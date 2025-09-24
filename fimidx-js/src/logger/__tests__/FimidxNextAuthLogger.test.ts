@@ -1,14 +1,8 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
-import {FimidxLogger} from '../FimidxLogger.js';
 import {
   FimidxNextAuthLogger,
   type NextAuthWarningCode,
 } from '../FimidxNextAuthLogger.js';
-
-// Mock the FimidxLogger
-vi.mock('../FimidxLogger.js', () => ({
-  FimidxLogger: vi.fn(),
-}));
 
 describe('FimidxNextAuthLogger', () => {
   let mockFimidxLogger: any;
@@ -19,15 +13,19 @@ describe('FimidxNextAuthLogger', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
 
-    // Create mock FimidxLogger
+    // Create mock FimidxConsoleLikeLogger
     mockFimidxLogger = {
       log: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+      warn: vi.fn(),
+      info: vi.fn(),
     };
 
-    // Mock the FimidxLogger constructor
-    (FimidxLogger as any).mockImplementation(() => mockFimidxLogger);
-
-    nextAuthLogger = new FimidxNextAuthLogger(mockFimidxLogger);
+    nextAuthLogger = new FimidxNextAuthLogger({
+      fimidxConsoleLogger: mockFimidxLogger,
+      debug: true, // Enable debug for tests
+    });
   });
 
   afterEach(() => {

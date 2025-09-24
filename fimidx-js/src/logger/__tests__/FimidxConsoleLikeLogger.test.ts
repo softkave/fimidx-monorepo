@@ -95,14 +95,15 @@ describe('FimidxConsoleLikeLogger', () => {
 
       expect(mockFimidxLogger.log).toHaveBeenCalledWith({
         level: 'log',
-        message: 'test message param1 param2',
+        message: 'test message',
+        args: ['param1', 'param2'],
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
-      expect(consoleSpy.log).toHaveBeenCalledWith('test message', [
+      expect(consoleSpy.log).toHaveBeenCalledWith(
+        'test message',
         'param1',
         'param2',
-      ]);
+      );
     });
 
     it('should debug with correct level and message', () => {
@@ -112,9 +113,8 @@ describe('FimidxConsoleLikeLogger', () => {
         level: 'debug',
         message: 'debug message',
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
-      expect(consoleSpy.debug).toHaveBeenCalledWith('debug message', []);
+      expect(consoleSpy.debug).toHaveBeenCalledWith('debug message');
     });
 
     it('should info with correct level and message', () => {
@@ -124,9 +124,8 @@ describe('FimidxConsoleLikeLogger', () => {
         level: 'info',
         message: 'info message',
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
-      expect(consoleSpy.info).toHaveBeenCalledWith('info message', []);
+      expect(consoleSpy.info).toHaveBeenCalledWith('info message');
     });
 
     it('should warn with correct level and message', () => {
@@ -136,9 +135,8 @@ describe('FimidxConsoleLikeLogger', () => {
         level: 'warn',
         message: 'warning message',
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
-      expect(consoleSpy.warn).toHaveBeenCalledWith('warning message', []);
+      expect(consoleSpy.warn).toHaveBeenCalledWith('warning message');
     });
 
     it('should error with correct level and message', () => {
@@ -148,9 +146,9 @@ describe('FimidxConsoleLikeLogger', () => {
         level: 'error',
         message: 'error message',
         timestamp: expect.any(String),
-        groupIndentation: 0,
+        stackTrace: expect.any(String),
       });
-      expect(consoleSpy.error).toHaveBeenCalledWith('error message', []);
+      expect(consoleSpy.error).toHaveBeenCalledWith('error message');
     });
   });
 
@@ -169,9 +167,9 @@ describe('FimidxConsoleLikeLogger', () => {
         level: 'assert',
         message: 'assertion failed',
         timestamp: expect.any(String),
-        groupIndentation: 0,
+        stackTrace: expect.any(String),
       });
-      expect(consoleSpy.assert).toHaveBeenCalledWith('assertion failed', []);
+      expect(consoleSpy.assert).toHaveBeenCalledWith(false, 'assertion failed');
     });
 
     it('should use default message when no message provided', () => {
@@ -181,7 +179,7 @@ describe('FimidxConsoleLikeLogger', () => {
         level: 'assert',
         message: 'Assertion failed',
         timestamp: expect.any(String),
-        groupIndentation: 0,
+        stackTrace: expect.any(String),
       });
     });
   });
@@ -196,19 +194,16 @@ describe('FimidxConsoleLikeLogger', () => {
         level: 'count',
         message: 'test: 1',
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
       expect(mockFimidxLogger.log).toHaveBeenCalledWith({
         level: 'count',
         message: 'test: 2',
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
       expect(mockFimidxLogger.log).toHaveBeenCalledWith({
         level: 'count',
         message: 'test: 3',
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
     });
 
@@ -217,10 +212,14 @@ describe('FimidxConsoleLikeLogger', () => {
       consoleLikeLogger.countReset('test');
 
       expect(mockFimidxLogger.log).toHaveBeenCalledWith({
+        level: 'count',
+        message: 'test: 1',
+        timestamp: expect.any(String),
+      });
+      expect(mockFimidxLogger.log).toHaveBeenCalledWith({
         level: 'countReset',
         message: 'test: 0',
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
     });
 
@@ -232,13 +231,11 @@ describe('FimidxConsoleLikeLogger', () => {
         level: 'count',
         message: 'default: 1',
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
       expect(mockFimidxLogger.log).toHaveBeenCalledWith({
         level: 'countReset',
         message: 'default: 0',
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
     });
   });
@@ -256,13 +253,11 @@ describe('FimidxConsoleLikeLogger', () => {
         level: 'time',
         message: "Timer 'test-timer' started",
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
       expect(mockFimidxLogger.log).toHaveBeenCalledWith({
         level: 'timeEnd',
         message: 'test-timer: 100ms',
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
     });
 
@@ -273,11 +268,8 @@ describe('FimidxConsoleLikeLogger', () => {
         level: 'timeEnd',
         message: "Timer 'non-existent' does not exist",
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
-      expect(consoleSpy.warn).toHaveBeenCalledWith(
-        "Timer 'non-existent' does not exist",
-      );
+      expect(consoleSpy.timeEnd).toHaveBeenCalledWith('non-existent');
     });
 
     it('should timeLog correctly', () => {
@@ -286,10 +278,15 @@ describe('FimidxConsoleLikeLogger', () => {
       consoleLikeLogger.timeLog('test-timer', 'additional data');
 
       expect(mockFimidxLogger.log).toHaveBeenCalledWith({
-        level: 'timeLog',
-        message: 'test-timer: 150ms additional data',
+        level: 'time',
+        message: "Timer 'test-timer' started",
         timestamp: expect.any(String),
-        groupIndentation: 0,
+      });
+      expect(mockFimidxLogger.log).toHaveBeenCalledWith({
+        level: 'timeLog',
+        message: 'test-timer: 150ms',
+        args: ['additional data'],
+        timestamp: expect.any(String),
       });
     });
 
@@ -300,7 +297,6 @@ describe('FimidxConsoleLikeLogger', () => {
         level: 'timeLog',
         message: "Timer 'non-existent' does not exist",
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
     });
   });
@@ -315,19 +311,16 @@ describe('FimidxConsoleLikeLogger', () => {
         level: 'group',
         message: 'test group',
         timestamp: expect.any(String),
-        groupIndentation: 2,
       });
       expect(mockFimidxLogger.log).toHaveBeenCalledWith({
         level: 'log',
         message: 'inside group',
         timestamp: expect.any(String),
-        groupIndentation: 2,
       });
       expect(mockFimidxLogger.log).toHaveBeenCalledWith({
         level: 'groupEnd',
         message: 'Group ended',
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
     });
 
@@ -338,10 +331,15 @@ describe('FimidxConsoleLikeLogger', () => {
       consoleLikeLogger.groupEnd();
       consoleLikeLogger.groupEnd();
 
+      // Verify that all the expected log calls were made
+      expect(mockFimidxLogger.log).toHaveBeenCalledTimes(5);
+
       const logCalls = mockFimidxLogger.log.mock.calls;
-      expect(logCalls[2][0].groupIndentation).toBe(4); // nested log
-      expect(logCalls[3][0].groupIndentation).toBe(2); // inner group end
-      expect(logCalls[4][0].groupIndentation).toBe(0); // outer group end
+      expect(logCalls[0][0].level).toBe('group'); // outer group
+      expect(logCalls[1][0].level).toBe('group'); // inner group
+      expect(logCalls[2][0].level).toBe('log'); // nested log
+      expect(logCalls[3][0].level).toBe('groupEnd'); // inner group end
+      expect(logCalls[4][0].level).toBe('groupEnd'); // outer group end
     });
 
     it('should handle groupCollapsed same as group', () => {
@@ -353,7 +351,6 @@ describe('FimidxConsoleLikeLogger', () => {
         level: 'group',
         message: 'collapsed group',
         timestamp: expect.any(String),
-        groupIndentation: 2,
       });
     });
   });
@@ -365,9 +362,8 @@ describe('FimidxConsoleLikeLogger', () => {
 
       expect(mockFimidxLogger.log).toHaveBeenCalledWith({
         level: 'dir',
-        message: expect.stringContaining('"test": "value"'),
+        message: '{\n  "test": "value"\n}',
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
       expect(consoleSpy.dir).toHaveBeenCalledWith(obj, undefined);
     });
@@ -377,9 +373,9 @@ describe('FimidxConsoleLikeLogger', () => {
 
       expect(mockFimidxLogger.log).toHaveBeenCalledWith({
         level: 'dirxml',
-        message: 'dirxml called xml data',
+        message: 'dirxml called',
+        args: ['xml data'],
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
       // Note: console.dirxml doesn't exist in Node.js, so it should fallback to console.log
       // but the fallback behavior is tested separately
@@ -391,9 +387,11 @@ describe('FimidxConsoleLikeLogger', () => {
 
       expect(mockFimidxLogger.log).toHaveBeenCalledWith({
         level: 'table',
-        message: expect.stringContaining('"type": "table"'),
+        data: [{name: 'John', age: 30}],
+        properties: [],
+        rowCount: 1,
         timestamp: expect.any(String),
-        groupIndentation: 0,
+        type: 'table',
       });
       expect(consoleSpy.table).toHaveBeenCalledWith(data, undefined);
     });
@@ -407,10 +405,9 @@ describe('FimidxConsoleLikeLogger', () => {
         level: 'trace',
         message: 'trace message',
         timestamp: expect.any(String),
-        groupIndentation: 0,
         stackTrace: expect.any(String),
       });
-      expect(consoleSpy.trace).toHaveBeenCalledWith('trace message', []);
+      expect(consoleSpy.trace).toHaveBeenCalledWith('trace message');
     });
   });
 
@@ -422,7 +419,6 @@ describe('FimidxConsoleLikeLogger', () => {
         level: 'clear',
         message: 'Console cleared',
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
       expect(consoleSpy.clear).toHaveBeenCalled();
     });
@@ -435,13 +431,11 @@ describe('FimidxConsoleLikeLogger', () => {
         level: 'profile',
         message: "Profile 'test-profile' started",
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
       expect(mockFimidxLogger.log).toHaveBeenCalledWith({
         level: 'profileEnd',
         message: "Profile 'test-profile' ended",
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
     });
 
@@ -452,7 +446,6 @@ describe('FimidxConsoleLikeLogger', () => {
         level: 'timeStamp',
         message: "Timestamp 'test-stamp'",
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
     });
   });
@@ -463,9 +456,9 @@ describe('FimidxConsoleLikeLogger', () => {
 
       expect(mockFimidxLogger.log).toHaveBeenCalledWith({
         level: 'log',
-        message: 'Hello John, you are 30 years old',
+        message: 'Hello %s, you are %d years old',
+        args: ['John', 30],
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
     });
 
@@ -476,9 +469,9 @@ describe('FimidxConsoleLikeLogger', () => {
 
       expect(mockFimidxLogger.log).toHaveBeenCalledWith({
         level: 'log',
-        message: expect.stringContaining('Object:'),
+        message: 'Object:',
+        args: [{name: 'John'}, 'Array:', [1, 2, 3]],
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
     });
 
@@ -487,9 +480,9 @@ describe('FimidxConsoleLikeLogger', () => {
 
       expect(mockFimidxLogger.log).toHaveBeenCalledWith({
         level: 'log',
-        message: 'null undefined',
+        message: 'null',
+        args: [undefined],
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
     });
 
@@ -499,9 +492,8 @@ describe('FimidxConsoleLikeLogger', () => {
 
       expect(mockFimidxLogger.log).toHaveBeenCalledWith({
         level: 'log',
-        message: expect.stringContaining('Error: test error'),
+        args: [error],
         timestamp: expect.any(String),
-        groupIndentation: 0,
       });
     });
   });

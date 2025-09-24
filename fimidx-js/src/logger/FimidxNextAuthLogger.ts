@@ -13,11 +13,18 @@ export interface IFimidxNextAuthLogger extends Record<string, Function> {
   debug: (message: string, metadata?: unknown) => void;
 }
 
+export interface IFimidxNextAuthLoggerOptions {
+  fimidxConsoleLogger: FimidxConsoleLikeLogger;
+  debug?: boolean;
+}
+
 export class FimidxNextAuthLogger implements IFimidxNextAuthLogger {
   private fimidxLogger: FimidxConsoleLikeLogger;
+  private logDebugMessages: boolean;
 
-  constructor(fimidxLogger: FimidxConsoleLikeLogger) {
-    this.fimidxLogger = fimidxLogger;
+  constructor(params: IFimidxNextAuthLoggerOptions) {
+    this.fimidxLogger = params.fimidxConsoleLogger;
+    this.logDebugMessages = params.debug ?? false;
   }
 
   [key: string]: any;
@@ -74,10 +81,12 @@ export class FimidxNextAuthLogger implements IFimidxNextAuthLogger {
       }
     }
 
-    this.fimidxLogger.error(logEntry);
+    this.fimidxLogger.log(logEntry);
   };
 
   debug = (message: string, metadata?: unknown): void => {
+    if (!this.logDebugMessages) return;
+
     const logEntry: any = {
       level: 'debug',
       message: `[auth][debug]: ${message}`,
@@ -89,6 +98,6 @@ export class FimidxNextAuthLogger implements IFimidxNextAuthLogger {
       logEntry.metadata = metadata;
     }
 
-    this.fimidxLogger.debug(logEntry);
+    this.fimidxLogger.log(logEntry);
   };
 }

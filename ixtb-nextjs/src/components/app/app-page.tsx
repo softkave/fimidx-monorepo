@@ -5,12 +5,17 @@ import { AppContainer } from "./app-container";
 export interface IAppPageProps {
   appId: string;
   defaultTab: AppTab;
+  className?: string;
 }
 
 export function AppPage(props: IAppPageProps) {
   return (
     <InternalAppPage>
-      <AppContainer appId={props.appId} defaultTab={props.defaultTab} />
+      <AppContainer
+        appId={props.appId}
+        defaultTab={props.defaultTab}
+        className={props.className}
+      />
     </InternalAppPage>
   );
 }

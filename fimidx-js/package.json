@@ -1,6 +1,6 @@
 {
   "name": "fimidx",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "fimidx js sdk",
   "author": {
     "email": "ywordk@gmail.com",
@@ -39,9 +39,10 @@
     "pretest": "npm run compile",
     "test": "env-cmd -f \".env.test\" vitest run --config=./vitest.config.ts",
     "test:browser": "env-cmd -f \".env.test\" vitest --config=./vitest.browser.config.ts",
-    "publish:npm": "npm run clean && npm run compile && npm publish",
-    "publish:local": "npm run clean && npm run compile && yalc publish",
-    "show:packlist": "npm run clean && npm run compile && npm pack --dry-run"
+    "publish:npm": "npm run compile && npm publish",
+    "publish:yalc": "npm run compile && yalc publish",
+    "publish:pnpm": "npm run compile && pnpm link",
+    "show:packlist": "npm run compile && npm pack --dry-run"
   },
   "engines": {
     "node": ">=13"

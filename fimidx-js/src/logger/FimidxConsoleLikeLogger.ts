@@ -1,4 +1,5 @@
-import {isObject} from 'lodash-es';
+import {isPlainObject, isString} from 'lodash-es';
+import type {AnyObject} from 'softkave-js-utils';
 import {FimidxLogger} from './FimidxLogger.js';
 
 export interface IFimidxConsoleLikeLoggerOptions {
@@ -6,6 +7,10 @@ export interface IFimidxConsoleLikeLoggerOptions {
   // Additional options specific to console-like behavior
   enableConsoleFallback?: boolean; // default: true
   enabled?: boolean; // default: true
+}
+
+function isPrimitiveLike(value: unknown): boolean {
+  return value === null || typeof value !== 'object';
 }
 
 export class FimidxConsoleLikeLogger {
@@ -35,59 +40,61 @@ export class FimidxConsoleLikeLogger {
   };
 
   // Core logging methods
-  log = (message?: any, ...optionalParams: any[]): void => {
+  log = (...params: any[]): void => {
     if (!this.enabled) {
-      this.consoleFallback('log', message, optionalParams);
+      this.consoleFallback('log', ...params);
       return;
     }
 
-    const logEntry = this.createLogEntry('log', message, optionalParams);
+    const logEntry = this.createLogEntry('log', [...params]);
     this.fimidxLogger.log(logEntry);
-    this.consoleFallback('log', message, optionalParams);
+    this.consoleFallback('log', ...params);
   };
 
-  debug = (message?: any, ...optionalParams: any[]): void => {
+  debug = (...params: any[]): void => {
     if (!this.enabled) {
-      this.consoleFallback('debug', message, optionalParams);
+      this.consoleFallback('debug', ...params);
       return;
     }
 
-    const logEntry = this.createLogEntry('debug', message, optionalParams);
+    const logEntry = this.createLogEntry('debug', [...params]);
     this.fimidxLogger.log(logEntry);
-    this.consoleFallback('debug', message, optionalParams);
+    this.consoleFallback('debug', ...params);
   };
 
-  info = (message?: any, ...optionalParams: any[]): void => {
+  info = (...params: any[]): void => {
     if (!this.enabled) {
-      this.consoleFallback('info', message, optionalParams);
+      this.consoleFallback('info', ...params);
       return;
     }
 
-    const logEntry = this.createLogEntry('info', message, optionalParams);
+    const logEntry = this.createLogEntry('info', [...params]);
     this.fimidxLogger.log(logEntry);
-    this.consoleFallback('info', message, optionalParams);
+    this.consoleFallback('info', ...params);
   };
 
-  warn = (message?: any, ...optionalParams: any[]): void => {
+  warn = (...params: any[]): void => {
     if (!this.enabled) {
-      this.consoleFallback('warn', message, optionalParams);
+      this.consoleFallback('warn', ...params);
       return;
     }
 
-    const logEntry = this.createLogEntry('warn', message, optionalParams);
+    const logEntry = this.createLogEntry('warn', [...params]);
     this.fimidxLogger.log(logEntry);
-    this.consoleFallback('warn', message, optionalParams);
+    this.consoleFallback('warn', ...params);
   };
 
-  error = (message?: any, ...optionalParams: any[]): void => {
+  error = (...params: any[]): void => {
     if (!this.enabled) {
-      this.consoleFallback('error', message, optionalParams);
+      this.consoleFallback('error', ...params);
       return;
     }
 
-    const logEntry = this.createLogEntry('error', message, optionalParams);
+    const logEntry = this.createLogEntry('error', [...params], {
+      stackTrace: new Error().stack,
+    });
     this.fimidxLogger.log(logEntry);
-    this.consoleFallback('error', message, optionalParams);
+    this.consoleFallback('error', ...params);
   };
 
   // Assertion
@@ -96,17 +103,24 @@ export class FimidxConsoleLikeLogger {
       const assertMessage = message || 'Assertion failed';
 
       if (!this.enabled) {
-        this.consoleFallback('assert', assertMessage, optionalParams);
+        this.consoleFallback('assert', value, assertMessage, ...optionalParams);
         return;
       }
 
       const logEntry = this.createLogEntry(
         'assert',
-        assertMessage,
-        optionalParams,
+        [assertMessage, ...optionalParams],
+        {stackTrace: new Error().stack},
       );
       this.fimidxLogger.log(logEntry);
-      this.consoleFallback('assert', assertMessage, optionalParams);
+
+      // console.assert throws an error if the condition is false, but if
+      // console fallback is disabled, we want to throw an error instead
+      if (this.enableConsoleFallback) {
+        this.consoleFallback('assert', value, assertMessage, ...optionalParams);
+      } else {
+        throw new Error(assertMessage);
+      }
     }
   };
 
@@ -123,7 +137,7 @@ export class FimidxConsoleLikeLogger {
       return;
     }
 
-    const logEntry = this.createLogEntry('count', message);
+    const logEntry = this.createLogEntry('count', [message]);
     this.fimidxLogger.log(logEntry);
     this.consoleFallback('count', label);
   };
@@ -137,7 +151,7 @@ export class FimidxConsoleLikeLogger {
       return;
     }
 
-    const logEntry = this.createLogEntry('countReset', message);
+    const logEntry = this.createLogEntry('countReset', [message]);
     this.fimidxLogger.log(logEntry);
     this.consoleFallback('countReset', label);
   };
@@ -152,7 +166,7 @@ export class FimidxConsoleLikeLogger {
       return;
     }
 
-    const logEntry = this.createLogEntry('time', message);
+    const logEntry = this.createLogEntry('time', [message]);
     this.fimidxLogger.log(logEntry);
     this.consoleFallback('time', label);
   };
@@ -169,7 +183,7 @@ export class FimidxConsoleLikeLogger {
         return;
       }
 
-      const logEntry = this.createLogEntry('timeEnd', message);
+      const logEntry = this.createLogEntry('timeEnd', [message]);
       this.fimidxLogger.log(logEntry);
       this.consoleFallback('timeEnd', label);
       this.timers.delete(label);
@@ -181,7 +195,7 @@ export class FimidxConsoleLikeLogger {
         return;
       }
 
-      const logEntry = this.createLogEntry('timeEnd', message);
+      const logEntry = this.createLogEntry('timeEnd', [message]);
       this.fimidxLogger.log(logEntry);
       this.consoleFallback('timeEnd', label);
     }
@@ -198,7 +212,7 @@ export class FimidxConsoleLikeLogger {
         return;
       }
 
-      const logEntry = this.createLogEntry('timeLog', message, data);
+      const logEntry = this.createLogEntry('timeLog', [message, ...data]);
       this.fimidxLogger.log(logEntry);
       this.consoleFallback('timeLog', label, ...data);
     } else {
@@ -209,7 +223,7 @@ export class FimidxConsoleLikeLogger {
         return;
       }
 
-      const logEntry = this.createLogEntry('timeLog', message);
+      const logEntry = this.createLogEntry('timeLog', [message, ...data]);
       this.fimidxLogger.log(logEntry);
       this.consoleFallback('timeLog', label, ...data);
     }
@@ -225,7 +239,7 @@ export class FimidxConsoleLikeLogger {
       return;
     }
 
-    const logEntry = this.createLogEntry('group', message);
+    const logEntry = this.createLogEntry('group', [message]);
     this.fimidxLogger.log(logEntry);
     this.consoleFallback('group', ...label);
   };
@@ -251,7 +265,7 @@ export class FimidxConsoleLikeLogger {
       return;
     }
 
-    const logEntry = this.createLogEntry('groupEnd', 'Group ended');
+    const logEntry = this.createLogEntry('groupEnd', ['Group ended']);
     this.fimidxLogger.log(logEntry);
     this.consoleFallback('groupEnd');
   };
@@ -264,7 +278,7 @@ export class FimidxConsoleLikeLogger {
     }
 
     const inspected = this.inspectObject(obj);
-    const logEntry = this.createLogEntry('dir', inspected);
+    const logEntry = this.createLogEntry('dir', [inspected]);
     this.fimidxLogger.log(logEntry);
     this.consoleFallback('dir', obj, options);
   };
@@ -275,7 +289,7 @@ export class FimidxConsoleLikeLogger {
       return;
     }
 
-    const logEntry = this.createLogEntry('dirxml', 'dirxml called', data);
+    const logEntry = this.createLogEntry('dirxml', ['dirxml called', ...data]);
     this.fimidxLogger.log(logEntry);
     this.consoleFallback('dirxml', ...data);
   };
@@ -287,24 +301,24 @@ export class FimidxConsoleLikeLogger {
     }
 
     const tableData = this.formatTable(tabularData, properties);
-    const logEntry = this.createLogEntry('table', tableData);
+    const logEntry = this.createLogEntry('table', [tableData]);
     this.fimidxLogger.log(logEntry);
     this.consoleFallback('table', tabularData, properties);
   };
 
   // Tracing
-  trace = (message?: any, ...optionalParams: any[]): void => {
+  trace = (...params: any[]): void => {
     if (!this.enabled) {
-      this.consoleFallback('trace', message, optionalParams);
+      this.consoleFallback('trace', ...params);
       return;
     }
 
     const stackTrace = new Error().stack;
-    const logEntry = this.createLogEntry('trace', message, optionalParams, {
+    const logEntry = this.createLogEntry('trace', [...params], {
       stackTrace,
     });
     this.fimidxLogger.log(logEntry);
-    this.consoleFallback('trace', message, optionalParams);
+    this.consoleFallback('trace', ...params);
   };
 
   // Utility methods
@@ -314,7 +328,7 @@ export class FimidxConsoleLikeLogger {
       return;
     }
 
-    const logEntry = this.createLogEntry('clear', 'Console cleared');
+    const logEntry = this.createLogEntry('clear', ['Console cleared']);
     this.fimidxLogger.log(logEntry);
     this.consoleFallback('clear');
   };
@@ -326,10 +340,9 @@ export class FimidxConsoleLikeLogger {
       return;
     }
 
-    const logEntry = this.createLogEntry(
-      'profile',
+    const logEntry = this.createLogEntry('profile', [
       `Profile '${label || 'default'}' started`,
-    );
+    ]);
     this.fimidxLogger.log(logEntry);
     this.consoleFallback('profile', label);
   };
@@ -340,10 +353,9 @@ export class FimidxConsoleLikeLogger {
       return;
     }
 
-    const logEntry = this.createLogEntry(
-      'profileEnd',
+    const logEntry = this.createLogEntry('profileEnd', [
       `Profile '${label || 'default'}' ended`,
-    );
+    ]);
     this.fimidxLogger.log(logEntry);
     this.consoleFallback('profileEnd', label);
   };
@@ -354,10 +366,9 @@ export class FimidxConsoleLikeLogger {
       return;
     }
 
-    const logEntry = this.createLogEntry(
-      'timeStamp',
+    const logEntry = this.createLogEntry('timeStamp', [
       `Timestamp '${label || 'default'}'`,
-    );
+    ]);
     this.fimidxLogger.log(logEntry);
     this.consoleFallback('timeStamp', label);
   };
@@ -378,19 +389,31 @@ export class FimidxConsoleLikeLogger {
   // Private helper methods
   private createLogEntry = (
     level: string,
-    message?: any,
-    optionalParams: any[] = [],
+    args: unknown[],
     additionalData?: any,
   ) => {
     const timestamp = new Date().toISOString();
-    const fMessage = this.formatMessage(message, optionalParams);
+
+    let message: string | undefined;
+    if (args.length === 0) {
+      message = 'Empty message';
+    } else if (args.length && isPrimitiveLike(args[0])) {
+      message = isString(args[0]) ? args[0] : JSON.stringify(args[0]);
+      args.shift();
+    }
+
+    let mergedArgs: AnyObject = {};
+    if (args.length === 1 && isPlainObject(args[0])) {
+      mergedArgs = args[0] as AnyObject;
+    } else if (args.length > 0) {
+      mergedArgs = {args: args};
+    }
+
     const entry: any = {
       level,
-      message: fMessage.message,
       timestamp,
-      ...(isObject(fMessage.remainingArgs)
-        ? fMessage.remainingArgs
-        : {remainingArgs: fMessage.remainingArgs}),
+      ...(message ? {message} : {}),
+      ...mergedArgs,
     };
 
     if (additionalData) {
@@ -398,32 +421,6 @@ export class FimidxConsoleLikeLogger {
     }
 
     return entry;
-  };
-
-  private formatMessage = (
-    message?: any,
-    optionalParams: any[] = [],
-  ): {message: string; remainingArgs?: any} => {
-    if (message === undefined && optionalParams.length === 0) {
-      return {message: 'empty message', remainingArgs: undefined};
-    }
-
-    if (typeof message === 'string') {
-      // Handle printf-style formatting
-      return {message: message, remainingArgs: optionalParams};
-    }
-
-    // Handle non-string messages
-    const parts = message ? [message, ...optionalParams] : optionalParams;
-    const messageType = typeof parts[0];
-    return {
-      message:
-        messageType !== 'object'
-          ? String(parts[0])
-          : parts[0]?.message || messageType,
-      remainingArgs:
-        parts.length === 1 ? parts[0] : parts.length > 1 ? parts : undefined,
-    };
   };
 
   private inspectObject = (obj: any): string => {

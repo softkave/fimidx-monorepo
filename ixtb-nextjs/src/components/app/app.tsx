@@ -1,5 +1,6 @@
 import { IApp } from "fimidx-core/definitions/app";
 import { ValueOf } from "type-fest";
+import { cn } from "../../lib/utils";
 import { ClientTokensPage } from "../client-token/client-tokens-page";
 import { LogsPage } from "../log/logs-page";
 import { AppUpdateState } from "./app-update-state";
@@ -14,10 +15,11 @@ export type AppTab = ValueOf<typeof kAppTabs>;
 export interface IAppProps {
   app: IApp;
   defaultTab: AppTab;
+  className?: string;
 }
 
 export function App(props: IAppProps) {
-  const { defaultTab } = props;
+  const { defaultTab, className } = props;
   let contentNode: React.ReactNode = null;
 
   if (defaultTab === kAppTabs.clientTokens) {
@@ -39,7 +41,7 @@ export function App(props: IAppProps) {
   }
 
   return (
-    <div className="max-w-md md:max-w-lg mx-auto w-full">
+    <div className={cn("max-w-md md:max-w-lg mx-auto w-full", className)}>
       {/* <AppHeader app={props.app} /> */}
       <AppUpdateState app={props.app} />
       {contentNode}

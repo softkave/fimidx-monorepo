@@ -17,6 +17,7 @@ export interface IAppContainerProps {
   render?: (response: IAppContainerRenderProps) => React.ReactNode;
   renderLoading?: () => React.ReactNode;
   renderError?: (error: unknown) => React.ReactNode;
+  className?: string;
 }
 
 export function AppContainer(props: IAppContainerProps) {
@@ -25,6 +26,7 @@ export function AppContainer(props: IAppContainerProps) {
     defaultTab = kAppTabs.logs,
     renderLoading,
     renderError,
+    className,
   } = props;
   const getAppsHook = useGetApps({
     query: {
@@ -51,7 +53,7 @@ export function AppContainer(props: IAppContainerProps) {
 
   const defaultRender = useCallback(
     (response: IAppContainerRenderProps) => (
-      <App app={response.app} defaultTab={defaultTab} />
+      <App app={response.app} defaultTab={defaultTab} className={className} />
     ),
     [defaultTab]
   );

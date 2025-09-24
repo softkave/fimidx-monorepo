@@ -34,5 +34,11 @@ export default async function Page(
     );
   }
 
-  return <AppPage appId={appId} defaultTab={kAppTabs.logs} />;
+  return (
+    <AppPage
+      appId={appId}
+      defaultTab={kAppTabs.logs}
+      className="max-w-full md:max-w-full"
+    />
+  );
 }

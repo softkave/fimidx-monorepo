@@ -44,8 +44,6 @@
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.40.0",
     "fimidx-core": "workspace:*",
-    "fimidx": "^0.3.1",
-    "fimidx-winston-transport": "^0.1.1",
     "jsonwebtoken": "^9.0.2",
     "lodash-es": "^4.17.21",
     "lucide-react": "^0.509.0",

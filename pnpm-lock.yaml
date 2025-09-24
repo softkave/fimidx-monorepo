@@ -23,11 +23,11 @@ importers:
         specifier: ^0.40.1
         version: 0.40.1(@libsql/client@0.14.0)(@types/pg@8.15.4)(gel@2.1.0)(pg@8.16.3)(sqlite3@5.1.7)
       fimidx:
-        specifier: ^0.4.1
-        version: 0.4.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+        specifier: ^0.5.0
+        version: 0.5.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
       fimidx-winston-transport:
-        specifier: ^0.3.1
-        version: 0.3.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+        specifier: ^0.3.2
+        version: 0.3.2(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.2
@@ -149,7 +149,7 @@ importers:
         version: 4.0.3
       fimidx:
         specifier: ^0.4.0
-        version: 0.4.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+        version: 0.4.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
       zod:
         specifier: ^4.0.15
         version: 4.0.15
@@ -268,8 +268,8 @@ importers:
   fimidx-winston-transport:
     dependencies:
       fimidx:
-        specifier: ^0.4.1
-        version: 0.4.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+        specifier: ^0.5.0
+        version: 0.5.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
       winston-transport:
         specifier: ^4.9.0
         version: 4.9.0
@@ -367,15 +367,9 @@ importers:
       drizzle-orm:
         specifier: ^0.40.0
         version: 0.40.1(@libsql/client@0.14.0)(@types/pg@8.15.4)(gel@2.1.0)(pg@8.16.3)(sqlite3@5.1.7)
-      fimidx:
-        specifier: ^0.3.1
-        version: 0.3.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
       fimidx-core:
         specifier: workspace:*
         version: link:../fimidx-core
-      fimidx-winston-transport:
-        specifier: ^0.1.1
-        version: 0.1.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.2
@@ -4106,32 +4100,20 @@ packages:
     resolution: {integrity: sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg==}
     engines: {node: '>=8'}
 
-  fimidx-winston-transport@0.1.1:
-    resolution: {integrity: sha512-EC6VMy36cZ5oiSR/ZG98nUoSKcQUle5QNFUVs5mSTX4/xbB1C6Uo0gDhAaAHy3ylSSq3lnv0uU6YFj+IHbeU6Q==}
-    engines: {node: '>=13'}
-
   fimidx-winston-transport@0.3.0:
     resolution: {integrity: sha512-AoQWhnj4SJj/naqA7dxt3d33iyg89yt9pPLsRkx7if5KnXm4Af78NFUJAgGwXVci8dtMkzGPasCVOesTYIKy7g==}
     engines: {node: '>=13'}
 
-  fimidx-winston-transport@0.3.1:
-    resolution: {integrity: sha512-4QLBoZx5xh2AKfwiF+6Sigx1OSB9wdavmzTWEf3UwMwHD1t3CBHzY/m1bxSQ0cdPUod+5+zU5lI/bB3wry3fTA==}
-    engines: {node: '>=13'}
-
-  fimidx@0.3.1:
-    resolution: {integrity: sha512-5a62Bzl/3GLLnS593bkCdsLjN4FCAsxNTIya4mRo3bstiqt4iaLelNs3vvtBeQB0stdqDfUa5lDxwdzMDJZDSQ==}
-    engines: {node: '>=13'}
-
-  fimidx@0.3.2:
-    resolution: {integrity: sha512-og3wL4Cailw0cZyTFiz6joo7lbR6j4rXAzwrvJKkpOjNOC0ptHa2kBKiHCyszdoTED35xCkwkIW9rbC50mYy4Q==}
-    engines: {node: '>=13'}
-
-  fimidx@0.4.0:
-    resolution: {integrity: sha512-jRpGVXHAOMMAOOWjBKbFTE/iBMiwAz8JTQhNgi6sASfqIcjnwXxV7wyJT/hZ1/57E5LYa9DY+aOxO/51qTPMkw==}
+  fimidx-winston-transport@0.3.2:
+    resolution: {integrity: sha512-fJwe4VhkN63CJ2WahzDOvNM12NEKvM7JYJx1jeVhq/n0m/+XV8CAESJO3N5TDIc4Go2iH1Kk5THXWKatolhnNw==}
     engines: {node: '>=13'}
 
   fimidx@0.4.1:
     resolution: {integrity: sha512-GzH9iUFCViWl0UOgQd23WxUQOIAAGwNOr/tnCC5R6h/EgNrAWMgMrVpKHvHPgeGI08XmUjuXMj7gNg8vzBmg3w==}
+    engines: {node: '>=13'}
+
+  fimidx@0.5.0:
+    resolution: {integrity: sha512-GPQDpwaUuowHjvXeeQ8uOzssvc0j4PjinNYQBcsQihQufglOnOY9EoMSQDfh6vLvYu+f1R3r6PLNPQSIp0KEcQ==}
     engines: {node: '>=13'}
 
   finalhandler@2.1.0:
@@ -10006,17 +9988,6 @@ snapshots:
     dependencies:
       to-regex-range: 5.0.1
 
-  fimidx-winston-transport@0.1.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
-    dependencies:
-      fimidx: 0.3.2(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
-      winston-transport: 4.9.0
-    transitivePeerDependencies:
-      - assert
-      - debug
-      - nanoid
-      - path-browserify
-      - type-fest
-
   fimidx-winston-transport@0.3.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
     dependencies:
       fimidx: 0.4.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
@@ -10028,9 +9999,9 @@ snapshots:
       - path-browserify
       - type-fest
 
-  fimidx-winston-transport@0.3.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
+  fimidx-winston-transport@0.3.2(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
     dependencies:
-      fimidx: 0.4.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+      fimidx: 0.5.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
       winston-transport: 4.9.0
     transitivePeerDependencies:
       - assert
@@ -10039,43 +10010,19 @@ snapshots:
       - path-browserify
       - type-fest
 
-  fimidx@0.3.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
-    dependencies:
-      lodash-es: 4.17.21
-      mfdoc-js-sdk-base: 0.3.1(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
-      softkave-js-utils: 0.17.1(assert@2.1.0)(lodash-es@4.17.21)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
-    transitivePeerDependencies:
-      - assert
-      - debug
-      - nanoid
-      - path-browserify
-      - type-fest
-
-  fimidx@0.3.2(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
-    dependencies:
-      lodash-es: 4.17.21
-      mfdoc-js-sdk-base: 0.3.1(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
-      softkave-js-utils: 0.17.1(assert@2.1.0)(lodash-es@4.17.21)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
-    transitivePeerDependencies:
-      - assert
-      - debug
-      - nanoid
-      - path-browserify
-      - type-fest
-
-  fimidx@0.4.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
-    dependencies:
-      lodash-es: 4.17.21
-      mfdoc-js-sdk-base: 0.3.1(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
-      softkave-js-utils: 0.17.1(assert@2.1.0)(lodash-es@4.17.21)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
-    transitivePeerDependencies:
-      - assert
-      - debug
-      - nanoid
-      - path-browserify
-      - type-fest
-
   fimidx@0.4.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
+    dependencies:
+      lodash-es: 4.17.21
+      mfdoc-js-sdk-base: 0.3.1(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+      softkave-js-utils: 0.17.1(assert@2.1.0)(lodash-es@4.17.21)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+    transitivePeerDependencies:
+      - assert
+      - debug
+      - nanoid
+      - path-browserify
+      - type-fest
+
+  fimidx@0.5.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
     dependencies:
       lodash-es: 4.17.21
       mfdoc-js-sdk-base: 0.3.1(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)

@@ -35,7 +35,7 @@ export function EmailSignInServer(props: IEmailSignInServerProps) {
         </p>
       </div>
       <Button type="submit" className="w-full" variant="outline">
-        Signin with Email
+        Sign-in with Email
       </Button>
     </form>
   );

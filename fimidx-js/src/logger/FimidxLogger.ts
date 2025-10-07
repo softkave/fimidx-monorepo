@@ -16,7 +16,15 @@ export interface IFimidxLoggerOptions {
   retryDelay?: number; // ms, default: 1000
 
   // Fallback options
+  /**
+   * Whether to log to console if an error occurs and logs are not sent to the
+   * server. This is to avoid losing logs.
+   */
   consoleLogOnError?: boolean; // default: true
+  /**
+   * Whether to log errors when sending logs to the server fails. This is to
+   * help diagnose issues with the server.
+   */
   logRemoteErrors?: boolean; // default: false
 
   // Metadata to include in every log entry

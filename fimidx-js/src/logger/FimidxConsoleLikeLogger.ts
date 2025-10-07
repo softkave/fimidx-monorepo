@@ -5,7 +5,14 @@ import {FimidxLogger} from './FimidxLogger.js';
 export interface IFimidxConsoleLikeLoggerOptions {
   fimidxLogger: FimidxLogger;
   // Additional options specific to console-like behavior
+  /**
+   * Whether to log each log entry to console, besides logging to fimidx. It
+   * does not affect the logging to fimidx.
+   */
   enableConsoleFallback?: boolean; // default: true
+  /**
+   * Whether to log to fimidx. It does not affect console fallback.
+   */
   enabled?: boolean; // default: true
 }
 

@@ -1,10 +1,10 @@
 import { FimidxConsoleLikeLogger } from "fimidx";
-import { getClientConfig } from "../getClientConfig.js";
 import { fimidxLogger } from "./fimidx-logger.js";
-
-const { nodeEnv } = getClientConfig();
 
 export const fimidxConsoleLogger = new FimidxConsoleLikeLogger({
   fimidxLogger: fimidxLogger,
-  enableConsoleFallback: nodeEnv === "development",
+  // Always enable console fallback to avoid losing logs in production. This is
+  // because fimidx handles logs for other apps including itself, but should it
+  // be down, there'll be no way to know what went wrong.
+  enableConsoleFallback: true,
 });

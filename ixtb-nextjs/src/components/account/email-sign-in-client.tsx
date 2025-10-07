@@ -85,7 +85,7 @@ export function EmailSignInClient(props: IEmailSignInClientProps) {
         />
         <Button type="submit" className="w-full" variant="default">
           <MailIcon className="w-4 h-4" />
-          <span className="flex-1">Signin with Email</span>
+          <span className="flex-1">Sign-in with Email</span>
         </Button>
       </form>
     </Form>

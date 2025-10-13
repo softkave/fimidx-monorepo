@@ -88,14 +88,14 @@ export async function getMemberRequests(params: {
   }
 
   if (args.includePermissions) {
-    assert(
+    assert.ok(
       args.query.appId,
       new OwnServerError(
         "App ID is required",
         kOwnServerErrorCodes.InvalidRequest
       )
     );
-    assert(
+    assert.ok(
       args.query.groupId,
       new OwnServerError(
         "Group ID is required",
@@ -119,7 +119,7 @@ export async function getMemberRequests(params: {
     memberPermissions,
     {
       indexer: (permission) => {
-        assert(permission.meta, "Permission meta is required");
+        assert.ok(permission.meta, "Permission meta is required");
         const meta = permission.meta as IMemberObjRecordMeta;
         return meta.__fimidx_managed_memberId;
       },

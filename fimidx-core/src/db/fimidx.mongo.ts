@@ -11,8 +11,8 @@ export function getMongoConnection() {
     const { mongo } = getCoreConfig();
     const uri = mongo.uri;
     const dbName = mongo.dbName;
-    assert(uri, "MONGO_URI is not set");
-    assert(dbName, "MONGO_DB_NAME is not set");
+    assert.ok(uri, "MONGO_URI is not set");
+    assert.ok(dbName, "MONGO_DB_NAME is not set");
     connection = createConnection(uri, { dbName });
     promise = connection.asPromise();
   }

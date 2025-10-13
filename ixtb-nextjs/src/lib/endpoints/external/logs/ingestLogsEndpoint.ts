@@ -26,11 +26,11 @@ export const ingestLogsEndpoint: NextClientTokenAuthenticatedEndpointFn<
   });
 
   const app = first(apps);
-  assert(
+  assert.ok(
     app,
     new OwnServerError("App not found", kOwnServerErrorCodes.NotFound)
   );
-  assert(
+  assert.ok(
     app?.id === clientToken.meta?.appId,
     new OwnServerError("Permission denied", kOwnServerErrorCodes.Unauthorized)
   );

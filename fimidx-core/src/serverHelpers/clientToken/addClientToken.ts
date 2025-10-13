@@ -54,14 +54,14 @@ export async function addClientToken(params: {
     storage,
   });
 
-  assert(
+  assert.ok(
     failedItems.length === 0,
     new OwnServerError(
       "Failed to add client token",
       kOwnServerErrorCodes.InternalServerError
     )
   );
-  assert(
+  assert.ok(
     newObjs.length === 1,
     new OwnServerError(
       "Failed to add client token",

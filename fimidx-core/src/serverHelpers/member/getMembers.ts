@@ -202,7 +202,7 @@ export async function getMembers(params: {
       };
 
   const permissionsMap = permissions.reduce((acc, permission) => {
-    assert(permission.meta, "Permission meta is required");
+    assert.ok(permission.meta, "Permission meta is required");
     const meta = permission.meta as IMemberObjRecordMeta;
     const memberId = meta.__fimidx_managed_memberId;
     if (!acc[memberId]) {

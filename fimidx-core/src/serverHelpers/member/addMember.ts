@@ -133,7 +133,7 @@ export async function addMember(params: {
     storage,
   });
 
-  assert(
+  assert.ok(
     failedItems.length === 0,
     new OwnServerError(
       "Failed to add member",
@@ -163,7 +163,7 @@ export async function addMember(params: {
   }
 
   const obj = first(newObjs);
-  assert(
+  assert.ok(
     obj,
     new OwnServerError(
       "Failed to add member",

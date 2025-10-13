@@ -25,7 +25,7 @@ export interface IWsBase {
 const { ws: wsConfig } = getCoreConfig();
 
 export function getWs(getWsClient: (host: string) => IWsBase) {
-  assert(wsConfig.host, "ws.host is required");
+  assert.ok(wsConfig.host, "ws.host is required");
   const ws = getWsClient(wsConfig.host);
   ws.addOpenListener(() => {
     fimidxConsoleLogger.log("Connected to WebSocket server");

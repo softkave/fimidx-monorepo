@@ -347,7 +347,7 @@ export async function getClientTokens(params: {
     });
 
     const permissionsMap = permissions.reduce((acc, permission) => {
-      assert(permission.meta, "Permission meta is required");
+      assert.ok(permission.meta, "Permission meta is required");
       const meta = permission.meta as IClientTokenObjRecordMeta;
       const clientTokenId = meta.__fimidx_managed_clientTokenId;
       if (!acc[clientTokenId]) {
@@ -398,7 +398,7 @@ export async function getClientTokens(params: {
       };
 
   const permissionsMap = permissions.reduce((acc, permission) => {
-    assert(permission.meta, "Permission meta is required");
+    assert.ok(permission.meta, "Permission meta is required");
     const meta = permission.meta as IClientTokenObjRecordMeta;
     const clientTokenId = meta.__fimidx_managed_clientTokenId;
     if (!acc[clientTokenId]) {

@@ -41,7 +41,7 @@ export async function addPermissions(params: {
     storage,
   });
 
-  assert(
+  assert.ok(
     failedItems.length === 0,
     new OwnServerError(
       "Failed to add permissions",

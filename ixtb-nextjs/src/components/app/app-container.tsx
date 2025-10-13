@@ -44,7 +44,7 @@ export function AppContainer(props: IAppContainerProps) {
       : undefined);
   const data = useMemo((): IAppContainerRenderProps | undefined => {
     if (getAppsHook.data) {
-      assert(getAppsHook.data.apps.length === 1, "App not found");
+      assert.ok(getAppsHook.data.apps.length === 1, "App not found");
       return {
         app: getAppsHook.data.apps[0],
       };

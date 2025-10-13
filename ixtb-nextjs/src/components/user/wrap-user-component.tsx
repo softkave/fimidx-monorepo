@@ -33,7 +33,7 @@ export function WrapUserComponent({
     return <PageError error={new Error("Unauthorized. Redirecting...")} />;
   }
 
-  assert(user, "User is not authenticated");
+  assert.ok(user, "User is not authenticated");
 
   const content =
     children || (typeof render === "function" ? render(user) : render);

@@ -45,14 +45,14 @@ export async function addApp(params: {
     storage,
   });
 
-  assert(
+  assert.ok(
     failedItems.length === 0,
     new OwnServerError(
       "Failed to add app",
       kOwnServerErrorCodes.InternalServerError
     )
   );
-  assert(
+  assert.ok(
     newObjs.length === 1,
     new OwnServerError(
       "Failed to add app",

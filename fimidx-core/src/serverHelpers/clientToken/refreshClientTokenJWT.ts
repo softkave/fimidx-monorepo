@@ -15,7 +15,7 @@ export async function refreshClientTokenJWT(params: {
 }) {
   const { id, refreshToken: oldRefreshToken, jwtContent } = params;
 
-  assert(
+  assert.ok(
     oldRefreshToken === jwtContent.refreshToken,
     new OwnServerError("Invalid refresh token", 401)
   );

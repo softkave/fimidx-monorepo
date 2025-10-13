@@ -63,7 +63,7 @@ export function jsRecordToObjPartQueryList(
   record: Record<string, string>
 ): IObjPartQueryList {
   return Object.entries(record).map(([key, value]) => {
-    assert(isString(value), `Value must be a string: ${value}`);
+    assert.ok(isString(value), `Value must be a string: ${value}`);
     return {
       op: "eq",
       field: key,

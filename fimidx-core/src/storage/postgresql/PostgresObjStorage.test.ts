@@ -76,8 +76,8 @@ describe.skip("PostgresObjStorage (integration)", () => {
   it("should read objects", async () => {
     const obj = makeObjFields();
     await fimidxPostgresDb.insert(objs).values(obj);
-    assert(obj.appId);
-    assert(obj.tag);
+    assert.ok(obj.appId);
+    assert.ok(obj.tag);
     const result = await storage.read({
       query: { appId: obj.appId },
       tag: obj.tag,
@@ -90,8 +90,8 @@ describe.skip("PostgresObjStorage (integration)", () => {
   it("should update objects", async () => {
     const obj = makeObjFields();
     await fimidxPostgresDb.insert(objs).values(obj);
-    assert(obj.appId);
-    assert(obj.tag);
+    assert.ok(obj.appId);
+    assert.ok(obj.tag);
     const newName = "Updated Name";
     const result = await storage.update({
       query: { appId: obj.appId },
@@ -113,8 +113,8 @@ describe.skip("PostgresObjStorage (integration)", () => {
   it("should soft-delete objects", async () => {
     const obj = makeObjFields();
     await fimidxPostgresDb.insert(objs).values(obj);
-    assert(obj.appId);
-    assert(obj.tag);
+    assert.ok(obj.appId);
+    assert.ok(obj.tag);
     const result = await storage.delete({
       query: { appId: obj.appId },
       tag: obj.tag,
@@ -273,8 +273,8 @@ describe.skip("PostgresObjStorage (integration)", () => {
   it("should merge fields with merge strategy", async () => {
     const obj = makeObjFields({ objRecord: { a: 1, b: 2 } });
     await fimidxPostgresDb.insert(objs).values(obj);
-    assert(obj.appId);
-    assert(obj.tag);
+    assert.ok(obj.appId);
+    assert.ok(obj.tag);
     await storage.update({
       query: { appId: obj.appId },
       tag: obj.tag,
@@ -296,8 +296,8 @@ describe.skip("PostgresObjStorage (integration)", () => {
   it("should merge arrays with mergeButReplaceArrays", async () => {
     const obj = makeObjFields({ objRecord: { arr: [1, 2], x: 1 } });
     await fimidxPostgresDb.insert(objs).values(obj);
-    assert(obj.appId);
-    assert(obj.tag);
+    assert.ok(obj.appId);
+    assert.ok(obj.tag);
     await storage.update({
       query: { appId: obj.appId },
       tag: obj.tag,
@@ -318,8 +318,8 @@ describe.skip("PostgresObjStorage (integration)", () => {
   it("should merge arrays with mergeButConcatArrays", async () => {
     const obj = makeObjFields({ objRecord: { arr: [1, 2] } });
     await fimidxPostgresDb.insert(objs).values(obj);
-    assert(obj.appId);
-    assert(obj.tag);
+    assert.ok(obj.appId);
+    assert.ok(obj.tag);
     await storage.update({
       query: { appId: obj.appId },
       tag: obj.tag,
@@ -339,8 +339,8 @@ describe.skip("PostgresObjStorage (integration)", () => {
   it("should merge arrays with mergeButKeepArrays", async () => {
     const obj = makeObjFields({ objRecord: { arr: [1, 2] } });
     await fimidxPostgresDb.insert(objs).values(obj);
-    assert(obj.appId);
-    assert(obj.tag);
+    assert.ok(obj.appId);
+    assert.ok(obj.tag);
     await storage.update({
       query: { appId: obj.appId },
       tag: obj.tag,

@@ -65,7 +65,7 @@ export async function addCallback(params: {
     storage,
   });
 
-  assert(
+  assert.ok(
     failedItems.length === 0,
     new OwnServerError(
       "Failed to add callback",
@@ -91,7 +91,7 @@ export async function addCallback(params: {
     }
   }
 
-  assert(
+  assert.ok(
     newObjs.length === 1,
     new OwnServerError(
       "Failed to add callback",

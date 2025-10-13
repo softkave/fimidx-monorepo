@@ -43,7 +43,7 @@ function validateFilter(
         };
       }
 
-      assert(filter.item.value);
+      assert.ok(filter.item.value);
       const value = Number(filter.item.value);
       if (isNaN(value)) {
         return {
@@ -88,7 +88,7 @@ function validateFilter(
         };
       }
 
-      assert(filter.item.value);
+      assert.ok(filter.item.value);
       const value1 = Number(filter.item.value);
       if (isNaN(value1)) {
         return {
@@ -120,9 +120,9 @@ function validateFilter(
 function workingFilterToFilter(
   filter: IWorkingLogPartFilterItem
 ): IObjPartQueryItem {
-  assert(filter.item.field, "Field is required");
-  assert(filter.item.op, "Op is required");
-  assert(filter.item.value, "Value is required");
+  assert.ok(filter.item.field, "Field is required");
+  assert.ok(filter.item.op, "Op is required");
+  assert.ok(filter.item.value, "Value is required");
   return {
     field: filter.item.field,
     op: filter.item.op,

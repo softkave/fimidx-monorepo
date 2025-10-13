@@ -124,7 +124,7 @@ export async function getAppById(params: {
   });
 
   const obj = first(objs);
-  assert(
+  assert.ok(
     obj,
     new OwnServerError("App not found", kOwnServerErrorCodes.NotFound)
   );

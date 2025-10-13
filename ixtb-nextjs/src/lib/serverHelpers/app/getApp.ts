@@ -20,13 +20,13 @@ export async function getApp(params: {
   });
 
   const app = first(apps);
-  assert(
+  assert.ok(
     app,
     new OwnServerError("App not found", kOwnServerErrorCodes.NotFound)
   );
 
   if (clientToken) {
-    assert(
+    assert.ok(
       app?.id === clientToken.appId,
       new OwnServerError("Permission denied", kOwnServerErrorCodes.Unauthorized)
     );

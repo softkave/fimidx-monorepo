@@ -33,7 +33,7 @@ export async function updateMemberPermissions(params: {
   });
 
   const member = first(members);
-  assert(
+  assert.ok(
     member,
     new OwnServerError(
       "Member not found",

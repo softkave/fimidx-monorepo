@@ -39,7 +39,7 @@ export async function hasPermission(params: {
         })
       ).members
     );
-  assert(member, new OwnServerError("Member not found", 404));
+  assert.ok(member, new OwnServerError("Member not found", 404));
   const { permissions } = member;
 
   if (!permissions) {
@@ -75,5 +75,5 @@ export async function checkPermission(params: {
   op?: "any" | "all";
 }) {
   const memberHasPermission = await hasPermission(params);
-  assert(memberHasPermission, new OwnServerError("Access Denied", 403));
+  assert.ok(memberHasPermission, new OwnServerError("Access Denied", 403));
 }

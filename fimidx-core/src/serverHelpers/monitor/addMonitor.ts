@@ -42,14 +42,14 @@ export async function addMonitor(params: {
     storage,
   });
 
-  assert(
+  assert.ok(
     failedItems.length === 0,
     new OwnServerError(
       "Failed to add monitor",
       kOwnServerErrorCodes.InternalServerError
     )
   );
-  assert(
+  assert.ok(
     newObjs.length === 1,
     new OwnServerError(
       "Failed to add monitor",

@@ -38,14 +38,14 @@ export async function addGroup(params: {
     storage,
   });
 
-  assert(
+  assert.ok(
     failedItems.length === 0,
     new OwnServerError(
       "Failed to add group",
       kOwnServerErrorCodes.InternalServerError
     )
   );
-  assert(
+  assert.ok(
     newObjs.length === 1,
     new OwnServerError(
       "Failed to add group",

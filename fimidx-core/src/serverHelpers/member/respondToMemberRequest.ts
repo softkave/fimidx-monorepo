@@ -32,8 +32,8 @@ export async function respondToMemberRequest(params: {
   });
 
   const member = first(members);
-  assert(member, new OwnServerError("Member request not found", 404));
-  assert(
+  assert.ok(member, new OwnServerError("Member request not found", 404));
+  assert.ok(
     member.status === kMemberStatus.pending,
     new OwnServerError("Invalid status", 400)
   );

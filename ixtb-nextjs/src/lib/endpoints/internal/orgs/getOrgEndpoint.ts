@@ -29,7 +29,7 @@ export const getOrgEndpoint: NextUserAuthenticatedEndpointFn<
   });
 
   const group = first(groups);
-  assert(
+  assert.ok(
     group,
     new OwnServerError("Organization not found", kOwnServerErrorCodes.NotFound)
   );

@@ -75,7 +75,7 @@ async function tryGetClientTokenAuthenticatedRequest(
     ? rawToken.slice(7)
     : rawToken;
 
-  assert(isString(inputToken), new OwnServerError("Unauthorized", 401));
+  assert.ok(isString(inputToken), new OwnServerError("Unauthorized", 401));
 
   try {
     const decodedToken = jwt.verify(
@@ -87,11 +87,11 @@ async function tryGetClientTokenAuthenticatedRequest(
       input: { clientTokenId: decodedToken.id },
     });
 
-    assert(
+    assert.ok(
       clientToken.appId === decodedToken.appId,
       new OwnServerError("Unauthorized", 401)
     );
-    assert(
+    assert.ok(
       clientToken.groupId === decodedToken.groupId,
       new OwnServerError("Unauthorized", 401)
     );
@@ -119,7 +119,7 @@ function getUserAuthenticatedRequest(
   req: NextAuthRequest
 ): IUserAuthenticatedRequest {
   const userAuthenticatedRequest = tryGetUserAuthenticatedRequest(req);
-  assert(userAuthenticatedRequest, new OwnServerError("Unauthorized", 401));
+  assert.ok(userAuthenticatedRequest, new OwnServerError("Unauthorized", 401));
   return userAuthenticatedRequest;
 }
 
@@ -128,7 +128,7 @@ async function getClientTokenAuthenticatedRequest(
 ): Promise<IClientTokenAuthenticatedRequest> {
   const clientTokenAuthenticatedRequest =
     await tryGetClientTokenAuthenticatedRequest(req);
-  assert(
+  assert.ok(
     clientTokenAuthenticatedRequest,
     new OwnServerError("Unauthorized", 401)
   );

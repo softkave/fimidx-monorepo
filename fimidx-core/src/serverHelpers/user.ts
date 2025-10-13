@@ -10,7 +10,7 @@ export async function getUserByUsername(username: string) {
     .where(eq(usersTable.name, username))
     .then((result) => result[0]);
 
-  assert(user, new OwnServerError("User not found", 404));
+  assert.ok(user, new OwnServerError("User not found", 404));
   return user;
 }
 
@@ -35,7 +35,7 @@ export async function getUserById(id: string) {
     .where(eq(usersTable.id, id))
     .then((result) => result[0]);
 
-  assert(user, new OwnServerError("User not found", 404));
+  assert.ok(user, new OwnServerError("User not found", 404));
   return user;
 }
 

@@ -11,9 +11,9 @@ export function getTestVars(): ITestVars {
   const serverURL = process.env.FIMIDX_SERVER_URL;
   const appId = process.env.FIMIDX_APP_ID;
 
-  assert(authToken, 'FIMIDX_AUTH_TOKEN is not set');
-  assert(serverURL, 'FIMIDX_SERVER_URL is not set');
-  assert(appId, 'FIMIDX_APP_ID is not set');
+  assert.ok(authToken, 'FIMIDX_AUTH_TOKEN is not set');
+  assert.ok(serverURL, 'FIMIDX_SERVER_URL is not set');
+  assert.ok(appId, 'FIMIDX_APP_ID is not set');
 
   return {
     authToken,

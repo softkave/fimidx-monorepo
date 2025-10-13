@@ -32,7 +32,7 @@ export async function updateClientTokenPermissions(params: {
   });
 
   const clientToken = first(clientTokens);
-  assert(
+  assert.ok(
     clientToken,
     new OwnServerError(
       "Client token not found",

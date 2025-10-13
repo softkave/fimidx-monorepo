@@ -19,13 +19,13 @@ export async function getClientToken(params: {
   });
 
   const clientToken = first(clientTokens);
-  assert(
+  assert.ok(
     clientToken,
     new OwnServerError("Client token not found", kOwnServerErrorCodes.NotFound)
   );
 
   if (clientToken) {
-    assert(
+    assert.ok(
       clientToken?.id === clientToken.id,
       new OwnServerError("Permission denied", kOwnServerErrorCodes.Unauthorized)
     );

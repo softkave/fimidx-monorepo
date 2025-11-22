@@ -3,8 +3,10 @@ import {ICallback} from 'fimidx-core/definitions/callback';
 import {kObjTags} from 'fimidx-core/definitions/obj';
 import {objToCallback} from 'fimidx-core/serverHelpers/index';
 import {addCallbackToStore} from './addCallbackToStore.js';
+import {fimidxNodeWinstonLogger} from '../../utils/fimidxNodeloggers.js';
 
 export async function loadCallbacks() {
+  fimidxNodeWinstonLogger.info('Loading callbacks');
   let batch: ICallback[] = [];
   let page = 0;
   const batchSize = 100;

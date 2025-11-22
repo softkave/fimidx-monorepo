@@ -14,6 +14,8 @@ export function startHttpServer(params: {
   const {port, internalAccessKey} = params;
   const app = express();
 
+  fimidxNodeWinstonLogger.info('Starting HTTP server');
+
   app.use(express.json());
   app.use((req, res, next) => {
     if (req.headers[kInternalAccessKeyHeader] === internalAccessKey) {

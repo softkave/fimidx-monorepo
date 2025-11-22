@@ -18,9 +18,8 @@
     "fix": "gts fix",
     "pretest": "npm run compile",
     "posttest": "npm run lint",
-    "dev": "npm run clean && tsc && env-cmd -f \".env.local\" node build/src/index.js",
-    "start:prod": "env-cmd -f \".env.local\" node build/src/index.js",
-    "dev:prod": "env-cmd -f \".env.prod\" node build/src/index.js"
+    "start": "env-cmd -f \".env.local\" node build/src/index.js",
+    "dev": "npm run compile && npm run start"
   },
   "devDependencies": {
     "@faker-js/faker": "^9.5.0",
@@ -38,7 +37,7 @@
     "axios": "^1.9.0",
     "config": "^4.0.0",
     "date-fns": "^4.1.0",
-    "env-cmd": "^10.1.0",
+    "env-cmd": "^11.0.0",
     "express": "^5.1.0",
     "fimidx-core": "workspace:*",
     "path-to-regexp": "^8.2.0",

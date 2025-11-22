@@ -4,6 +4,7 @@ import {getCallbacks} from 'fimidx-core/serverHelpers/index';
 import {first} from 'lodash-es';
 import {addCallbackEndpointImpl} from '../../httpEndpoints/cbs/addCallbackEndpoint.js';
 import {kInternalAccessKeyHeader} from '../../httpServer.js';
+import {fimidxNodeWinstonLogger} from '../../utils/fimidxNodeloggers.js';
 
 export async function setupCleanupObjsCallback() {
   const name = '__fimidx_cleanupObjs_callback';
@@ -22,9 +23,13 @@ export async function setupCleanupObjsCallback() {
   const callback = first(callbacks);
 
   if (callback) {
+    fimidxNodeWinstonLogger.info('Cleanup objs callback already setup', {
+      id: callback.id,
+    });
     return;
   }
 
+  fimidxNodeWinstonLogger.info('Setting up cleanup objs callback');
   const {
     fimidxInternal: {internalAccessKey},
     cleanupObjs: {url: cleanupObjsUrl, intervalMs: cleanupObjsIntervalMs},

@@ -53,6 +53,7 @@
     "@libsql/client": "^0.14.0",
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.40.1",
+    "fimidara": "^1.39.0",
     "fimidx": "^0.5.0",
     "fimidx-winston-transport": "^0.3.2",
     "jsonwebtoken": "^9.0.2",

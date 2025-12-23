@@ -1,6 +1,7 @@
 import express from 'express';
 import {addCallbackEndpoint} from './httpEndpoints/cbs/addCallbackEndpoint.js';
 import {deleteCallbacksEndpoint} from './httpEndpoints/cbs/deleteCallbacksEndpoint.js';
+import {consumeLogsEndpoint} from './httpEndpoints/logs/consumeLogsEndpoint.js';
 import {cleanupDeletedObjsEndpoint} from './httpEndpoints/objs/cleanupDeletedObjsEndpoint.js';
 import {indexObjsEndpoint} from './httpEndpoints/objs/indexObjsEndpoint.js';
 import {fimidxNodeWinstonLogger} from './utils/fimidxNodeloggers.js';
@@ -37,6 +38,10 @@ export function startHttpServer(params: {
   });
   app.post('/objs/cleanupDeletedObjs', (req, res) => {
     cleanupDeletedObjsEndpoint(req, res);
+  });
+
+  app.post('/logs/consumeLogs', (req, res) => {
+    consumeLogsEndpoint(req, res);
   });
 
   app.listen(port, () => {

@@ -1,5 +1,7 @@
+import * as fimidara from 'fimidara';
+import {MfdocEndpointError as FimidaraEndpointError} from 'fimidara';
 import {FimidxEndpoints} from '../endpoints/fimidxEndpoints.js';
-import type {IngestLogsArgs} from '../endpoints/fimidxTypes.js';
+import type {InitSdkArgs} from '../endpoints/fimidxTypes.js';
 import {MfdocEndpointError} from '../endpoints/index.js';
 
 export interface IFimidxLoggerOptions {
@@ -54,6 +56,18 @@ export class FimidxLogger {
   // Metadata
   private metadata?: Record<string, any>;
 
+  // Fimidara file-based logging
+  private fimidaraToken?: string;
+  private folderPath?: string;
+  private filePrefix?: string;
+  private fimidaraEndpoints?: fimidara.FimidaraEndpoints;
+  private initialized: boolean = false;
+  private initPromise?: Promise<void>;
+
+  // Flush lock to prevent concurrent writes
+  private isFlushing: boolean = false;
+  private flushPromise?: Promise<void>;
+
   constructor(opts: IFimidxLoggerOptions) {
     // Validate required parameters
     if (!opts.appId) throw new Error('FimidxLogger: appId is required');
@@ -88,6 +102,46 @@ export class FimidxLogger {
   }
 
   // Public API
+  init = async (): Promise<void> => {
+    // If already initialized, return
+    if (this.initialized) {
+      return;
+    }
+
+    // If initialization is in progress, wait for it
+    if (this.initPromise) {
+      return this.initPromise;
+    }
+
+    // Start initialization
+    this.initPromise = this.doInit();
+    await this.initPromise;
+  };
+
+  private doInit = async (): Promise<void> => {
+    try {
+      // Call init SDK endpoint
+      const args: InitSdkArgs = {};
+      const response = await this.fimidx.logs.initSdk(args);
+
+      this.fimidaraToken = response.fimidaraToken;
+      this.folderPath = response.folderPath;
+      this.filePrefix = response.filePrefix;
+
+      // Initialize fimidara endpoints
+      this.fimidaraEndpoints = new fimidara.FimidaraEndpoints({
+        authToken: this.fimidaraToken,
+      });
+
+      this.initialized = true;
+    } catch (error) {
+      if (this.consoleLogOnError) {
+        console.error('FimidxLogger: Failed to initialize:', error);
+      }
+      throw error;
+    }
+  };
+
   log = (entry: any): void => {
     this.addToBuffer(entry);
   };
@@ -121,6 +175,11 @@ export class FimidxLogger {
       this.flushTimer = undefined;
     }
 
+    // Wait for any in-progress flush to complete
+    if (this.flushPromise) {
+      await this.flushPromise;
+    }
+
     // Flush any remaining entries
     await this.flushBuffer();
   };
@@ -129,6 +188,11 @@ export class FimidxLogger {
   private addToBuffer = (entry: any): void => {
     // Merge entry with metadata
     const logEntry = this.metadata ? {...this.metadata, ...entry} : entry;
+
+    // Ensure timestamp is in UTC if not provided
+    if (!logEntry.timestamp) {
+      logEntry.timestamp = Date.now();
+    }
 
     this.buffer.push(logEntry);
 
@@ -165,6 +229,39 @@ export class FimidxLogger {
       return;
     }
 
+    // If a flush is already in progress, wait for it to complete
+    if (this.isFlushing && this.flushPromise) {
+      return this.flushPromise;
+    }
+
+    // Start new flush operation - create promise first for atomicity
+    const flushPromise = this.doFlushBuffer().finally(() => {
+      this.isFlushing = false;
+      this.flushPromise = undefined;
+    });
+
+    this.isFlushing = true;
+    this.flushPromise = flushPromise;
+
+    return flushPromise;
+  };
+
+  private doFlushBuffer = async (): Promise<void> => {
+    // Ensure initialized
+    if (!this.initialized) {
+      try {
+        await this.init();
+      } catch (error) {
+        if (this.consoleLogOnError) {
+          console.error(
+            'FimidxLogger: Failed to initialize during flush:',
+            error,
+          );
+        }
+        return;
+      }
+    }
+
     // Take current buffer contents and clear buffer
     const logsToSend = [...this.buffer];
     this.buffer = [];
@@ -190,12 +287,29 @@ export class FimidxLogger {
 
   private retrySend = async (logs: any[], attempt: number): Promise<void> => {
     try {
-      const args: IngestLogsArgs = {
-        appId: this.appId,
-        logs: logs,
-      };
+      if (!this.fimidaraEndpoints || !this.folderPath || !this.filePrefix) {
+        throw new Error('FimidxLogger: Not initialized');
+      }
 
-      await this.fimidx.logs.ingestLogs(args);
+      // Get current date in YYYY-MM-DD format
+      const today = new Date().toISOString().split('T')[0];
+      const filename = `${this.filePrefix}-${today}.ndjson`;
+      const filepath = `${this.folderPath}/${filename}`;
+
+      // Convert logs to newline-delimited JSON
+      const ndjsonContent =
+        logs.map(log => JSON.stringify(log)).join('\n') + '\n';
+
+      // Upload with append mode - this will create the file if it doesn't exist
+      const blob = new Blob([ndjsonContent], {type: 'application/x-ndjson'});
+      await this.fimidaraEndpoints.files.uploadFile({
+        filepath,
+        data: blob,
+        size: blob.size,
+        mimetype: 'application/x-ndjson',
+        append: true,
+        onAppendCreateIfNotExists: true,
+      });
     } catch (error) {
       // Don't retry on authentication or client errors
       if (this.isNonRetryableError(error)) {
@@ -228,6 +342,23 @@ export class FimidxLogger {
 
   private isNonRetryableError = (error: any): boolean => {
     if (error instanceof MfdocEndpointError) {
+      // Check for authentication errors (401)
+      if (error.statusCode === 401) {
+        return true;
+      }
+
+      // Check for client errors (4xx, except 429 which is retryable)
+      if (
+        error.statusCode &&
+        error.statusCode >= 400 &&
+        error.statusCode < 500 &&
+        error.statusCode !== 429
+      ) {
+        return true;
+      }
+    }
+
+    if (error instanceof FimidaraEndpointError) {
       // Check for authentication errors (401)
       if (error.statusCode === 401) {
         return true;

@@ -50,6 +50,18 @@ export const coreConfigSchema = z.object({
   ws: z.object({
     host: z.string().optional(),
   }),
+  fimidara: z.object({
+    authToken: z.string(),
+    workspaceRootname: z.string(),
+    logsFolderPrefix: z.string(),
+  }),
+  redis: z.object({
+    url: z.string(),
+  }),
+  consumeLogs: z.object({
+    url: z.string(),
+    intervalMs: z.coerce.number(),
+  }),
 });
 
 export type CoreConfig = z.infer<typeof coreConfigSchema>;

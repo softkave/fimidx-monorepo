@@ -59,9 +59,18 @@ export const getLogFieldsSchema = z.object({
   limit: z.number().optional(),
 });
 
+export const initSdkSchema = z.object({});
+
 export type IngestLogsEndpointArgs = z.infer<typeof ingestLogsSchema>;
 export type GetLogsEndpointArgs = z.infer<typeof getLogsSchema>;
 export type GetLogFieldsEndpointArgs = z.infer<typeof getLogFieldsSchema>;
+export type InitSdkEndpointArgs = z.infer<typeof initSdkSchema>;
+
+export interface InitSdkEndpointResponse {
+  fimidaraToken: string;
+  folderPath: string;
+  filePrefix: string;
+}
 
 export interface GetLogsEndpointResponse {
   logs: ILog[];

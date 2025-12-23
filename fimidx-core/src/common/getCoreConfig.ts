@@ -32,6 +32,12 @@ export function getCoreConfig(): CoreConfig {
   const fimidxLoggerServerUrl =
     process.env.NEXT_PUBLIC_FIMIDX_LOGGER_SERVER_URL;
   const wsHost = process.env.WS_HOST;
+  const fimidaraAuthToken = process.env.FIMIDARA_AUTH_TOKEN;
+  const fimidaraWorkspaceRootname = process.env.FIMIDARA_WORKSPACE_ROOTNAME;
+  const fimidaraLogsFolderPrefix = process.env.FIMIDARA_LOGS_FOLDER_PREFIX;
+  const redisUrl = process.env.REDIS_URL;
+  const consumeLogsUrl = process.env.CONSUME_LOGS_URL;
+  const consumeLogsIntervalMs = process.env.CONSUME_LOGS_INTERVAL_MS;
 
   return coreConfigSchema.parse({
     postgres: {
@@ -82,6 +88,18 @@ export function getCoreConfig(): CoreConfig {
     },
     ws: {
       host: wsHost,
+    },
+    fimidara: {
+      authToken: fimidaraAuthToken,
+      workspaceRootname: fimidaraWorkspaceRootname,
+      logsFolderPrefix: fimidaraLogsFolderPrefix,
+    },
+    redis: {
+      url: redisUrl,
+    },
+    consumeLogs: {
+      url: consumeLogsUrl,
+      intervalMs: consumeLogsIntervalMs,
     },
   });
 }

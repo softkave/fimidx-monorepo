@@ -1,0 +1,35 @@
+# New logs consumer
+
+- JS SDK will call an init sdk endpoint at startup
+  - it'll call with the client token passed
+  - it'll get a fimidara folder & fimidara access token for writing to the folder
+  - it'll create a daily rotated file it'll append batched logs to
+  - each batch of logs is appended to the file as an newline delimited json
+  - each log object should contain a timestamp in UTC if not added by user
+- server
+  - add a new init sdk endpoint
+    - check validity of sdk's client token
+    - it'll check if there's an existing fimidara agent token for that client token using the client token id as provided resource id
+    - if there's one, use it, if there isn't create a new agent token for that client token, use the client token's id as provided resource id
+    - create a folder for that app if it doesn't exist
+    - create a write logs permission group for that app if it doesn't exist
+      - it'll have permission to upload file in that folder
+    - assign the permission group to the agent token
+    - return a stringified fimidara token to the sdk, with the folder path
+    - the sdk should also be given a unique file name prefix so that it doesn't confict withother sdks using the same client token
+  - no more ingest logs external endpoint
+  - new consume logs internal endpoint
+    - loop through each app and consume their log files from fimidara
+    - make fimidara folderpath from a folder prefix from config, and app id
+    - it'll keep track of which day (logs are daily rotated) and file index it's reading or last read
+      - this can be done in a new mongodb collection
+    - use fimidara's range readFile to read in chunks and stream to ndjson - https://www.npmjs.com/package/ndjson
+    - each log will be processed as it currently is done in the external ingest logs flow
+    - add a callback with configurable interval
+- use redlock to make sure only one index objs and cleanup objs and consume logs is running at a time
+  - this is done in the endpoints
+  - we need to install a redis client
+  - add redis url to core config
+  - if it's locked, skip that run
+  - the lock should timeout after a timeout configurable from core config
+  - install and use redlock-universal package - https://www.npmjs.com/package/redlock-universal

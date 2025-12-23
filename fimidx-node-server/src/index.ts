@@ -1,5 +1,6 @@
 import {getCoreConfig} from 'fimidx-core/common/getCoreConfig';
 import {loadCallbacks} from './helpers/cb/loadCallbacks.js';
+import {setupConsumeLogsCallback} from './helpers/logs/setupConsumeLogsCallback.js';
 import {setupCleanupObjsCallback} from './helpers/obj/setupCleanupObjsCallback.js';
 import {setupIndexObjsCallback} from './helpers/obj/setupIndexObjsCallback.js';
 import {startHttpServer} from './httpServer.js';
@@ -15,6 +16,7 @@ async function main() {
 
   await setupIndexObjsCallback();
   await setupCleanupObjsCallback();
+  await setupConsumeLogsCallback();
   await loadCallbacks();
 
   startHttpServer({

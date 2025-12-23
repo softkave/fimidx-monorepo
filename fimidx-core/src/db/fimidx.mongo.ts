@@ -46,3 +46,38 @@ export function getObjModel() {
   const model = connection.model<IObj>(modelName, objSchema, collectionName);
   return model;
 }
+
+export interface ILogFileConsumption {
+  appId: string;
+  filePath: string;
+  lastDay: string; // YYYY-MM-DD
+  fileIndex: number;
+  lastPosition: number; // byte position
+  lastModified: number; // timestamp
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export const logFileConsumptionSchema = new Schema<ILogFileConsumption>({
+  appId: { type: String, required: true, index: true },
+  filePath: { type: String, required: true, index: true },
+  lastDay: { type: String, required: true }, // YYYY-MM-DD
+  fileIndex: { type: Number, required: true, default: 0 },
+  lastPosition: { type: Number, required: true, default: 0 },
+  lastModified: { type: Number, required: true },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+});
+
+const logFileConsumptionModelName = "logFileConsumption";
+const logFileConsumptionCollectionName = "logFileConsumptions";
+
+export function getLogFileConsumptionModel() {
+  const { connection } = getMongoConnection();
+  const model = connection.model<ILogFileConsumption>(
+    logFileConsumptionModelName,
+    logFileConsumptionSchema,
+    logFileConsumptionCollectionName
+  );
+  return model;
+}

@@ -3,10 +3,10 @@ import { v7 as uuidv7 } from "uuid";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { getObjModel } from "../../../db/fimidx.mongo.js";
 import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
-import type { IAppObjRecord } from "../../../definitions/app.js";
 import type { IInputObjRecord, IObj } from "../../../definitions/obj.js";
+import type { IProjectObjRecord } from "../../../definitions/project.js";
 import { createStorage } from "../../../storage/config.js";
-import { addApp } from "../../app/addApp.js";
+import { addProject } from "../../project/addProject.js";
 import { indexObjs, indexObjsBatch } from "../indexObjs.js";
 
 const backends: { type: "mongo" | "postgres"; name: string }[] = [
@@ -14,7 +14,7 @@ const backends: { type: "mongo" | "postgres"; name: string }[] = [
   // { type: "postgres", name: "Postgres" },
 ];
 
-const TEST_APP_ID = "test-app-indexObjs";
+const TEST_PROJECT_ID = "test-project-indexObjs";
 const TEST_GROUP_ID = "test-group-indexObjs";
 const TEST_TAG = "test-tag-indexObjs";
 
@@ -46,7 +46,7 @@ function makeObj(overrides: Partial<IObj> = {}): IObj {
     createdByType: "user",
     updatedBy: "tester",
     updatedByType: "user",
-    appId: TEST_APP_ID,
+    projectId: TEST_PROJECT_ID,
     groupId: TEST_GROUP_ID,
     tag: TEST_TAG,
     objRecord: makeInputObjRecord(),
@@ -59,10 +59,12 @@ function makeObj(overrides: Partial<IObj> = {}): IObj {
   };
 }
 
-function makeApp(overrides: Partial<IAppObjRecord> = {}): IAppObjRecord {
+function makeProject(
+  overrides: Partial<IProjectObjRecord> = {}
+): IProjectObjRecord {
   return {
-    name: "Test App " + uuidv7(),
-    description: "Test app for indexObjs",
+    name: "Test Project " + uuidv7(),
+    description: "Test project for indexObjs",
     orgId: TEST_GROUP_ID,
     objFieldsToIndex: ["name", "value", "nested.deep.field"],
     ...overrides,
@@ -97,7 +99,7 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
     if (backend.type === "mongo") {
       const model = getObjModel();
       await model.deleteMany({
-        appId: TEST_APP_ID,
+        projectId: TEST_PROJECT_ID,
         tag: TEST_TAG,
       });
     } else if (backend.type === "postgres") {
@@ -106,7 +108,9 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
       );
       await fimidxPostgresDb
         .delete(objs)
-        .where(and(eq(objs.appId, TEST_APP_ID), eq(objs.tag, TEST_TAG)));
+        .where(
+          and(eq(objs.projectId, TEST_PROJECT_ID), eq(objs.tag, TEST_TAG))
+        );
     }
 
     // Clean up SQLite tables
@@ -114,7 +118,7 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
       .delete(objFieldsTable)
       .where(
         and(
-          eq(objFieldsTable.appId, TEST_APP_ID),
+          eq(objFieldsTable.projectId, TEST_PROJECT_ID),
           eq(objFieldsTable.tag, TEST_TAG)
         )
       )
@@ -144,7 +148,7 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
         .from(objFieldsTable)
         .where(
           and(
-            eq(objFieldsTable.appId, TEST_APP_ID),
+            eq(objFieldsTable.projectId, TEST_PROJECT_ID),
             eq(objFieldsTable.tag, TEST_TAG)
           )
         );
@@ -184,7 +188,7 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
         .from(objFieldsTable)
         .where(
           and(
-            eq(objFieldsTable.appId, TEST_APP_ID),
+            eq(objFieldsTable.projectId, TEST_PROJECT_ID),
             eq(objFieldsTable.tag, TEST_TAG)
           )
         );
@@ -195,27 +199,27 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
       expect(fieldNames).toContain("value");
     });
 
-    it("should handle app-specific fieldsToIndex", async () => {
-      // Create an app with specific fields to index
-      const appWithFields = makeApp({
+    it("should handle project-specific fieldsToIndex", async () => {
+      // Create an project with specific fields to index
+      const projectWithFields = makeProject({
         objFieldsToIndex: ["name", "nested.deep.field"],
       });
 
-      const { app } = await addApp({
+      const { project } = await addProject({
         args: {
-          name: appWithFields.name + "-specific",
-          description: appWithFields.description || undefined,
-          orgId: appWithFields.orgId,
-          objFieldsToIndex: appWithFields.objFieldsToIndex || undefined,
+          name: projectWithFields.name + "-specific",
+          description: projectWithFields.description || undefined,
+          orgId: projectWithFields.orgId,
+          objFieldsToIndex: projectWithFields.objFieldsToIndex || undefined,
         },
         by: "tester",
         byType: "user",
       });
 
-      // Create objects with the new app ID
+      // Create objects with the new project ID
       const objs = [
         makeObj({
-          appId: app.id,
+          projectId: project.id,
           shouldIndex: true,
           objRecord: {
             name: "test-name",
@@ -236,7 +240,7 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
         .from(objFieldsTable)
         .where(
           and(
-            eq(objFieldsTable.appId, app.id),
+            eq(objFieldsTable.projectId, project.id),
             eq(objFieldsTable.tag, TEST_TAG)
           )
         );
@@ -272,7 +276,7 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
         .from(objFieldsTable)
         .where(
           and(
-            eq(objFieldsTable.appId, TEST_APP_ID),
+            eq(objFieldsTable.projectId, TEST_PROJECT_ID),
             eq(objFieldsTable.tag, TEST_TAG)
           )
         );
@@ -308,7 +312,7 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
         .from(objFieldsTable)
         .where(
           and(
-            eq(objFieldsTable.appId, TEST_APP_ID),
+            eq(objFieldsTable.projectId, TEST_PROJECT_ID),
             eq(objFieldsTable.tag, TEST_TAG)
           )
         );
@@ -363,7 +367,7 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
         .from(objFieldsTable)
         .where(
           and(
-            eq(objFieldsTable.appId, TEST_APP_ID),
+            eq(objFieldsTable.projectId, TEST_PROJECT_ID),
             eq(objFieldsTable.tag, TEST_TAG)
           )
         );
@@ -395,7 +399,7 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
 
       await storage.update({
         query: {
-          appId: obj.appId,
+          projectId: obj.projectId,
           metaQuery: { id: { eq: obj.id } },
         },
         update: updatedObj.objRecord,
@@ -412,7 +416,7 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
         .from(objFieldsTable)
         .where(
           and(
-            eq(objFieldsTable.appId, TEST_APP_ID),
+            eq(objFieldsTable.projectId, TEST_PROJECT_ID),
             eq(objFieldsTable.tag, TEST_TAG)
           )
         );
@@ -431,16 +435,16 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
         makeObj({ objRecord: { name: "obj2", value: 200 } }),
       ];
 
-      const mockGetApp = () => null;
+      const mockGetProject = () => null;
 
-      await indexObjsBatch({ objs, getApp: mockGetApp });
+      await indexObjsBatch({ objs, getProject: mockGetProject });
 
       const fields = await db
         .select()
         .from(objFieldsTable)
         .where(
           and(
-            eq(objFieldsTable.appId, TEST_APP_ID),
+            eq(objFieldsTable.projectId, TEST_PROJECT_ID),
             eq(objFieldsTable.tag, TEST_TAG)
           )
         );

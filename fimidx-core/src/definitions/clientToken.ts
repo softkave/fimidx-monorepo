@@ -23,7 +23,7 @@ export interface IClientToken {
   createdByType: string;
   updatedBy: string;
   updatedByType: string;
-  appId: string;
+  projectId: string;
   groupId: string;
   meta?: Record<string, string> | null;
   /** Permissions are null if reading other client tokens and user does not have
@@ -46,7 +46,7 @@ export interface IClientTokenObjRecordMeta
 
 export const addClientTokenSchema = z.object({
   groupId: z.string(),
-  appId: z.string(),
+  projectId: z.string(),
   name: z.string().optional(),
   description: z.string().optional(),
   meta: z.record(z.string(), z.string()).optional(),
@@ -54,7 +54,7 @@ export const addClientTokenSchema = z.object({
 });
 
 export const clientTokenQuerySchema = z.object({
-  appId: z.string(),
+  projectId: z.string(),
   id: stringMetaQuerySchema.optional(),
   name: stringMetaQuerySchema.optional(),
   meta: objPartQueryListSchema.optional(),
@@ -82,7 +82,7 @@ export const updateClientTokenPermissionsSchema = z.object({
   query: z.object({
     id: z.string().min(1),
     groupId: z.string(),
-    appId: z.string(),
+    projectId: z.string(),
   }),
   update: z.object({
     permissions: z.array(permissionAtomSchema),
@@ -91,7 +91,7 @@ export const updateClientTokenPermissionsSchema = z.object({
 
 export const addClientTokenPermissionsSchema = z.object({
   groupId: z.string(),
-  appId: z.string(),
+  projectId: z.string(),
   permissions: z.array(permissionAtomSchema),
   clientTokenId: z.string(),
 });
@@ -120,7 +120,7 @@ export const refreshClientTokenJWTSchema = z.object({
 });
 
 export const checkClientTokenPermissionsSchema = z.object({
-  appId: z.string(),
+  projectId: z.string(),
   clientTokenId: z.string(),
   groupId: z.string(),
   items: z.array(checkPermissionItemSchema),

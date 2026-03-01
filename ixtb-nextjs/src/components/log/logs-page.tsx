@@ -2,17 +2,17 @@
 
 import { cn } from "@/src/lib/utils.ts";
 import { useState } from "react";
-import { AppPage } from "../internal/app-page.tsx";
+import { ProjectPage } from "../internal/project-page.tsx";
 import { LogListContainer } from "./logs-container.tsx";
 import { LogsHeader } from "./logs-header.tsx";
 
 export function LogsPage(props: {
   orgId: string;
-  appId: string;
+  projectId: string;
   className?: string;
-  withAppWrapper?: boolean;
+  withProjectWrapper?: boolean;
 }) {
-  const { withAppWrapper = true } = props;
+  const { withProjectWrapper = true } = props;
   const [showFiltersAndSort, setShowFiltersAndSort] = useState(false);
 
   const contentNode = (
@@ -20,21 +20,21 @@ export function LogsPage(props: {
       <LogsHeader
         className="max-w-lg mx-auto"
         orgId={props.orgId}
-        appId={props.appId}
+        projectId={props.projectId}
         onShowFiltersAndSort={setShowFiltersAndSort}
         showFiltersAndSort={showFiltersAndSort}
       />
       <LogListContainer
         orgId={props.orgId}
-        appId={props.appId}
+        projectId={props.projectId}
         showNoLogsMessage={false}
         showFiltersAndSort={showFiltersAndSort}
       />
     </div>
   );
 
-  if (withAppWrapper) {
-    return <AppPage>{contentNode}</AppPage>;
+  if (withProjectWrapper) {
+    return <ProjectPage>{contentNode}</ProjectPage>;
   }
 
   return contentNode;

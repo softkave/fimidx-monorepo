@@ -17,7 +17,7 @@ export default function GoogleSignInClient(props: IGoogleSignInClientProps) {
   const redirectTo =
     props.redirectTo ??
     searchParams.get("redirectTo") ??
-    kClientPaths.app.index;
+    kClientPaths.project.index;
 
   return (
     <Button

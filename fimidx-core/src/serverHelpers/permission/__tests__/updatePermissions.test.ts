@@ -1,16 +1,18 @@
 import { and, eq } from "drizzle-orm";
-import { v7 as uuidv7 } from "uuid";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
 import { kObjTags } from "../../../definitions/obj.js";
-import type { UpdatePermissionsEndpointArgs } from "../../../definitions/permission.js";
+import type {
+  AddPermissionsEndpointArgs,
+  UpdatePermissionsEndpointArgs,
+} from "../../../definitions/permission.js";
 import { createDefaultStorage } from "../../../storage/config.js";
 import type { IObjStorage } from "../../../storage/types.js";
 import { addPermissions } from "../addPermissions.js";
 import { getPermissions } from "../getPermissions.js";
 import { updatePermissions } from "../updatePermissions.js";
 
-const defaultAppId = "test-app-updatePermissions";
+const defaultProjectId = "test-project-updatePermissions";
 const defaultGroupId = "test-group";
 const defaultBy = "tester";
 const defaultByType = "user";
@@ -18,13 +20,15 @@ const defaultByType = "user";
 // Test counter to ensure unique permissions
 let testCounter = 0;
 
-function makeAddPermissionsArgs(overrides: any = {}): any {
+function makeAddPermissionsArgs(
+  overrides: Partial<AddPermissionsEndpointArgs> = {}
+): AddPermissionsEndpointArgs {
   testCounter++;
   const uniqueId = `${testCounter}_${Date.now()}_${Math.random()
     .toString(36)
     .substr(2, 9)}`;
   return {
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     permissions: [
       {
         entity: "user",
@@ -43,7 +47,7 @@ function makeUpdatePermissionsArgs(
 ): UpdatePermissionsEndpointArgs {
   return {
     query: {
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       ...overrides.query,
     },
     update: {
@@ -51,37 +55,6 @@ function makeUpdatePermissionsArgs(
     },
     updateMany: overrides.updateMany,
   };
-}
-
-// Helper function to insert objFields for the "action" field for sorting
-async function insertActionFieldForSorting(params: {
-  groupId: string;
-  tag: string;
-}) {
-  const { groupId, tag } = params;
-  const now = new Date();
-
-  const actionField = {
-    id: uuidv7(),
-    createdAt: now,
-    updatedAt: now,
-    appId: defaultAppId,
-    groupId,
-    tag,
-    field: "action",
-    path: "action",
-    type: "string",
-    arrayTypes: [],
-    isArrayCompressed: false,
-    fieldKeys: ["action"],
-    fieldKeyTypes: ["string"],
-    valueTypes: ["string"],
-  };
-
-  // Insert the field definition
-  await db.insert(objFieldsTable).values(actionField);
-
-  return actionField;
 }
 
 describe("updatePermissions integration", () => {
@@ -94,7 +67,7 @@ describe("updatePermissions integration", () => {
   beforeEach(async () => {
     try {
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
         tag: kObjTags.permission,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -107,7 +80,7 @@ describe("updatePermissions integration", () => {
         .delete(objFieldsTable)
         .where(
           and(
-            eq(objFieldsTable.appId, defaultAppId),
+            eq(objFieldsTable.projectId, defaultProjectId),
             eq(objFieldsTable.groupId, defaultGroupId),
             eq(objFieldsTable.tag, kObjTags.permission)
           )
@@ -120,7 +93,7 @@ describe("updatePermissions integration", () => {
   afterEach(async () => {
     try {
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
         tag: kObjTags.permission,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -133,7 +106,7 @@ describe("updatePermissions integration", () => {
         .delete(objFieldsTable)
         .where(
           and(
-            eq(objFieldsTable.appId, defaultAppId),
+            eq(objFieldsTable.projectId, defaultProjectId),
             eq(objFieldsTable.groupId, defaultGroupId),
             eq(objFieldsTable.tag, kObjTags.permission)
           )
@@ -168,7 +141,7 @@ describe("updatePermissions integration", () => {
     // Update the permission
     const updateArgs = makeUpdatePermissionsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         entity: { eq: "user" },
       },
       update: {
@@ -187,7 +160,7 @@ describe("updatePermissions integration", () => {
     // Verify the update
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         entity: { eq: "user" },
       },
     };
@@ -228,7 +201,7 @@ describe("updatePermissions integration", () => {
     // Update the entity
     const updateArgs = makeUpdatePermissionsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         entity: { eq: "user" },
       },
       update: {
@@ -246,7 +219,7 @@ describe("updatePermissions integration", () => {
     // Verify the update
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         entity: { eq: "admin" },
       },
     };
@@ -283,7 +256,7 @@ describe("updatePermissions integration", () => {
     // Update the action
     const updateArgs = makeUpdatePermissionsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         action: { eq: "read" },
       },
       update: {
@@ -301,7 +274,7 @@ describe("updatePermissions integration", () => {
     // Verify the update
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         action: { eq: "write" },
       },
     };
@@ -338,7 +311,7 @@ describe("updatePermissions integration", () => {
     // Update the target
     const updateArgs = makeUpdatePermissionsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         target: { eq: "document" },
       },
       update: {
@@ -356,7 +329,7 @@ describe("updatePermissions integration", () => {
     // Verify the update
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         target: { eq: "image" },
       },
     };
@@ -406,7 +379,7 @@ describe("updatePermissions integration", () => {
     // Update all user permissions
     const updateArgs = makeUpdatePermissionsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         entity: { eq: "user" },
       },
       update: {
@@ -425,7 +398,7 @@ describe("updatePermissions integration", () => {
     // Verify the updates
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
     };
 
@@ -481,7 +454,7 @@ describe("updatePermissions integration", () => {
     // Update only one permission
     const updateArgs = makeUpdatePermissionsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         entity: { eq: "user" },
       },
       update: {
@@ -500,7 +473,7 @@ describe("updatePermissions integration", () => {
     // Verify only one was updated
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         entity: { eq: "user" },
       },
     };
@@ -547,7 +520,7 @@ describe("updatePermissions integration", () => {
     // Update with new complex objects
     const updateArgs = makeUpdatePermissionsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         entity: [{ op: "eq" as const, field: "type", value: "user" }],
       },
       update: {
@@ -568,7 +541,7 @@ describe("updatePermissions integration", () => {
     // Verify the update
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         entity: [{ op: "eq" as const, field: "type", value: "admin" }],
       },
     };
@@ -610,7 +583,7 @@ describe("updatePermissions integration", () => {
     // Update meta
     const updateArgs = makeUpdatePermissionsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         entity: { eq: "user" },
       },
       update: {
@@ -628,7 +601,7 @@ describe("updatePermissions integration", () => {
     // Verify the update
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         entity: { eq: "user" },
       },
     };

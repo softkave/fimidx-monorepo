@@ -12,7 +12,7 @@ export interface ICallback {
   createdAt: number | Date;
   updatedAt: number | Date;
   groupId: string;
-  appId: string;
+  projectId: string;
   name: string;
   description?: string | null;
   createdBy: string;
@@ -65,7 +65,7 @@ export interface ICallbackObjRecord {
 export interface ICallbackExecution {
   id: string;
   groupId: string;
-  appId: string;
+  projectId: string;
   callbackId: string;
   /** The callback error from network, fimidx, etc. */
   error: string | null;
@@ -95,7 +95,7 @@ export const callbackMethodSchema = z.enum([
 ]);
 
 export const addCallbackSchema = z.object({
-  appId: z.string(),
+  projectId: z.string(),
   url: z.string().url(),
   method: callbackMethodSchema,
   requestHeaders: z.record(z.string(), z.string()).optional(),
@@ -109,7 +109,7 @@ export const addCallbackSchema = z.object({
 });
 
 export const callbacksQuerySchema = z.object({
-  appId: z.string(),
+  projectId: z.string(),
   id: stringMetaQuerySchema.optional(),
   createdAt: numberMetaQuerySchema.optional(),
   updatedAt: numberMetaQuerySchema.optional(),

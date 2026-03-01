@@ -20,7 +20,7 @@ export default function GoogleSignInServer({
         "use server";
         await signIn("google", {
           redirectTo: kClientPaths.withURL(
-            redirectTo ?? kClientPaths.app.index
+            redirectTo ?? kClientPaths.project.index
           ),
         });
       }}

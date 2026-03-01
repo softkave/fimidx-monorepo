@@ -6,7 +6,7 @@ import type { IObjStorage } from "../../storage/types.js";
 import { setManyObjs } from "../obj/setObjs.js";
 
 export async function addCallbackExecution(params: {
-  appId: string;
+  projectId: string;
   groupId: string;
   callbackId: string;
   error: string | null;
@@ -18,7 +18,7 @@ export async function addCallbackExecution(params: {
   storage?: IObjStorage;
 }) {
   const {
-    appId,
+    projectId,
     groupId,
     callbackId,
     error,
@@ -53,7 +53,7 @@ export async function addCallbackExecution(params: {
     groupId,
     tag: kObjTags.callbackExecution,
     input: {
-      appId,
+      projectId,
       items: [objRecord],
     },
     storage,

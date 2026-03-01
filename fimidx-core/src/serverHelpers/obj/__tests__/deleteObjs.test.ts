@@ -31,7 +31,7 @@ function makeObjFields(overrides: Partial<IObj> = {}): IObj {
     createdByType: "user",
     updatedBy: "tester",
     updatedByType: "user",
-    appId: "test-app",
+    projectId: "test-project",
     groupId: "test-group",
     tag: "test-tag",
     objRecord: makeInputObjRecord(),
@@ -45,7 +45,7 @@ function makeObjFields(overrides: Partial<IObj> = {}): IObj {
 }
 
 // Use unique identifiers for each test file to prevent conflicts
-const defaultAppId = "test-app-deleteObjs";
+const defaultProjectId = "test-project-deleteObjs";
 const defaultTag = "test-tag-deleteObjs";
 
 describe.each(backends)(
@@ -72,22 +72,30 @@ describe.each(backends)(
     beforeEach(async () => {
       if (backend.type === "mongo") {
         const model = getObjModel();
-        await model.deleteMany({ appId: defaultAppId, tag: defaultTag });
+        await model.deleteMany({
+          projectId: defaultProjectId,
+          tag: defaultTag,
+        });
       } else if (backend.type === "postgres") {
         const { fimidxPostgresDb, objs } = await import(
           "../../../db/fimidx.postgres.js"
         );
         await fimidxPostgresDb
           .delete(objs)
-          .where(and(eq(objs.appId, defaultAppId), eq(objs.tag, defaultTag)));
+          .where(
+            and(eq(objs.projectId, defaultProjectId), eq(objs.tag, defaultTag))
+          );
       }
     });
 
-    it("soft deletes objects by appId and tag", async () => {
-      const obj = makeObjFields({ appId: defaultAppId, tag: defaultTag });
+    it("soft deletes objects by projectId and tag", async () => {
+      const obj = makeObjFields({
+        projectId: defaultProjectId,
+        tag: defaultTag,
+      });
       await storage.create({ objs: [obj] });
       const result = await deleteManyObjs({
-        objQuery: { appId: obj.appId },
+        objQuery: { projectId: obj.projectId },
         tag: obj.tag,
         deletedBy: "deleter",
         deletedByType: "user",
@@ -96,7 +104,7 @@ describe.each(backends)(
       expect(result.deletedCount).toBeGreaterThanOrEqual(1);
       // Check that the object is now soft deleted
       const readResult = await storage.read({
-        query: { appId: obj.appId },
+        query: { projectId: obj.projectId },
         tag: obj.tag,
         includeDeleted: true,
       });
@@ -109,7 +117,7 @@ describe.each(backends)(
 
     it("does not delete objects if no match", async () => {
       const result = await deleteManyObjs({
-        objQuery: { appId: "nonexistent-app" },
+        objQuery: { projectId: "nonexistent-project" },
         tag: "nonexistent-tag",
         deletedBy: "deleter",
         deletedByType: "user",
@@ -119,11 +127,14 @@ describe.each(backends)(
     });
 
     it("cleanupDeletedObjs removes soft deleted objects", async () => {
-      const obj = makeObjFields({ appId: defaultAppId, tag: defaultTag });
+      const obj = makeObjFields({
+        projectId: defaultProjectId,
+        tag: defaultTag,
+      });
       await storage.create({ objs: [obj] });
       // Soft delete
       await deleteManyObjs({
-        objQuery: { appId: obj.appId },
+        objQuery: { projectId: obj.projectId },
         tag: obj.tag,
         deletedBy: "deleter",
         deletedByType: "user",
@@ -136,7 +147,7 @@ describe.each(backends)(
       expect(cleanupResult.cleanedCount).toBeGreaterThanOrEqual(1);
       // Check that the object is now gone
       const readResult = await storage.read({
-        query: { appId: obj.appId },
+        query: { projectId: obj.projectId },
         tag: obj.tag,
         includeDeleted: true,
       });

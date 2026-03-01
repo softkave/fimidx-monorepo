@@ -38,7 +38,7 @@ describe('FimidxLogger', () => {
   describe('constructor', () => {
     it('should create logger with required parameters', () => {
       const logger = new FimidxLogger({
-        appId: 'test-app',
+        projectId: 'test-project',
         clientToken: 'test-token',
       });
 
@@ -49,25 +49,25 @@ describe('FimidxLogger', () => {
       });
     });
 
-    it('should throw error when appId is missing', () => {
+    it('should throw error when projectId is missing', () => {
       expect(() => {
         new FimidxLogger({
           clientToken: 'test-token',
         } as any);
-      }).toThrow('appId is required');
+      }).toThrow('projectId is required');
     });
 
     it('should throw error when clientToken is missing', () => {
       expect(() => {
         new FimidxLogger({
-          appId: 'test-app',
+          projectId: 'test-project',
         } as any);
       }).toThrow('clientToken is required');
     });
 
     it('should use default values for optional parameters', () => {
       const logger = new FimidxLogger({
-        appId: 'test-app',
+        projectId: 'test-project',
         clientToken: 'test-token',
       });
 
@@ -83,7 +83,7 @@ describe('FimidxLogger', () => {
 
     it('should use custom values for optional parameters', () => {
       const logger = new FimidxLogger({
-        appId: 'test-app',
+        projectId: 'test-project',
         clientToken: 'test-token',
         bufferTimeout: 2000,
         maxBufferSize: 50,
@@ -108,7 +108,7 @@ describe('FimidxLogger', () => {
   describe('log', () => {
     it('should add entry to buffer and schedule flush', async () => {
       const logger = new FimidxLogger({
-        appId: 'test-app',
+        projectId: 'test-project',
         clientToken: 'test-token',
         bufferTimeout: 1000,
       });
@@ -137,7 +137,7 @@ describe('FimidxLogger', () => {
 
       // Check that logs were sent
       expect(mockLogsEndpoints.ingestLogs).toHaveBeenCalledWith({
-        appId: 'test-app',
+        projectId: 'test-project',
         logs: [{level: 'info', message: 'test message'}],
       });
 
@@ -146,7 +146,7 @@ describe('FimidxLogger', () => {
 
     it('should merge metadata with log entries', async () => {
       const logger = new FimidxLogger({
-        appId: 'test-app',
+        projectId: 'test-project',
         clientToken: 'test-token',
         metadata: {environment: 'test', version: '1.0.0'},
       });
@@ -159,7 +159,7 @@ describe('FimidxLogger', () => {
 
       // Check that metadata was merged
       expect(mockLogsEndpoints.ingestLogs).toHaveBeenCalledWith({
-        appId: 'test-app',
+        projectId: 'test-project',
         logs: [
           {
             environment: 'test',
@@ -173,7 +173,7 @@ describe('FimidxLogger', () => {
 
     it('should trigger immediate flush when buffer is full', async () => {
       const logger = new FimidxLogger({
-        appId: 'test-app',
+        projectId: 'test-project',
         clientToken: 'test-token',
         maxBufferSize: 2,
       });
@@ -184,7 +184,7 @@ describe('FimidxLogger', () => {
 
       // Should trigger immediate flush without waiting for timer
       expect(mockLogsEndpoints.ingestLogs).toHaveBeenCalledWith({
-        appId: 'test-app',
+        projectId: 'test-project',
         logs: [
           {level: 'info', message: 'first'},
           {level: 'info', message: 'second'},
@@ -196,7 +196,7 @@ describe('FimidxLogger', () => {
   describe('logList', () => {
     it('should add multiple entries to buffer', async () => {
       const logger = new FimidxLogger({
-        appId: 'test-app',
+        projectId: 'test-project',
         clientToken: 'test-token',
       });
 
@@ -211,7 +211,7 @@ describe('FimidxLogger', () => {
       await vi.runAllTimersAsync();
 
       expect(mockLogsEndpoints.ingestLogs).toHaveBeenCalledWith({
-        appId: 'test-app',
+        projectId: 'test-project',
         logs: [
           {level: 'info', message: 'first'},
           {level: 'error', message: 'second'},
@@ -224,7 +224,7 @@ describe('FimidxLogger', () => {
   describe('flush', () => {
     it('should immediately flush buffer', async () => {
       const logger = new FimidxLogger({
-        appId: 'test-app',
+        projectId: 'test-project',
         clientToken: 'test-token',
       });
 
@@ -234,14 +234,14 @@ describe('FimidxLogger', () => {
       await logger.flush();
 
       expect(mockLogsEndpoints.ingestLogs).toHaveBeenCalledWith({
-        appId: 'test-app',
+        projectId: 'test-project',
         logs: [{level: 'info', message: 'test'}],
       });
     });
 
     it('should do nothing when buffer is empty', async () => {
       const logger = new FimidxLogger({
-        appId: 'test-app',
+        projectId: 'test-project',
         clientToken: 'test-token',
       });
 
@@ -254,7 +254,7 @@ describe('FimidxLogger', () => {
   describe('close', () => {
     it('should flush remaining entries and clear timers', async () => {
       const logger = new FimidxLogger({
-        appId: 'test-app',
+        projectId: 'test-project',
         clientToken: 'test-token',
       });
 
@@ -263,7 +263,7 @@ describe('FimidxLogger', () => {
       await logger.close();
 
       expect(mockLogsEndpoints.ingestLogs).toHaveBeenCalledWith({
-        appId: 'test-app',
+        projectId: 'test-project',
         logs: [{level: 'info', message: 'test'}],
       });
     });
@@ -272,7 +272,7 @@ describe('FimidxLogger', () => {
   describe('error handling and retries', () => {
     it('should retry on network errors', async () => {
       const logger = new FimidxLogger({
-        appId: 'test-app',
+        projectId: 'test-project',
         clientToken: 'test-token',
         maxRetries: 2,
         retryDelay: 100,
@@ -296,7 +296,7 @@ describe('FimidxLogger', () => {
 
     it('should not retry on authentication errors', async () => {
       const logger = new FimidxLogger({
-        appId: 'test-app',
+        projectId: 'test-project',
         clientToken: 'test-token',
       });
 
@@ -327,7 +327,7 @@ describe('FimidxLogger', () => {
         .mockImplementation(() => {});
 
       const logger = new FimidxLogger({
-        appId: 'test-app',
+        projectId: 'test-project',
         clientToken: 'test-token',
         maxRetries: 1,
         consoleLogOnError: true,
@@ -362,7 +362,7 @@ describe('FimidxLogger', () => {
         .mockImplementation(() => {});
 
       const logger = new FimidxLogger({
-        appId: 'test-app',
+        projectId: 'test-project',
         clientToken: 'test-token',
         maxRetries: 1,
         consoleLogOnError: false,
@@ -389,7 +389,7 @@ describe('FimidxLogger', () => {
         .mockImplementation(() => {});
 
       const logger = new FimidxLogger({
-        appId: 'test-app',
+        projectId: 'test-project',
         clientToken: 'test-token',
         maxRetries: 2,
         logRemoteErrors: true,

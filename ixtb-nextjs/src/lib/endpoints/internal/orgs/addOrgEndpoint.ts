@@ -15,7 +15,7 @@ export const addOrgEndpoint: NextUserAuthenticatedEndpointFn<
   const input = addOrgSchema.parse(await req.json());
   const group = await addGroup({
     args: {
-      appId: kId0,
+      projectId: kId0,
       name: input.name,
       description: input.description,
     },
@@ -26,7 +26,7 @@ export const addOrgEndpoint: NextUserAuthenticatedEndpointFn<
 
   await addMember({
     args: {
-      appId: kId0,
+      projectId: kId0,
       groupId: group.group.id,
       memberId: userId,
       email: user?.email ?? email,

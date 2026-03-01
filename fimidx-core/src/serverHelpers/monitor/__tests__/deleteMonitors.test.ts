@@ -1,5 +1,8 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import type { DeleteMonitorsEndpointArgs } from "../../../definitions/monitor.js";
+import type {
+  AddMonitorEndpointArgs,
+  DeleteMonitorsEndpointArgs,
+} from "../../../definitions/monitor.js";
 import { kObjTags } from "../../../definitions/obj.js";
 import { createDefaultStorage } from "../../../storage/config.js";
 import type { IObjStorage } from "../../../storage/types.js";
@@ -7,7 +10,7 @@ import { addMonitor } from "../addMonitor.js";
 import { deleteMonitors } from "../deleteMonitors.js";
 import { getMonitors } from "../getMonitors.js";
 
-const defaultAppId = "test-app-deleteMonitors";
+const defaultProjectId = "test-project-deleteMonitors";
 const defaultGroupId = "test-group";
 const defaultBy = "tester";
 const defaultByType = "user";
@@ -20,20 +23,22 @@ function makeDeleteMonitorsArgs(
 ): DeleteMonitorsEndpointArgs {
   return {
     query: {
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       ...overrides.query,
     },
     deleteMany: overrides.deleteMany,
   };
 }
 
-function makeAddMonitorArgs(overrides: any = {}) {
+function makeAddMonitorArgs(
+  overrides: Partial<AddMonitorEndpointArgs> = {}
+): AddMonitorEndpointArgs {
   testCounter++;
   const uniqueId = `${testCounter}_${Date.now()}_${Math.random()
     .toString(36)
     .substr(2, 9)}`;
   return {
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     name: `Test Monitor ${uniqueId}`,
     description: "Test description",
     status: "enabled",
@@ -64,7 +69,7 @@ describe("deleteMonitors integration", () => {
     // Clean up test data before each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
         tag: kObjTags.monitor,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -80,7 +85,7 @@ describe("deleteMonitors integration", () => {
     // Clean up after each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
         tag: kObjTags.monitor,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -104,7 +109,7 @@ describe("deleteMonitors integration", () => {
 
     const args = makeDeleteMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: monitor.monitor.id },
       },
     });
@@ -119,7 +124,7 @@ describe("deleteMonitors integration", () => {
     // Verify the deletion
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
     };
 
@@ -156,7 +161,7 @@ describe("deleteMonitors integration", () => {
 
     const args = makeDeleteMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         status: { eq: "enabled" },
       },
       deleteMany: true,
@@ -172,7 +177,7 @@ describe("deleteMonitors integration", () => {
     // Verify the deletion
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
     };
 
@@ -203,7 +208,7 @@ describe("deleteMonitors integration", () => {
 
     const args = makeDeleteMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         name: { eq: "Error Monitor" },
       },
       deleteMany: true,
@@ -219,7 +224,7 @@ describe("deleteMonitors integration", () => {
     // Verify the deletion
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
     };
 
@@ -252,7 +257,7 @@ describe("deleteMonitors integration", () => {
 
     const args = makeDeleteMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         status: { eq: "disabled" },
       },
       deleteMany: true,
@@ -268,7 +273,7 @@ describe("deleteMonitors integration", () => {
     // Verify the deletion
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
     };
 
@@ -305,7 +310,7 @@ describe("deleteMonitors integration", () => {
 
     const args = makeDeleteMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         reportsTo: { eq: "user1" },
       },
       deleteMany: true,
@@ -321,7 +326,7 @@ describe("deleteMonitors integration", () => {
     // Verify the deletion
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
     };
 
@@ -352,7 +357,7 @@ describe("deleteMonitors integration", () => {
 
     const args = makeDeleteMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         createdBy: { eq: "user1" },
       },
       deleteMany: true,
@@ -368,7 +373,7 @@ describe("deleteMonitors integration", () => {
     // Verify the deletion
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
     };
 
@@ -400,7 +405,7 @@ describe("deleteMonitors integration", () => {
     // Update monitor1 to have a different updatedBy
     const updateArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: monitor1.monitor.id },
       },
       update: {
@@ -420,7 +425,7 @@ describe("deleteMonitors integration", () => {
     // Update monitor2 to have a different updatedBy
     const updateArgs2 = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: monitor2.monitor.id },
       },
       update: {
@@ -440,7 +445,7 @@ describe("deleteMonitors integration", () => {
     // Delete monitors updated by updater1
     const args = makeDeleteMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         updatedBy: { eq: "updater1" },
       },
       deleteMany: true,
@@ -456,7 +461,7 @@ describe("deleteMonitors integration", () => {
     // Verify the deletion
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
     };
 
@@ -494,7 +499,7 @@ describe("deleteMonitors integration", () => {
     // Delete monitors created after monitor1
     const args = makeDeleteMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         createdAt: { gt: monitor1.monitor.createdAt.getTime() },
       },
       deleteMany: true,
@@ -510,7 +515,7 @@ describe("deleteMonitors integration", () => {
     // Verify the deletion
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
     };
 
@@ -541,7 +546,7 @@ describe("deleteMonitors integration", () => {
     // Update monitor1
     const updateArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: monitor1.monitor.id },
       },
       update: {
@@ -564,7 +569,7 @@ describe("deleteMonitors integration", () => {
     // Update monitor2
     const updateArgs2 = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: monitor2.monitor.id },
       },
       update: {
@@ -584,7 +589,7 @@ describe("deleteMonitors integration", () => {
     // Get the updated monitor2 to get its updatedAt timestamp
     const getMonitor2Args = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: monitor2.monitor.id },
       },
     };
@@ -598,7 +603,7 @@ describe("deleteMonitors integration", () => {
     // Delete monitors updated before monitor2's update (should delete monitor1)
     const args = makeDeleteMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         updatedAt: { lt: updatedMonitor2.updatedAt.getTime() },
       },
       deleteMany: true,
@@ -614,7 +619,7 @@ describe("deleteMonitors integration", () => {
     // Verify the deletion
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
     };
 
@@ -664,7 +669,7 @@ describe("deleteMonitors integration", () => {
 
     const args = makeDeleteMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         status: { eq: "enabled" },
         reportsTo: { eq: "user1" },
       },
@@ -681,7 +686,7 @@ describe("deleteMonitors integration", () => {
     // Verify the deletion
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
     };
 
@@ -707,7 +712,7 @@ describe("deleteMonitors integration", () => {
 
     const args = makeDeleteMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         name: { eq: "Non-existent Monitor" },
       },
       deleteMany: true,
@@ -723,7 +728,7 @@ describe("deleteMonitors integration", () => {
     // Verify no changes were made
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
     };
 
@@ -753,7 +758,7 @@ describe("deleteMonitors integration", () => {
 
     const args = makeDeleteMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
       deleteMany: true,
     });
@@ -768,7 +773,7 @@ describe("deleteMonitors integration", () => {
     // Verify all monitors were deleted
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
     };
 

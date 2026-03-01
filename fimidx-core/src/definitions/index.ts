@@ -1,4 +1,4 @@
-export * from "./app.js";
+export * from "./project.js";
 export * from "./appConstants.js";
 export * from "./callback.js";
 export * from "./clientToken.js";

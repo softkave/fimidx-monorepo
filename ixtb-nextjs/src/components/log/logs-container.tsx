@@ -28,7 +28,7 @@ export interface ILogListContainerProps {
   className?: string;
   logsContainerClassName?: string;
   orgId: string;
-  appId: string;
+  projectId: string;
   showFiltersAndSort?: boolean;
 }
 
@@ -38,7 +38,7 @@ export function LogListContainer({
   className,
   logsContainerClassName,
   orgId,
-  appId,
+  projectId,
   showFiltersAndSort,
 }: ILogListContainerProps) {
   const [page, setPage] = useState(1);
@@ -50,11 +50,11 @@ export function LogListContainer({
       page,
       limit: pageSize,
       query: {
-        appId,
+        projectId,
         logsQuery: filters.length > 0 ? { and: filters } : undefined,
       },
     }),
-    [page, pageSize, filters, appId]
+    [page, pageSize, filters, projectId]
   );
 
   const logsHook = useGetLogs(args);
@@ -64,7 +64,7 @@ export function LogListContainer({
       <Logs
         logs={logs}
         orgId={orgId}
-        appId={appId}
+        projectId={projectId}
         filters={filters}
         onFiltersChange={setFilters}
         showFiltersAndSort={showFiltersAndSort}
@@ -102,7 +102,7 @@ export function LogListContainer({
           return data.logs.length === 0 && showNoLogsMessage ? (
             <ComponentListMessage
               title="No logs found"
-              message="Use the API to send logs to this app or change the filters"
+              message="Use the API to send logs to this project or change the filters"
               className="flex flex-col max-w-lg mx-auto"
             />
           ) : (

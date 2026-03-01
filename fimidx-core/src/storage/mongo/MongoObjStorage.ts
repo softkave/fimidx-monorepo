@@ -1,4 +1,4 @@
-import { get } from "lodash-es";
+import { get, uniq } from "lodash-es";
 import type { Model, SortOrder } from "mongoose";
 import { mergeObjects, type AnyObject } from "softkave-js-utils";
 import { v7 as uuidv7 } from "uuid";
@@ -77,8 +77,8 @@ export class MongoObjStorage implements IObjStorage {
 
     // console.log("read params");
     // console.dir(params, { depth: null });
-    // console.log("read filter");
-    // console.dir(filter, { depth: null });
+    console.log("read filter");
+    console.dir(filter, { depth: null });
     // console.log("read sort");
     // console.dir(sort, { depth: null });
     // console.log("read pagination");
@@ -218,7 +218,7 @@ export class MongoObjStorage implements IObjStorage {
       conflictOnKeys = [],
       onConflict = "replace",
       tag,
-      appId,
+      projectId,
       groupId,
       createdBy,
       createdByType,
@@ -242,11 +242,16 @@ export class MongoObjStorage implements IObjStorage {
       const existingObjs = await this.findExistingObjsForBatch({
         items: batch,
         conflictOnKeys,
-        appId,
+        projectId,
         tag,
         date,
         session,
       });
+
+      // console.log("existingObjs", existingObjs);
+      // console.log("conflictOnKeys", conflictOnKeys);
+      // console.log("batch", batch);
+      // console.log("projectId", projectId);
 
       // Group items into new and existing
       const { newItems, existingItems } = this.groupItemsIntoNewAndExisting(
@@ -258,7 +263,7 @@ export class MongoObjStorage implements IObjStorage {
       if (newItems.length > 0) {
         const createdObjs = await this.createNewObjs({
           items: newItems,
-          appId,
+          projectId,
           tag,
           date,
           groupId,
@@ -473,14 +478,14 @@ export class MongoObjStorage implements IObjStorage {
         // Hard delete
         await this.objModel.deleteMany(
           {
-            id: { $in: objs.map((obj) => obj.id) },
+            id: { $in: uniq(objs.map((obj) => obj.id)) },
           },
           session ? { session } : undefined
         );
       } else {
         // Soft delete
         await this.objModel.updateMany(
-          { id: { $in: objs.map((obj) => obj.id) } },
+          { id: { $in: uniq(objs.map((obj) => obj.id)) } },
           {
             $set: {
               deletedAt: date,
@@ -536,7 +541,7 @@ export class MongoObjStorage implements IObjStorage {
       // For now, just delete the objects
       await this.objModel.deleteMany(
         {
-          id: { $in: objs.map((obj) => obj.id) },
+          id: { $in: uniq(objs.map((obj) => obj.id)) },
         },
         session ? { session } : undefined
       );
@@ -600,12 +605,12 @@ export class MongoObjStorage implements IObjStorage {
   private async findExistingObjsForBatch(params: {
     items: IInputObjRecord[];
     conflictOnKeys: string[];
-    appId: string;
+    projectId: string;
     tag: string;
     date: Date;
     session?: any;
   }): Promise<(IObj | undefined)[]> {
-    const { items, conflictOnKeys, appId, tag, date, session } = params;
+    const { items, conflictOnKeys, projectId, tag, date, session } = params;
 
     if (!conflictOnKeys.length) {
       return new Array(items.length).fill(undefined);
@@ -617,7 +622,7 @@ export class MongoObjStorage implements IObjStorage {
       const conflictFilter = this.buildConflictFilter({
         item,
         conflictOnKeys,
-        appId,
+        projectId,
         tag,
       });
 
@@ -640,12 +645,12 @@ export class MongoObjStorage implements IObjStorage {
   private buildConflictFilter(params: {
     item: IInputObjRecord;
     conflictOnKeys: string[];
-    appId: string;
+    projectId: string;
     tag: string;
   }): any {
-    const { item, conflictOnKeys, appId, tag } = params;
+    const { item, conflictOnKeys, projectId, tag } = params;
     const filter: any = {
-      appId,
+      projectId,
       tag,
       deletedAt: null,
     };
@@ -684,7 +689,7 @@ export class MongoObjStorage implements IObjStorage {
 
   private async createNewObjs(params: {
     items: IInputObjRecord[];
-    appId: string;
+    projectId: string;
     tag: string;
     date: Date;
     groupId: string;
@@ -696,7 +701,7 @@ export class MongoObjStorage implements IObjStorage {
   }): Promise<IObj[]> {
     const {
       items,
-      appId,
+      projectId,
       tag,
       date,
       groupId,
@@ -709,7 +714,7 @@ export class MongoObjStorage implements IObjStorage {
 
     const newObjs: IObj[] = items.map((item) => ({
       id: uuidv7(),
-      appId,
+      projectId,
       tag,
       groupId,
       createdAt: date,

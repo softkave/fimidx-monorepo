@@ -6,7 +6,7 @@ import { addMember } from "../addMember.js";
 import { getMembers } from "../getMembers.js";
 import { updateMemberSendEmailStatus } from "../updateMemberSendEmailStatus.js";
 
-const defaultAppId = "test-app-updateMemberSendEmailStatus";
+const defaultProjectId = "test-project-updateMemberSendEmailStatus";
 const defaultGroupId = "test-group";
 const defaultBy = "tester";
 const defaultByType = "user";
@@ -22,7 +22,7 @@ function makeAddMemberArgs(overrides: any = {}) {
   return {
     name: `Test Member ${uniqueId}`,
     description: "Test description",
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     groupId: defaultGroupId,
     email: `test${uniqueId}@example.com`,
     memberId: `member-${uniqueId}`,
@@ -40,14 +40,14 @@ describe("updateMemberSendEmailStatus integration", () => {
 
   beforeEach(async () => {
     try {
-      const testAppIds = [
-        defaultAppId,
-        "test-app-updateMemberSendEmailStatus-1",
-        "test-app-updateMemberSendEmailStatus-2",
+      const testProjectIds = [
+        defaultProjectId,
+        "test-project-updateMemberSendEmailStatus-1",
+        "test-project-updateMemberSendEmailStatus-2",
       ];
-      for (const appId of testAppIds) {
+      for (const projectId of testProjectIds) {
         await storage.bulkDelete({
-          query: { appId },
+          query: { projectId },
           tag: kObjTags.member,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -62,14 +62,14 @@ describe("updateMemberSendEmailStatus integration", () => {
 
   afterEach(async () => {
     try {
-      const testAppIds = [
-        defaultAppId,
-        "test-app-updateMemberSendEmailStatus-1",
-        "test-app-updateMemberSendEmailStatus-2",
+      const testProjectIds = [
+        defaultProjectId,
+        "test-project-updateMemberSendEmailStatus-1",
+        "test-project-updateMemberSendEmailStatus-2",
       ];
-      for (const appId of testAppIds) {
+      for (const projectId of testProjectIds) {
         await storage.bulkDelete({
-          query: { appId },
+          query: { projectId },
           tag: kObjTags.member,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -97,7 +97,7 @@ describe("updateMemberSendEmailStatus integration", () => {
     const emailLastSentStatus = "sent" as const;
 
     await updateMemberSendEmailStatus({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       id: member.member.memberId,
       sentEmailCount,
@@ -110,7 +110,7 @@ describe("updateMemberSendEmailStatus integration", () => {
     const { members } = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           memberId: { eq: member.member.memberId },
         },
@@ -139,7 +139,7 @@ describe("updateMemberSendEmailStatus integration", () => {
     const emailLastSentStatus = "failed" as const;
 
     await updateMemberSendEmailStatus({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       id: member.member.memberId,
       sentEmailCount,
@@ -152,7 +152,7 @@ describe("updateMemberSendEmailStatus integration", () => {
     const { members } = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           memberId: { eq: member.member.memberId },
         },
@@ -181,7 +181,7 @@ describe("updateMemberSendEmailStatus integration", () => {
     const emailLastSentStatus = "pending" as const;
 
     await updateMemberSendEmailStatus({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       id: member.member.memberId,
       sentEmailCount,
@@ -194,7 +194,7 @@ describe("updateMemberSendEmailStatus integration", () => {
     const { members } = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           memberId: { eq: member.member.memberId },
         },
@@ -208,11 +208,11 @@ describe("updateMemberSendEmailStatus integration", () => {
     expect(members[0].emailLastSentStatus).toBe(emailLastSentStatus);
   });
 
-  it("handles different app IDs", async () => {
-    // Create a member in a different app
+  it("handles different project IDs", async () => {
+    // Create a member in a different project
     const memberArgs = makeAddMemberArgs({
       memberId: "test-member",
-      appId: "different-app",
+      projectId: "different-project",
     });
     const member = await addMember({
       args: memberArgs,
@@ -226,7 +226,7 @@ describe("updateMemberSendEmailStatus integration", () => {
     const emailLastSentStatus = "sent" as const;
 
     await updateMemberSendEmailStatus({
-      appId: "different-app",
+      projectId: "different-project",
       groupId: defaultGroupId,
       id: member.member.memberId,
       sentEmailCount,
@@ -239,7 +239,7 @@ describe("updateMemberSendEmailStatus integration", () => {
     const { members } = await getMembers({
       args: {
         query: {
-          appId: "different-app",
+          projectId: "different-project",
           groupId: defaultGroupId,
           memberId: { eq: member.member.memberId },
         },
@@ -271,7 +271,7 @@ describe("updateMemberSendEmailStatus integration", () => {
     const emailLastSentStatus = "sent" as const;
 
     await updateMemberSendEmailStatus({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: "different-group",
       id: member.member.memberId,
       sentEmailCount,
@@ -284,7 +284,7 @@ describe("updateMemberSendEmailStatus integration", () => {
     const { members } = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: "different-group",
           memberId: { eq: member.member.memberId },
         },
@@ -319,7 +319,7 @@ describe("updateMemberSendEmailStatus integration", () => {
 
     // Update email status for member 1
     await updateMemberSendEmailStatus({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       id: member1.member.memberId,
       sentEmailCount: 5,
@@ -330,7 +330,7 @@ describe("updateMemberSendEmailStatus integration", () => {
 
     // Update email status for member 2
     await updateMemberSendEmailStatus({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       id: member2.member.memberId,
       sentEmailCount: 10,
@@ -343,7 +343,7 @@ describe("updateMemberSendEmailStatus integration", () => {
     const { members } = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
         },
       },
@@ -389,7 +389,7 @@ describe("updateMemberSendEmailStatus integration", () => {
     const emailLastSentStatus = "sent" as const;
 
     await updateMemberSendEmailStatus({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       id: member.member.memberId,
       sentEmailCount,
@@ -402,7 +402,7 @@ describe("updateMemberSendEmailStatus integration", () => {
     const { members } = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           memberId: { eq: member.member.memberId },
         },
@@ -435,7 +435,7 @@ describe("updateMemberSendEmailStatus integration", () => {
     const emailLastSentStatus = "sent" as const;
 
     await updateMemberSendEmailStatus({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       id: member.member.memberId,
       sentEmailCount,
@@ -448,7 +448,7 @@ describe("updateMemberSendEmailStatus integration", () => {
     const { members } = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           memberId: { eq: member.member.memberId },
         },
@@ -475,7 +475,7 @@ describe("updateMemberSendEmailStatus integration", () => {
     const emailLastSentStatus = "custom_status" as any;
 
     await updateMemberSendEmailStatus({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       id: member.member.memberId,
       sentEmailCount,
@@ -488,7 +488,7 @@ describe("updateMemberSendEmailStatus integration", () => {
     const { members } = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           memberId: { eq: member.member.memberId },
         },

@@ -6,7 +6,7 @@ import { addMember } from "../addMember.js";
 import { getMembers } from "../getMembers.js";
 import { updateMembers } from "../updateMembers.js";
 
-const defaultAppId = "test-app-updateMembers";
+const defaultProjectId = "test-project-updateMembers";
 const defaultGroupId = "test-group";
 const defaultBy = "tester";
 const defaultByType = "user";
@@ -22,7 +22,7 @@ function makeAddMemberArgs(overrides: any = {}) {
   return {
     name: `Test Member ${uniqueId}`,
     description: "Test description",
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     groupId: defaultGroupId,
     email: `test${uniqueId}@example.com`,
     memberId: `member-${uniqueId}`,
@@ -42,15 +42,15 @@ describe("updateMembers integration", () => {
   beforeEach(async () => {
     // Clean up test data before each test using hard deletes for complete isolation
     try {
-      // Delete all members for all test apps using hard deletes
-      const testAppIds = [
-        defaultAppId,
-        "test-app-updateMembers-1",
-        "test-app-updateMembers-2",
+      // Delete all members for all test projects using hard deletes
+      const testProjectIds = [
+        defaultProjectId,
+        "test-project-updateMembers-1",
+        "test-project-updateMembers-2",
       ];
-      for (const appId of testAppIds) {
+      for (const projectId of testProjectIds) {
         await storage.bulkDelete({
-          query: { appId },
+          query: { projectId },
           tag: kObjTags.member,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -66,15 +66,15 @@ describe("updateMembers integration", () => {
   afterEach(async () => {
     // Clean up after each test using hard deletes for complete isolation
     try {
-      // Delete all members for all test apps using hard deletes
-      const testAppIds = [
-        defaultAppId,
-        "test-app-updateMembers-1",
-        "test-app-updateMembers-2",
+      // Delete all members for all test projects using hard deletes
+      const testProjectIds = [
+        defaultProjectId,
+        "test-project-updateMembers-1",
+        "test-project-updateMembers-2",
       ];
-      for (const appId of testAppIds) {
+      for (const projectId of testProjectIds) {
         await storage.bulkDelete({
-          query: { appId },
+          query: { projectId },
           tag: kObjTags.member,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -101,7 +101,7 @@ describe("updateMembers integration", () => {
     await updateMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           memberId: { eq: memberArgs.memberId },
         },
@@ -118,7 +118,7 @@ describe("updateMembers integration", () => {
     const result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           memberId: { eq: memberArgs.memberId },
         },
@@ -146,7 +146,7 @@ describe("updateMembers integration", () => {
     await updateMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           memberId: { eq: memberArgs.memberId },
         },
@@ -163,7 +163,7 @@ describe("updateMembers integration", () => {
     const result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           memberId: { eq: memberArgs.memberId },
         },
@@ -189,7 +189,7 @@ describe("updateMembers integration", () => {
     await updateMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           memberId: { eq: memberArgs.memberId },
         },
@@ -206,7 +206,7 @@ describe("updateMembers integration", () => {
     const result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           memberId: { eq: memberArgs.memberId },
         },
@@ -234,7 +234,7 @@ describe("updateMembers integration", () => {
     await updateMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           memberId: { eq: memberArgs.memberId },
         },
@@ -255,7 +255,7 @@ describe("updateMembers integration", () => {
     const result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           memberId: { eq: memberArgs.memberId },
         },
@@ -289,7 +289,7 @@ describe("updateMembers integration", () => {
     await updateMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           memberId: { eq: memberArgs.memberId },
         },
@@ -308,7 +308,7 @@ describe("updateMembers integration", () => {
     const result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           memberId: { eq: memberArgs.memberId },
         },
@@ -353,7 +353,7 @@ describe("updateMembers integration", () => {
     await updateMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
         },
         update: {
@@ -370,7 +370,7 @@ describe("updateMembers integration", () => {
     const result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
         },
       },
@@ -406,7 +406,7 @@ describe("updateMembers integration", () => {
     await updateMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
         },
         update: {
@@ -423,7 +423,7 @@ describe("updateMembers integration", () => {
     const result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
         },
       },
@@ -460,7 +460,7 @@ describe("updateMembers integration", () => {
     await updateMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           name: { eq: "Alice" },
         },
@@ -477,7 +477,7 @@ describe("updateMembers integration", () => {
     const result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
         },
       },
@@ -515,7 +515,7 @@ describe("updateMembers integration", () => {
     await updateMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           email: { eq: "alice@example.com" },
         },
@@ -532,7 +532,7 @@ describe("updateMembers integration", () => {
     const result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
         },
       },
@@ -566,7 +566,7 @@ describe("updateMembers integration", () => {
     await updateMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           memberId: { eq: memberArgs.memberId },
         },
@@ -583,7 +583,7 @@ describe("updateMembers integration", () => {
     const result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           memberId: { eq: memberArgs.memberId },
         },

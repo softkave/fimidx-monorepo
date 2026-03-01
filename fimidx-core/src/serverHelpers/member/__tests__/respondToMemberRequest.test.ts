@@ -18,14 +18,14 @@ describe("respondToMemberRequest integration", () => {
     testName: "respondToMemberRequest",
   });
 
-  const { appId, groupId, by, byType } = testData;
+  const { projectId, groupId, by, byType } = testData;
 
   function makeAddMemberArgs(overrides: any = {}) {
     const testData = makeTestData({ testName: "member" });
     return {
       name: testData.name,
       description: "Test description",
-      appId,
+      projectId,
       groupId,
       email: testData.email,
       memberId: testData.memberId,
@@ -36,7 +36,7 @@ describe("respondToMemberRequest integration", () => {
 
   function makeRespondToMemberRequestArgs(overrides: any = {}) {
     return {
-      appId,
+      projectId,
       groupId,
       requestId: "test-request-id",
       status: kMemberStatus.accepted,
@@ -94,7 +94,7 @@ describe("respondToMemberRequest integration", () => {
     const { members } = await getMembers({
       args: {
         query: {
-          appId,
+          projectId,
           groupId,
           memberId: { eq: member.member.memberId },
         },
@@ -139,7 +139,7 @@ describe("respondToMemberRequest integration", () => {
     const { members } = await getMembers({
       args: {
         query: {
-          appId,
+          projectId,
           groupId,
           memberId: { eq: member.member.memberId },
         },
@@ -195,11 +195,11 @@ describe("respondToMemberRequest integration", () => {
     ).rejects.toThrow("Invalid status");
   });
 
-  it("handles different app IDs", async () => {
-    // Create a pending member in a different app
+  it("handles different project IDs", async () => {
+    // Create a pending member in a different project
     const memberArgs = makeAddMemberArgs({
       memberId: "test-member-respondToMemberRequest",
-      appId: "different-app",
+      projectId: "different-project",
       seed: {
         status: kMemberStatus.pending,
       },
@@ -214,7 +214,7 @@ describe("respondToMemberRequest integration", () => {
     });
 
     const args = makeRespondToMemberRequestArgs({
-      appId: "different-app",
+      projectId: "different-project",
       requestId: member.member.id,
       status: kMemberStatus.accepted,
     });
@@ -228,7 +228,7 @@ describe("respondToMemberRequest integration", () => {
     const { members } = await getMembers({
       args: {
         query: {
-          appId: "different-app",
+          projectId: "different-project",
           groupId,
           memberId: { eq: member.member.memberId },
         },
@@ -273,7 +273,7 @@ describe("respondToMemberRequest integration", () => {
     const { members } = await getMembers({
       args: {
         query: {
-          appId,
+          projectId,
           groupId: "different-group",
           memberId: { eq: member.member.memberId },
         },
@@ -320,7 +320,7 @@ describe("respondToMemberRequest integration", () => {
     const { members } = await getMembers({
       args: {
         query: {
-          appId,
+          projectId,
           groupId,
           memberId: { eq: member.member.memberId },
         },
@@ -370,7 +370,7 @@ describe("respondToMemberRequest integration", () => {
     let { members } = await getMembers({
       args: {
         query: {
-          appId,
+          projectId,
           groupId,
           memberId: { eq: member.member.memberId },
         },

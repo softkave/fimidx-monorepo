@@ -29,7 +29,7 @@ export function objToMember(
     emailLastSentStatus: obj.objRecord.emailLastSentStatus,
     createdBy: obj.createdBy,
     updatedBy: obj.updatedBy,
-    appId: obj.appId,
+    projectId: obj.projectId,
     createdByType: obj.createdByType,
     updatedByType: obj.updatedByType,
     description: obj.objRecord.description ?? null,

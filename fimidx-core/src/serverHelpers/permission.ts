@@ -7,7 +7,7 @@ import { getMembers } from "./member/getMembers.js";
 
 export async function hasPermission(params: {
   memberId: string;
-  appId: string;
+  projectId: string;
   groupId: string;
   member?: IMember;
   permission: string | string[];
@@ -15,7 +15,7 @@ export async function hasPermission(params: {
 }) {
   const {
     memberId,
-    appId,
+    projectId,
     groupId,
     member: inputMember,
     permission: inputPermission,
@@ -29,7 +29,7 @@ export async function hasPermission(params: {
         await getMembers({
           args: {
             query: {
-              appId,
+              projectId,
               groupId,
               memberId: { eq: memberId },
             },
@@ -68,7 +68,7 @@ export async function hasPermission(params: {
 
 export async function checkPermission(params: {
   memberId: string;
-  appId: string;
+  projectId: string;
   groupId: string;
   member?: IMember;
   permission: string | string[];

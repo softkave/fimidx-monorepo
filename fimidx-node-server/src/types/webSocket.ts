@@ -5,7 +5,7 @@ import {z} from 'zod';
 export interface AugmentedWebSocket extends WebSocket {
   __fimidxWebSocketId: string;
   __fimidxAuthId: string;
-  __fimidxAppId: string;
+  __fimidxProjectId: string;
   __fimidxgroupId: string;
   __fimidxIsAugmentedWebSocket: true;
 }

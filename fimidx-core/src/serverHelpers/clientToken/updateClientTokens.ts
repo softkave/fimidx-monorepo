@@ -53,7 +53,7 @@ export async function updateClientTokens(params: {
         // Clear all existing permissions for this client token
         await deletePermissions({
           query: {
-            appId: clientToken.appId,
+            projectId: clientToken.projectId,
             meta: [
               {
                 op: "eq",
@@ -71,7 +71,7 @@ export async function updateClientTokens(params: {
         // Clear existing permissions first, then add new ones
         await deletePermissions({
           query: {
-            appId: clientToken.appId,
+            projectId: clientToken.projectId,
             meta: [
               {
                 op: "eq",
@@ -91,7 +91,7 @@ export async function updateClientTokens(params: {
           by,
           byType,
           groupId: clientToken.groupId,
-          appId: clientToken.appId,
+          projectId: clientToken.projectId,
           permissions,
           clientTokenId: clientToken.id,
           storage,

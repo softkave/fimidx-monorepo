@@ -6,32 +6,32 @@
 export const TEST_CONFIG = {
   // Unique identifiers for each test file
   updateObjs: {
-    appId: "test-app-updateObjs",
+    projectId: "test-project-updateObjs",
     tag: "test-tag-updateObjs",
     groupId: "test-group-updateObjs",
   },
   setObjs: {
-    appId: "test-app-setObjs",
+    projectId: "test-project-setObjs",
     tag: "test-tag-setObjs",
     groupId: "test-group-setObjs",
   },
   deleteObjs: {
-    appId: "test-app-deleteObjs",
+    projectId: "test-project-deleteObjs",
     tag: "test-tag-deleteObjs",
     groupId: "test-group-deleteObjs",
   },
   getObjs: {
-    appId: "test-app-getObjs",
+    projectId: "test-project-getObjs",
     tag: "test-tag-getObjs",
     groupId: "test-group-getObjs",
   },
   indexObjs: {
-    appId: "test-app-indexObjs",
+    projectId: "test-project-indexObjs",
     tag: "test-tag-indexObjs",
     groupId: "test-group-indexObjs",
   },
   getObjFields: {
-    appId: "test-app-getObjFields",
+    projectId: "test-project-getObjFields",
     tag: "test-tag-getObjFields",
     groupId: "test-group-getObjFields",
   },
@@ -50,7 +50,7 @@ export function makeUniqueTestData(prefix: string) {
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(7);
   return {
-    appId: `${prefix}-${timestamp}-${random}`,
+    projectId: `${prefix}-${timestamp}-${random}`,
     tag: `${prefix}-tag-${timestamp}-${random}`,
     groupId: `${prefix}-group-${timestamp}-${random}`,
   };

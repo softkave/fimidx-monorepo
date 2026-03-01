@@ -7,7 +7,7 @@ import { addCallback } from "../addCallback.js";
 import { deleteCallbacks } from "../deleteCallbacks.js";
 import { getCallbacks } from "../getCallbacks.js";
 
-const defaultAppId = "test-app-deleteCallbacks";
+const defaultProjectId = "test-project-deleteCallbacks";
 const defaultGroupId = "test-group";
 const defaultBy = "tester";
 const defaultByType = "user";
@@ -21,7 +21,7 @@ function makeDeleteCallbacksArgs(
 ): DeleteCallbacksEndpointArgs {
   return {
     query: {
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       ...overrides.query,
     },
     deleteMany: overrides.deleteMany,
@@ -34,7 +34,7 @@ function makeAddCallbackArgs(overrides: any = {}) {
     .toString(36)
     .substr(2, 9)}`;
   return {
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     url: "https://example.com/webhook",
     method: "POST",
     name: `Test Callback ${uniqueId}`,
@@ -50,7 +50,7 @@ function makeTestCallbackArgs(name: string, overrides: any = {}) {
     .toString(36)
     .substr(2, 9)}`;
   return {
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     url: "https://example.com/webhook",
     method: "POST",
     name: `${name}_${uniqueId}`,
@@ -71,7 +71,7 @@ describe("deleteCallbacks integration", () => {
     // Clean up test data before each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
         tag: kObjTags.callback,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -87,7 +87,7 @@ describe("deleteCallbacks integration", () => {
     // Clean up after each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
         tag: kObjTags.callback,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -103,7 +103,7 @@ describe("deleteCallbacks integration", () => {
     // Create test callbacks
     const callback1 = await addCallback({
       args: makeTestCallbackArgs("Callback 1"),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -112,7 +112,7 @@ describe("deleteCallbacks integration", () => {
 
     const callback2 = await addCallback({
       args: makeTestCallbackArgs("Callback 2"),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -122,7 +122,7 @@ describe("deleteCallbacks integration", () => {
     // Verify both callbacks exist
     const beforeResult = await getCallbacks({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });
@@ -131,7 +131,7 @@ describe("deleteCallbacks integration", () => {
     // Delete the first callback
     const deleteArgs = makeDeleteCallbacksArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: callback1.id },
       },
     });
@@ -145,7 +145,7 @@ describe("deleteCallbacks integration", () => {
     // Verify only the second callback remains
     const afterResult = await getCallbacks({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });
@@ -157,7 +157,7 @@ describe("deleteCallbacks integration", () => {
     // Create test callbacks
     await addCallback({
       args: makeTestCallbackArgs("GET Callback", { method: "GET" }),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -166,7 +166,7 @@ describe("deleteCallbacks integration", () => {
 
     await addCallback({
       args: makeTestCallbackArgs("POST Callback", { method: "POST" }),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -175,7 +175,7 @@ describe("deleteCallbacks integration", () => {
 
     await addCallback({
       args: makeTestCallbackArgs("Another GET Callback", { method: "GET" }),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -185,7 +185,7 @@ describe("deleteCallbacks integration", () => {
     // Verify all callbacks exist
     const beforeResult = await getCallbacks({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });
@@ -194,7 +194,7 @@ describe("deleteCallbacks integration", () => {
     // Delete all GET callbacks
     const deleteArgs = makeDeleteCallbacksArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         method: { eq: "GET" },
       },
       deleteMany: true,
@@ -209,7 +209,7 @@ describe("deleteCallbacks integration", () => {
     // Verify only POST callback remains
     const afterResult = await getCallbacks({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });
@@ -221,7 +221,7 @@ describe("deleteCallbacks integration", () => {
     // Create test callbacks
     const alphaCallback = await addCallback({
       args: makeTestCallbackArgs("Alpha Callback"),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -230,7 +230,7 @@ describe("deleteCallbacks integration", () => {
 
     const betaCallback = await addCallback({
       args: makeTestCallbackArgs("Beta Callback"),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -240,7 +240,7 @@ describe("deleteCallbacks integration", () => {
     // Verify both callbacks exist
     const beforeResult = await getCallbacks({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });
@@ -249,7 +249,7 @@ describe("deleteCallbacks integration", () => {
     // Delete callback by name using the actual name from the created callback
     const deleteArgs = makeDeleteCallbacksArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         name: { eq: alphaCallback.name },
       },
     });
@@ -263,7 +263,7 @@ describe("deleteCallbacks integration", () => {
     // Verify only Beta callback remains
     const afterResult = await getCallbacks({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });
@@ -277,7 +277,7 @@ describe("deleteCallbacks integration", () => {
       args: makeTestCallbackArgs("Callback 1", {
         url: "https://api1.example.com/webhook",
       }),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -288,7 +288,7 @@ describe("deleteCallbacks integration", () => {
       args: makeTestCallbackArgs("Callback 2", {
         url: "https://api2.example.com/webhook",
       }),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -298,7 +298,7 @@ describe("deleteCallbacks integration", () => {
     // Verify both callbacks exist
     const beforeResult = await getCallbacks({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });
@@ -307,7 +307,7 @@ describe("deleteCallbacks integration", () => {
     // Delete callback by URL
     const deleteArgs = makeDeleteCallbacksArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         url: { eq: "https://api1.example.com/webhook" },
       },
     });
@@ -321,7 +321,7 @@ describe("deleteCallbacks integration", () => {
     // Verify only second callback remains
     const afterResult = await getCallbacks({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });
@@ -337,7 +337,7 @@ describe("deleteCallbacks integration", () => {
     // Create test callbacks
     await addCallback({
       args: makeTestCallbackArgs("Callback 1", { idempotencyKey: uniqueKey }),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -348,7 +348,7 @@ describe("deleteCallbacks integration", () => {
       args: makeTestCallbackArgs("Callback 2", {
         idempotencyKey: "different-key",
       }),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -358,7 +358,7 @@ describe("deleteCallbacks integration", () => {
     // Verify both callbacks exist
     const beforeResult = await getCallbacks({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });
@@ -367,7 +367,7 @@ describe("deleteCallbacks integration", () => {
     // Delete callback by idempotency key
     const deleteArgs = makeDeleteCallbacksArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         idempotencyKey: { eq: uniqueKey },
       },
     });
@@ -381,7 +381,7 @@ describe("deleteCallbacks integration", () => {
     // Verify only second callback remains
     const afterResult = await getCallbacks({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });
@@ -393,7 +393,7 @@ describe("deleteCallbacks integration", () => {
     // Create test callbacks
     await addCallback({
       args: makeTestCallbackArgs("Callback 1"),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -402,7 +402,7 @@ describe("deleteCallbacks integration", () => {
 
     await addCallback({
       args: makeTestCallbackArgs("Callback 2"),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -412,7 +412,7 @@ describe("deleteCallbacks integration", () => {
     // Verify both callbacks exist
     const beforeResult = await getCallbacks({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });
@@ -421,7 +421,7 @@ describe("deleteCallbacks integration", () => {
     // Delete all callbacks
     const deleteArgs = makeDeleteCallbacksArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
       deleteMany: true,
     });
@@ -435,7 +435,7 @@ describe("deleteCallbacks integration", () => {
     // Verify no callbacks remain
     const afterResult = await getCallbacks({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });
@@ -446,7 +446,7 @@ describe("deleteCallbacks integration", () => {
     // Try to delete a non-existent callback
     const deleteArgs = makeDeleteCallbacksArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: "non-existent-id" },
       },
     });
@@ -468,7 +468,7 @@ describe("deleteCallbacks integration", () => {
         method: "GET",
         url: "https://api.example.com/webhook",
       }),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -480,7 +480,7 @@ describe("deleteCallbacks integration", () => {
         method: "POST",
         url: "https://api.example.com/webhook",
       }),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -492,7 +492,7 @@ describe("deleteCallbacks integration", () => {
         method: "GET",
         url: "https://different.example.com/webhook",
       }),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -502,7 +502,7 @@ describe("deleteCallbacks integration", () => {
     // Verify all callbacks exist
     const beforeResult = await getCallbacks({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });
@@ -511,7 +511,7 @@ describe("deleteCallbacks integration", () => {
     // Delete callbacks by multiple criteria
     const deleteArgs = makeDeleteCallbacksArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         method: { eq: "GET" },
         url: { eq: "https://api.example.com/webhook" },
       },
@@ -527,7 +527,7 @@ describe("deleteCallbacks integration", () => {
     // Verify only the matching callback was deleted
     const afterResult = await getCallbacks({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });

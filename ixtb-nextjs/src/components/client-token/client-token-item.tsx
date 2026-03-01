@@ -11,20 +11,22 @@ export interface IClientTokenItemProps {
 
 export function ClientTokenItem(props: IClientTokenItemProps) {
   const orgId = props.item.meta?.orgId;
-  const appId = props.item.meta?.appId;
+  const projectId = props.item.meta?.projectId;
 
-  if (!orgId || !appId) {
+  if (!orgId || !projectId) {
     return null;
   }
 
   return (
     <ComponentListItem
-      button={<ClientTokenItemMenu clientToken={props.item} appId={appId} />}
+      button={
+        <ClientTokenItemMenu clientToken={props.item} projectId={projectId} />
+      }
     >
       <Link
-        href={kClientPaths.app.org.app.clientToken.single(
+        href={kClientPaths.project.org.project.clientToken.single(
           orgId,
-          appId,
+          projectId,
           props.item.id
         )}
         className="flex-1"

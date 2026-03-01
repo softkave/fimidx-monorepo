@@ -7,7 +7,7 @@ import { addGroup } from "../addGroup.js";
 import { getGroups } from "../getGroups.js";
 import { updateGroups } from "../updateGroups.js";
 
-const defaultAppId = "test-app-updateGroups";
+const defaultProjectId = "test-project-updateGroups";
 const defaultGroupId = "test-group";
 const defaultBy = "tester";
 const defaultByType = "user";
@@ -22,7 +22,7 @@ function makeUpdateGroupsArgs(
       meta: { updatedKey: "updatedValue" },
     },
     query: {
-      appId: defaultAppId,
+      projectId: defaultProjectId,
     },
     ...overrides,
   };
@@ -32,7 +32,7 @@ function makeAddGroupArgs(overrides: any = {}) {
   return {
     name: `Test Group ${Math.random()}`,
     description: "Test description",
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     meta: { key1: "value1", key2: "value2" },
     ...overrides,
   };
@@ -50,7 +50,7 @@ describe("updateGroups integration", () => {
     // Clean up test data before each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
         tag: kObjTags.group,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -66,7 +66,7 @@ describe("updateGroups integration", () => {
     // Clean up after each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
         tag: kObjTags.group,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -102,7 +102,7 @@ describe("updateGroups integration", () => {
         meta: { updatedKey: "updatedValue", newKey: "newValue" },
       },
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: createdGroup.group.id },
       },
     });
@@ -117,7 +117,7 @@ describe("updateGroups integration", () => {
     // Verify the update
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: createdGroup.group.id },
       },
     };
@@ -156,7 +156,7 @@ describe("updateGroups integration", () => {
         name: "Only Name Updated",
       },
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: createdGroup.group.id },
       },
     });
@@ -171,7 +171,7 @@ describe("updateGroups integration", () => {
     // Verify only name was updated
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: createdGroup.group.id },
       },
     };
@@ -204,7 +204,7 @@ describe("updateGroups integration", () => {
     const group3 = await addGroup({
       args: makeAddGroupArgs({
         name: "Group 3",
-        appId: "test-app-updateGroups-different",
+        projectId: "test-project-updateGroups-different",
       }),
       by: defaultBy,
       byType: defaultByType,
@@ -212,14 +212,14 @@ describe("updateGroups integration", () => {
       storage,
     });
 
-    // Update all groups in the default app
+    // Update all groups in the default project
     const updateArgs = makeUpdateGroupsArgs({
       update: {
         description: "Updated for all groups",
         meta: { bulkUpdate: "true" },
       },
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
       updateMany: true,
     });
@@ -231,10 +231,10 @@ describe("updateGroups integration", () => {
       storage,
     });
 
-    // Verify all groups in the app were updated
+    // Verify all groups in the project were updated
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
     };
 
@@ -250,14 +250,16 @@ describe("updateGroups integration", () => {
     expect(updatedGroups[1].description).toBe("Updated for all groups");
     expect(updatedGroups[1].meta).toEqual({ bulkUpdate: "true" });
 
-    // Verify the group in different app was not updated
-    const differentAppResult = await getGroups({
-      args: { query: { appId: "test-app-updateGroups-different" } },
+    // Verify the group in different project was not updated
+    const differentProjectResult = await getGroups({
+      args: { query: { projectId: "test-project-updateGroups-different" } },
       storage,
     });
-    expect(differentAppResult.groups).toHaveLength(1);
-    expect(differentAppResult.groups[0].description).toBe("Test description");
-    expect(differentAppResult.groups[0].meta).toEqual({
+    expect(differentProjectResult.groups).toHaveLength(1);
+    expect(differentProjectResult.groups[0].description).toBe(
+      "Test description"
+    );
+    expect(differentProjectResult.groups[0].meta).toEqual({
       key1: "value1",
       key2: "value2",
     });
@@ -287,7 +289,7 @@ describe("updateGroups integration", () => {
         description: "Updated by name query",
       },
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         name: { eq: "Target Group" },
       },
       updateMany: true,
@@ -302,7 +304,7 @@ describe("updateGroups integration", () => {
 
     // Verify only the target group was updated
     const result = await getGroups({
-      args: { query: { appId: defaultAppId } },
+      args: { query: { projectId: defaultProjectId } },
       storage,
     });
     expect(result.groups).toHaveLength(2);
@@ -338,7 +340,7 @@ describe("updateGroups integration", () => {
         meta: { updatedByCreator: "user-a" },
       },
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         createdBy: { eq: "user-a" },
       },
       updateMany: true,
@@ -353,7 +355,7 @@ describe("updateGroups integration", () => {
 
     // Verify only user-a's groups were updated
     const result = await getGroups({
-      args: { query: { appId: defaultAppId } },
+      args: { query: { projectId: defaultProjectId } },
       storage,
     });
     expect(result.groups).toHaveLength(2);
@@ -379,7 +381,7 @@ describe("updateGroups integration", () => {
     const updateArgs = makeUpdateGroupsArgs({
       update: {},
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: createdGroup.group.id },
       },
     });
@@ -394,7 +396,7 @@ describe("updateGroups integration", () => {
     // Verify group remains unchanged except for updatedBy fields
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: createdGroup.group.id },
       },
     };
@@ -424,7 +426,7 @@ describe("updateGroups integration", () => {
         name: "Updated Timestamp Test",
       },
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: createdGroup.group.id },
       },
     });
@@ -441,7 +443,7 @@ describe("updateGroups integration", () => {
     // Verify timestamps
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: createdGroup.group.id },
       },
     };
@@ -479,7 +481,7 @@ describe("updateGroups integration", () => {
         meta: { specialKey: "value with spaces and symbols: !@#" },
       },
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: createdGroup.group.id },
       },
     });
@@ -494,7 +496,7 @@ describe("updateGroups integration", () => {
     // Verify special characters are preserved
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: createdGroup.group.id },
       },
     };
@@ -534,7 +536,7 @@ describe("updateGroups integration", () => {
         meta: { longKey: longMetaValue },
       },
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: createdGroup.group.id },
       },
     });
@@ -549,7 +551,7 @@ describe("updateGroups integration", () => {
     // Verify long values are preserved
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: createdGroup.group.id },
       },
     };
@@ -568,7 +570,7 @@ describe("updateGroups integration", () => {
         name: "This should not update anything",
       },
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: "non-existent-id" },
       },
     });
@@ -585,7 +587,7 @@ describe("updateGroups integration", () => {
 
     // Verify no groups exist
     const result = await getGroups({
-      args: { query: { appId: defaultAppId } },
+      args: { query: { projectId: defaultProjectId } },
       storage,
     });
     expect(result.groups).toHaveLength(0);
@@ -632,7 +634,7 @@ describe("updateGroups integration", () => {
         meta: { category: "tech", priority: "high", updated: "true" },
       },
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         meta: [
           { op: "eq", field: "category", value: "tech" },
           { op: "eq", field: "priority", value: "high" },
@@ -650,7 +652,7 @@ describe("updateGroups integration", () => {
 
     // Verify only the matching group was updated
     const result = await getGroups({
-      args: { query: { appId: defaultAppId } },
+      args: { query: { projectId: defaultProjectId } },
       storage,
     });
     expect(result.groups).toHaveLength(3);

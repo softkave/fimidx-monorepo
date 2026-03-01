@@ -13,7 +13,7 @@ export interface ILogFilesConsumption {
 // Zod schemas
 export const ProcessingOptionsSchema = z.object({
   metadata: z.record(z.string(), z.any()).optional(),
-  appId: z.string().optional(),
+  projectId: z.string().optional(),
   clientToken: z.string().optional(),
   serverURL: z.string().optional(),
 });

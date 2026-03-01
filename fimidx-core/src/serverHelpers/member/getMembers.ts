@@ -25,7 +25,7 @@ export function getMembersObjQuery(params: { args: GetMembersEndpointArgs }) {
     createdBy,
     updatedBy,
     meta,
-    appId,
+    projectId,
     id,
     groupId,
     email,
@@ -103,7 +103,7 @@ export function getMembersObjQuery(params: { args: GetMembersEndpointArgs }) {
   }
 
   const objQuery: IObjQuery = {
-    appId,
+    projectId,
     partQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
     metaQuery: { id, createdAt, updatedAt, createdBy, updatedBy },
     topLevelFields: groupId ? { groupId: { eq: groupId } } : undefined,
@@ -113,12 +113,12 @@ export function getMembersObjQuery(params: { args: GetMembersEndpointArgs }) {
 }
 
 export async function getMembersPermissions(params: {
-  appId: string;
+  projectId: string;
   memberIds: string[];
   groupId: string;
   storage?: IObjStorage;
 }) {
-  const { appId, memberIds, groupId, storage } = params;
+  const { projectId, memberIds, groupId, storage } = params;
 
   // If memberIds is empty, return empty permissions to avoid SQL syntax error
   if (memberIds.length === 0) {
@@ -148,7 +148,7 @@ export async function getMembersPermissions(params: {
   const { permissions } = await getPermissions({
     args: {
       query: {
-        appId,
+        projectId,
         meta: metaConditions,
       },
     },
@@ -192,7 +192,7 @@ export async function getMembers(params: {
 
   const { permissions } = includePermissions
     ? await getMembersPermissions({
-        appId: args.query.appId,
+        projectId: args.query.projectId,
         memberIds: objs.map((obj) => obj.objRecord.memberId),
         groupId: args.query.groupId,
         storage,

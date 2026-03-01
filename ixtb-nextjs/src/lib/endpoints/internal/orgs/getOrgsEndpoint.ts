@@ -17,7 +17,7 @@ export const getOrgsEndpoint: NextUserAuthenticatedEndpointFn<
   const requests = await getMemberRequests({
     args: {
       query: {
-        appId: kId0,
+        projectId: kId0,
         memberId: userId,
         status: kMemberStatus.accepted,
       },
@@ -31,7 +31,7 @@ export const getOrgsEndpoint: NextUserAuthenticatedEndpointFn<
     groupIds.length > 0
       ? await getGroups({
           args: {
-            query: { id: { in: groupIds }, appId: kId0 },
+            query: { id: { in: groupIds }, projectId: kId0 },
           },
         })
       : { groups: [] };

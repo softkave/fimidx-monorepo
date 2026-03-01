@@ -4,7 +4,7 @@
 - Current offerings will be:
   - objs (underlying all offerings & external)
   - group (internal & external)
-  - app (internal)
+  - project (internal)
   - client token (internal & external)
   - callback (internal-use & external)
   - logs (external)

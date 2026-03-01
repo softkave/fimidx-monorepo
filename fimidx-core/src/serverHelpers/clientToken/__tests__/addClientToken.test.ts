@@ -16,7 +16,7 @@ describe("addClientToken integration", () => {
     testName: "addClientToken",
   });
 
-  const { appId, groupId, by, byType } = testData;
+  const { projectId, groupId, by, byType } = testData;
 
   function makeAddClientTokenArgs(
     overrides: Partial<AddClientTokenEndpointArgs> = {}
@@ -26,7 +26,7 @@ describe("addClientToken integration", () => {
       groupId,
       name: testData.tokenName,
       description: "Test description",
-      appId,
+      projectId,
       meta: { key: "value" },
       permissions: [
         {
@@ -50,7 +50,7 @@ describe("addClientToken integration", () => {
     return {
       name: `${name}_${testData.tokenName}`,
       description: "Test description",
-      appId,
+      projectId,
       meta: { key: "value" },
       permissions: [
         {
@@ -153,7 +153,7 @@ describe("addClientToken integration", () => {
     expect(result.clientToken.permissions![0].entity).toBe("user");
     expect(result.clientToken.permissions![0].action).toBe("read");
     expect(result.clientToken.permissions![0].target).toBe("document");
-    expect(result.clientToken.appId).toBe(appId);
+    expect(result.clientToken.projectId).toBe(projectId);
     expect(result.clientToken.createdBy).toBe(by);
     expect(result.clientToken.createdByType).toBe(byType);
     expect(result.clientToken.id).toBeDefined();
@@ -183,7 +183,7 @@ describe("addClientToken integration", () => {
     expect(result.clientToken.permissions).toBeNull();
   });
 
-  it("fails when trying to create a token with duplicate name in same app", async () => {
+  it("fails when trying to create a token with duplicate name in same project", async () => {
     const args = makeAddClientTokenArgs({
       name: "Duplicate Name Token",
     });
@@ -210,18 +210,18 @@ describe("addClientToken integration", () => {
     ).rejects.toThrow("Failed to add client token");
   });
 
-  it("allows tokens with same name in different apps", async () => {
+  it("allows tokens with same name in different projects", async () => {
     const args1 = makeAddClientTokenArgs({
       name: "Same Name Token",
-      appId: "app1",
+      projectId: "project1",
     });
 
     const args2 = makeAddClientTokenArgs({
       name: "Same Name Token",
-      appId: "app2",
+      projectId: "project2",
     });
 
-    // Both tokens should succeed since they're in different apps
+    // Both tokens should succeed since they're in different projects
     const result1 = await addClientToken({
       args: args1,
       by: by,
@@ -237,9 +237,9 @@ describe("addClientToken integration", () => {
     });
 
     expect(result1.clientToken.name).toBe("Same Name Token");
-    expect(result1.clientToken.appId).toBe("app1");
+    expect(result1.clientToken.projectId).toBe("project1");
     expect(result2.clientToken.name).toBe("Same Name Token");
-    expect(result2.clientToken.appId).toBe("app2");
+    expect(result2.clientToken.projectId).toBe("project2");
   });
 
   it("generates name when not provided", async () => {

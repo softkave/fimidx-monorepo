@@ -17,7 +17,7 @@ export interface IGroup {
   updatedBy: string;
   updatedByType: string;
   meta?: Record<string, string> | null;
-  appId: string;
+  projectId: string;
   groupId: string;
 }
 
@@ -31,7 +31,7 @@ export const addGroupSchema = z.object({
   name: z.string(),
   description: z.string().optional(),
   meta: z.record(z.string(), z.string()).optional(),
-  appId: z.string(),
+  projectId: z.string(),
 });
 
 export const groupQuerySchema = z.object({
@@ -42,7 +42,7 @@ export const groupQuerySchema = z.object({
   createdBy: stringMetaQuerySchema.optional(),
   updatedBy: stringMetaQuerySchema.optional(),
   meta: objPartQueryListSchema.optional(),
-  appId: z.string(),
+  projectId: z.string(),
 });
 
 export const updateGroupsSchema = z.object({

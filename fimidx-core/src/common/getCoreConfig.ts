@@ -26,7 +26,8 @@ export function getCoreConfig(): CoreConfig {
   const cleanupObjsUrl = process.env.CLEANUP_OBJS_URL;
   const cleanupObjsIntervalMs = process.env.CLEANUP_OBJS_INTERVAL_MS;
   const nodeServerHttpPort = process.env.NODE_SERVER_HTTP_PORT;
-  const fimidxLoggerAppId = process.env.NEXT_PUBLIC_FIMIDX_LOGGER_APP_ID;
+  const fimidxLoggerProjectId =
+    process.env.NEXT_PUBLIC_FIMIDX_LOGGER_PROJECT_ID;
   const fimidxLoggerClientToken =
     process.env.NEXT_PUBLIC_FIMIDX_LOGGER_CLIENT_TOKEN;
   const fimidxLoggerServerUrl =
@@ -76,7 +77,7 @@ export function getCoreConfig(): CoreConfig {
       port: nodeServerHttpPort,
     },
     logger: {
-      fimidxAppId: fimidxLoggerAppId,
+      fimidxProjectId: fimidxLoggerProjectId,
       fimidxClientToken: fimidxLoggerClientToken,
       fimidxServerUrl: fimidxLoggerServerUrl,
     },

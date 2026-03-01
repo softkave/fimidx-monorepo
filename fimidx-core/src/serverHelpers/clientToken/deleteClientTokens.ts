@@ -31,7 +31,7 @@ export async function deleteClientTokens(
       // Delete specific tokens by their IDs
       await deleteManyObjs({
         objQuery: {
-          appId: query.appId,
+          projectId: query.projectId,
           metaQuery: {
             id: { in: filteredClientTokenIds },
           },

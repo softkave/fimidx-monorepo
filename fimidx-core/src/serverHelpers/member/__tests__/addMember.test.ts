@@ -7,6 +7,7 @@ import {
   expect,
   it,
 } from "vitest";
+import type { AddMemberEndpointArgs } from "../../../definitions/member.js";
 import { addMember } from "../addMember.js";
 import { getMembers } from "../getMembers.js";
 import { createTestSetup, makeTestData } from "./testUtils.js";
@@ -16,14 +17,16 @@ describe("addMember integration", () => {
     testName: "addMember",
   });
 
-  const { appId, groupId, by, byType } = testData;
+  const { projectId, groupId, by, byType } = testData;
 
-  function makeAddMemberArgs(overrides: any = {}) {
+  function makeAddMemberArgs(
+    overrides: Partial<AddMemberEndpointArgs> = {}
+  ): AddMemberEndpointArgs {
     const testData = makeTestData({ testName: "member" });
     return {
       name: testData.name,
       description: "Test description",
-      appId,
+      projectId,
       groupId,
       email: testData.email,
       memberId: testData.memberId,
@@ -65,7 +68,7 @@ describe("addMember integration", () => {
     expect(result.member.description).toBe(args.description);
     expect(result.member.email).toBe(args.email);
     expect(result.member.memberId).toBe(args.memberId);
-    expect(result.member.appId).toBe(args.appId);
+    expect(result.member.projectId).toBe(args.projectId);
     expect(result.member.groupId).toBe(args.groupId);
     expect(result.member.status).toBe("pending");
     expect(result.member.permissions).toBeNull(); // No permissions by default
@@ -210,7 +213,7 @@ describe("addMember integration", () => {
     const result = await getMembers({
       args: {
         query: {
-          appId,
+          projectId,
           groupId,
           memberId: { eq: args.memberId },
         },

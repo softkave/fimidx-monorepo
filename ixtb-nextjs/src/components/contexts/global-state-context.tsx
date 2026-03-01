@@ -3,28 +3,28 @@
 import { createContext, useMemo, useState } from "react";
 
 export interface IGlobalState {
-  appName?: string;
+  projectName?: string;
   orgName?: string;
-  setAppName: (appName: string | undefined) => void;
+  setProjectName: (projectName: string | undefined) => void;
   setOrgName: (orgName: string | undefined) => void;
 }
 
 export const GlobalStateContext = createContext<IGlobalState>({
-  setAppName: () => {},
+  setProjectName: () => {},
   setOrgName: () => {},
 });
 
 export function GlobalStateProvider(props: { children: React.ReactNode }) {
-  const [appName, setAppName] = useState<string | undefined>(undefined);
+  const [projectName, setProjectName] = useState<string | undefined>(undefined);
   const [orgName, setOrgName] = useState<string | undefined>(undefined);
   const globalState = useMemo(() => {
     return {
-      appName,
-      setAppName,
+      projectName,
+      setProjectName,
       orgName,
       setOrgName,
     };
-  }, [appName, orgName]);
+  }, [projectName, orgName]);
 
   return (
     <GlobalStateContext.Provider value={globalState}>

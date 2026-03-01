@@ -1,5 +1,8 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import type { UpdateMonitorsEndpointArgs } from "../../../definitions/monitor.js";
+import type {
+  AddMonitorEndpointArgs,
+  UpdateMonitorsEndpointArgs,
+} from "../../../definitions/monitor.js";
 import { kObjTags } from "../../../definitions/obj.js";
 import { createDefaultStorage } from "../../../storage/config.js";
 import type { IObjStorage } from "../../../storage/types.js";
@@ -7,7 +10,7 @@ import { addMonitor } from "../addMonitor.js";
 import { getMonitors } from "../getMonitors.js";
 import { updateMonitors } from "../updateMonitors.js";
 
-const defaultAppId = "test-app-updateMonitors";
+const defaultProjectId = "test-project-updateMonitors";
 const defaultGroupId = "test-group";
 const defaultBy = "tester";
 const defaultByType = "user";
@@ -20,7 +23,7 @@ function makeUpdateMonitorsArgs(
 ): UpdateMonitorsEndpointArgs {
   return {
     query: {
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       ...overrides.query,
     },
     update: {
@@ -29,13 +32,15 @@ function makeUpdateMonitorsArgs(
   };
 }
 
-function makeAddMonitorArgs(overrides: any = {}) {
+function makeAddMonitorArgs(
+  overrides: Partial<AddMonitorEndpointArgs> = {}
+): AddMonitorEndpointArgs {
   testCounter++;
   const uniqueId = `${testCounter}_${Date.now()}_${Math.random()
     .toString(36)
     .substr(2, 9)}`;
   return {
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     name: `Test Monitor ${uniqueId}`,
     description: "Test description",
     status: "enabled",
@@ -66,7 +71,7 @@ describe("updateMonitors integration", () => {
     // Clean up test data before each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
         tag: kObjTags.monitor,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -82,7 +87,7 @@ describe("updateMonitors integration", () => {
     // Clean up after each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
         tag: kObjTags.monitor,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -106,7 +111,7 @@ describe("updateMonitors integration", () => {
 
     const args = makeUpdateMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: monitor.monitor.id },
       },
       update: {
@@ -125,7 +130,7 @@ describe("updateMonitors integration", () => {
     // Verify the update
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: monitor.monitor.id },
       },
     };
@@ -151,7 +156,7 @@ describe("updateMonitors integration", () => {
 
     const args = makeUpdateMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: monitor.monitor.id },
       },
       update: {
@@ -169,7 +174,7 @@ describe("updateMonitors integration", () => {
     // Verify the update
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: monitor.monitor.id },
       },
     };
@@ -195,7 +200,7 @@ describe("updateMonitors integration", () => {
 
     const args = makeUpdateMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: monitor.monitor.id },
       },
       update: {
@@ -213,7 +218,7 @@ describe("updateMonitors integration", () => {
     // Verify the update
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: monitor.monitor.id },
       },
     };
@@ -242,7 +247,7 @@ describe("updateMonitors integration", () => {
 
     const args = makeUpdateMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: monitor.monitor.id },
       },
       update: {
@@ -260,7 +265,7 @@ describe("updateMonitors integration", () => {
     // Verify the update
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: monitor.monitor.id },
       },
     };
@@ -309,7 +314,7 @@ describe("updateMonitors integration", () => {
 
     const args = makeUpdateMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: monitor.monitor.id },
       },
       update: {
@@ -327,7 +332,7 @@ describe("updateMonitors integration", () => {
     // Verify the update
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: monitor.monitor.id },
       },
     };
@@ -358,7 +363,7 @@ describe("updateMonitors integration", () => {
 
     const args = makeUpdateMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         name: { eq: "Error Monitor" },
       },
       update: {
@@ -376,7 +381,7 @@ describe("updateMonitors integration", () => {
     // Verify the update
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
     };
 
@@ -413,7 +418,7 @@ describe("updateMonitors integration", () => {
 
     const args = makeUpdateMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         createdBy: { eq: "user1" },
       },
       update: {
@@ -431,7 +436,7 @@ describe("updateMonitors integration", () => {
     // Verify the update
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
     };
 
@@ -462,7 +467,7 @@ describe("updateMonitors integration", () => {
 
     const args = makeUpdateMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: monitor.monitor.id },
       },
       update: {
@@ -484,7 +489,7 @@ describe("updateMonitors integration", () => {
     // Verify the update
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: monitor.monitor.id },
       },
     };
@@ -515,7 +520,7 @@ describe("updateMonitors integration", () => {
 
     const args = makeUpdateMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         name: { eq: "Non-existent Monitor" },
       },
       update: {
@@ -533,7 +538,7 @@ describe("updateMonitors integration", () => {
     // Verify no changes were made
     const getArgs = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: monitor.monitor.id },
       },
     };

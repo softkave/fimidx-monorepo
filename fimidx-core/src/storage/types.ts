@@ -118,7 +118,7 @@ export interface BulkUpsertParams {
   conflictOnKeys?: string[];
   onConflict?: OnConflict;
   tag: string;
-  appId: string;
+  projectId: string;
   groupId: string;
   createdBy: string;
   createdByType: string;

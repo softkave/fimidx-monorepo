@@ -16,7 +16,7 @@ export interface ILogField {
   isArrayCompressed: boolean;
   createdAt: Date;
   updatedAt: Date;
-  appId: string;
+  projectId: string;
   groupId: string;
 }
 
@@ -25,13 +25,13 @@ export interface ILog {
   createdAt: Date;
   createdBy: string;
   createdByType: string;
-  appId: string;
+  projectId: string;
   groupId: string;
   data: AnyObject;
 }
 
 export const ingestLogsSchema = z.object({
-  appId: z.string(),
+  projectId: z.string(),
   logs: inputObjRecordArraySchema,
 });
 
@@ -41,7 +41,7 @@ export const logsMetaQuerySchema = z.object({
 });
 
 export const logQuerySchema = z.object({
-  appId: z.string(),
+  projectId: z.string(),
   logsQuery: objPartLogicalQuerySchema.optional(),
   metaQuery: logsMetaQuerySchema.optional(),
 });
@@ -54,7 +54,7 @@ export const getLogsSchema = z.object({
 });
 
 export const getLogFieldsSchema = z.object({
-  appId: z.string(),
+  projectId: z.string(),
   page: z.number().optional(),
   limit: z.number().optional(),
 });

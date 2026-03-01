@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default async function SigninPage(): Promise<JSX.Element> {
   const session = await auth();
   if (session) {
-    return redirect(kClientPaths.withURL(kClientPaths.app.index));
+    return redirect(kClientPaths.withURL(kClientPaths.project.index));
   }
 
   return <WebSignin />;

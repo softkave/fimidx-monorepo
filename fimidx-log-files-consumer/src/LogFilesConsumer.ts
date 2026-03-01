@@ -12,7 +12,7 @@ import {
 interface IAwakeFile {
   path: string;
   metadata: Record<string, any>;
-  appId: string;
+  projectId: string;
   clientToken: string;
   serverURL?: string;
 }
@@ -20,7 +20,7 @@ interface IAwakeFile {
 interface IAsleepFile {
   path: string;
   metadata: Record<string, any>;
-  appId: string;
+  projectId: string;
   clientToken: string;
   serverURL?: string;
 }
@@ -176,15 +176,15 @@ export class LogFilesConsumer implements ILogFilesConsumer {
       // Merge config options (per-entry config takes priority)
       const mergedConfig = {
         metadata: logFile.metadata || config.metadata || {},
-        appId: logFile.appId || config.appId,
+        projectId: logFile.projectId || config.projectId,
         clientToken: logFile.clientToken || config.clientToken,
         serverURL: logFile.serverURL || config.serverURL,
       };
 
       // Validate that required fields are present
-      if (!mergedConfig.appId || !mergedConfig.clientToken) {
+      if (!mergedConfig.projectId || !mergedConfig.clientToken) {
         throw new Error(
-          `Missing required config for file ${logFile.path}: appId and clientToken are required`,
+          `Missing required config for file ${logFile.path}: projectId and clientToken are required`,
         );
       }
 
@@ -200,7 +200,7 @@ export class LogFilesConsumer implements ILogFilesConsumer {
       this.awakeFiles.set(fileKey, {
         path: logFile.path,
         metadata: mergedConfig.metadata,
-        appId: mergedConfig.appId!,
+        projectId: mergedConfig.projectId!,
         clientToken: mergedConfig.clientToken!,
         serverURL: mergedConfig.serverURL,
       });
@@ -290,7 +290,7 @@ export class LogFilesConsumer implements ILogFilesConsumer {
           {
             path: awakeFile.path,
             metadata: awakeFile.metadata,
-            appId: awakeFile.appId,
+            projectId: awakeFile.projectId,
             clientToken: awakeFile.clientToken,
             serverURL: awakeFile.serverURL,
           },

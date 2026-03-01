@@ -16,7 +16,7 @@ describe("addClientTokenPermissions integration", () => {
     testName: "addClientTokenPermissions",
   });
 
-  const { appId, groupId, by, byType } = testData;
+  const { projectId, groupId, by, byType } = testData;
 
   function makeAddClientTokenArgs(overrides: any = {}) {
     const testData = makeTestData({ testName: "token" });
@@ -24,7 +24,7 @@ describe("addClientTokenPermissions integration", () => {
       groupId,
       name: testData.tokenName,
       description: "Test description",
-      appId,
+      projectId,
       permissions: [],
       ...overrides,
     };
@@ -36,7 +36,7 @@ describe("addClientTokenPermissions integration", () => {
       by,
       byType,
       groupId,
-      appId,
+      projectId,
       permissions: [
         {
           entity: "user",

@@ -169,19 +169,26 @@ export async function addClientTokenPermissions(params: {
   by: string;
   byType: string;
   groupId: string;
-  appId: string;
+  projectId: string;
   permissions: IPermissionAtom[];
   clientTokenId: string;
   storage?: IObjStorage;
 }) {
-  const { by, byType, groupId, appId, permissions, clientTokenId, storage } =
-    params;
+  const {
+    by,
+    byType,
+    groupId,
+    projectId,
+    permissions,
+    clientTokenId,
+    storage,
+  } = params;
   const { permissions: newPermissions } = await addPermissions({
     by,
     byType,
     groupId,
     args: {
-      appId,
+      projectId,
       permissions: permissions.map((permission) =>
         getFimidxManagedClientTokenPermission({
           permission,

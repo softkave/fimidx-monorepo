@@ -16,14 +16,14 @@ describe("updateMemberPermissions integration", () => {
     testName: "updateMemberPermissions",
   });
 
-  const { appId, groupId, by, byType } = testData;
+  const { projectId, groupId, by, byType } = testData;
 
   function makeAddMemberArgs(overrides: any = {}) {
     const testData = makeTestData({ testName: "member" });
     return {
       name: testData.name,
       description: "Test description",
-      appId,
+      projectId,
       groupId,
       email: testData.email,
       memberId: testData.memberId,
@@ -37,7 +37,7 @@ describe("updateMemberPermissions integration", () => {
       query: {
         memberId: "test-member-id",
         groupId,
-        appId,
+        projectId,
         ...overrides.query,
       },
       update: {
@@ -216,11 +216,11 @@ describe("updateMemberPermissions integration", () => {
     ).rejects.toThrow("Member not found");
   });
 
-  it("handles different app IDs", async () => {
-    // Create a member in a different app
+  it("handles different project IDs", async () => {
+    // Create a member in a different project
     const memberArgs = makeAddMemberArgs({
       memberId: "test-member-updateMemberPermissions",
-      appId: "different-app",
+      projectId: "different-project",
     });
     const member = await addMember({
       args: memberArgs,
@@ -232,7 +232,7 @@ describe("updateMemberPermissions integration", () => {
     const args = makeUpdateMemberPermissionsArgs({
       query: {
         memberId: member.member.memberId,
-        appId: "different-app",
+        projectId: "different-project",
       },
       update: {
         permissions: [
@@ -253,7 +253,7 @@ describe("updateMemberPermissions integration", () => {
     });
 
     expect(result.member).toBeDefined();
-    expect(result.member.appId).toBe("different-app");
+    expect(result.member.projectId).toBe("different-project");
     expect(result.member.permissions).toHaveLength(1);
   });
 

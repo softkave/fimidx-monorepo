@@ -1,10 +1,10 @@
 import { IOrg } from "@/src/definitions/org";
 import { ValueOf } from "type-fest";
-import { AppsPage } from "../app/apps-page";
+import { ProjectsPage } from "../project/projects-page";
 import { OrgUpdateState } from "./org-update-state";
 
 export const kOrgTabs = {
-  apps: "apps",
+  projects: "projects",
 } as const;
 
 export type OrgTab = ValueOf<typeof kOrgTabs>;
@@ -18,8 +18,10 @@ export function Org(props: IOrgProps) {
   const { defaultTab } = props;
   let contentNode: React.ReactNode = null;
 
-  if (defaultTab === kOrgTabs.apps) {
-    contentNode = <AppsPage orgId={props.org.id} withAppWrapper={false} />;
+  if (defaultTab === kOrgTabs.projects) {
+    contentNode = (
+      <ProjectsPage orgId={props.org.id} withProjectWrapper={false} />
+    );
   }
 
   return (

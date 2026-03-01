@@ -15,7 +15,7 @@ import { UpdateClientTokenForm } from "./update-client-token-form.tsx";
 
 export interface IClientTokenFormSheetProps {
   orgId: string;
-  appId: string;
+  projectId: string;
   clientToken?: IClientToken;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
@@ -33,7 +33,7 @@ export function ClientTokenFormSheet(props: IClientTokenFormSheetProps) {
     onSubmitComplete,
     clientToken,
     orgId,
-    appId,
+    projectId,
     addMessage = "Create a new client token to start adding logs.",
     updateMessage = "Update the client token to change the name or description.",
     addTitle = "New Client Token",
@@ -68,7 +68,7 @@ export function ClientTokenFormSheet(props: IClientTokenFormSheetProps) {
               <AddClientTokenForm
                 onSubmitComplete={handleSubmitComplete}
                 orgId={orgId}
-                appId={appId}
+                projectId={projectId}
               />
             )}
           </div>

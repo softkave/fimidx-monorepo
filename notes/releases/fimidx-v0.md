@@ -1,4 +1,4 @@
-# `fimidx` app `v0.x.x` - Release Notes
+# `fimidx` project `v0.x.x` - Release Notes
 
 ## v0.1.0
 

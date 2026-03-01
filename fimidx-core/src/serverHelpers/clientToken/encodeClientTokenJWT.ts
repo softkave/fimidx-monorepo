@@ -16,16 +16,16 @@ export interface IEncodeClientTokenJWTContent {
   refreshToken?: string;
   duration?: number;
   groupId: string;
-  appId: string;
+  projectId: string;
 }
 
 export async function encodeClientTokenJWT(params: {
   id: string;
   groupId: string;
-  appId: string;
+  projectId: string;
   args: EncodeClientTokenJWTEndpointArgs;
 }) {
-  const { id, groupId, appId, args } = params;
+  const { id, groupId, projectId, args } = params;
   const { refresh, expiresAt: expiresAtDate } = args;
 
   const refreshToken = refresh
@@ -44,7 +44,7 @@ export async function encodeClientTokenJWT(params: {
     refreshToken,
     duration,
     groupId,
-    appId,
+    projectId,
   };
 
   const token = jwt.sign(

@@ -2,14 +2,19 @@ import { and, eq } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
-import type { GetMembersEndpointArgs } from "../../../definitions/member.js";
+import {
+  kMemberStatus,
+  type AddMemberEndpointArgs,
+  type GetMembersEndpointArgs,
+  type IMemberObjRecord,
+} from "../../../definitions/member.js";
 import { kObjTags } from "../../../definitions/obj.js";
 import { createDefaultStorage } from "../../../storage/config.js";
 import type { IObjStorage } from "../../../storage/types.js";
 import { addMember } from "../addMember.js";
 import { getMembers } from "../getMembers.js";
 
-const defaultAppId = "test-app-getMembers";
+const defaultProjectId = "test-project-getMembers";
 const defaultGroupId = "test-group";
 const defaultBy = "tester";
 const defaultByType = "user";
@@ -22,7 +27,7 @@ function makeGetMembersArgs(
 ): GetMembersEndpointArgs {
   return {
     query: {
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       ...overrides.query,
     },
@@ -32,7 +37,9 @@ function makeGetMembersArgs(
   };
 }
 
-function makeAddMemberArgs(overrides: any = {}) {
+function makeAddMemberArgs(
+  overrides: Partial<AddMemberEndpointArgs> = {}
+): AddMemberEndpointArgs {
   testCounter++;
   const uniqueId = `${testCounter}_${Date.now()}_${Math.random()
     .toString(36)
@@ -40,25 +47,7 @@ function makeAddMemberArgs(overrides: any = {}) {
   return {
     name: `Test Member ${uniqueId}`,
     description: "Test description",
-    appId: defaultAppId,
-    groupId: defaultGroupId,
-    email: `test${uniqueId}@example.com`,
-    memberId: `member-${uniqueId}`,
-    permissions: [],
-    ...overrides,
-  };
-}
-
-// Helper function to create members with specific names for testing
-function makeTestMemberArgs(name: string, overrides: any = {}) {
-  testCounter++;
-  const uniqueId = `${testCounter}_${Date.now()}_${Math.random()
-    .toString(36)
-    .substr(2, 9)}`;
-  return {
-    name: `${name}_${uniqueId}`,
-    description: "Test description",
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     groupId: defaultGroupId,
     email: `test${uniqueId}@example.com`,
     memberId: `member-${uniqueId}`,
@@ -69,18 +58,18 @@ function makeTestMemberArgs(name: string, overrides: any = {}) {
 
 // Helper function to insert objFields for the "name" field
 async function insertNameFieldForSorting(params: {
-  appId: string;
+  projectId: string;
   groupId: string;
   tag: string;
 }) {
-  const { appId, groupId, tag } = params;
+  const { projectId, groupId, tag } = params;
   const now = new Date();
 
   const nameField = {
     id: uuidv7(),
     createdAt: now,
     updatedAt: now,
-    appId,
+    projectId,
     groupId,
     tag,
     field: "name",
@@ -110,15 +99,15 @@ describe("getMembers integration", () => {
   beforeEach(async () => {
     // Clean up test data before each test using hard deletes for complete isolation
     try {
-      // Delete all members for all test apps using hard deletes
-      const testAppIds = [
-        defaultAppId,
-        "test-app-getMembers-1",
-        "test-app-getMembers-2",
+      // Delete all members for all test projects using hard deletes
+      const testProjectIds = [
+        defaultProjectId,
+        "test-project-getMembers-1",
+        "test-project-getMembers-2",
       ];
-      for (const appId of testAppIds) {
+      for (const projectId of testProjectIds) {
         await storage.bulkDelete({
-          query: { appId },
+          query: { projectId },
           tag: kObjTags.member,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -127,13 +116,13 @@ describe("getMembers integration", () => {
         });
       }
 
-      // Clean up objFields for test apps
-      for (const appId of testAppIds) {
+      // Clean up objFields for test projects
+      for (const projectId of testProjectIds) {
         await db
           .delete(objFieldsTable)
           .where(
             and(
-              eq(objFieldsTable.appId, appId),
+              eq(objFieldsTable.projectId, projectId),
               eq(objFieldsTable.tag, kObjTags.member)
             )
           );
@@ -146,15 +135,15 @@ describe("getMembers integration", () => {
   afterEach(async () => {
     // Clean up after each test using hard deletes for complete isolation
     try {
-      // Delete all members for all test apps using hard deletes
-      const testAppIds = [
-        defaultAppId,
-        "test-app-getMembers-1",
-        "test-app-getMembers-2",
+      // Delete all members for all test projects using hard deletes
+      const testProjectIds = [
+        defaultProjectId,
+        "test-project-getMembers-1",
+        "test-project-getMembers-2",
       ];
-      for (const appId of testAppIds) {
+      for (const projectId of testProjectIds) {
         await storage.bulkDelete({
-          query: { appId },
+          query: { projectId },
           tag: kObjTags.member,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -163,13 +152,13 @@ describe("getMembers integration", () => {
         });
       }
 
-      // Clean up objFields for test apps
-      for (const appId of testAppIds) {
+      // Clean up objFields for test projects
+      for (const projectId of testProjectIds) {
         await db
           .delete(objFieldsTable)
           .where(
             and(
-              eq(objFieldsTable.appId, appId),
+              eq(objFieldsTable.projectId, projectId),
               eq(objFieldsTable.tag, kObjTags.member)
             )
           );
@@ -249,7 +238,7 @@ describe("getMembers integration", () => {
 
     const args = makeGetMembersArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         groupId: defaultGroupId,
         name: { eq: "Alice Member" },
       },
@@ -291,7 +280,7 @@ describe("getMembers integration", () => {
 
     const args = makeGetMembersArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         groupId: defaultGroupId,
         email: { eq: "alice@example.com" },
       },
@@ -333,7 +322,7 @@ describe("getMembers integration", () => {
 
     const args = makeGetMembersArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         groupId: defaultGroupId,
         memberId: { eq: "alice-123" },
       },
@@ -375,7 +364,7 @@ describe("getMembers integration", () => {
 
     const args = makeGetMembersArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         groupId: "group-1",
       },
     });
@@ -444,7 +433,7 @@ describe("getMembers integration", () => {
   it("sorts by name when objFields are set up", async () => {
     // Set up objFields for name sorting
     await insertNameFieldForSorting({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       tag: kObjTags.member,
     });
@@ -597,7 +586,7 @@ describe("getMembers integration", () => {
 
     const args = makeGetMembersArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         groupId: defaultGroupId,
         meta: [
           {
@@ -623,19 +612,17 @@ describe("getMembers integration", () => {
     // Create test members with different statuses
     const member1Args = makeAddMemberArgs({
       name: "Alice",
-      seed: { status: "pending" },
     });
     const member2Args = makeAddMemberArgs({
       name: "Bob",
-      seed: { status: "accepted" },
     });
 
     // Extract seed from memberArgs
-    const { seed: seed1, ...args1 } = member1Args;
-    const { seed: seed2, ...args2 } = member2Args;
+    const seed1: Partial<IMemberObjRecord> = { status: kMemberStatus.pending };
+    const seed2: Partial<IMemberObjRecord> = { status: kMemberStatus.accepted };
 
     await addMember({
-      args: args1,
+      args: member1Args,
       by: defaultBy,
       byType: defaultByType,
       seed: seed1,
@@ -643,7 +630,7 @@ describe("getMembers integration", () => {
     });
 
     await addMember({
-      args: args2,
+      args: member2Args,
       by: defaultBy,
       byType: defaultByType,
       seed: seed2,
@@ -658,7 +645,7 @@ describe("getMembers integration", () => {
 
     const args = makeGetMembersArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         groupId: defaultGroupId,
         status: { eq: "pending" },
       },

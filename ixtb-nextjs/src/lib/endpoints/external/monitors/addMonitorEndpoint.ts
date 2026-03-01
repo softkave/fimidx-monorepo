@@ -1,4 +1,4 @@
-import { getApp } from "@/src/lib/serverHelpers/app/getApp";
+import { getProject } from "@/src/lib/serverHelpers/project/getProject";
 import {
   addMonitorSchema,
   IAddMonitorEndpointResponse,
@@ -15,15 +15,15 @@ export const addMonitorEndpoint: NextMaybeAuthenticatedEndpointFn<
   } = params;
 
   const input = addMonitorSchema.parse(await req.json());
-  const { app } = await getApp({
-    input: { appId: input.appId },
+  const { project } = await getProject({
+    input: { projectId: input.projectId },
     clientToken,
   });
   const { monitor } = await addMonitor({
     args: input,
     by: getBy().by,
     byType: getBy().byType,
-    groupId: app.orgId,
+    groupId: project.orgId,
   });
 
   const response: IAddMonitorEndpointResponse = {

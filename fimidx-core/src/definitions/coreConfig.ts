@@ -43,7 +43,7 @@ export const coreConfigSchema = z.object({
     port: z.coerce.number(),
   }),
   logger: z.object({
-    fimidxAppId: z.string(),
+    fimidxProjectId: z.string(),
     fimidxClientToken: z.string(),
     fimidxServerUrl: z.string().optional(),
   }),

@@ -19,7 +19,7 @@ import { createTestSetup } from "./testUtils.js";
 
 const testName = "getLogs";
 const { storage, cleanup, testData } = createTestSetup({ testName });
-const { appId, by, byType } = testData;
+const { projectId, by, byType } = testData;
 
 // Test counter to ensure unique names
 let testCounter = 0;
@@ -30,7 +30,7 @@ function makeObjField(overrides: Partial<IObjField> = {}): IObjField {
     id: uuidv7(),
     createdAt: now,
     updatedAt: now,
-    appId: appId,
+    projectId: projectId,
     groupId: "test-group",
     tag: kObjTags.log,
     path: "timestamp",
@@ -48,7 +48,7 @@ async function setupObjFields(fields: IObjField[]) {
       .delete(objFieldsTable)
       .where(
         and(
-          eq(objFieldsTable.appId, fields[0].appId),
+          eq(objFieldsTable.projectId, fields[0].projectId),
           eq(objFieldsTable.tag, fields[0].tag)
         )
       )
@@ -67,7 +67,7 @@ function makeGetLogsArgs(
   testCounter++;
   return {
     query: {
-      appId: appId,
+      projectId: projectId,
       logsQuery: undefined,
       metaQuery: undefined,
     },
@@ -92,9 +92,9 @@ function makeTestLog(overrides: any = {}) {
   };
 }
 
-// Helper to generate a unique appId for each test
-function makeUniqueAppId() {
-  return `test-app-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+// Helper to generate a unique projectId for each test
+function makeUniqueProjectId() {
+  return `test-project-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 describe("getLogs integration", () => {
@@ -115,7 +115,7 @@ describe("getLogs integration", () => {
   });
 
   it("returns empty result when no logs exist", async () => {
-    const args = makeGetLogsArgs({ query: { appId: appId } });
+    const args = makeGetLogsArgs({ query: { projectId: projectId } });
 
     const result = await getLogs({
       args,
@@ -138,7 +138,7 @@ describe("getLogs integration", () => {
 
     await ingestLogs({
       args: {
-        appId: appId,
+        projectId: projectId,
         logs,
       },
       by: by,
@@ -151,7 +151,7 @@ describe("getLogs integration", () => {
     const args1 = makeGetLogsArgs({
       page: 1,
       limit: 2,
-      query: { appId: appId },
+      query: { projectId: projectId },
     });
 
     const result1 = await getLogs({
@@ -168,7 +168,7 @@ describe("getLogs integration", () => {
     const args2 = makeGetLogsArgs({
       page: 2,
       limit: 2,
-      query: { appId: appId },
+      query: { projectId: projectId },
     });
 
     const result2 = await getLogs({
@@ -192,7 +192,7 @@ describe("getLogs integration", () => {
 
     await ingestLogs({
       args: {
-        appId: appId,
+        projectId: projectId,
         logs,
       },
       by: by,
@@ -204,7 +204,7 @@ describe("getLogs integration", () => {
     // Filter by error level
     const args = makeGetLogsArgs({
       query: {
-        appId: appId,
+        projectId: projectId,
         logsQuery: {
           and: [
             {
@@ -237,7 +237,7 @@ describe("getLogs integration", () => {
 
     await ingestLogs({
       args: {
-        appId: appId,
+        projectId: projectId,
         logs,
       },
       by: by,
@@ -249,7 +249,7 @@ describe("getLogs integration", () => {
     // Filter by info level AND api source
     const args = makeGetLogsArgs({
       query: {
-        appId: appId,
+        projectId: projectId,
         logsQuery: {
           and: [
             {
@@ -287,7 +287,7 @@ describe("getLogs integration", () => {
 
     await ingestLogs({
       args: {
-        appId: appId,
+        projectId: projectId,
         logs,
       },
       by: "user1",
@@ -298,7 +298,7 @@ describe("getLogs integration", () => {
 
     await ingestLogs({
       args: {
-        appId: appId,
+        projectId: projectId,
         logs: [makeTestLog({ level: "error", message: "User 2 log" })],
       },
       by: "user2",
@@ -310,7 +310,7 @@ describe("getLogs integration", () => {
     // Filter by creator
     const args = makeGetLogsArgs({
       query: {
-        appId: appId,
+        projectId: projectId,
         metaQuery: {
           createdBy: {
             eq: "user1",
@@ -338,7 +338,7 @@ describe("getLogs integration", () => {
       type: "string",
       arrayTypes: [],
       isArrayCompressed: false,
-      appId: appId,
+      projectId: projectId,
     });
     await setupObjFields([timestampField]);
 
@@ -352,7 +352,7 @@ describe("getLogs integration", () => {
 
     await ingestLogs({
       args: {
-        appId: appId,
+        projectId: projectId,
         logs,
       },
       by: by,
@@ -369,7 +369,7 @@ describe("getLogs integration", () => {
           direction: "desc",
         },
       ],
-      query: { appId: appId },
+      query: { projectId: projectId },
     });
 
     const result = await getLogs({
@@ -390,7 +390,7 @@ describe("getLogs integration", () => {
       type: "string",
       arrayTypes: [],
       isArrayCompressed: false,
-      appId: appId,
+      projectId: projectId,
     });
     await setupObjFields([levelField]);
 
@@ -404,7 +404,7 @@ describe("getLogs integration", () => {
 
     await ingestLogs({
       args: {
-        appId: appId,
+        projectId: projectId,
         logs,
       },
       by: by,
@@ -421,7 +421,7 @@ describe("getLogs integration", () => {
           direction: "asc",
         },
       ],
-      query: { appId: appId },
+      query: { projectId: projectId },
     });
 
     const result = await getLogs({
@@ -460,7 +460,7 @@ describe("getLogs integration", () => {
 
     await ingestLogs({
       args: {
-        appId: appId,
+        projectId: projectId,
         logs,
       },
       by: by,
@@ -472,7 +472,7 @@ describe("getLogs integration", () => {
     // Filter by nested field
     const args = makeGetLogsArgs({
       query: {
-        appId: appId,
+        projectId: projectId,
         logsQuery: {
           and: [
             {
@@ -495,16 +495,16 @@ describe("getLogs integration", () => {
     expect(result.logs[0].data.metadata.user.id).toBe("user1");
   });
 
-  it("returns only logs for the specified appId", async () => {
-    // Create logs for different apps
-    const appId1 = makeUniqueAppId();
-    const appId2 = makeUniqueAppId();
-    const logs1 = [makeTestLog({ level: "info", message: "App 1 log" })];
-    const logs2 = [makeTestLog({ level: "info", message: "App 2 log" })];
+  it("returns only logs for the specified projectId", async () => {
+    // Create logs for different projects
+    const projectId1 = makeUniqueProjectId();
+    const projectId2 = makeUniqueProjectId();
+    const logs1 = [makeTestLog({ level: "info", message: "Project 1 log" })];
+    const logs2 = [makeTestLog({ level: "info", message: "Project 2 log" })];
 
     await ingestLogs({
       args: {
-        appId: appId1,
+        projectId: projectId1,
         logs: logs1,
       },
       by: by,
@@ -515,7 +515,7 @@ describe("getLogs integration", () => {
 
     await ingestLogs({
       args: {
-        appId: appId2,
+        projectId: projectId2,
         logs: logs2,
       },
       by: by,
@@ -524,10 +524,10 @@ describe("getLogs integration", () => {
       storage,
     });
 
-    // Query for app-1 logs
+    // Query for project-1 logs
     const args = makeGetLogsArgs({
       query: {
-        appId: appId1,
+        projectId: projectId1,
       },
     });
 
@@ -537,7 +537,7 @@ describe("getLogs integration", () => {
     });
 
     expect(result.logs.length).toBe(1);
-    expect(result.logs[0].data.message).toBe("App 1 log");
-    expect(result.logs[0].appId).toBe(appId1);
+    expect(result.logs[0].data.message).toBe("Project 1 log");
+    expect(result.logs[0].projectId).toBe(projectId1);
   });
 });

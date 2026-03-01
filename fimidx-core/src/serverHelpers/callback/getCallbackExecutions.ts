@@ -6,10 +6,10 @@ import { objToCallbackExecution } from "./objToCallbackExecution.js";
 
 export async function getCallbackExecutions(params: {
   args: GetCallbackExecutionsEndpointArgs;
-  appId: string;
+  projectId: string;
   storage?: IObjStorage;
 }) {
-  const { args, appId, storage } = params;
+  const { args, projectId, storage } = params;
   const { page: inputPage, limit: inputLimit, sort } = args;
 
   // Convert 1-based pagination to 0-based for storage layer
@@ -18,7 +18,7 @@ export async function getCallbackExecutions(params: {
   const storagePage = pageNumber - 1; // Convert to 0-based
 
   const objQuery: IObjQuery = {
-    appId,
+    projectId,
     partQuery: {
       and: [
         {

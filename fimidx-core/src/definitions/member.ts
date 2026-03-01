@@ -47,7 +47,7 @@ export interface IMember {
   emailLastSentStatus: EmailRecordStatus | (string & {}) | null;
   meta?: Record<string, string> | null;
   name?: string | null;
-  appId: string;
+  projectId: string;
   description?: string | null;
 }
 
@@ -79,7 +79,7 @@ export interface IMemberObjRecordMeta extends NonNullable<IPermissionMeta> {
 
 export const addMemberSchema = z.object({
   groupId: z.string(),
-  appId: z.string(),
+  projectId: z.string(),
   email: z.string().email().optional(),
   memberId: z.string(),
   permissions: z.array(permissionAtomSchema),
@@ -91,7 +91,7 @@ export const addMemberSchema = z.object({
 export const getMemberByMemberIdSchema = z.object({
   memberId: z.string().min(1),
   groupId: z.string(),
-  appId: z.string(),
+  projectId: z.string(),
 });
 
 export const memberQuerySchema = z.object({
@@ -106,7 +106,7 @@ export const memberQuerySchema = z.object({
   meta: objPartQueryListSchema.optional(),
   name: stringMetaQuerySchema.optional(),
   groupId: z.string(),
-  appId: z.string(),
+  projectId: z.string(),
 });
 
 export const updateMembersSchema = z.object({
@@ -125,7 +125,7 @@ export const updateMemberPermissionsSchema = z.object({
   query: z.object({
     memberId: z.string().min(1),
     groupId: z.string(),
-    appId: z.string(),
+    projectId: z.string(),
   }),
   update: z.object({
     permissions: z.array(permissionAtomSchema),
@@ -138,7 +138,7 @@ export const deleteMembersSchema = z.object({
 });
 
 export const respondToMemberRequestSchema = z.object({
-  appId: z.string(),
+  projectId: z.string(),
   groupId: z.string(),
   requestId: z.string().min(1),
   status: z.enum([kMemberStatus.accepted, kMemberStatus.rejected]),
@@ -154,9 +154,9 @@ export const getMembersSchema = z.object({
 
 export const getMemberRequestsSchema = z.object({
   query: z.object({
-    memberId: z.string().min(1),
+    memberId: z.string().min(1).optional(),
     groupId: z.string().optional(),
-    appId: z.string(),
+    projectId: z.string(),
     status: z
       .enum([
         kMemberStatus.pending,
@@ -171,7 +171,7 @@ export const getMemberRequestsSchema = z.object({
 });
 
 export const checkMemberPermissionsSchema = z.object({
-  appId: z.string(),
+  projectId: z.string(),
   memberId: z.string(),
   groupId: z.string(),
   items: z.array(checkPermissionItemSchema),

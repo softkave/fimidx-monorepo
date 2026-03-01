@@ -163,18 +163,19 @@ export async function addMemberPermissions(params: {
   by: string;
   byType: string;
   groupId: string;
-  appId: string;
+  projectId: string;
   permissions: IPermissionAtom[];
   memberId: string;
   storage?: IObjStorage;
 }) {
-  const { by, byType, groupId, appId, permissions, memberId, storage } = params;
+  const { by, byType, groupId, projectId, permissions, memberId, storage } =
+    params;
   const { permissions: newPermissions } = await addPermissions({
     by,
     byType,
     groupId,
     args: {
-      appId,
+      projectId,
       permissions: permissions.map((permission) =>
         getFimidxManagedMemberPermission({
           permission,

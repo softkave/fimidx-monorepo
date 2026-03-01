@@ -1,6 +1,6 @@
 import { IGetUserEndpointResponse } from "fimidx-core/definitions/user";
 import useSWR from "swr";
-import { useAppSession } from "../clientHooks/userHooks.ts";
+import { useProjectSession } from "../clientHooks/userHooks.ts";
 import { handleResponse } from "./utils.ts";
 
 export const kApiUserSWRKeys = {
@@ -16,7 +16,7 @@ async function getUser(url: string) {
 }
 
 export function useGetUser() {
-  const { userId } = useAppSession();
+  const { userId } = useProjectSession();
   const { data, error, isLoading, mutate, isValidating } = useSWR(
     userId ? kApiUserSWRKeys.getUserKey : null,
     getUser

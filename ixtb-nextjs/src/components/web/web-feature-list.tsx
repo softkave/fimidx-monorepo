@@ -11,7 +11,7 @@ export interface IWebFeature {
 export const kFeatureListItems: IWebFeature[] = [
   {
     title: "Logs",
-    description: "View your application logs.",
+    description: "View your project logs.",
     icon: <LogsIcon />,
   },
 ];

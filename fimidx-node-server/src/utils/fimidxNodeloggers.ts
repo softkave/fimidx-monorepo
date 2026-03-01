@@ -6,7 +6,7 @@ import {
 import {fimidxWinstonLogger} from 'fimidx-core/common/logger/winston-logger';
 
 fimidxLogger.mergeMetadata({
-  app: 'fimidx-node-server',
+  project: 'fimidx-node-server',
 });
 
 export const fimidxNodeConsoleLogger: typeof fimidxConsoleLogger =

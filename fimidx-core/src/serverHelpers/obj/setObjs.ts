@@ -30,7 +30,7 @@ export async function setManyObjs(params: {
     conflictOnKeys: input.conflictOnKeys || [],
     onConflict: input.onConflict || "replace",
     tag,
-    appId: input.appId,
+    projectId: input.projectId,
     groupId,
     createdBy: by,
     createdByType: byType,

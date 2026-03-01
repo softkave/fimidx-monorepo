@@ -16,7 +16,7 @@ export interface IClientTokenContainerRenderProps {
 }
 
 export interface IClientTokenContainerProps {
-  appId: string;
+  projectId: string;
   clientTokenId: string;
   render?: (response: IClientTokenContainerRenderProps) => React.ReactNode;
   renderLoading?: () => React.ReactNode;
@@ -24,14 +24,14 @@ export interface IClientTokenContainerProps {
 }
 
 export function ClientTokenContainer(props: IClientTokenContainerProps) {
-  const { appId, clientTokenId, renderLoading, renderError } = props;
+  const { projectId, clientTokenId, renderLoading, renderError } = props;
 
   const args = useMemo(
     (): z.infer<typeof getClientTokensSchema> => ({
       page: 1,
       limit: 1,
       query: {
-        appId: kId0,
+        projectId: kId0,
         id: {
           eq: clientTokenId,
         },

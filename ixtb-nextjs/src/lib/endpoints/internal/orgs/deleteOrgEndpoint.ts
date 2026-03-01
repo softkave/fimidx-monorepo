@@ -22,7 +22,7 @@ export const deleteOrgEndpoint: NextUserAuthenticatedEndpointFn<void> = async (
       id: {
         eq: input.id,
       },
-      appId: kId0,
+      projectId: kId0,
     },
     by: userId,
     byType: kByTypes.user,

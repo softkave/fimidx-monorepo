@@ -62,7 +62,7 @@ export const AddParticipantEmail = ({
                   <Button
                     className="rounded-[8px] bg-blue-500 px-[16px] py-[8px] text-center font-semibold text-white"
                     href={`${kClientPaths.withURL(
-                      kClientPaths.app.myRequests
+                      kClientPaths.project.myRequests
                     )}`}
                   >
                     Accept Invitation

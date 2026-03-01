@@ -23,7 +23,7 @@ export function getClientTokensObjQuery(params: {
   const {
     name,
     meta,
-    appId,
+    projectId,
     id,
     createdAt,
     updatedAt,
@@ -65,7 +65,7 @@ export function getClientTokensObjQuery(params: {
   }
 
   const objQuery: IObjQuery = {
-    appId,
+    projectId,
     partQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
     metaQuery: { id, createdAt, updatedAt, createdBy, updatedBy },
   };
@@ -79,7 +79,8 @@ export async function getClientTokensWithPermissionFilter(params: {
 }) {
   const { args, storage } = params;
   const { query } = args;
-  const { permissionEntity, permissionAction, permissionTarget, appId } = query;
+  const { permissionEntity, permissionAction, permissionTarget, projectId } =
+    query;
 
   // If no permission filters are specified, return all client tokens
   if (!permissionEntity && !permissionAction && !permissionTarget) {
@@ -88,7 +89,7 @@ export async function getClientTokensWithPermissionFilter(params: {
 
   // First, get all client tokens to get their IDs for permission filtering
   const { objs } = await getManyObjs({
-    objQuery: { appId },
+    objQuery: { projectId },
     tag: kObjTags.clientToken,
     limit: 1000,
     page: 0,
@@ -129,7 +130,7 @@ export async function getClientTokensWithPermissionFilter(params: {
       const { permissions } = await getPermissions({
         args: {
           query: {
-            appId,
+            projectId,
             entity: entityQuery,
             meta: [
               {
@@ -175,7 +176,7 @@ export async function getClientTokensWithPermissionFilter(params: {
       const { permissions } = await getPermissions({
         args: {
           query: {
-            appId,
+            projectId,
             action: actionQuery,
             meta: [
               {
@@ -221,7 +222,7 @@ export async function getClientTokensWithPermissionFilter(params: {
       const { permissions } = await getPermissions({
         args: {
           query: {
-            appId,
+            projectId,
             target: targetQuery,
             meta: [
               {
@@ -250,16 +251,16 @@ export async function getClientTokensWithPermissionFilter(params: {
 }
 
 export async function getClientTokensPermissions(params: {
-  appId: string;
+  projectId: string;
   clientTokenIds: string[];
   groupId: string;
   storage?: IObjStorage;
 }) {
-  const { appId, clientTokenIds, groupId, storage } = params;
+  const { projectId, clientTokenIds, groupId, storage } = params;
   const { permissions } = await getPermissions({
     args: {
       query: {
-        appId,
+        projectId,
         meta: [
           {
             op: "in",
@@ -340,7 +341,7 @@ export async function getClientTokens(params: {
 
     // Always include permissions when filtering by permissions
     const { permissions } = await getClientTokensPermissions({
-      appId: args.query.appId,
+      projectId: args.query.projectId,
       clientTokenIds: paginatedObjs.map((obj) => obj.id),
       groupId: paginatedObjs[0]?.groupId || "",
       storage,
@@ -388,7 +389,7 @@ export async function getClientTokens(params: {
 
   const { permissions } = includePermissions
     ? await getClientTokensPermissions({
-        appId: args.query.appId,
+        projectId: args.query.projectId,
         clientTokenIds: objs.map((obj) => obj.id),
         groupId: objs[0]?.groupId || "",
         storage,

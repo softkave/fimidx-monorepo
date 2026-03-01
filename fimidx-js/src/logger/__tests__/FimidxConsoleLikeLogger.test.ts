@@ -50,7 +50,7 @@ describe('FimidxConsoleLikeLogger', () => {
 
     consoleLikeLogger = new FimidxConsoleLikeLogger({
       fimidxLogger: new FimidxLogger({
-        appId: 'test-app',
+        projectId: 'test-project',
         clientToken: 'test-token',
       }),
     });
@@ -71,7 +71,7 @@ describe('FimidxConsoleLikeLogger', () => {
     it('should create logger with default options', () => {
       expect(consoleLikeLogger).toBeInstanceOf(FimidxConsoleLikeLogger);
       expect(FimidxLogger).toHaveBeenCalledWith({
-        appId: 'test-app',
+        projectId: 'test-project',
         clientToken: 'test-token',
       });
     });
@@ -79,7 +79,7 @@ describe('FimidxConsoleLikeLogger', () => {
     it('should create logger with custom options', () => {
       const customLogger = new FimidxConsoleLikeLogger({
         fimidxLogger: new FimidxLogger({
-          appId: 'test-app',
+          projectId: 'test-project',
           clientToken: 'test-token',
         }),
         enableConsoleFallback: false,
@@ -502,7 +502,7 @@ describe('FimidxConsoleLikeLogger', () => {
     it('should disable console fallback when configured', () => {
       const noFallbackLogger = new FimidxConsoleLikeLogger({
         fimidxLogger: new FimidxLogger({
-          appId: 'test-app',
+          projectId: 'test-project',
           clientToken: 'test-token',
         }),
         enableConsoleFallback: false,
@@ -518,7 +518,7 @@ describe('FimidxConsoleLikeLogger', () => {
       // Test the consoleFallback method directly since we can't call non-existent methods
       const noFallbackLogger = new FimidxConsoleLikeLogger({
         fimidxLogger: new FimidxLogger({
-          appId: 'test-app',
+          projectId: 'test-project',
           clientToken: 'test-token',
         }),
         enableConsoleFallback: true,

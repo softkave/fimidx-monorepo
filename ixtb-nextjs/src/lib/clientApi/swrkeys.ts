@@ -3,7 +3,6 @@
 // invalidate the SWR cache using the api path.
 
 import { GetOrgsEndpointArgs } from "@/src/definitions/org";
-import { GetAppsEndpointArgs } from "fimidx-core/definitions/app";
 import { GetCallbacksEndpointArgs } from "fimidx-core/definitions/callback";
 import { GetClientTokensEndpointArgs } from "fimidx-core/definitions/clientToken";
 import { GetGroupsEndpointArgs } from "fimidx-core/definitions/group";
@@ -16,8 +15,8 @@ import {
   GetMembersEndpointArgs,
 } from "fimidx-core/definitions/member";
 import { GetMonitorsEndpointArgs } from "fimidx-core/definitions/monitor";
+import { GetProjectsEndpointArgs } from "fimidx-core/definitions/project";
 import {
-  kApiAppKeys,
   kApiCallbackKeys,
   kApiClientTokenKeys,
   kApiGroupKeys,
@@ -25,6 +24,7 @@ import {
   kApiMemberKeys,
   kApiMonitorKeys,
   kApiOrgKeys,
+  kApiProjectKeys,
 } from "./apikeys";
 
 export const kGroupSWRKeys = {
@@ -45,12 +45,12 @@ export const kOrgSWRKeys = {
   updateOrg: (orgId: string) => kApiOrgKeys.updateOrg(orgId),
 };
 
-export const kAppSWRKeys = {
-  getApps: (params: GetAppsEndpointArgs) =>
-    [kApiAppKeys.getApps(), params] as const,
-  addApp: () => kApiAppKeys.addApp(),
-  deleteApp: () => kApiAppKeys.deleteApp(),
-  updateApp: () => kApiAppKeys.updateApp(),
+export const kProjectSWRKeys = {
+  getProjects: (params: GetProjectsEndpointArgs) =>
+    [kApiProjectKeys.getProjects(), params] as const,
+  addProject: () => kApiProjectKeys.addProject(),
+  deleteProject: () => kApiProjectKeys.deleteProject(),
+  updateProject: () => kApiProjectKeys.updateProject(),
 };
 
 export const kClientTokenSWRKeys = {

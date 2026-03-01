@@ -10,7 +10,7 @@ export function objToClientToken(
     id: obj.id,
     createdAt: obj.createdAt,
     updatedAt: obj.updatedAt,
-    appId: obj.appId,
+    projectId: obj.projectId,
     name: obj.objRecord.name,
     description: obj.objRecord.description,
     meta: obj.objRecord.meta,

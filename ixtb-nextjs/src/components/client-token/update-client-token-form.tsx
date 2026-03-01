@@ -59,7 +59,7 @@ export function UpdateClientTokenForm(props: IUpdateClientTokenFormProps) {
     async (values: z.infer<typeof updateClientTokenFormSchema>) => {
       await updateClientTokenHook.trigger({
         query: {
-          appId: kId0,
+          projectId: kId0,
           id: {
             eq: clientToken.id,
           },

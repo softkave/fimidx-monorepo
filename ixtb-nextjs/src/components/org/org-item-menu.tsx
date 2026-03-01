@@ -40,7 +40,7 @@ export function OrgItemMenu(props: IOrgItemMenuProps) {
         router.push(
           isString(routeAfterDelete)
             ? routeAfterDelete
-            : kClientPaths.app.org.index
+            : kClientPaths.project.org.index
         );
       }
     },

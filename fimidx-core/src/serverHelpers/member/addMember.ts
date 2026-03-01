@@ -28,7 +28,7 @@ export async function addMember(params: {
   const {
     name,
     description,
-    appId,
+    projectId,
     meta,
     permissions,
     groupId,
@@ -47,7 +47,7 @@ export async function addMember(params: {
   if (memberId) {
     const existingMemberId = await getManyObjs({
       objQuery: {
-        appId,
+        projectId,
         topLevelFields: {
           groupId: groupId ? { eq: groupId } : undefined,
         },
@@ -78,7 +78,7 @@ export async function addMember(params: {
   if (email) {
     const existingEmail = await getManyObjs({
       objQuery: {
-        appId,
+        projectId,
         topLevelFields: {
           groupId: groupId ? { eq: groupId } : undefined,
         },
@@ -125,13 +125,15 @@ export async function addMember(params: {
     groupId,
     tag: kObjTags.member,
     input: {
-      appId,
+      projectId,
       items: [objRecord],
       conflictOnKeys: [], // No conflicts expected since we checked manually
       onConflict: "fail",
     },
     storage,
   });
+
+  console.log("newObjs", newObjs);
 
   assert.ok(
     failedItems.length === 0,
@@ -147,7 +149,7 @@ export async function addMember(params: {
       by,
       byType,
       groupId,
-      appId,
+      projectId,
       permissions,
       memberId,
       storage,

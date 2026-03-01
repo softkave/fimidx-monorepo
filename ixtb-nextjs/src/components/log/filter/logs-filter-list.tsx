@@ -12,7 +12,7 @@ import { IWorkingLogPartFilterItem } from "./types";
 
 export interface ILogsFilterListProps {
   orgId: string;
-  appId: string;
+  projectId: string;
   onChange: (filters: IObjPartQueryList) => void;
   filters?: IObjPartQueryList;
   fields: ILogField[];
@@ -133,7 +133,7 @@ function workingFilterToFilter(
 export function LogsFilterList(props: ILogsFilterListProps) {
   const {
     orgId,
-    appId,
+    projectId,
     onChange,
     filters: initialFilters,
     fields,
@@ -191,7 +191,7 @@ export function LogsFilterList(props: ILogsFilterListProps) {
         onChange={(value) => handleChange(value, index)}
         onRemove={() => handleRemoveFilter(index)}
         orgId={orgId}
-        appId={appId}
+        projectId={projectId}
         fields={fields}
         disabled={disabled}
       />

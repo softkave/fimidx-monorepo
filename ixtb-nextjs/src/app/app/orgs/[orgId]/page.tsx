@@ -20,5 +20,7 @@ export default async function Page(
 ): Promise<JSX.Element> {
   const { orgId } = await props.params;
 
-  return redirect(kClientPaths.withURL(kClientPaths.app.org.app.index(orgId)));
+  return redirect(
+    kClientPaths.withURL(kClientPaths.project.org.project.index(orgId))
+  );
 }

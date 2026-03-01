@@ -24,9 +24,9 @@ export function ClientToken(props: IClientTokenProps) {
   const { data } = encodeClientTokenJWT;
 
   const orgId = props.clientToken.meta?.orgId;
-  const appId = props.clientToken.meta?.appId;
+  const projectId = props.clientToken.meta?.projectId;
 
-  if (!orgId || !appId) {
+  if (!orgId || !projectId) {
     return null;
   }
 
@@ -38,7 +38,10 @@ export function ClientToken(props: IClientTokenProps) {
             {props.clientToken.name}
           </h1>
         </div>
-        <ClientTokenItemMenu clientToken={props.clientToken} appId={appId} />
+        <ClientTokenItemMenu
+          clientToken={props.clientToken}
+          projectId={projectId}
+        />
       </div>
       <div className="flex flex-col gap-4">
         {props.clientToken.description && (
@@ -48,10 +51,12 @@ export function ClientToken(props: IClientTokenProps) {
         )}
         <Separator />
         <div className="flex flex-col gap-2">
-          <h3 className="text-sm font-medium text-muted-foreground">App ID</h3>
-          <Copyable produceText={() => appId}>
+          <h3 className="text-sm font-medium text-muted-foreground">
+            Project ID
+          </h3>
+          <Copyable produceText={() => projectId}>
             <pre className="text-sm text-muted-foreground bg-muted p-2 rounded-md whitespace-pre-wrap break-all">
-              <code>{appId}</code>
+              <code>{projectId}</code>
             </pre>
           </Copyable>
         </div>

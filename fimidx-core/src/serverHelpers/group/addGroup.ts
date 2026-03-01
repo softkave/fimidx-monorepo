@@ -17,7 +17,7 @@ export async function addGroup(params: {
   storage?: IObjStorage;
 }) {
   const { args, by, byType, groupId, storage } = params;
-  const { name, description, appId, meta } = args;
+  const { name, description, projectId, meta } = args;
   const objRecord: IGroupObjRecord = {
     name,
     description,
@@ -30,13 +30,15 @@ export async function addGroup(params: {
     groupId,
     tag: kObjTags.group,
     input: {
-      appId,
+      projectId,
       items: [objRecord],
-      conflictOnKeys: ["appId", "name"],
+      conflictOnKeys: ["projectId", "name"],
       onConflict: "fail",
     },
     storage,
   });
+
+  console.log("newObjs group", newObjs);
 
   assert.ok(
     failedItems.length === 0,

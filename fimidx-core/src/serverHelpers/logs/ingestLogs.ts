@@ -11,7 +11,7 @@ export async function ingestLogs(params: {
   storage?: IObjStorage;
 }) {
   const { args, by, byType, groupId, storage } = params;
-  const { appId, logs } = args;
+  const { projectId, logs } = args;
 
   const date = new Date();
   const dateMs = date.getTime();
@@ -25,7 +25,7 @@ export async function ingestLogs(params: {
     groupId,
     tag: kObjTags.log,
     input: {
-      appId,
+      projectId,
       items: logs,
     },
     storage,

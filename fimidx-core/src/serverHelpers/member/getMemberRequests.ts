@@ -23,7 +23,7 @@ export function getMemberRequestsObjQuery(params: {
 }) {
   const { args } = params;
   const { query } = args;
-  const { appId, groupId, memberId, status } = query;
+  const { projectId, groupId, memberId, status } = query;
 
   const filterArr: Array<IObjPartQueryItem> = [];
 
@@ -45,7 +45,7 @@ export function getMemberRequestsObjQuery(params: {
   }
 
   const objQuery: IObjQuery = {
-    appId,
+    projectId,
     partQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
     topLevelFields: groupId ? { groupId: { eq: groupId } } : undefined,
   };
@@ -66,7 +66,8 @@ export async function getMemberRequests(params: {
   const storagePage = pageNumber - 1; // Convert to 0-based
 
   const objQuery = getMemberRequestsObjQuery({ args });
-  const { objs, hasMore, page, limit } = await getManyObjs({
+  console.log("objQuery", objQuery);
+  const { objs, hasMore } = await getManyObjs({
     objQuery,
     tag: kObjTags.member,
     limit: limitNumber,
@@ -75,7 +76,11 @@ export async function getMemberRequests(params: {
     storage,
   });
 
+  console.log("objs", objs);
+
   const memberIds = uniq(objs.map((obj) => obj.objRecord.memberId));
+
+  console.log("memberIds", memberIds);
 
   // Return early if no memberIds found (schema requires at least one member)
   if (!memberIds.length) {
@@ -89,9 +94,9 @@ export async function getMemberRequests(params: {
 
   if (args.includePermissions) {
     assert.ok(
-      args.query.appId,
+      args.query.projectId,
       new OwnServerError(
-        "App ID is required",
+        "Project ID is required",
         kOwnServerErrorCodes.InvalidRequest
       )
     );
@@ -106,14 +111,14 @@ export async function getMemberRequests(params: {
 
   const { permissions: memberPermissions } = args.includePermissions
     ? await getMembersPermissions({
-        appId: args.query.appId,
+        projectId: args.query.projectId,
         memberIds,
         groupId: args.query.groupId!,
         storage,
       })
-    : {
-        permissions: [],
-      };
+    : { permissions: [] };
+
+  console.log("memberPermissions", memberPermissions);
 
   const memberPermissionsMap = indexArray<IPermission, IPermission[]>(
     memberPermissions,
@@ -136,7 +141,10 @@ export async function getMemberRequests(params: {
     const memberPermissions = memberPermissionsMap[memberId] ?? null;
     return objToMember(obj, memberPermissions);
   });
+  console.log("members", members);
   const requests = await objToMemberRequest({ requests: members });
+
+  console.log("requests", requests);
 
   return {
     requests,

@@ -1,8 +1,8 @@
 import { kEmailRecordStatus } from "fimidx-core/definitions/email";
 import { kId0 } from "fimidx-core/definitions/system";
 import { updateMemberSendEmailStatus } from "fimidx-core/serverHelpers/index";
-import { sendAddParticipantEmail } from "../emails/sendAddParticipantEmail";
 import { ixtbConsoleLogger } from "../../common/ixtb-loggers";
+import { sendAddParticipantEmail } from "../emails/sendAddParticipantEmail";
 
 export async function sendEmailAndUpdateMember(params: {
   to: string;
@@ -21,7 +21,7 @@ export async function sendEmailAndUpdateMember(params: {
     });
 
     await updateMemberSendEmailStatus({
-      appId: kId0,
+      projectId: kId0,
       groupId: kId0,
       id,
       sentEmailCount: 1,

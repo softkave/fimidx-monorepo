@@ -1,11 +1,12 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import type { AddMemberEndpointArgs } from "../../../definitions/member.js";
 import { kObjTags } from "../../../definitions/obj.js";
 import { createDefaultStorage } from "../../../storage/config.js";
 import type { IObjStorage } from "../../../storage/types.js";
 import { addMember } from "../addMember.js";
 import { addMemberPermissions } from "../addMemberPermissions.js";
 
-const defaultAppId = "test-app-addMemberPermissions";
+const defaultProjectId = "test-project-addMemberPermissions";
 const defaultGroupId = "test-group";
 const defaultBy = "tester";
 const defaultByType = "user";
@@ -13,7 +14,9 @@ const defaultByType = "user";
 // Test counter to ensure unique names
 let testCounter = 0;
 
-function makeAddMemberArgs(overrides: any = {}) {
+function makeAddMemberArgs(
+  overrides: Partial<AddMemberEndpointArgs> = {}
+): AddMemberEndpointArgs {
   testCounter++;
   const uniqueId = `${testCounter}_${Date.now()}_${Math.random()
     .toString(36)
@@ -21,7 +24,7 @@ function makeAddMemberArgs(overrides: any = {}) {
   return {
     name: `Test Member ${uniqueId}`,
     description: "Test description",
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     groupId: defaultGroupId,
     email: `test${uniqueId}@example.com`,
     memberId: `member-${uniqueId}`,
@@ -30,7 +33,9 @@ function makeAddMemberArgs(overrides: any = {}) {
   };
 }
 
-function makeAddMemberPermissionsArgs(overrides: any = {}) {
+function makeAddMemberPermissionsArgs(
+  overrides: Partial<Parameters<typeof addMemberPermissions>[0]> = {}
+): Parameters<typeof addMemberPermissions>[0] {
   testCounter++;
   const uniqueId = `${testCounter}_${Date.now()}_${Math.random()
     .toString(36)
@@ -39,7 +44,7 @@ function makeAddMemberPermissionsArgs(overrides: any = {}) {
     by: defaultBy,
     byType: defaultByType,
     groupId: defaultGroupId,
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     permissions: [
       {
         entity: "user",
@@ -61,14 +66,14 @@ describe("addMemberPermissions integration", () => {
 
   beforeEach(async () => {
     try {
-      const testAppIds = [
-        defaultAppId,
-        "test-app-addMemberPermissions-1",
-        "test-app-addMemberPermissions-2",
+      const testProjectIds = [
+        defaultProjectId,
+        "test-project-addMemberPermissions-1",
+        "test-project-addMemberPermissions-2",
       ];
-      for (const appId of testAppIds) {
+      for (const projectId of testProjectIds) {
         await storage.bulkDelete({
-          query: { appId },
+          query: { projectId },
           tag: kObjTags.member,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -76,7 +81,7 @@ describe("addMemberPermissions integration", () => {
           hardDelete: true,
         });
         await storage.bulkDelete({
-          query: { appId },
+          query: { projectId },
           tag: kObjTags.permission,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -91,14 +96,14 @@ describe("addMemberPermissions integration", () => {
 
   afterEach(async () => {
     try {
-      const testAppIds = [
-        defaultAppId,
-        "test-app-addMemberPermissions-1",
-        "test-app-addMemberPermissions-2",
+      const testProjectIds = [
+        defaultProjectId,
+        "test-project-addMemberPermissions-1",
+        "test-project-addMemberPermissions-2",
       ];
-      for (const appId of testAppIds) {
+      for (const projectId of testProjectIds) {
         await storage.bulkDelete({
-          query: { appId },
+          query: { projectId },
           tag: kObjTags.member,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -106,7 +111,7 @@ describe("addMemberPermissions integration", () => {
           hardDelete: true,
         });
         await storage.bulkDelete({
-          query: { appId },
+          query: { projectId },
           tag: kObjTags.permission,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -326,7 +331,7 @@ describe("addMemberPermissions integration", () => {
     );
   });
 
-  it("adds permissions with different app IDs", async () => {
+  it("adds permissions with different project IDs", async () => {
     const memberArgs = makeAddMemberArgs();
     const member = await addMember({
       args: memberArgs,
@@ -337,7 +342,7 @@ describe("addMemberPermissions integration", () => {
 
     const permissionsArgs = makeAddMemberPermissionsArgs({
       memberId: member.member.memberId,
-      appId: "different-app",
+      projectId: "different-project",
       permissions: [
         {
           entity: "user",
@@ -350,7 +355,7 @@ describe("addMemberPermissions integration", () => {
     const result = await addMemberPermissions(permissionsArgs);
 
     expect(result.permissions).toHaveLength(1);
-    expect(result.permissions[0].appId).toBe("different-app");
+    expect(result.permissions[0].projectId).toBe("different-project");
   });
 
   it("adds permissions with different by/byType values", async () => {

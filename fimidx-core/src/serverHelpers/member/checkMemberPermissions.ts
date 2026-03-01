@@ -13,7 +13,7 @@ export async function checkMemberPermissions(params: {
   storage?: IObjStorage;
 }) {
   const { args, storage } = params;
-  const { appId, memberId, groupId, items } = args;
+  const { projectId, memberId, groupId, items } = args;
 
   const permissions = await Promise.all(
     items.map(async (item) => {
@@ -27,7 +27,7 @@ export async function checkMemberPermissions(params: {
       const { permissions } = await getPermissions({
         args: {
           query: {
-            appId,
+            projectId,
             entity: isString(managedPermission.entity)
               ? { eq: managedPermission.entity }
               : jsRecordToObjPartQueryList(managedPermission.entity),

@@ -5,7 +5,7 @@ import { createDefaultStorage } from "../../../storage/config.js";
 import type { IObjStorage } from "../../../storage/types.js";
 import { addCallback } from "../addCallback.js";
 
-const defaultAppId = "test-app";
+const defaultProjectId = "test-project";
 const defaultGroupId = "test-group";
 const defaultBy = "tester";
 const defaultByType = "user";
@@ -21,7 +21,7 @@ function makeAddCallbackArgs(
     .toString(36)
     .substr(2, 9)}`;
   return {
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     url: "https://example.com/webhook",
     method: "POST",
     name: `Test Callback ${uniqueId}`,
@@ -37,7 +37,7 @@ function makeTestCallbackArgs(name: string, overrides: any = {}) {
     .toString(36)
     .substr(2, 9)}`;
   return {
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     url: "https://example.com/webhook",
     method: "POST",
     name: `${name}_${uniqueId}`,
@@ -58,7 +58,7 @@ describe("addCallback integration", () => {
     // Clean up test data before each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
         tag: kObjTags.callback,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -74,7 +74,7 @@ describe("addCallback integration", () => {
     // Clean up after each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
         tag: kObjTags.callback,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -97,7 +97,7 @@ describe("addCallback integration", () => {
     // First callback creation should succeed
     const result1 = await addCallback({
       args,
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -110,7 +110,7 @@ describe("addCallback integration", () => {
     // Second callback with same idempotency key should be ignored due to conflict
     const result2 = await addCallback({
       args,
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -133,7 +133,7 @@ describe("addCallback integration", () => {
 
     const result = await addCallback({
       args,
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -150,7 +150,7 @@ describe("addCallback integration", () => {
     });
     expect(result.requestBody).toBe('{"test": "data"}');
     expect(result.groupId).toBe(defaultGroupId);
-    expect(result.appId).toBe(defaultAppId);
+    expect(result.projectId).toBe(defaultProjectId);
     expect(result.createdBy).toBe(defaultBy);
     expect(result.createdByType).toBe(defaultByType);
     expect(result.id).toBeDefined();
@@ -168,7 +168,7 @@ describe("addCallback integration", () => {
 
     const result = await addCallback({
       args,
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -189,7 +189,7 @@ describe("addCallback integration", () => {
 
     const result = await addCallback({
       args,
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -212,7 +212,7 @@ describe("addCallback integration", () => {
 
     const result = await addCallback({
       args,
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -233,7 +233,7 @@ describe("addCallback integration", () => {
 
     const result = await addCallback({
       args,
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -250,7 +250,7 @@ describe("addCallback integration", () => {
 
     const result = await addCallback({
       args,
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,

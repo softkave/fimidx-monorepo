@@ -27,7 +27,7 @@ export const updateOrgEndpoint: NextUserAuthenticatedEndpointFn<
         id: {
           eq: input.id,
         },
-        appId: kId0,
+        projectId: kId0,
       },
       update: input.update,
       updateMany: false,

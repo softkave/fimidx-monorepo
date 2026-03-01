@@ -11,42 +11,42 @@ describe("MongoQueryTransformer", () => {
   const now = new Date("2024-01-01T00:00:00Z");
 
   describe("transformFilter", () => {
-    it("should add appId to filter", () => {
-      const query: IObjQuery = { appId: "app1" };
+    it("should add projectId to filter", () => {
+      const query: IObjQuery = { projectId: "project1" };
       expect(transformer.transformFilter(query, now)).toEqual({
-        appId: "app1",
+        projectId: "project1",
       });
     });
 
     it("should add partQuery to filter (eq)", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: { and: [{ op: "eq", field: "foo", value: "bar" }] },
       };
       expect(transformer.transformFilter(query, now)).toEqual({
-        $and: [{ appId: "app1" }, { "objRecord.foo": { $eq: "bar" } }],
+        $and: [{ projectId: "project1" }, { "objRecord.foo": { $eq: "bar" } }],
       });
     });
 
     it("should add metaQuery to filter (string eq)", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         metaQuery: { id: { eq: "id1" } },
       };
       expect(transformer.transformFilter(query, now)).toEqual({
-        $and: [{ appId: "app1" }, { id: "id1" }],
+        $and: [{ projectId: "project1" }, { id: "id1" }],
       });
     });
 
     it("should combine partQuery and metaQuery", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: { and: [{ op: "eq", field: "foo", value: "bar" }] },
         metaQuery: { id: { eq: "id1" } },
       };
       expect(transformer.transformFilter(query, now)).toEqual({
         $and: [
-          { appId: "app1" },
+          { projectId: "project1" },
           { "objRecord.foo": { $eq: "bar" } },
           { id: "id1" },
         ],
@@ -154,17 +154,17 @@ describe("MongoQueryTransformer", () => {
   describe("partQuery operators", () => {
     it("should handle neq", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: { and: [{ op: "neq", field: "foo", value: "bar" }] },
       };
       expect(transformer.transformFilter(query, now)).toEqual({
-        $and: [{ appId: "app1" }, { "objRecord.foo": { $ne: "bar" } }],
+        $and: [{ projectId: "project1" }, { "objRecord.foo": { $ne: "bar" } }],
       });
     });
 
     it("should handle gt/gte/lt/lte with numbers", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: {
           and: [
             { op: "gt", field: "num", value: 5 },
@@ -176,7 +176,7 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now)).toEqual({
         $and: [
-          { appId: "app1" },
+          { projectId: "project1" },
           { "objRecord.num": { $gt: 5, $gte: 6, $lt: 10, $lte: 11 } },
         ],
       });
@@ -184,7 +184,7 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle like (case-insensitive)", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: { and: [{ op: "like", field: "foo", value: "bar" }] },
       };
       const filter = transformer.transformFilter(query, now);
@@ -198,7 +198,7 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle like (case-sensitive)", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: {
           and: [
             { op: "like", field: "foo", value: "bar", caseSensitive: true },
@@ -215,7 +215,7 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle in/not_in", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: {
           and: [
             { op: "in", field: "foo", value: ["a", "b"] },
@@ -225,7 +225,7 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now)).toEqual({
         $and: [
-          { appId: "app1" },
+          { projectId: "project1" },
           {
             "objRecord.foo": { $in: ["a", "b"] },
             "objRecord.bar": { $nin: [1, 2] },
@@ -236,25 +236,31 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle between", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: {
           and: [{ op: "between", field: "num", value: [1, 10] }],
         },
       };
       expect(transformer.transformFilter(query, now)).toEqual({
-        $and: [{ appId: "app1" }, { "objRecord.num": { $gte: 1, $lte: 10 } }],
+        $and: [
+          { projectId: "project1" },
+          { "objRecord.num": { $gte: 1, $lte: 10 } },
+        ],
       });
     });
 
     it("should handle exists", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: {
           and: [{ op: "exists", field: "foo", value: true }],
         },
       };
       expect(transformer.transformFilter(query, now)).toEqual({
-        $and: [{ appId: "app1" }, { "objRecord.foo": { $exists: true } }],
+        $and: [
+          { projectId: "project1" },
+          { "objRecord.foo": { $exists: true } },
+        ],
       });
     });
   });
@@ -262,7 +268,7 @@ describe("MongoQueryTransformer", () => {
   describe("metaQuery number ops", () => {
     it("should handle metaQuery number eq/neq/in/not_in", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         metaQuery: {
           createdAt: {
             eq: 123,
@@ -274,7 +280,7 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now)).toEqual({
         $and: [
-          { appId: "app1" },
+          { projectId: "project1" },
           {
             createdAt: {
               $in: [1, 2],
@@ -289,7 +295,7 @@ describe("MongoQueryTransformer", () => {
   describe("logicalQuery or", () => {
     it("should handle or queries", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: {
           or: [
             { op: "eq", field: "foo", value: "bar" },
@@ -299,7 +305,7 @@ describe("MongoQueryTransformer", () => {
       };
       const filter = transformer.transformFilter(query, now);
       if (!filter.$and) throw new Error("Expected $and in filter");
-      expect(filter.$and[0].appId).toBe("app1");
+      expect(filter.$and[0].projectId).toBe("project1");
       expect(Array.isArray(filter.$and[1].$or)).toBe(true);
       expect(filter.$and[1].$or?.length).toBe(2);
       expect(filter.$and[1].$or).toEqual([
@@ -312,79 +318,88 @@ describe("MongoQueryTransformer", () => {
   describe("topLevelFields", () => {
     it("should handle shouldIndex boolean field", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         topLevelFields: {
           shouldIndex: true,
         },
       };
       expect(transformer.transformFilter(query, now)).toEqual({
-        $and: [{ appId: "app1" }, { shouldIndex: true }],
+        $and: [{ projectId: "project1" }, { shouldIndex: true }],
       });
     });
 
     it("should handle fieldsToIndex array field", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         topLevelFields: {
           fieldsToIndex: ["field1", "field2"],
         },
       };
       expect(transformer.transformFilter(query, now)).toEqual({
-        $and: [{ appId: "app1" }, { fieldsToIndex: ["field1", "field2"] }],
+        $and: [
+          { projectId: "project1" },
+          { fieldsToIndex: ["field1", "field2"] },
+        ],
       });
     });
 
     it("should handle tag string meta query", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         topLevelFields: {
           tag: { eq: "test-tag" },
         },
       };
       expect(transformer.transformFilter(query, now)).toEqual({
-        $and: [{ appId: "app1" }, { tag: "test-tag" }],
+        $and: [{ projectId: "project1" }, { tag: "test-tag" }],
       });
     });
 
     it("should handle groupId string meta query", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         topLevelFields: {
           groupId: { in: ["group1", "group2"] },
         },
       };
       expect(transformer.transformFilter(query, now)).toEqual({
-        $and: [{ appId: "app1" }, { groupId: { $in: ["group1", "group2"] } }],
+        $and: [
+          { projectId: "project1" },
+          { groupId: { $in: ["group1", "group2"] } },
+        ],
       });
     });
 
     it("should handle deletedAt null", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         topLevelFields: {
           deletedAt: null,
         },
       };
       expect(transformer.transformFilter(query, now)).toEqual({
-        appId: "app1",
+        projectId: "project1",
       });
     });
 
     it("should handle deletedAt number meta query", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         topLevelFields: {
           deletedAt: { gte: 123 },
         },
       };
       expect(transformer.transformFilter(query, now)).toEqual({
-        $and: [{ appId: "app1" }, { deletedAt: { $gte: new Date(123) } }],
+        $and: [
+          { projectId: "project1" },
+          { deletedAt: { $gte: new Date(123) } },
+        ],
       });
     });
 
     it("should combine multiple top-level fields", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         topLevelFields: {
           shouldIndex: true,
           tag: { eq: "test-tag" },
@@ -393,7 +408,7 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now)).toEqual({
         $and: [
-          { appId: "app1" },
+          { projectId: "project1" },
           { shouldIndex: true, tag: "test-tag", groupId: "group1" },
         ],
       });
@@ -401,7 +416,7 @@ describe("MongoQueryTransformer", () => {
 
     it("should combine topLevelFields with other query types", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: { and: [{ op: "eq", field: "foo", value: "bar" }] },
         metaQuery: { id: { eq: "id1" } },
         topLevelFields: {
@@ -411,7 +426,7 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now)).toEqual({
         $and: [
-          { appId: "app1" },
+          { projectId: "project1" },
           { "objRecord.foo": { $eq: "bar" } },
           { id: "id1" },
           { shouldIndex: true, tag: "test-tag" },
@@ -421,14 +436,17 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle queries without tag in topLevelFields", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         topLevelFields: {
           shouldIndex: true,
           groupId: { eq: "group1" },
         },
       };
       expect(transformer.transformFilter(query, now)).toEqual({
-        $and: [{ appId: "app1" }, { shouldIndex: true, groupId: "group1" }],
+        $and: [
+          { projectId: "project1" },
+          { shouldIndex: true, groupId: "group1" },
+        ],
       });
     });
   });
@@ -445,7 +463,7 @@ describe("MongoQueryTransformer", () => {
           isArrayCompressed: false,
           createdAt: new Date(),
           updatedAt: new Date(),
-          appId: "app1",
+          projectId: "project1",
           groupId: "group1",
           tag: "tag1",
         },
@@ -460,7 +478,7 @@ describe("MongoQueryTransformer", () => {
           isArrayCompressed: false,
           createdAt: new Date(),
           updatedAt: new Date(),
-          appId: "app1",
+          projectId: "project1",
           groupId: "group1",
           tag: "tag1",
         },
@@ -469,7 +487,7 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle array field eq operation", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: {
           and: [
             {
@@ -482,7 +500,7 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now, arrayFields)).toEqual({
         $and: [
-          { appId: "app1" },
+          { projectId: "project1" },
           { "objRecord.logsQuery.and.message": { $eq: "error occurred" } },
         ],
       });
@@ -490,7 +508,7 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle array field neq operation", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: {
           and: [
             {
@@ -503,7 +521,7 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now, arrayFields)).toEqual({
         $and: [
-          { appId: "app1" },
+          { projectId: "project1" },
           { "objRecord.logsQuery.and.level": { $ne: "debug" } },
         ],
       });
@@ -511,7 +529,7 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle array field in operation", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: {
           and: [
             {
@@ -524,7 +542,7 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now, arrayFields)).toEqual({
         $and: [
-          { appId: "app1" },
+          { projectId: "project1" },
           { "objRecord.logsQuery.and.level": { $in: ["error", "warn"] } },
         ],
       });
@@ -532,7 +550,7 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle array field not_in operation", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: {
           and: [
             {
@@ -545,7 +563,7 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now, arrayFields)).toEqual({
         $and: [
-          { appId: "app1" },
+          { projectId: "project1" },
           { "objRecord.logsQuery.and.level": { $nin: ["debug", "info"] } },
         ],
       });
@@ -553,7 +571,7 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle array field like operation", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: {
           and: [
             {
@@ -579,7 +597,7 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle array field exists operation", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: {
           and: [
             {
@@ -592,7 +610,7 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now, arrayFields)).toEqual({
         $and: [
-          { appId: "app1" },
+          { projectId: "project1" },
           { "objRecord.logsQuery.and.timestamp": { $exists: true } },
         ],
       });
@@ -600,7 +618,7 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle array field numeric operations", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: {
           and: [
             {
@@ -618,7 +636,7 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now, arrayFields)).toEqual({
         $and: [
-          { appId: "app1" },
+          { projectId: "project1" },
           {
             "objRecord.logsQuery.and.count": { $gt: 5, $lte: 100 },
           },
@@ -628,7 +646,7 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle nested array field paths", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: {
           and: [
             {
@@ -641,7 +659,7 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now, arrayFields)).toEqual({
         $and: [
-          { appId: "app1" },
+          { projectId: "project1" },
           {
             "objRecord.logsQuery.and.details.user.id": { $eq: "user123" },
           },
@@ -651,7 +669,7 @@ describe("MongoQueryTransformer", () => {
 
     it("should fall back to regular query for non-array fields", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: {
           and: [
             {
@@ -664,7 +682,7 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now, arrayFields)).toEqual({
         $and: [
-          { appId: "app1" },
+          { projectId: "project1" },
           { "objRecord.regularField": { $eq: "value" } },
         ],
       });
@@ -672,7 +690,7 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle array field between operation", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: {
           and: [
             {
@@ -685,7 +703,7 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now, arrayFields)).toEqual({
         $and: [
-          { appId: "app1" },
+          { projectId: "project1" },
           { "objRecord.logsQuery.and.count": { $gte: 1, $lte: 10 } },
         ],
       });
@@ -693,7 +711,7 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle complex array field queries with logical operators", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: {
           and: [
             {
@@ -719,7 +737,7 @@ describe("MongoQueryTransformer", () => {
       const filter = transformer.transformFilter(query, now, arrayFields);
       expect(filter.$and).toBeDefined();
       expect(filter.$and?.length).toBe(2);
-      expect(filter.$and?.[0].appId).toBe("app1");
+      expect(filter.$and?.[0].projectId).toBe("project1");
       expect(filter.$and?.[1].$or).toBeDefined();
       expect(filter.$and?.[1].$or?.length).toBe(3); // AND condition + 2 OR conditions
       // The first element should be the AND condition
@@ -741,7 +759,7 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle mixed array and regular field queries", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: {
           and: [
             {
@@ -759,7 +777,7 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now, arrayFields)).toEqual({
         $and: [
-          { appId: "app1" },
+          { projectId: "project1" },
           {
             "objRecord.title": { $eq: "Test Post" },
             "objRecord.comments.rating": { $gt: 4 },
@@ -770,7 +788,7 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle array field with duration values", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: {
           and: [
             {
@@ -873,7 +891,7 @@ describe("MongoQueryTransformer", () => {
   describe("enhanced query generation", () => {
     it("should handle complex nested field queries", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: {
           and: [
             {
@@ -896,7 +914,7 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now)).toEqual({
         $and: [
-          { appId: "app1" },
+          { projectId: "project1" },
           {
             "objRecord.user.profile.email": { $eq: "test@example.com" },
             "objRecord.user.profile.age": { $gt: 18 },
@@ -918,7 +936,7 @@ describe("MongoQueryTransformer", () => {
             isArrayCompressed: false,
             createdAt: new Date(),
             updatedAt: new Date(),
-            appId: "app1",
+            projectId: "project1",
             groupId: "group1",
             tag: "tag1",
           },
@@ -926,7 +944,7 @@ describe("MongoQueryTransformer", () => {
       ]);
 
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: {
           and: [
             {
@@ -939,7 +957,7 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now, arrayFields)).toEqual({
         $and: [
-          { appId: "app1" },
+          { projectId: "project1" },
           { "objRecord.logs.entry.message": { $eq: "test message" } },
         ],
       });
@@ -957,7 +975,7 @@ describe("MongoQueryTransformer", () => {
             isArrayCompressed: false,
             createdAt: new Date(),
             updatedAt: new Date(),
-            appId: "app1",
+            projectId: "project1",
             groupId: "group1",
             tag: "tag1",
           },
@@ -965,7 +983,7 @@ describe("MongoQueryTransformer", () => {
       ]);
 
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: {
           and: [
             {
@@ -991,7 +1009,7 @@ describe("MongoQueryTransformer", () => {
       const filter = transformer.transformFilter(query, now, arrayFields);
       expect(filter.$and).toBeDefined();
       expect(filter.$and?.length).toBe(2);
-      expect(filter.$and?.[0].appId).toBe("app1");
+      expect(filter.$and?.[0].projectId).toBe("project1");
       expect(filter.$and?.[1].$or).toBeDefined();
       expect(filter.$and?.[1].$or?.length).toBe(3); // AND condition + 2 OR conditions
       // The first element should be the AND condition
@@ -1013,7 +1031,7 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle date field conversions in meta queries", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         metaQuery: {
           createdAt: {
             gt: "2024-01-01T00:00:00Z",
@@ -1031,7 +1049,7 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle duration values in queries", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         partQuery: {
           and: [
             {
@@ -1053,7 +1071,7 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle complex top-level field combinations", () => {
       const query: IObjQuery = {
-        appId: "app1",
+        projectId: "project1",
         topLevelFields: {
           shouldIndex: true,
           tag: { eq: "test-tag" },
@@ -1065,7 +1083,7 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now)).toEqual({
         $and: [
-          { appId: "app1" },
+          { projectId: "project1" },
           {
             shouldIndex: true,
             tag: "test-tag",

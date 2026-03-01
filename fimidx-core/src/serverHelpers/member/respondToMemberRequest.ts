@@ -17,12 +17,12 @@ export async function respondToMemberRequest(params: {
   storage?: IObjStorage;
 }) {
   const { args, storage } = params;
-  const { status, requestId, appId, groupId } = args;
+  const { status, requestId, projectId, groupId } = args;
 
   const { members } = await getMembers({
     args: {
       query: {
-        appId,
+        projectId,
         groupId,
         id: { eq: requestId },
       },
@@ -45,7 +45,7 @@ export async function respondToMemberRequest(params: {
 
   await updateManyObjs({
     objQuery: {
-      appId,
+      projectId,
       metaQuery: {
         id: { eq: requestId },
       },

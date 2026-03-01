@@ -15,7 +15,7 @@ export const getObjFieldsEndpoint: NextMaybeAuthenticatedEndpointFn<
 
   const input = getObjFieldsSchema.parse(await req.json());
   const response = await getObjFields({
-    appId: input.appId,
+    projectId: input.projectId,
     page: input.page,
     limit: input.limit,
     tag: kObjTags.obj,

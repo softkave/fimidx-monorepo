@@ -7,7 +7,7 @@ export function objToLog(obj: IObj): ILog {
     createdAt: obj.createdAt,
     createdBy: obj.createdBy,
     createdByType: obj.createdByType,
-    appId: obj.appId,
+    projectId: obj.projectId,
     groupId: obj.groupId,
     data: obj.objRecord,
   };

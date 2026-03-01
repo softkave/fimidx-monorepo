@@ -11,8 +11,16 @@ import { objToGroup } from "./objToGroup.js";
 export function getGroupsObjQuery(params: { args: GetGroupsEndpointArgs }) {
   const { args } = params;
   const { query } = args;
-  const { name, createdAt, updatedAt, createdBy, updatedBy, meta, appId, id } =
-    query;
+  const {
+    name,
+    createdAt,
+    updatedAt,
+    createdBy,
+    updatedBy,
+    meta,
+    projectId,
+    id,
+  } = query;
 
   const filterArr: Array<IObjPartQueryItem> = [];
 
@@ -72,7 +80,7 @@ export function getGroupsObjQuery(params: { args: GetGroupsEndpointArgs }) {
   }
 
   const objQuery: IObjQuery = {
-    appId,
+    projectId,
     partQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
     metaQuery: { id, createdAt, updatedAt, createdBy, updatedBy },
   };
@@ -101,6 +109,8 @@ export async function getGroups(params: {
   });
 
   const objQuery = getGroupsObjQuery({ args });
+  console.log("objQuery groups");
+  console.dir(objQuery, { depth: null });
   const result = await getManyObjs({
     objQuery,
     page: storagePage,
@@ -109,6 +119,8 @@ export async function getGroups(params: {
     sort: transformedSort,
     storage,
   });
+
+  console.log("result groups", result);
 
   return {
     groups: result.objs.map(objToGroup),

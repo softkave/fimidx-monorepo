@@ -7,7 +7,7 @@ export function objToPermission(obj: IObj): IPermission {
     createdAt: obj.createdAt,
     updatedAt: obj.updatedAt,
     groupId: obj.groupId,
-    appId: obj.appId,
+    projectId: obj.projectId,
     createdBy: obj.createdBy,
     createdByType: obj.createdByType,
     updatedBy: obj.updatedBy,

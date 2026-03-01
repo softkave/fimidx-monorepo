@@ -1,4 +1,9 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import {
+  kMemberStatus,
+  type AddMemberEndpointArgs,
+  type IMemberObjRecord,
+} from "../../../definitions/member.js";
 import { kObjTags } from "../../../definitions/obj.js";
 import { createDefaultStorage } from "../../../storage/config.js";
 import type { IObjStorage } from "../../../storage/types.js";
@@ -6,7 +11,7 @@ import { addMember } from "../addMember.js";
 import { deleteMembers } from "../deleteMembers.js";
 import { getMembers } from "../getMembers.js";
 
-const defaultAppId = "test-app-deleteMembers";
+const defaultProjectId = "test-project-deleteMembers";
 const defaultGroupId = "test-group";
 const defaultBy = "tester";
 const defaultByType = "user";
@@ -14,7 +19,9 @@ const defaultByType = "user";
 // Test counter to ensure unique names
 let testCounter = 0;
 
-function makeAddMemberArgs(overrides: any = {}) {
+function makeAddMemberArgs(
+  overrides: Partial<AddMemberEndpointArgs> = {}
+): AddMemberEndpointArgs {
   testCounter++;
   const uniqueId = `${testCounter}_${Date.now()}_${Math.random()
     .toString(36)
@@ -22,7 +29,7 @@ function makeAddMemberArgs(overrides: any = {}) {
   return {
     name: `Test Member ${uniqueId}`,
     description: "Test description",
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     groupId: defaultGroupId,
     email: `test${uniqueId}@example.com`,
     memberId: `member-${uniqueId}`,
@@ -42,15 +49,15 @@ describe("deleteMembers integration", () => {
   beforeEach(async () => {
     // Clean up test data before each test using hard deletes for complete isolation
     try {
-      // Delete all members for all test apps using hard deletes
-      const testAppIds = [
-        defaultAppId,
-        "test-app-deleteMembers-1",
-        "test-app-deleteMembers-2",
+      // Delete all members for all test projects using hard deletes
+      const testProjectIds = [
+        defaultProjectId,
+        "test-project-deleteMembers-1",
+        "test-project-deleteMembers-2",
       ];
-      for (const appId of testAppIds) {
+      for (const projectId of testProjectIds) {
         await storage.bulkDelete({
-          query: { appId },
+          query: { projectId },
           tag: kObjTags.member,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -66,15 +73,15 @@ describe("deleteMembers integration", () => {
   afterEach(async () => {
     // Clean up after each test using hard deletes for complete isolation
     try {
-      // Delete all members for all test apps using hard deletes
-      const testAppIds = [
-        defaultAppId,
-        "test-app-deleteMembers-1",
-        "test-app-deleteMembers-2",
+      // Delete all members for all test projects using hard deletes
+      const testProjectIds = [
+        defaultProjectId,
+        "test-project-deleteMembers-1",
+        "test-project-deleteMembers-2",
       ];
-      for (const appId of testAppIds) {
+      for (const projectId of testProjectIds) {
         await storage.bulkDelete({
-          query: { appId },
+          query: { projectId },
           tag: kObjTags.member,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -101,7 +108,7 @@ describe("deleteMembers integration", () => {
     let result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           memberId: { eq: memberArgs.memberId },
         },
@@ -114,7 +121,7 @@ describe("deleteMembers integration", () => {
     // Delete the member
     await deleteMembers({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         groupId: defaultGroupId,
         memberId: { eq: memberArgs.memberId },
       },
@@ -127,7 +134,7 @@ describe("deleteMembers integration", () => {
     result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           memberId: { eq: memberArgs.memberId },
         },
@@ -152,7 +159,7 @@ describe("deleteMembers integration", () => {
     let result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           name: { eq: "Member to Delete" },
         },
@@ -165,7 +172,7 @@ describe("deleteMembers integration", () => {
     // Delete the member
     await deleteMembers({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         groupId: defaultGroupId,
         name: { eq: "Member to Delete" },
       },
@@ -178,7 +185,7 @@ describe("deleteMembers integration", () => {
     result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           name: { eq: "Member to Delete" },
         },
@@ -203,7 +210,7 @@ describe("deleteMembers integration", () => {
     let result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           email: { eq: "delete@example.com" },
         },
@@ -216,7 +223,7 @@ describe("deleteMembers integration", () => {
     // Delete the member
     await deleteMembers({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         groupId: defaultGroupId,
         email: { eq: "delete@example.com" },
       },
@@ -229,7 +236,7 @@ describe("deleteMembers integration", () => {
     result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
           email: { eq: "delete@example.com" },
         },
@@ -271,7 +278,7 @@ describe("deleteMembers integration", () => {
     let result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
         },
         includePermissions: false,
@@ -283,7 +290,7 @@ describe("deleteMembers integration", () => {
     // Delete all members in the group
     await deleteMembers({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         groupId: defaultGroupId,
       },
       deleteMany: true,
@@ -296,7 +303,7 @@ describe("deleteMembers integration", () => {
     result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
         },
         includePermissions: false,
@@ -329,7 +336,7 @@ describe("deleteMembers integration", () => {
     let result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
         },
         includePermissions: false,
@@ -341,7 +348,7 @@ describe("deleteMembers integration", () => {
     // Delete members in the group (should only delete first match)
     await deleteMembers({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         groupId: defaultGroupId,
       },
       deleteMany: false,
@@ -354,7 +361,7 @@ describe("deleteMembers integration", () => {
     result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
         },
         includePermissions: false,
@@ -393,7 +400,7 @@ describe("deleteMembers integration", () => {
     let result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
         },
         includePermissions: false,
@@ -405,7 +412,7 @@ describe("deleteMembers integration", () => {
     // Delete only engineering department members
     await deleteMembers({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         groupId: defaultGroupId,
         meta: [
           {
@@ -424,7 +431,7 @@ describe("deleteMembers integration", () => {
     result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
         },
         includePermissions: false,
@@ -440,19 +447,16 @@ describe("deleteMembers integration", () => {
     // Create test members with different statuses
     const member1Args = makeAddMemberArgs({
       name: "Alice",
-      seed: { status: "pending" },
     });
     const member2Args = makeAddMemberArgs({
       name: "Bob",
-      seed: { status: "accepted" },
     });
 
-    // Extract seed from memberArgs
-    const { seed: seed1, ...args1 } = member1Args;
-    const { seed: seed2, ...args2 } = member2Args;
+    const seed1: Partial<IMemberObjRecord> = { status: kMemberStatus.pending };
+    const seed2: Partial<IMemberObjRecord> = { status: kMemberStatus.accepted };
 
     await addMember({
-      args: args1,
+      args: member1Args,
       by: defaultBy,
       byType: defaultByType,
       seed: seed1,
@@ -460,7 +464,7 @@ describe("deleteMembers integration", () => {
     });
 
     await addMember({
-      args: args2,
+      args: member2Args,
       by: defaultBy,
       byType: defaultByType,
       seed: seed2,
@@ -471,7 +475,7 @@ describe("deleteMembers integration", () => {
     let result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
         },
         includePermissions: false,
@@ -483,7 +487,7 @@ describe("deleteMembers integration", () => {
     // Delete only pending members
     await deleteMembers({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         groupId: defaultGroupId,
         status: { eq: "pending" },
       },
@@ -496,7 +500,7 @@ describe("deleteMembers integration", () => {
     result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: defaultGroupId,
         },
         includePermissions: false,
@@ -537,7 +541,7 @@ describe("deleteMembers integration", () => {
     let result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: "group-1",
         },
         includePermissions: false,
@@ -549,7 +553,7 @@ describe("deleteMembers integration", () => {
     result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: "group-2",
         },
         includePermissions: false,
@@ -561,7 +565,7 @@ describe("deleteMembers integration", () => {
     // Delete only group-1 members
     await deleteMembers({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         groupId: "group-1",
       },
       by: defaultBy,
@@ -573,7 +577,7 @@ describe("deleteMembers integration", () => {
     result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: "group-1",
         },
         includePermissions: false,
@@ -585,7 +589,7 @@ describe("deleteMembers integration", () => {
     result = await getMembers({
       args: {
         query: {
-          appId: defaultAppId,
+          projectId: defaultProjectId,
           groupId: "group-2",
         },
         includePermissions: false,
@@ -596,15 +600,15 @@ describe("deleteMembers integration", () => {
     expect(result.members[0].name).toBe("Bob");
   });
 
-  it("deletes members from specific app only", async () => {
-    // Create members in different apps
+  it("deletes members from specific project only", async () => {
+    // Create members in different projects
     const member1Args = makeAddMemberArgs({
       name: "Alice",
-      appId: "app-1",
+      projectId: "project-1",
     });
     const member2Args = makeAddMemberArgs({
       name: "Bob",
-      appId: "app-2",
+      projectId: "project-2",
     });
 
     await addMember({
@@ -625,7 +629,7 @@ describe("deleteMembers integration", () => {
     let result = await getMembers({
       args: {
         query: {
-          appId: "app-1",
+          projectId: "project-1",
           groupId: defaultGroupId,
         },
         includePermissions: false,
@@ -637,7 +641,7 @@ describe("deleteMembers integration", () => {
     result = await getMembers({
       args: {
         query: {
-          appId: "app-2",
+          projectId: "project-2",
           groupId: defaultGroupId,
         },
         includePermissions: false,
@@ -646,10 +650,10 @@ describe("deleteMembers integration", () => {
     });
     expect(result.members).toHaveLength(1);
 
-    // Delete only app-1 members
+    // Delete only project-1 members
     await deleteMembers({
       query: {
-        appId: "app-1",
+        projectId: "project-1",
         groupId: defaultGroupId,
       },
       by: defaultBy,
@@ -657,11 +661,11 @@ describe("deleteMembers integration", () => {
       storage,
     });
 
-    // Verify only app-1 member is deleted
+    // Verify only project-1 member is deleted
     result = await getMembers({
       args: {
         query: {
-          appId: "app-1",
+          projectId: "project-1",
           groupId: defaultGroupId,
         },
         includePermissions: false,
@@ -673,7 +677,7 @@ describe("deleteMembers integration", () => {
     result = await getMembers({
       args: {
         query: {
-          appId: "app-2",
+          projectId: "project-2",
           groupId: defaultGroupId,
         },
         includePermissions: false,

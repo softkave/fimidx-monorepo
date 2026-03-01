@@ -22,7 +22,7 @@ function makeInputObjRecord(
   };
 }
 
-function makeObjFields(overrides: Partial<IObj> = {}): IObj {
+function makeObjs(overrides: Partial<IObj> = {}): IObj {
   const now = new Date();
   return {
     id: uuidv7(),
@@ -32,7 +32,7 @@ function makeObjFields(overrides: Partial<IObj> = {}): IObj {
     createdByType: "user",
     updatedBy: "tester",
     updatedByType: "user",
-    appId: "test-app",
+    projectId: "test-project",
     groupId: "test-group",
     tag: "test-tag",
     objRecord: makeInputObjRecord(),
@@ -46,7 +46,7 @@ function makeObjFields(overrides: Partial<IObj> = {}): IObj {
 }
 
 // Use unique identifiers for each test file to prevent conflicts
-const defaultAppId = "test-app-updateObjs";
+const defaultProjectId = "test-project-updateObjs";
 const defaultTag = "test-tag-updateObjs";
 const defaultBy = "tester";
 const defaultByType = "user";
@@ -73,27 +73,29 @@ describe.each(backends)("updateManyObjs integration (%s)", (backend) => {
   beforeEach(async () => {
     if (backend.type === "mongo") {
       const model = getObjModel();
-      await model.deleteMany({ appId: defaultAppId, tag: defaultTag });
+      await model.deleteMany({ projectId: defaultProjectId, tag: defaultTag });
     } else if (backend.type === "postgres") {
       const { fimidxPostgresDb, objs } = await import(
         "../../../db/fimidx.postgres.js"
       );
       await fimidxPostgresDb
         .delete(objs)
-        .where(and(eq(objs.appId, defaultAppId), eq(objs.tag, defaultTag)));
+        .where(
+          and(eq(objs.projectId, defaultProjectId), eq(objs.tag, defaultTag))
+        );
     }
   });
 
   it("updates objects by query (default updateWay)", async () => {
-    const obj = makeObjFields({
-      appId: defaultAppId,
+    const obj = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { foo: "bar", count: 1 },
     });
     await storage.create({ objs: [obj] });
     const update = { foo: "baz", count: 2 };
     const result = await updateManyObjs({
-      objQuery: { appId: obj.appId },
+      objQuery: { projectId: obj.projectId },
       tag: obj.tag,
       update,
       by: defaultBy,
@@ -102,7 +104,7 @@ describe.each(backends)("updateManyObjs integration (%s)", (backend) => {
     });
     expect(result.updatedCount).toBe(1);
     const read = await getManyObjs({
-      objQuery: { appId: obj.appId },
+      objQuery: { projectId: obj.projectId },
       tag: obj.tag,
       storageType: backend.type,
     });
@@ -111,15 +113,15 @@ describe.each(backends)("updateManyObjs integration (%s)", (backend) => {
   });
 
   it("updates with updateWay=replace", async () => {
-    const obj = makeObjFields({
-      appId: defaultAppId,
+    const obj = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { foo: "bar", arr: [1, 2] },
     });
     await storage.create({ objs: [obj] });
     const update = { foo: "replaced", arr: [9, 8] };
     const result = await updateManyObjs({
-      objQuery: { appId: obj.appId },
+      objQuery: { projectId: obj.projectId },
       tag: obj.tag,
       update,
       by: defaultBy,
@@ -129,7 +131,7 @@ describe.each(backends)("updateManyObjs integration (%s)", (backend) => {
     });
     expect(result.updatedCount).toBe(1);
     const read = await getManyObjs({
-      objQuery: { appId: obj.appId },
+      objQuery: { projectId: obj.projectId },
       tag: obj.tag,
       storageType: backend.type,
     });
@@ -137,15 +139,15 @@ describe.each(backends)("updateManyObjs integration (%s)", (backend) => {
   });
 
   it("updates with updateWay=merge", async () => {
-    const obj = makeObjFields({
-      appId: defaultAppId,
+    const obj = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { foo: "bar", a: 1 },
     });
     await storage.create({ objs: [obj] });
     const update = { foo: "merged", b: 2 };
     const result = await updateManyObjs({
-      objQuery: { appId: obj.appId },
+      objQuery: { projectId: obj.projectId },
       tag: obj.tag,
       update,
       by: defaultBy,
@@ -155,7 +157,7 @@ describe.each(backends)("updateManyObjs integration (%s)", (backend) => {
     });
     expect(result.updatedCount).toBe(1);
     const read = await getManyObjs({
-      objQuery: { appId: obj.appId },
+      objQuery: { projectId: obj.projectId },
       tag: obj.tag,
       storageType: backend.type,
     });
@@ -165,15 +167,15 @@ describe.each(backends)("updateManyObjs integration (%s)", (backend) => {
   });
 
   it("updates with updateWay=mergeButReplaceArrays", async () => {
-    const obj = makeObjFields({
-      appId: defaultAppId,
+    const obj = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { arr: [1, 2], foo: "bar" },
     });
     await storage.create({ objs: [obj] });
     const update = { arr: [3, 4], foo: "baz" };
     const result = await updateManyObjs({
-      objQuery: { appId: obj.appId },
+      objQuery: { projectId: obj.projectId },
       tag: obj.tag,
       update,
       by: defaultBy,
@@ -183,7 +185,7 @@ describe.each(backends)("updateManyObjs integration (%s)", (backend) => {
     });
     expect(result.updatedCount).toBe(1);
     const read = await getManyObjs({
-      objQuery: { appId: obj.appId },
+      objQuery: { projectId: obj.projectId },
       tag: obj.tag,
       storageType: backend.type,
     });
@@ -192,15 +194,15 @@ describe.each(backends)("updateManyObjs integration (%s)", (backend) => {
   });
 
   it("updates with updateWay=mergeButConcatArrays", async () => {
-    const obj = makeObjFields({
-      appId: defaultAppId,
+    const obj = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { arr: [1, 2], foo: "bar" },
     });
     await storage.create({ objs: [obj] });
     const update = { arr: [3, 4], foo: "baz" };
     const result = await updateManyObjs({
-      objQuery: { appId: obj.appId },
+      objQuery: { projectId: obj.projectId },
       tag: obj.tag,
       update,
       by: defaultBy,
@@ -210,7 +212,7 @@ describe.each(backends)("updateManyObjs integration (%s)", (backend) => {
     });
     expect(result.updatedCount).toBe(1);
     const read = await getManyObjs({
-      objQuery: { appId: obj.appId },
+      objQuery: { projectId: obj.projectId },
       tag: obj.tag,
       storageType: backend.type,
     });
@@ -219,15 +221,15 @@ describe.each(backends)("updateManyObjs integration (%s)", (backend) => {
   });
 
   it("updates with updateWay=mergeButKeepArrays", async () => {
-    const obj = makeObjFields({
-      appId: defaultAppId,
+    const obj = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { arr: [1, 2], foo: "bar" },
     });
     await storage.create({ objs: [obj] });
     const update = { arr: [3, 4], foo: "baz" };
     const result = await updateManyObjs({
-      objQuery: { appId: obj.appId },
+      objQuery: { projectId: obj.projectId },
       tag: obj.tag,
       update,
       by: defaultBy,
@@ -237,7 +239,7 @@ describe.each(backends)("updateManyObjs integration (%s)", (backend) => {
     });
     expect(result.updatedCount).toBe(1);
     const read = await getManyObjs({
-      objQuery: { appId: obj.appId },
+      objQuery: { projectId: obj.projectId },
       tag: obj.tag,
       storageType: backend.type,
     });
@@ -247,18 +249,18 @@ describe.each(backends)("updateManyObjs integration (%s)", (backend) => {
 
   it("respects count limit", async () => {
     const objs = [
-      makeObjFields({
-        appId: defaultAppId,
+      makeObjs({
+        projectId: defaultProjectId,
         tag: defaultTag,
         objRecord: { foo: "a" },
       }),
-      makeObjFields({
-        appId: defaultAppId,
+      makeObjs({
+        projectId: defaultProjectId,
         tag: defaultTag,
         objRecord: { foo: "b" },
       }),
-      makeObjFields({
-        appId: defaultAppId,
+      makeObjs({
+        projectId: defaultProjectId,
         tag: defaultTag,
         objRecord: { foo: "c" },
       }),
@@ -266,7 +268,7 @@ describe.each(backends)("updateManyObjs integration (%s)", (backend) => {
     await storage.create({ objs });
     const update = { foo: "updated" };
     const result = await updateManyObjs({
-      objQuery: { appId: defaultAppId },
+      objQuery: { projectId: defaultProjectId },
       tag: defaultTag,
       update,
       by: defaultBy,
@@ -276,7 +278,7 @@ describe.each(backends)("updateManyObjs integration (%s)", (backend) => {
     });
     expect(result.updatedCount).toBe(2);
     const read = await getManyObjs({
-      objQuery: { appId: defaultAppId },
+      objQuery: { projectId: defaultProjectId },
       tag: defaultTag,
       storageType: backend.type,
     });
@@ -287,7 +289,7 @@ describe.each(backends)("updateManyObjs integration (%s)", (backend) => {
   it("returns 0 if no match", async () => {
     const update = { foo: "no-match" };
     const result = await updateManyObjs({
-      objQuery: { appId: "nonexistent-app" },
+      objQuery: { projectId: "nonexistent-project" },
       tag: "nonexistent-tag",
       update,
       by: defaultBy,

@@ -46,7 +46,7 @@ async function processNextCallbacksBatch() {
         const callback = await addCallback({
           args: item.item,
           groupId: item.groupId,
-          appId: item.item.appId,
+          projectId: item.item.projectId,
           by: item.clientTokenId,
           byType: kByTypes.clientToken,
         });

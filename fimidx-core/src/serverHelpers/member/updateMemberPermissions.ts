@@ -21,7 +21,7 @@ export async function updateMemberPermissions(params: {
   const { members } = await getMembers({
     args: {
       query: {
-        appId: query.appId,
+        projectId: query.projectId,
         groupId: query.groupId,
         memberId: {
           eq: query.memberId,
@@ -45,7 +45,7 @@ export async function updateMemberPermissions(params: {
     by,
     byType,
     groupId: member.groupId,
-    appId: member.appId,
+    projectId: member.projectId,
     permissions: update.permissions,
     memberId: member.memberId,
     storage,

@@ -21,7 +21,7 @@ export const encodeClientTokenEndpoint: NextMaybeAuthenticatedEndpointFn<
   const { refreshToken, token } = await encodeClientTokenJWT({
     id: input.id,
     groupId: clientToken.groupId,
-    appId: clientToken.appId,
+    projectId: clientToken.projectId,
     args: input,
   });
 

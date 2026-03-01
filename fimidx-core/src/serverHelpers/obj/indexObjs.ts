@@ -8,11 +8,11 @@ import {
   type IndexedJson,
 } from "../../common/indexer.js";
 import { db, objFields as objFieldsTable } from "../../db/fimidx.sqlite.js";
-import type { IApp } from "../../definitions/app.js";
 import type { IObj, IObjField } from "../../definitions/obj.js";
+import type { IProject } from "../../definitions/project.js";
 import { createStorage, getDefaultStorageType } from "../../storage/config.js";
 import type { IObjStorage } from "../../storage/types.js";
-import { getApps } from "../app/getApps.js";
+import { getProjects } from "../project/getProjects.js";
 
 const batchSize = 1000;
 
@@ -38,7 +38,7 @@ async function indexObjFields(params: {
             ? Array.from(indexedField.arrayTypes)
             : [],
           isArrayCompressed: indexedField.isArrayCompressed,
-          appId: obj.appId,
+          projectId: obj.projectId,
           groupId: obj.groupId,
           tag: obj.tag,
           createdAt: obj.createdAt,
@@ -74,7 +74,7 @@ async function indexObjFields(params: {
             objFieldsTable.path,
             batch.map((field) => field.path)
           ),
-          eq(objFieldsTable.appId, batch[0].appId)
+          eq(objFieldsTable.projectId, batch[0].projectId)
         )
       )
       .limit(batchSize);
@@ -131,60 +131,63 @@ async function indexObjFields(params: {
   }
 }
 
-function initAppGetter() {
-  const cache = new LRUCache<string, IApp>({
+function initProjectGetter() {
+  const cache = new LRUCache<string, IProject>({
     max: batchSize * 2,
   });
 
-  const prefetchApps = async (objs: IObj[]) => {
-    const appIds = uniq(objs.map((obj) => obj.appId));
-    const apps: Record<string, IApp | null> = {};
-    appIds.forEach((appId) => {
-      apps[appId] = cache.get(appId) ?? null;
+  const prefetchProjects = async (objs: IObj[]) => {
+    const projectIds = uniq(objs.map((obj) => obj.projectId));
+    const projects: Record<string, IProject | null> = {};
+    projectIds.forEach((projectId) => {
+      projects[projectId] = cache.get(projectId) ?? null;
     });
-    const appsToFetch = appIds.filter((appId) => !apps[appId]);
+    const projectsToFetch = projectIds.filter(
+      (projectId) => !projects[projectId]
+    );
 
-    if (appsToFetch.length === 0) {
+    if (projectsToFetch.length === 0) {
       return;
     }
 
-    const fetchedApps = await getApps({
+    const fetchedProjects = await getProjects({
       args: {
         query: {
           id: {
-            in: appsToFetch,
+            in: projectsToFetch,
           },
         },
       },
     });
 
-    fetchedApps.apps.forEach((app) => {
-      cache.set(app.id, app);
+    fetchedProjects.projects.forEach((project) => {
+      cache.set(project.id, project);
     });
   };
 
-  const getApp = (obj: IObj) => {
-    const app = cache.get(obj.appId);
-    return app ?? null;
+  const getProject = (obj: IObj) => {
+    const project = cache.get(obj.projectId);
+    return project ?? null;
   };
 
   return {
-    getApp,
-    prefetchApps,
+    getProject,
+    prefetchProjects,
   };
 }
 
 export async function indexObjsBatch(params: {
   objs: IObj[];
-  getApp: (obj: IObj) => IApp | null;
+  getProject: (obj: IObj) => IProject | null;
 }) {
-  const { objs, getApp } = params;
+  const { objs, getProject } = params;
 
   // TODO: eventually move to or make a background job service to avoid
   // blocking the server
   const indexList = objs.map((obj) => {
-    const app = getApp(obj);
-    const fieldsToIndex = obj.fieldsToIndex ?? app?.objFieldsToIndex ?? null;
+    const project = getProject(obj);
+    const fieldsToIndex =
+      obj.fieldsToIndex ?? project?.objFieldsToIndex ?? null;
     const rawIndex = indexJson(obj.objRecord);
     let index: IndexedJson = rawIndex;
     if (fieldsToIndex) {
@@ -213,7 +216,7 @@ export async function indexObjs(params: {
     storage = createStorage({ type: storageType }),
   } = params;
 
-  const { getApp, prefetchApps } = initAppGetter();
+  const { getProject, prefetchProjects } = initProjectGetter();
 
   let page = 0;
   let batch: IObj[] = [];
@@ -237,13 +240,13 @@ export async function indexObjs(params: {
     });
 
     batch = readResult.objs;
-    await prefetchApps(batch);
-    const batchGroupedByApp = groupBy(batch, (obj) => obj.appId);
+    await prefetchProjects(batch);
+    const batchGroupedByProject = groupBy(batch, (obj) => obj.projectId);
 
     // index one batch at a time to avoid duplicating fields across batches
-    await Object.values(batchGroupedByApp).reduce(async (acc, batch) => {
+    await Object.values(batchGroupedByProject).reduce(async (acc, batch) => {
       await acc;
-      return indexObjsBatch({ objs: batch, getApp });
+      return indexObjsBatch({ objs: batch, getProject });
     }, Promise.resolve());
 
     page++;

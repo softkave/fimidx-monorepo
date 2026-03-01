@@ -1,5 +1,4 @@
 import { and, eq } from "drizzle-orm";
-import { v7 as uuidv7 } from "uuid";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
 import { kObjTags } from "../../../definitions/obj.js";
@@ -8,7 +7,7 @@ import { createDefaultStorage } from "../../../storage/config.js";
 import type { IObjStorage } from "../../../storage/types.js";
 import { addPermissions } from "../addPermissions.js";
 
-const defaultAppId = "test-app-addPermissions";
+const defaultProjectId = "test-project-addPermissions";
 const defaultGroupId = "test-group";
 const defaultBy = "tester";
 const defaultByType = "user";
@@ -24,7 +23,7 @@ function makeAddPermissionsArgs(
     .toString(36)
     .substr(2, 9)}`;
   return {
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     permissions: [
       {
         entity: "user",
@@ -43,14 +42,14 @@ function makeTestPermissionsArgs(
   entity: string,
   action: string,
   target: string,
-  overrides: any = {}
+  overrides: Partial<AddPermissionsEndpointArgs> = {}
 ) {
   testCounter++;
   const uniqueId = `${testCounter}_${Date.now()}_${Math.random()
     .toString(36)
     .substr(2, 9)}`;
   return {
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     permissions: [
       {
         entity: `${entity}_${uniqueId}`,
@@ -62,37 +61,6 @@ function makeTestPermissionsArgs(
       },
     ],
   };
-}
-
-// Helper function to insert objFields for the "action" field for sorting
-async function insertActionFieldForSorting(params: {
-  groupId: string;
-  tag: string;
-}) {
-  const { groupId, tag } = params;
-  const now = new Date();
-
-  const actionField = {
-    id: uuidv7(),
-    createdAt: now,
-    updatedAt: now,
-    appId: defaultAppId,
-    groupId,
-    tag,
-    field: "action",
-    path: "action",
-    type: "string",
-    arrayTypes: [],
-    isArrayCompressed: false,
-    fieldKeys: ["action"],
-    fieldKeyTypes: ["string"],
-    valueTypes: ["string"],
-  };
-
-  // Insert the field definition
-  await db.insert(objFieldsTable).values(actionField);
-
-  return actionField;
 }
 
 describe("addPermissions integration", () => {
@@ -107,7 +75,7 @@ describe("addPermissions integration", () => {
     // Clean up test data before each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
         tag: kObjTags.permission,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -120,7 +88,7 @@ describe("addPermissions integration", () => {
         .delete(objFieldsTable)
         .where(
           and(
-            eq(objFieldsTable.appId, defaultAppId),
+            eq(objFieldsTable.projectId, defaultProjectId),
             eq(objFieldsTable.groupId, defaultGroupId),
             eq(objFieldsTable.tag, kObjTags.permission)
           )
@@ -134,7 +102,7 @@ describe("addPermissions integration", () => {
     // Clean up after each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
         tag: kObjTags.permission,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -147,7 +115,7 @@ describe("addPermissions integration", () => {
         .delete(objFieldsTable)
         .where(
           and(
-            eq(objFieldsTable.appId, defaultAppId),
+            eq(objFieldsTable.projectId, defaultProjectId),
             eq(objFieldsTable.groupId, defaultGroupId),
             eq(objFieldsTable.tag, kObjTags.permission)
           )
@@ -207,7 +175,7 @@ describe("addPermissions integration", () => {
     expect(permission.description).toBe("A test permission description");
     expect(permission.meta).toEqual({ key: "value", another: "value2" });
     expect(permission.groupId).toBe(defaultGroupId);
-    expect(permission.appId).toBe(defaultAppId);
+    expect(permission.projectId).toBe(defaultProjectId);
     expect(permission.createdBy).toBe(defaultBy);
     expect(permission.createdByType).toBe(defaultByType);
     expect(permission.id).toBeDefined();

@@ -6,7 +6,7 @@ export function objToGroup(obj: IObj): IGroup {
     id: obj.id,
     createdAt: obj.createdAt,
     updatedAt: obj.updatedAt,
-    appId: obj.appId,
+    projectId: obj.projectId,
     groupId: obj.groupId,
     name: obj.objRecord.name,
     description:

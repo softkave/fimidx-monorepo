@@ -25,7 +25,7 @@ export interface IClientTokenItemMenuProps {
   onDeleting?: () => void;
   onDeleted?: () => void;
   routeAfterDelete?: string | boolean;
-  appId: string;
+  projectId: string;
 }
 
 export function ClientTokenItemMenu(props: IClientTokenItemMenuProps) {
@@ -34,7 +34,7 @@ export function ClientTokenItemMenu(props: IClientTokenItemMenuProps) {
     onDeleting,
     onDeleted,
     routeAfterDelete = true,
-    appId,
+    projectId,
   } = props;
 
   const router = useRouter();
@@ -45,16 +45,19 @@ export function ClientTokenItemMenu(props: IClientTokenItemMenuProps) {
       onDeleted?.();
       if (routeAfterDelete) {
         const orgId = clientToken.meta?.orgId;
-        const appId = clientToken.meta?.appId;
+        const projectId = clientToken.meta?.projectId;
 
-        if (!orgId || !appId) {
+        if (!orgId || !projectId) {
           return;
         }
 
         router.push(
           isString(routeAfterDelete)
             ? routeAfterDelete
-            : kClientPaths.app.org.app.clientToken.index(orgId, appId)
+            : kClientPaths.project.org.project.clientToken.index(
+                orgId,
+                projectId
+              )
         );
       }
     },
@@ -64,7 +67,7 @@ export function ClientTokenItemMenu(props: IClientTokenItemMenuProps) {
     onDeleting?.();
     deleteClientTokenHook.trigger({
       query: {
-        appId: kId0,
+        projectId: kId0,
         id: {
           eq: clientToken.id,
         },
@@ -86,7 +89,7 @@ export function ClientTokenItemMenu(props: IClientTokenItemMenuProps) {
       <ClientTokenFormSheet
         clientToken={clientToken}
         orgId={clientToken.groupId}
-        appId={appId}
+        projectId={projectId}
         onOpenChange={setIsEditing}
         isOpen={isEditing}
       />

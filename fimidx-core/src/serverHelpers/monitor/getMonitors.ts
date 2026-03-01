@@ -20,7 +20,7 @@ export function getMonitorsObjQuery(params: { args: GetMonitorsEndpointArgs }) {
     updatedBy,
     reportsTo,
     status,
-    appId,
+    projectId,
     id,
   } = query;
 
@@ -67,7 +67,7 @@ export function getMonitorsObjQuery(params: { args: GetMonitorsEndpointArgs }) {
   }
 
   const objQuery: IObjQuery = {
-    appId,
+    projectId,
     partQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
     metaQuery: { id, createdAt, updatedAt, createdBy, updatedBy },
   };

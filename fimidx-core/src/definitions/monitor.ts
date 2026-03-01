@@ -31,7 +31,7 @@ export interface IMonitor {
   updatedBy: string;
   createdByType: string;
   updatedByType: string;
-  appId: string;
+  projectId: string;
   logsQuery: IObjPartLogicalQuery;
   groupId: string;
   status: MonitorStatus;
@@ -49,7 +49,7 @@ export interface IMonitorObjRecord {
 }
 
 export const addMonitorSchema = z.object({
-  appId: z.string(),
+  projectId: z.string(),
   name: z.string().min(1),
   description: z.string().optional(),
   logsQuery: objPartLogicalQuerySchema,
@@ -59,7 +59,7 @@ export const addMonitorSchema = z.object({
 });
 
 export const monitorQuerySchema = z.object({
-  appId: z.string(),
+  projectId: z.string(),
   id: stringMetaQuerySchema.optional(),
   createdBy: stringMetaQuerySchema.optional(),
   updatedBy: stringMetaQuerySchema.optional(),

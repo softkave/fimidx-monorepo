@@ -12,7 +12,7 @@ export function getUniqueTestId(): string {
     .substr(2, 9)}`;
 }
 
-export function makeUniqueAppId(prefix: string): string {
+export function makeUniqueProjectId(prefix: string): string {
   return `${prefix}_${getUniqueTestId()}`;
 }
 
@@ -27,20 +27,20 @@ export function makeUniqueTokenName(prefix: string): string {
 // Comprehensive cleanup function that cleans all related data
 export async function cleanupTestData(params: {
   storage: IObjStorage;
-  appIds: string[];
+  projectIds: string[];
   by: string;
   byType: string;
 }): Promise<void> {
-  const { storage, appIds, by, byType } = params;
+  const { storage, projectIds, by, byType } = params;
 
   try {
-    for (const appId of appIds) {
+    for (const projectId of projectIds) {
       // Clean up all object types in the correct order to avoid foreign key constraints
       const objectTypes = [
         kObjTags.clientToken,
         kObjTags.permission,
         kObjTags.group,
-        kObjTags.app,
+        kObjTags.project,
         kObjTags.member,
         kObjTags.monitor,
         kObjTags.callback,
@@ -49,7 +49,7 @@ export async function cleanupTestData(params: {
 
       for (const tag of objectTypes) {
         await storage.bulkDelete({
-          query: { appId },
+          query: { projectId },
           tag,
           deletedBy: by,
           deletedByType: byType,
@@ -74,7 +74,7 @@ export function createTestSetup(params: {
 
   // Create unique identifiers for this test suite
   const uniqueId = getUniqueTestId();
-  const appId = makeUniqueAppId(testName);
+  const projectId = makeUniqueProjectId(testName);
   const groupId = makeUniqueGroupId(testName);
 
   // Create storage instance
@@ -84,7 +84,7 @@ export function createTestSetup(params: {
   const cleanup = async () => {
     await cleanupTestData({
       storage,
-      appIds: [appId],
+      projectIds: [projectId],
       by: defaultBy,
       byType: defaultByType,
     });
@@ -94,7 +94,7 @@ export function createTestSetup(params: {
     storage,
     cleanup,
     testData: {
-      appId,
+      projectId,
       groupId,
       by: defaultBy,
       byType: defaultByType,
@@ -112,7 +112,7 @@ export function makeTestData(params: {
   const uniqueId = getUniqueTestId();
 
   return {
-    appId: makeUniqueAppId(testName),
+    projectId: makeUniqueProjectId(testName),
     groupId: makeUniqueGroupId(testName),
     tokenName: makeUniqueTokenName(testName),
     ...overrides,

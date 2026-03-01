@@ -17,7 +17,7 @@ export interface ILogsProps {
   onFiltersChange?: (filters: IObjPartQueryList) => void;
   showFiltersAndSort?: boolean;
   orgId: string;
-  appId: string;
+  projectId: string;
 }
 
 export function LogItemsEmpty(props: { title?: string; message?: string }) {
@@ -55,7 +55,7 @@ export function Logs(props: ILogsProps) {
               onChange={props.onFiltersChange}
               filters={props.filters}
               orgId={props.orgId}
-              appId={props.appId}
+              projectId={props.projectId}
             />
           </AccordionContent>
         </AccordionItem>

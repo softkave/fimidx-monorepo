@@ -37,7 +37,7 @@ vi.mock('../LogFilesConsumer.js', () => ({
 
 describe('startLogFilesConsumer', () => {
   const mockConfig = {
-    appId: 'test-app',
+    projectId: 'test-project',
     clientToken: 'test-token',
     serverURL: 'https://test-server.com',
     metadata: {environment: 'test'},

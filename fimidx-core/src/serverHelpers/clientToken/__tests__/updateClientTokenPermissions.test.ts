@@ -17,7 +17,7 @@ describe("updateClientTokenPermissions integration", () => {
     testName: "updateClientTokenPermissions",
   });
 
-  const { appId, groupId, by, byType } = testData;
+  const { projectId, groupId, by, byType } = testData;
 
   function makeAddClientTokenArgs(overrides: any = {}) {
     const testData = makeTestData({ testName: "token" });
@@ -25,7 +25,7 @@ describe("updateClientTokenPermissions integration", () => {
       groupId,
       name: testData.tokenName,
       description: "Test description",
-      appId,
+      projectId,
       permissions: [],
       ...overrides,
     };
@@ -37,7 +37,7 @@ describe("updateClientTokenPermissions integration", () => {
       query: {
         id: `token-${testData.tokenName}`,
         groupId,
-        appId,
+        projectId,
       },
       update: {
         permissions: [
@@ -85,7 +85,7 @@ describe("updateClientTokenPermissions integration", () => {
       by: by,
       byType: byType,
       groupId: groupId,
-      appId: appId,
+      projectId: projectId,
       permissions: [
         {
           entity: "user",
@@ -102,7 +102,7 @@ describe("updateClientTokenPermissions integration", () => {
       query: {
         id: token.clientToken.id,
         groupId: groupId,
-        appId: appId,
+        projectId: projectId,
       },
       update: {
         permissions: [
@@ -149,7 +149,7 @@ describe("updateClientTokenPermissions integration", () => {
       query: {
         id: "non-existent-token",
         groupId: groupId,
-        appId: appId,
+        projectId: projectId,
       },
       update: {
         permissions: [
@@ -187,7 +187,7 @@ describe("updateClientTokenPermissions integration", () => {
       by: by,
       byType: byType,
       groupId: groupId,
-      appId: appId,
+      projectId: projectId,
       permissions: [
         {
           entity: "user",
@@ -204,7 +204,7 @@ describe("updateClientTokenPermissions integration", () => {
       query: {
         id: token.clientToken.id,
         groupId: groupId,
-        appId: appId,
+        projectId: projectId,
       },
       update: {
         permissions: [],
@@ -238,7 +238,7 @@ describe("updateClientTokenPermissions integration", () => {
       query: {
         id: token.clientToken.id,
         groupId: groupId,
-        appId: appId,
+        projectId: projectId,
       },
       update: {
         permissions: [

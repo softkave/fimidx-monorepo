@@ -1,4 +1,4 @@
-import { getApp } from "@/src/lib/serverHelpers/app/getApp";
+import { getProject } from "@/src/lib/serverHelpers/project/getProject";
 import {
   ISetManyObjsEndpointResponse,
   kObjTags,
@@ -17,14 +17,14 @@ export const setManyObjsEndpoint: NextClientTokenAuthenticatedEndpointFn<
   } = params;
 
   const input = setManyObjsSchema.parse(await req.json());
-  const { app } = await getApp({
-    input: { appId: input.appId },
+  const { project } = await getProject({
+    input: { projectId: input.projectId },
     clientToken,
   });
   const response = await setManyObjs({
     by: clientToken.id,
     byType: kByTypes.clientToken,
-    groupId: app.orgId,
+    groupId: project.orgId,
     tag: kObjTags.obj,
     input,
   });

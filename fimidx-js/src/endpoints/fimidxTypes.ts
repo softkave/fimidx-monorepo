@@ -7,8 +7,8 @@ export type InputLogRecord = {};
  */
 export type IngestLogsArgs = {
   /**
-   * The app ID
+   * The project ID
    */
-  appId: string;
+  projectId: string;
   logs: Array<InputLogRecord>;
 };

@@ -21,7 +21,7 @@ describe("getClientTokens integration", () => {
     testName: "getClientTokens",
   });
 
-  const { appId, groupId, by, byType } = testData;
+  const { projectId, groupId, by, byType } = testData;
 
   function makeAddClientTokenArgs(overrides: any = {}) {
     const testData = makeTestData({ testName: "token" });
@@ -41,7 +41,7 @@ describe("getClientTokens integration", () => {
           target: "settings",
         },
       ],
-      appId: overrides.appId || appId,
+      projectId: overrides.projectId || projectId,
       groupId,
       ...overrides,
     };
@@ -75,13 +75,13 @@ describe("getClientTokens integration", () => {
     // Clean up before each test
     await cleanup();
 
-    // Clean up objFields for test app
+    // Clean up objFields for test project
     try {
       await db
         .delete(objFieldsTable)
         .where(
           and(
-            eq(objFieldsTable.appId, appId),
+            eq(objFieldsTable.projectId, projectId),
             eq(objFieldsTable.tag, kObjTags.clientToken)
           )
         );
@@ -94,13 +94,13 @@ describe("getClientTokens integration", () => {
     // Clean up after each test
     await cleanup();
 
-    // Clean up objFields for test app
+    // Clean up objFields for test project
     try {
       await db
         .delete(objFieldsTable)
         .where(
           and(
-            eq(objFieldsTable.appId, appId),
+            eq(objFieldsTable.projectId, projectId),
             eq(objFieldsTable.tag, kObjTags.clientToken)
           )
         );
@@ -112,7 +112,7 @@ describe("getClientTokens integration", () => {
   it("returns empty array when no tokens exist", async () => {
     const args: GetClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
       },
     };
 
@@ -127,7 +127,7 @@ describe("getClientTokens integration", () => {
     expect(result.limit).toBe(100);
   });
 
-  it("retrieves all tokens for an app", async () => {
+  it("retrieves all tokens for an project", async () => {
     // Create test tokens
     const token1 = await createTestToken("Token 1");
     const token2 = await createTestToken("Token 2");
@@ -135,7 +135,7 @@ describe("getClientTokens integration", () => {
 
     const args: GetClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
       },
     };
 
@@ -162,7 +162,7 @@ describe("getClientTokens integration", () => {
 
     const args: GetClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
         name: {
           eq: "Apple Token",
         },
@@ -186,7 +186,7 @@ describe("getClientTokens integration", () => {
 
     const args: GetClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
         name: {
           in: ["Apple Token", "Banana Token"],
         },
@@ -214,7 +214,7 @@ describe("getClientTokens integration", () => {
 
     const args: GetClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
         meta: [
           {
             op: "eq",
@@ -273,7 +273,7 @@ describe("getClientTokens integration", () => {
 
     const args: GetClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
         permissionAction: {
           in: ["read", "write"],
         },
@@ -328,7 +328,7 @@ describe("getClientTokens integration", () => {
 
     const args: GetClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
         permissionEntity: {
           eq: "user",
         },
@@ -376,7 +376,7 @@ describe("getClientTokens integration", () => {
 
     const args: GetClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
         permissionTarget: {
           in: ["document", "settings"],
         },
@@ -431,7 +431,7 @@ describe("getClientTokens integration", () => {
 
     const args: GetClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
         permissionEntity: {
           eq: "user",
         },
@@ -459,7 +459,7 @@ describe("getClientTokens integration", () => {
 
     const args: GetClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
       },
       page: 1,
       limit: 2,
@@ -484,7 +484,7 @@ describe("getClientTokens integration", () => {
 
     const args: GetClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
       },
       page: 2,
       limit: 2,
@@ -509,7 +509,7 @@ describe("getClientTokens integration", () => {
 
     const args: GetClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
       },
       page: 3,
       limit: 2,
@@ -529,7 +529,7 @@ describe("getClientTokens integration", () => {
   it("sorts tokens by name ascending", async () => {
     // Insert the name field definition for sorting
     await insertNameFieldForSorting({
-      appId: appId,
+      projectId: projectId,
       groupId: groupId,
       tag: kObjTags.clientToken,
     });
@@ -541,7 +541,7 @@ describe("getClientTokens integration", () => {
 
     const args: GetClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
       },
       sort: [
         {
@@ -565,7 +565,7 @@ describe("getClientTokens integration", () => {
   it("sorts tokens by name descending", async () => {
     // Insert the name field definition for sorting
     await insertNameFieldForSorting({
-      appId: appId,
+      projectId: projectId,
       groupId: groupId,
       tag: kObjTags.clientToken,
     });
@@ -577,7 +577,7 @@ describe("getClientTokens integration", () => {
 
     const args: GetClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
       },
       sort: [
         {
@@ -605,7 +605,7 @@ describe("getClientTokens integration", () => {
 
     const args: GetClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
         createdBy: {
           eq: by,
         },
@@ -629,7 +629,7 @@ describe("getClientTokens integration", () => {
 
     const args: GetClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
         name: {
           in: ["Admin Token", "Admin Token 2"],
         },
@@ -664,7 +664,7 @@ describe("getClientTokens integration", () => {
 
     const args: GetClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
       },
     };
 
@@ -677,21 +677,21 @@ describe("getClientTokens integration", () => {
     expect(result.limit).toBe(100);
   });
 
-  it("filters tokens by appId correctly", async () => {
-    // Create tokens in different apps
+  it("filters tokens by projectId correctly", async () => {
+    // Create tokens in different projects
     await createTestToken("Token 1 - getClientTokens", {
-      appId: "app1 - getClientTokens",
+      projectId: "project1 - getClientTokens",
     });
     await createTestToken("Token 2 - getClientTokens", {
-      appId: "app2 - getClientTokens",
+      projectId: "project2 - getClientTokens",
     });
     await createTestToken("Token 3 - getClientTokens", {
-      appId: "app1 - getClientTokens",
+      projectId: "project1 - getClientTokens",
     });
 
     const args: GetClientTokensEndpointArgs = {
       query: {
-        appId: "app1 - getClientTokens",
+        projectId: "project1 - getClientTokens",
       },
     };
 
@@ -702,25 +702,27 @@ describe("getClientTokens integration", () => {
 
     expect(result.clientTokens).toHaveLength(2);
     expect(
-      result.clientTokens.every((t) => t.appId === "app1 - getClientTokens")
+      result.clientTokens.every(
+        (t) => t.projectId === "project1 - getClientTokens"
+      )
     ).toBe(true);
   });
 });
 
 // Helper function to insert objFields for the "name" field
 async function insertNameFieldForSorting(params: {
-  appId: string;
+  projectId: string;
   groupId: string;
   tag: string;
 }) {
-  const { appId, groupId, tag } = params;
+  const { projectId, groupId, tag } = params;
   const now = new Date();
 
   const nameField = {
     id: uuidv7(),
     createdAt: now,
     updatedAt: now,
-    appId,
+    projectId,
     groupId,
     tag,
     field: "name",

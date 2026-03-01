@@ -6,7 +6,7 @@ import { LogsHeaderMenu } from "./logs-header-menu";
 export function LogsHeader(props: {
   className?: string;
   orgId: string;
-  appId: string;
+  projectId: string;
   onShowFiltersAndSort: (showFiltersAndSort: boolean) => void;
   showFiltersAndSort: boolean;
 }) {

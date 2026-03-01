@@ -14,7 +14,7 @@ import { createTestSetup } from "./testUtils.js";
 
 const testName = "ingestLogs";
 const { storage, cleanup, testData } = createTestSetup({ testName });
-const { appId, by, byType } = testData;
+const { projectId, by, byType } = testData;
 
 // Test counter to ensure unique names
 let testCounter = 0;
@@ -27,7 +27,7 @@ function makeIngestLogsArgs(
     .toString(36)
     .substr(2, 9)}`;
   return {
-    appId: appId,
+    projectId: projectId,
     logs: [
       {
         level: "info",
@@ -121,7 +121,7 @@ describe("ingestLogs integration", () => {
     expect(result.logs[0].objRecord.message).toBe("Test log message");
     expect(result.logs[0].objRecord.source).toBe("test");
     expect(result.logs[0].objRecord.userId).toBe("user123");
-    expect(result.logs[0].appId).toBe(appId);
+    expect(result.logs[0].projectId).toBe(projectId);
     expect(result.logs[0].groupId).toBe("test-group"); // Assuming a default groupId for this test
     expect(result.logs[0].createdBy).toBe(by);
     expect(result.logs[0].createdByType).toBe(byType);

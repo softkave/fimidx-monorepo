@@ -19,7 +19,7 @@ export function OrgsHeader(props: { className?: string }) {
         onOpenChange={setOpenForm}
         onSubmitComplete={(org) => {
           if (org) {
-            router.push(kClientPaths.app.org.single(org.id));
+            router.push(kClientPaths.project.org.single(org.id));
           }
         }}
       />

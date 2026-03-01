@@ -42,7 +42,7 @@ The configuration file is a JSON file with the following structure:
 
 ```json
 {
-  "appId": "your-app-id",
+  "projectId": "your-project-id",
   "clientToken": "your-client-token",
   "serverURL": "https://your-fimidx-server.com",
   "metadata": {
@@ -66,7 +66,7 @@ The configuration file is a JSON file with the following structure:
 
 #### Global Options (optional, can be overridden per file)
 
-- `appId` (string): Your Fimidx application ID
+- `projectId` (string): Your Fimidx application ID
 - `clientToken` (string): Your Fimidx client token
 - `serverURL` (string): Fimidx server URL
 - `metadata` (object): Global metadata to attach to all log entries
@@ -75,7 +75,7 @@ The configuration file is a JSON file with the following structure:
 
 - `path` (string, required): Path to the log file to monitor
 - `metadata` (object, optional): File-specific metadata
-- `appId` (string, optional): Override global appId
+- `projectId` (string, optional): Override global projectId
 - `clientToken` (string, optional): Override global clientToken
 - `serverURL` (string, optional): Override global serverURL
 

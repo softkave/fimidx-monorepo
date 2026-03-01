@@ -1,15 +1,17 @@
 import { and, eq } from "drizzle-orm";
-import { v7 as uuidv7 } from "uuid";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
 import { kObjTags } from "../../../definitions/obj.js";
-import type { CheckPermissionsEndpointArgs } from "../../../definitions/permission.js";
+import type {
+  AddPermissionsEndpointArgs,
+  CheckPermissionsEndpointArgs,
+} from "../../../definitions/permission.js";
 import { createDefaultStorage } from "../../../storage/config.js";
 import type { IObjStorage } from "../../../storage/types.js";
 import { addPermissions } from "../addPermissions.js";
 import { checkPermissions } from "../checkPermissions.js";
 
-const defaultAppId = "test-app-checkPermissions";
+const defaultProjectId = "test-project-checkPermissions";
 const defaultGroupId = "test-group";
 const defaultBy = "tester";
 const defaultByType = "user";
@@ -17,13 +19,15 @@ const defaultByType = "user";
 // Test counter to ensure unique permissions
 let testCounter = 0;
 
-function makeAddPermissionsArgs(overrides: any = {}): any {
+function makeAddPermissionsArgs(
+  overrides: Partial<AddPermissionsEndpointArgs> = {}
+): AddPermissionsEndpointArgs {
   testCounter++;
   const uniqueId = `${testCounter}_${Date.now()}_${Math.random()
     .toString(36)
     .substr(2, 9)}`;
   return {
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     permissions: [
       {
         entity: "user",
@@ -41,7 +45,7 @@ function makeCheckPermissionsArgs(
   overrides: Partial<CheckPermissionsEndpointArgs> = {}
 ): CheckPermissionsEndpointArgs {
   return {
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     items: [
       {
         entity: "user",
@@ -51,37 +55,6 @@ function makeCheckPermissionsArgs(
     ],
     ...overrides,
   };
-}
-
-// Helper function to insert objFields for the "action" field for sorting
-async function insertActionFieldForSorting(params: {
-  groupId: string;
-  tag: string;
-}) {
-  const { groupId, tag } = params;
-  const now = new Date();
-
-  const actionField = {
-    id: uuidv7(),
-    createdAt: now,
-    updatedAt: now,
-    appId: defaultAppId,
-    groupId,
-    tag,
-    field: "action",
-    path: "action",
-    type: "string",
-    arrayTypes: [],
-    isArrayCompressed: false,
-    fieldKeys: ["action"],
-    fieldKeyTypes: ["string"],
-    valueTypes: ["string"],
-  };
-
-  // Insert the field definition
-  await db.insert(objFieldsTable).values(actionField);
-
-  return actionField;
 }
 
 describe("checkPermissions integration", () => {
@@ -94,7 +67,7 @@ describe("checkPermissions integration", () => {
   beforeEach(async () => {
     try {
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
         tag: kObjTags.permission,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -107,7 +80,7 @@ describe("checkPermissions integration", () => {
         .delete(objFieldsTable)
         .where(
           and(
-            eq(objFieldsTable.appId, defaultAppId),
+            eq(objFieldsTable.projectId, defaultProjectId),
             eq(objFieldsTable.groupId, defaultGroupId),
             eq(objFieldsTable.tag, kObjTags.permission)
           )
@@ -120,7 +93,7 @@ describe("checkPermissions integration", () => {
   afterEach(async () => {
     try {
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
         tag: kObjTags.permission,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -133,7 +106,7 @@ describe("checkPermissions integration", () => {
         .delete(objFieldsTable)
         .where(
           and(
-            eq(objFieldsTable.appId, defaultAppId),
+            eq(objFieldsTable.projectId, defaultProjectId),
             eq(objFieldsTable.groupId, defaultGroupId),
             eq(objFieldsTable.tag, kObjTags.permission)
           )
@@ -457,10 +430,10 @@ describe("checkPermissions integration", () => {
     expect(result.results).toHaveLength(0);
   });
 
-  it("checks permissions across different apps", async () => {
-    // Create permissions in different apps
+  it("checks permissions across different projects", async () => {
+    // Create permissions in different projects
     const addArgs1 = makeAddPermissionsArgs({
-      appId: "app1",
+      projectId: "project1",
       permissions: [
         {
           entity: "user",
@@ -471,7 +444,7 @@ describe("checkPermissions integration", () => {
     });
 
     const addArgs2 = makeAddPermissionsArgs({
-      appId: "app2",
+      projectId: "project2",
       permissions: [
         {
           entity: "user",
@@ -497,9 +470,9 @@ describe("checkPermissions integration", () => {
       storage,
     });
 
-    // Check permissions in app1
+    // Check permissions in project1
     const checkArgs1 = makeCheckPermissionsArgs({
-      appId: "app1",
+      projectId: "project1",
       items: [
         {
           entity: "user",
@@ -519,9 +492,9 @@ describe("checkPermissions integration", () => {
     expect(result1.results).toHaveLength(1);
     expect(result1.results[0].hasPermission).toBe(true);
 
-    // Check permissions in app2
+    // Check permissions in project2
     const checkArgs2 = makeCheckPermissionsArgs({
-      appId: "app2",
+      projectId: "project2",
       items: [
         {
           entity: "user",
@@ -541,9 +514,9 @@ describe("checkPermissions integration", () => {
     expect(result2.results).toHaveLength(1);
     expect(result2.results[0].hasPermission).toBe(true);
 
-    // Check permissions in non-existent app
+    // Check permissions in non-existent project
     const checkArgs3 = makeCheckPermissionsArgs({
-      appId: "non-existent",
+      projectId: "non-existent",
       items: [
         {
           entity: "user",

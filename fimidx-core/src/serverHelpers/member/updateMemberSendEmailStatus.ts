@@ -6,7 +6,7 @@ import type { IObjStorage } from "../../storage/types.js";
 import { updateManyObjs } from "../obj/updateObjs.js";
 
 export async function updateMemberSendEmailStatus(params: {
-  appId: string;
+  projectId: string;
   groupId: string;
   id: string;
   sentEmailCount: number;
@@ -15,7 +15,7 @@ export async function updateMemberSendEmailStatus(params: {
   storage?: IObjStorage;
 }) {
   const {
-    appId,
+    projectId,
     groupId,
     id,
     sentEmailCount,
@@ -31,7 +31,7 @@ export async function updateMemberSendEmailStatus(params: {
 
   await updateManyObjs({
     objQuery: {
-      appId,
+      projectId,
       partQuery: {
         and: [{ value: id, op: "eq", field: "memberId" }],
       },

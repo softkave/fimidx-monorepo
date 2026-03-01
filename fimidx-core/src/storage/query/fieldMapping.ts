@@ -5,7 +5,7 @@ export const FIELD_MAP: Record<string, string> = {
   createdAt: "created_at",
   createdBy: "created_by",
   createdByType: "created_by_type",
-  appId: "app_id",
+  projectId: "project_id",
   groupId: "group_id",
   updatedAt: "updated_at",
   updatedBy: "updated_by",

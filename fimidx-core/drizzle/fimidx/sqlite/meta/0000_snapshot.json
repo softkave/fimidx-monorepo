@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "c2532433-48ab-42fe-849c-4ee23ddac457",
+  "id": "43625fd2-a5d5-4509-8b53-22ddb36334cd",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "emailBlockList": {
@@ -202,8 +202,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "appId": {
-          "name": "appId",
+        "projectId": {
+          "name": "projectId",
           "type": "text",
           "primaryKey": false,
           "notNull": true,

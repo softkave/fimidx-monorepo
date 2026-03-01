@@ -18,7 +18,7 @@ describe("updateClientTokens integration", () => {
     testName: "updateClientTokens",
   });
 
-  const { appId, groupId, by, byType } = testData;
+  const { projectId, groupId, by, byType } = testData;
 
   function makeAddClientTokenArgs(overrides: any = {}) {
     const testData = makeTestData({ testName: "token" });
@@ -39,7 +39,7 @@ describe("updateClientTokens integration", () => {
           target: "settings",
         },
       ],
-      appId: overrides.appId || appId,
+      projectId: overrides.projectId || projectId,
       ...overrides,
     };
   }
@@ -96,7 +96,7 @@ describe("updateClientTokens integration", () => {
     const beforeUpdate = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
           name: {
             eq: "Original Token",
           },
@@ -108,7 +108,7 @@ describe("updateClientTokens integration", () => {
 
     const args: UpdateClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
         name: {
           eq: "Original Token",
         },
@@ -149,7 +149,7 @@ describe("updateClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
           name: {
             eq: "Updated Token",
           },
@@ -180,7 +180,7 @@ describe("updateClientTokens integration", () => {
 
     const args: UpdateClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
         meta: [
           {
             op: "eq",
@@ -218,7 +218,7 @@ describe("updateClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
           meta: [
             {
               op: "eq",
@@ -258,7 +258,7 @@ describe("updateClientTokens integration", () => {
 
     const args: UpdateClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
         meta: [
           {
             op: "eq",
@@ -284,7 +284,7 @@ describe("updateClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
           meta: [
             {
               op: "eq",
@@ -307,7 +307,7 @@ describe("updateClientTokens integration", () => {
 
     const args: UpdateClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
         id: {
           eq: token.id,
         },
@@ -330,7 +330,7 @@ describe("updateClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
           id: {
             eq: token.id,
           },
@@ -351,7 +351,7 @@ describe("updateClientTokens integration", () => {
 
     const args: UpdateClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
         createdBy: {
           eq: by,
         },
@@ -373,7 +373,7 @@ describe("updateClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
           meta: [
             {
               op: "eq",
@@ -409,7 +409,7 @@ describe("updateClientTokens integration", () => {
 
     const args: UpdateClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
         name: {
           eq: "Test Token",
         },
@@ -431,7 +431,7 @@ describe("updateClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
           name: {
             eq: "Test Token",
           },
@@ -460,7 +460,7 @@ describe("updateClientTokens integration", () => {
 
     const args: UpdateClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
         name: {
           eq: "Test Token",
         },
@@ -482,7 +482,7 @@ describe("updateClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
           name: {
             eq: "Test Token",
           },
@@ -512,7 +512,7 @@ describe("updateClientTokens integration", () => {
 
     const args: UpdateClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
         name: {
           eq: "Test Token",
         },
@@ -550,7 +550,7 @@ describe("updateClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
           name: {
             eq: "Test Token",
           },
@@ -586,7 +586,7 @@ describe("updateClientTokens integration", () => {
 
     const args: UpdateClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
         name: {
           eq: "Test Token",
         },
@@ -608,7 +608,7 @@ describe("updateClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
           name: {
             eq: "Test Token",
           },
@@ -621,14 +621,18 @@ describe("updateClientTokens integration", () => {
     expect(result.clientTokens[0].permissions).toBeNull();
   });
 
-  it("updates tokens across different apps", async () => {
-    // Create tokens in different apps
-    await createTestToken("Token 1 - updateClientTokens", { appId: "app1" });
-    await createTestToken("Token 2 - updateClientTokens", { appId: "app2" });
+  it("updates tokens across different projects", async () => {
+    // Create tokens in different projects
+    await createTestToken("Token 1 - updateClientTokens", {
+      projectId: "project1",
+    });
+    await createTestToken("Token 2 - updateClientTokens", {
+      projectId: "project2",
+    });
 
     const args: UpdateClientTokensEndpointArgs = {
       query: {
-        appId: "app1",
+        projectId: "project1",
         name: {
           eq: "Token 1 - updateClientTokens",
         },
@@ -646,11 +650,11 @@ describe("updateClientTokens integration", () => {
       storage,
     });
 
-    // Verify only the token in app1 was updated
+    // Verify only the token in project1 was updated
     const result1 = await getClientTokens({
       args: {
         query: {
-          appId: "app1",
+          projectId: "project1",
         },
       },
       storage,
@@ -659,7 +663,7 @@ describe("updateClientTokens integration", () => {
     const result2 = await getClientTokens({
       args: {
         query: {
-          appId: "app2",
+          projectId: "project2",
         },
       },
       storage,

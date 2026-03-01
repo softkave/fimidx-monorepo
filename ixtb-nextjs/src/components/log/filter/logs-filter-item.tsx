@@ -50,7 +50,7 @@ const kValueTypeToAllowedOps: Record<FieldType, (keyof typeof kOps)[]> = {
 
 export interface ILogsFilterItemProps {
   orgId: string;
-  appId: string;
+  projectId: string;
   item: IWorkingLogPartFilterItem;
   fields: ILogField[];
   onChange: (value: IWorkingLogPartFilterItem) => void;
@@ -59,7 +59,7 @@ export interface ILogsFilterItemProps {
 }
 
 export function LogsFilterItem(props: ILogsFilterItemProps) {
-  const { fields, item, onChange, onRemove, appId, disabled } = props;
+  const { fields, item, onChange, onRemove, projectId, disabled } = props;
 
   const field = useMemo(() => {
     return fields.find((f) => f.path === item.item.field);

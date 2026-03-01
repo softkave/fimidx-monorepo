@@ -21,7 +21,7 @@ export async function updateClientTokenPermissions(params: {
   const { clientTokens } = await getClientTokens({
     args: {
       query: {
-        appId: query.appId,
+        projectId: query.projectId,
         id: {
           eq: query.id,
         },
@@ -44,7 +44,7 @@ export async function updateClientTokenPermissions(params: {
     by,
     byType,
     groupId: clientToken.groupId,
-    appId: clientToken.appId,
+    projectId: clientToken.projectId,
     permissions: update.permissions,
     clientTokenId: clientToken.id,
     storage,

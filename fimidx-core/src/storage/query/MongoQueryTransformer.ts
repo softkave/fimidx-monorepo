@@ -1,3 +1,4 @@
+import { uniq } from "lodash-es";
 import type { FilterQuery, SortOrder } from "mongoose";
 import type {
   INumberMetaQuery,
@@ -24,9 +25,9 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
   ): FilterQuery<IObj> {
     const filters: FilterQuery<IObj>[] = [];
 
-    // Add appId filter
-    if (query.appId) {
-      filters.push({ appId: query.appId });
+    // Add projectId filter
+    if (query.projectId) {
+      filters.push({ projectId: query.projectId });
     }
 
     // Add part query filter
@@ -79,7 +80,7 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
       "createdByType",
       "updatedBy",
       "updatedByType",
-      "appId",
+      "projectId",
       "groupId",
       "tag",
       "deletedAt",
@@ -426,11 +427,11 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
         break;
       case "in":
         const inValues = Array.isArray(value) ? value : [value];
-        fieldOps.$elemMatch = { $in: inValues };
+        fieldOps.$elemMatch = { $in: uniq(inValues) };
         break;
       case "not_in":
         const notInValues = Array.isArray(value) ? value : [value];
-        fieldOps.$not = { $elemMatch: { $in: notInValues } };
+        fieldOps.$not = { $elemMatch: { $in: uniq(notInValues) } };
         break;
       case "between":
         const [min, max] = Array.isArray(value) ? value : [value, value];
@@ -556,11 +557,11 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
         break;
       case "in":
         const inValues = Array.isArray(value) ? value : [value];
-        fieldOps.$in = inValues;
+        fieldOps.$in = uniq(inValues);
         break;
       case "not_in":
         const notInValues = Array.isArray(value) ? value : [value];
-        fieldOps.$nin = notInValues;
+        fieldOps.$nin = uniq(notInValues);
         break;
       case "between":
         const [min, max] = Array.isArray(value) ? value : [value, value];
@@ -640,10 +641,10 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
       fieldFilter.$ne = value.neq;
     }
     if (hasIn) {
-      fieldFilter.$in = value.in;
+      fieldFilter.$in = uniq(value.in);
     }
     if (hasNotIn) {
-      fieldFilter.$nin = value.not_in;
+      fieldFilter.$nin = uniq(value.not_in);
     }
 
     // Assign the field filter to the main filter
@@ -694,16 +695,16 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
     // Process in/not_in operations (they take precedence)
     if (value.in !== undefined && value.in.length > 0) {
       if (isDateField && value.in.some((v) => typeof v !== "number")) {
-        fieldFilter.$in = value.in.map(toDate);
+        fieldFilter.$in = uniq(value.in.map(toDate));
       } else {
-        fieldFilter.$in = value.in;
+        fieldFilter.$in = uniq(value.in);
       }
     }
     if (value.not_in !== undefined && value.not_in.length > 0) {
       if (isDateField && value.not_in.some((v) => typeof v !== "number")) {
-        fieldFilter.$nin = value.not_in.map(toDate);
+        fieldFilter.$nin = uniq(value.not_in.map(toDate));
       } else {
-        fieldFilter.$nin = value.not_in;
+        fieldFilter.$nin = uniq(value.not_in);
       }
     }
 

@@ -88,7 +88,7 @@ async function tryGetClientTokenAuthenticatedRequest(
     });
 
     assert.ok(
-      clientToken.appId === decodedToken.appId,
+      clientToken.projectId === decodedToken.projectId,
       new OwnServerError("Unauthorized", 401)
     );
     assert.ok(

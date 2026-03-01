@@ -17,7 +17,7 @@ describe("checkClientTokenPermissions integration", () => {
     testName: "checkClientTokenPermissions",
   });
 
-  const { appId, groupId, by, byType } = testData;
+  const { projectId, groupId, by, byType } = testData;
 
   function makeAddClientTokenArgs(overrides: any = {}) {
     const testData = makeTestData({ testName: "token" });
@@ -25,7 +25,7 @@ describe("checkClientTokenPermissions integration", () => {
       groupId,
       name: testData.tokenName,
       description: "Test description",
-      appId,
+      projectId,
       permissions: [],
       ...overrides,
     };
@@ -37,7 +37,7 @@ describe("checkClientTokenPermissions integration", () => {
       by,
       byType,
       groupId,
-      appId,
+      projectId,
       permissions: [
         {
           entity: "user",
@@ -52,7 +52,7 @@ describe("checkClientTokenPermissions integration", () => {
 
   function makeCheckClientTokenPermissionsArgs(overrides: any = {}) {
     return {
-      appId,
+      projectId,
       clientTokenId: "test-token-id",
       groupId,
       items: [

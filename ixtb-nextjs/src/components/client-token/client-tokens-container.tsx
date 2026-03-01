@@ -25,7 +25,7 @@ export interface IClientTokenListContainerProps {
   filter?: IClientTokenListContainerFilter;
   className?: string;
   clientTokensContainerClassName?: string;
-  appId: string;
+  projectId: string;
 }
 
 export function ClientTokenListContainer({
@@ -34,7 +34,7 @@ export function ClientTokenListContainer({
   filter,
   className,
   clientTokensContainerClassName,
-  appId,
+  projectId,
 }: IClientTokenListContainerProps) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -43,11 +43,11 @@ export function ClientTokenListContainer({
     page,
     limit: pageSize,
     query: {
-      appId: kId0,
+      projectId: kId0,
       meta: [
         {
-          field: "appId",
-          value: appId,
+          field: "projectId",
+          value: projectId,
           op: "eq",
         },
       ],

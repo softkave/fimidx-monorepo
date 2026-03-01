@@ -1,4 +1,4 @@
-import { AppHeader } from "@/src/components/internal/app-header";
+import { ProjectHeader } from "@/src/components/internal/project-header";
 import { VerifyRequestMessage } from "@/src/components/internal/verify-request-message.tsx";
 import { kAppConstants } from "fimidx-core/definitions/appConstants";
 import { Metadata } from "next";
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function VerifyRequestPage() {
   return (
     <main className="flex flex-col h-screen flex-1">
-      <AppHeader />
+      <ProjectHeader />
       <div className="flex h-screen w-full flex-col items-center justify-center flex-1">
         <a
           href="#"

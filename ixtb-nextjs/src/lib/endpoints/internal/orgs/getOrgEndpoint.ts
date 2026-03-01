@@ -23,7 +23,7 @@ export const getOrgEndpoint: NextUserAuthenticatedEndpointFn<
         id: {
           eq: input.id,
         },
-        appId: kId0,
+        projectId: kId0,
       },
     },
   });

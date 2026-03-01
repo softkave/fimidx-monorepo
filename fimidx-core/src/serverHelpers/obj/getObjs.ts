@@ -1,5 +1,3 @@
-import { and, eq, inArray } from "drizzle-orm";
-import { db, objFields as objFieldsTable } from "../../db/fimidx.sqlite.js";
 import type {
   INumberMetaQuery,
   IObjField,
@@ -100,26 +98,6 @@ export function metaQueryToPartQueryList(params: {
   return partQuery.length ? partQuery : undefined;
 }
 
-async function getObjFieldsFromDb(params: {
-  appId: string;
-  tag: string;
-  limit?: number;
-  fields?: string[];
-}) {
-  const { appId, tag, limit = 100, fields } = params;
-  return await db
-    .select()
-    .from(objFieldsTable)
-    .where(
-      and(
-        eq(objFieldsTable.appId, appId),
-        eq(objFieldsTable.tag, tag),
-        fields ? inArray(objFieldsTable.path, fields) : undefined
-      )
-    )
-    .limit(limit);
-}
-
 export async function getManyObjs(params: {
   objQuery: IObjQuery;
   page?: number;
@@ -144,12 +122,12 @@ export async function getManyObjs(params: {
   // Fetch fields for query generation
   let fields: IObjField[] = [];
 
-  if (objQuery.appId) {
+  if (objQuery.projectId) {
     // Fetch fields
     const fieldsResult = await getObjFields({
-      appId: objQuery.appId,
+      projectId: objQuery.projectId,
       tag,
-      limit: 1000, // Fetch all fields for this app/tag combination
+      limit: 1000, // Fetch all fields for this project/tag combination
     });
     fields = fieldsResult.fields.map((field) => ({
       ...field,

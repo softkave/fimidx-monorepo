@@ -15,7 +15,7 @@ export function getPermissionsObjQuery(params: {
   const { args } = params;
   const {
     query: {
-      appId,
+      projectId,
       id,
       entity,
       action,
@@ -94,7 +94,7 @@ export function getPermissionsObjQuery(params: {
   ];
 
   const objQuery: IObjQuery = {
-    appId,
+    projectId,
     partQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
     metaQuery: { id, createdAt, updatedAt, createdBy, updatedBy },
   };

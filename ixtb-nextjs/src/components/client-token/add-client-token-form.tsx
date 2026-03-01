@@ -25,7 +25,7 @@ import { Textarea } from "../ui/textarea.tsx";
 
 export interface IAddClientTokenFormProps {
   orgId: string;
-  appId: string;
+  projectId: string;
   onSubmitComplete: (clientToken: IClientToken) => void;
 }
 
@@ -39,7 +39,7 @@ function generateClientTokenName() {
 }
 
 export function AddClientTokenForm(props: IAddClientTokenFormProps) {
-  const { appId, orgId, onSubmitComplete } = props;
+  const { projectId, orgId, onSubmitComplete } = props;
 
   const form = useForm<z.infer<typeof addClientTokenFormSchema>>({
     resolver: zodResolver(addClientTokenFormSchema),
@@ -58,23 +58,23 @@ export function AddClientTokenForm(props: IAddClientTokenFormProps) {
 
   const addClientTokenHook = useAddClientToken({
     onSuccess: handleSuccess,
-    appId: appId,
+    projectId: projectId,
   });
 
   const onSubmit = useCallback(
     async (values: z.infer<typeof addClientTokenFormSchema>) => {
       await addClientTokenHook.trigger({
-        appId: kId0,
+        projectId: kId0,
         groupId: kId0,
         name: values.name,
         description: values.description,
         meta: {
-          appId: appId,
+          projectId: projectId,
           orgId: orgId,
         },
       });
     },
-    [addClientTokenHook, appId, orgId]
+    [addClientTokenHook, projectId, orgId]
   );
 
   return (

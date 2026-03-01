@@ -28,12 +28,12 @@ export async function deleteManyObjs(params: {
   // Fetch fields for query generation
   let fields: IObjField[] = [];
 
-  if (objQuery.appId) {
+  if (objQuery.projectId) {
     // Fetch fields
     const fieldsResult = await getObjFields({
-      appId: objQuery.appId,
+      projectId: objQuery.projectId,
       tag,
-      limit: 1000, // Fetch all fields for this app/tag combination
+      limit: 1000, // Fetch all fields for this project/tag combination
     });
     fields = fieldsResult.fields.map((field) => ({
       ...field,

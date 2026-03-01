@@ -10,10 +10,10 @@ import { objToLog } from "./objToLog.js";
 export function getLogsObjQuery(params: { args: GetLogsEndpointArgs }) {
   const { args } = params;
   const { query } = args;
-  const { appId, logsQuery, metaQuery } = query;
+  const { projectId, logsQuery, metaQuery } = query;
 
   const objQuery: IObjQuery = {
-    appId,
+    projectId,
     partQuery: logsQuery,
     metaQuery,
   };

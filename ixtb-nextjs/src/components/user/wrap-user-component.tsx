@@ -1,7 +1,7 @@
 "use client";
 
 import { kClientPaths } from "@/src/lib/clientHelpers/clientPaths.ts";
-import { useAppSession } from "@/src/lib/clientHooks/userHooks.ts";
+import { useProjectSession } from "@/src/lib/clientHooks/userHooks.ts";
 import assert from "assert";
 import { IUser } from "fimidx-core/definitions/user";
 import { redirect, usePathname } from "next/navigation";
@@ -18,7 +18,7 @@ export function WrapUserComponent({
   render,
   children,
 }: IWrapUserComponentProps) {
-  const { status, user } = useAppSession();
+  const { status, user } = useProjectSession();
   const pathname = usePathname();
 
   useEffect(() => {

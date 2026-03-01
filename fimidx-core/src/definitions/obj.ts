@@ -11,7 +11,7 @@ export const kObjTags = {
   group: "group",
   clientToken: "clientToken",
   member: "member",
-  app: "app",
+  project: "project",
   monitor: "monitor",
   permission: "permission",
 } as const;
@@ -39,7 +39,7 @@ export type IObjField = {
   isArrayCompressed: boolean;
   createdAt: Date;
   updatedAt: Date;
-  appId: string;
+  projectId: string;
   groupId: string;
   tag: string;
 };
@@ -49,7 +49,7 @@ export type IObj = {
   createdAt: Date;
   createdBy: string;
   createdByType: string;
-  appId: string;
+  projectId: string;
   groupId: string;
   updatedAt: Date;
   updatedBy: string;
@@ -78,7 +78,7 @@ export const onConflictSchema = z
   .default("replace");
 
 export const setManyObjsSchema = z.object({
-  appId: z.string(),
+  projectId: z.string(),
   items: inputObjRecordArraySchema.min(1).max(100),
   onConflict: onConflictSchema.optional(),
   /**
@@ -238,9 +238,9 @@ export const topLevelFieldQuerySchema = z.object({
   deletedByType: stringMetaQuerySchema.optional(),
 });
 
-// TODO: appId shouldn't be optional for external use
+// TODO: projectId shouldn't be optional for external use
 export const objQuerySchema = z.object({
-  appId: z.string().optional(),
+  projectId: z.string().optional(),
   partQuery: objPartLogicalQuerySchema.optional(),
   metaQuery: objMetaQuerySchema.optional(),
   topLevelFields: topLevelFieldQuerySchema.optional(),
@@ -281,13 +281,13 @@ export const getManyObjsSchema = z.object({
 });
 
 export const getObjFieldsSchema = z.object({
-  appId: z.string(),
+  projectId: z.string(),
   page: z.number().optional(),
   limit: z.number().optional(),
 });
 
 export const getObjFieldValuesSchema = z.object({
-  appId: z.string(),
+  projectId: z.string(),
   field: z.string(),
   page: z.number().optional(),
   limit: z.number().optional(),

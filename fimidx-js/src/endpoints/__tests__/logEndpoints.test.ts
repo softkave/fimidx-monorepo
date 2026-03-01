@@ -11,7 +11,7 @@ const endpoints = new FimidxEndpoints({
 describe('log endpoints', () => {
   test('ingest logs succeeds', async () => {
     await endpoints.logs.ingestLogs({
-      appId: vars.appId,
+      projectId: vars.projectId,
       logs: [
         {
           message: 'Hello, world!',

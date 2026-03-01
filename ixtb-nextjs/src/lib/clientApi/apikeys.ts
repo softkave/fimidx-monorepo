@@ -14,11 +14,11 @@ export const kApiOrgKeys = {
   updateOrg: (orgId: string) => `/api/orgs/${orgId}`,
 };
 
-export const kApiAppKeys = {
-  getApps: () => `/api/apps/fetch`,
-  addApp: () => `/api/apps`,
-  deleteApp: () => `/api/apps`,
-  updateApp: () => `/api/apps`,
+export const kApiProjectKeys = {
+  getProjects: () => `/api/projects/fetch`,
+  addProject: () => `/api/projects`,
+  deleteProject: () => `/api/projects`,
+  updateProject: () => `/api/projects`,
 };
 
 export const kApiClientTokenKeys = {

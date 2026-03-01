@@ -13,10 +13,10 @@ export const kFimidxPermissions = {
     update: "group:update",
     delete: "group:delete",
   },
-  app: {
-    read: "app:read",
-    update: "app:update",
-    delete: "app:delete",
+  project: {
+    read: "project:read",
+    update: "project:update",
+    delete: "project:delete",
   },
   member: {
     read: "member:read",
@@ -61,9 +61,9 @@ export const kFimidxPermissionsList = [
   kFimidxPermissions.wildcard,
   kFimidxPermissions.group.update,
   kFimidxPermissions.group.delete,
-  kFimidxPermissions.app.read,
-  kFimidxPermissions.app.update,
-  kFimidxPermissions.app.delete,
+  kFimidxPermissions.project.read,
+  kFimidxPermissions.project.update,
+  kFimidxPermissions.project.delete,
   kFimidxPermissions.member.read,
   kFimidxPermissions.member.readPermissions,
   kFimidxPermissions.member.update,
@@ -107,7 +107,7 @@ export interface IPermission extends IPermissionAtom {
   createdByType: string;
   updatedBy: string;
   updatedByType: string;
-  appId: string;
+  projectId: string;
   groupId: string;
   meta?: IPermissionMeta;
 }
@@ -136,7 +136,7 @@ export const addPermissionItemSchema = permissionAtomSchema.extend({
 });
 
 export const addPermissionsSchema = z.object({
-  appId: z.string(),
+  projectId: z.string(),
   permissions: z.array(addPermissionItemSchema),
 });
 
@@ -147,7 +147,7 @@ export const actionQuerySchema = entityQuerySchema;
 export const targetQuerySchema = entityQuerySchema;
 
 export const permissionQuerySchema = z.object({
-  appId: z.string(),
+  projectId: z.string(),
   id: stringMetaQuerySchema.optional(),
   entity: entityQuerySchema.optional(),
   action: actionQuerySchema.optional(),
@@ -190,7 +190,7 @@ export const checkPermissionItemSchema = z.object({
 });
 
 export const checkPermissionsSchema = z.object({
-  appId: z.string(),
+  projectId: z.string(),
   items: z.array(checkPermissionItemSchema),
 });
 

@@ -14,7 +14,7 @@ export function getCallbacksObjQuery(params: {
   const { args } = params;
   const { query } = args;
   const {
-    appId,
+    projectId,
     createdBy,
     updatedBy,
     idempotencyKey,
@@ -194,7 +194,7 @@ export function getCallbacksObjQuery(params: {
   }
 
   const objQuery: IObjQuery = {
-    appId,
+    projectId,
     partQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
     metaQuery: { id, createdAt, updatedAt, createdBy, updatedBy },
   };

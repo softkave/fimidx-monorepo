@@ -11,7 +11,7 @@ export async function getLogFields(params: {
   args: GetLogFieldsEndpointArgs;
 }): Promise<GetLogFieldsEndpointResponse> {
   const { args } = params;
-  const { appId, page, limit } = args;
+  const { projectId, page, limit } = args;
 
   // Convert 1-based pagination to 0-based for storage layer
   const pageNumber = page ?? 1;
@@ -24,7 +24,7 @@ export async function getLogFields(params: {
     limit: storageLimit,
     hasMore,
   } = await getObjFields({
-    appId,
+    projectId,
     page: storagePage,
     limit: limitNumber,
     tag: kObjTags.log,
@@ -33,7 +33,7 @@ export async function getLogFields(params: {
   return {
     fields: fields.map(
       (field): ILogField => ({
-        appId,
+        projectId,
         groupId: field.groupId,
         id: field.id,
         path: field.path,

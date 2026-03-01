@@ -13,21 +13,21 @@ export interface ILogContainerRenderProps {
 
 export interface ILogContainerProps {
   logId: string;
-  appId: string;
+  projectId: string;
   render?: (response: ILogContainerRenderProps) => React.ReactNode;
   renderLoading?: () => React.ReactNode;
   renderError?: (error: unknown) => React.ReactNode;
 }
 
 export function LogContainer(props: ILogContainerProps) {
-  const { logId, appId, renderLoading, renderError } = props;
+  const { logId, projectId, renderLoading, renderError } = props;
 
   const args = useMemo(
     (): z.infer<typeof getLogsSchema> => ({
       page: 1,
       limit: 1,
       query: {
-        appId,
+        projectId,
         logsQuery: {
           and: [
             {
@@ -39,7 +39,7 @@ export function LogContainer(props: ILogContainerProps) {
         },
       },
     }),
-    [logId, appId]
+    [logId, projectId]
   );
 
   const logHook = useGetLogs(args);

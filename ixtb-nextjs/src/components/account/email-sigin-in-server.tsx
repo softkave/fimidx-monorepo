@@ -15,7 +15,7 @@ export function EmailSignInServer(props: IEmailSignInServerProps) {
         await signIn("resend", {
           email: formData.get("email"),
           redirectTo: kClientPaths.withURL(
-            props.redirectTo ?? kClientPaths.app.index
+            props.redirectTo ?? kClientPaths.project.index
           ),
         });
       }}

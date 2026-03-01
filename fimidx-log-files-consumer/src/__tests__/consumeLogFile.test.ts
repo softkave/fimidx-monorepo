@@ -56,7 +56,7 @@ describe('consumeLogFiles', () => {
     const input: IConsumeLogFileInput = {
       path: '/test/log.txt',
       metadata: {source: 'test'},
-      appId: 'test-app',
+      projectId: 'test-project',
       clientToken: 'test-token',
     };
 
@@ -87,7 +87,7 @@ describe('consumeLogFiles', () => {
     expect(fs.stat).toHaveBeenCalledWith('/test/log.txt');
     expect(fs.open).toHaveBeenCalledWith('/test/log.txt', 'r');
     expect(FimidxConsoleLikeLogger).toHaveBeenCalledWith({
-      appId: 'test-app',
+      projectId: 'test-project',
       clientToken: 'test-token',
       serverURL: undefined,
       metadata: {source: 'test'},
@@ -103,7 +103,7 @@ describe('consumeLogFiles', () => {
     const input: IConsumeLogFileInput = {
       path: '/test/log.txt',
       metadata: {source: 'test'},
-      appId: 'test-app',
+      projectId: 'test-project',
       clientToken: 'test-token',
     };
 
@@ -143,7 +143,7 @@ describe('consumeLogFiles', () => {
     const input: IConsumeLogFileInput = {
       path: '/test/log.txt',
       metadata: {source: 'test'},
-      appId: 'test-app',
+      projectId: 'test-project',
       clientToken: 'test-token',
     };
 
@@ -193,7 +193,7 @@ describe('consumeLogFiles', () => {
     const input: IConsumeLogFileInput = {
       path: '/test/empty.txt',
       metadata: {source: 'test'},
-      appId: 'test-app',
+      projectId: 'test-project',
       clientToken: 'test-token',
     };
 
@@ -215,7 +215,7 @@ describe('consumeLogFiles', () => {
     const input: IConsumeLogFileInput = {
       path: '/test/incomplete.txt',
       metadata: {source: 'test'},
-      appId: 'test-app',
+      projectId: 'test-project',
       clientToken: 'test-token',
     };
 
@@ -240,7 +240,7 @@ describe('consumeLogFiles', () => {
     const input: IConsumeLogFileInput = {
       path: '/test/log.txt',
       metadata: {source: 'test'},
-      appId: 'test-app',
+      projectId: 'test-project',
       clientToken: 'test-token',
     };
 
@@ -281,7 +281,7 @@ describe('consumeLogFiles', () => {
     const input: IConsumeLogFileInput = {
       path: '/test/mixed.txt',
       metadata: {source: 'test'},
-      appId: 'test-app',
+      projectId: 'test-project',
       clientToken: 'test-token',
     };
 
@@ -319,7 +319,7 @@ describe('consumeLogFiles', () => {
     const input: IConsumeLogFileInput = {
       path: '/test/tabs.txt',
       metadata: {source: 'test'},
-      appId: 'test-app',
+      projectId: 'test-project',
       clientToken: 'test-token',
     };
 
@@ -357,7 +357,7 @@ describe('consumeLogFiles', () => {
     const input: IConsumeLogFileInput = {
       path: '/test/large.txt',
       metadata: {source: 'test'},
-      appId: 'test-app',
+      projectId: 'test-project',
       clientToken: 'test-token',
     };
 
@@ -420,7 +420,7 @@ describe('consumeLogFiles', () => {
     const input: IConsumeLogFileInput = {
       path: '/test/error.txt',
       metadata: {source: 'test'},
-      appId: 'test-app',
+      projectId: 'test-project',
       clientToken: 'test-token',
     };
 
@@ -443,7 +443,7 @@ describe('consumeLogFiles', () => {
     const input: IConsumeLogFileInput = {
       path: '/test/log.txt',
       metadata: {source: 'test'},
-      appId: 'test-app',
+      projectId: 'test-project',
       clientToken: 'test-token',
     };
 
@@ -481,7 +481,7 @@ describe('consumeLogFiles', () => {
     const input: IConsumeLogFileInput = {
       path: '/test/log.txt',
       metadata: {source: 'test'},
-      appId: 'test-app',
+      projectId: 'test-project',
       clientToken: 'test-token',
     };
 
@@ -506,7 +506,7 @@ describe('consumeLogFiles', () => {
     const input: IConsumeLogFileInput = {
       path: '/test/log.txt',
       metadata: {source: 'test'},
-      appId: 'test-app',
+      projectId: 'test-project',
       clientToken: 'test-token',
     };
 
@@ -533,7 +533,7 @@ describe('consumeLogFiles', () => {
     const input: IConsumeLogFileInput = {
       path: '/test/log.txt',
       metadata: {source: 'test'},
-      appId: 'test-app',
+      projectId: 'test-project',
       clientToken: 'test-token',
     };
 
@@ -550,7 +550,7 @@ describe('consumeLogFiles', () => {
     const input: IConsumeLogFileInput = {
       path: '/test/log.txt',
       metadata: {source: 'test'},
-      appId: 'test-app',
+      projectId: 'test-project',
       clientToken: 'test-token',
     };
 

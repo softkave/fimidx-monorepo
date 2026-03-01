@@ -2,7 +2,7 @@ import assert from "assert";
 import { kOwnServerErrorCodes, OwnServerError } from "fimidx-core/common/error";
 import { ingestLogsSchema } from "fimidx-core/definitions/log";
 import { kByTypes } from "fimidx-core/definitions/other";
-import { getApps, ingestLogs } from "fimidx-core/serverHelpers/index";
+import { getProjects, ingestLogs } from "fimidx-core/serverHelpers/index";
 import { first } from "lodash-es";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
 
@@ -15,23 +15,23 @@ export const ingestLogsEndpoint: NextClientTokenAuthenticatedEndpointFn<
   } = params;
 
   const input = ingestLogsSchema.parse(await req.json());
-  const { apps } = await getApps({
+  const { projects } = await getProjects({
     args: {
       query: {
         id: {
-          eq: input.appId,
+          eq: input.projectId,
         },
       },
     },
   });
 
-  const app = first(apps);
+  const project = first(projects);
   assert.ok(
-    app,
-    new OwnServerError("App not found", kOwnServerErrorCodes.NotFound)
+    project,
+    new OwnServerError("Project not found", kOwnServerErrorCodes.NotFound)
   );
   assert.ok(
-    app?.id === clientToken.meta?.appId,
+    project?.id === clientToken.meta?.projectId,
     new OwnServerError("Permission denied", kOwnServerErrorCodes.Unauthorized)
   );
 
@@ -39,6 +39,6 @@ export const ingestLogsEndpoint: NextClientTokenAuthenticatedEndpointFn<
     args: input,
     by: clientToken.id,
     byType: kByTypes.clientToken,
-    groupId: app.orgId,
+    groupId: project.orgId,
   });
 };

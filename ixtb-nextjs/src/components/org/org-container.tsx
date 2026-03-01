@@ -21,7 +21,7 @@ export interface IOrgContainerProps {
 export function OrgContainer(props: IOrgContainerProps) {
   const {
     orgId,
-    defaultTab = kOrgTabs.apps,
+    defaultTab = kOrgTabs.projects,
     renderLoading,
     renderError,
   } = props;

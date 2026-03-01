@@ -42,7 +42,7 @@ export type AddClientTokenOnSuccessParams = [
 
 export function useAddClientToken(
   opts: IUseMutationHandlerOpts<typeof addClientToken> & {
-    appId: string;
+    projectId: string;
   }
 ) {
   const mutationHandler = useMutationHandler(addClientToken, {

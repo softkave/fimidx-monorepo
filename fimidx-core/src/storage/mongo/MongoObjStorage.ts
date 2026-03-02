@@ -2,7 +2,7 @@ import { get, uniq } from "lodash-es";
 import type { Model, SortOrder } from "mongoose";
 import { mergeObjects, type AnyObject } from "softkave-js-utils";
 import { v7 as uuidv7 } from "uuid";
-import type { IInputObjRecord, IObj } from "../../definitions/obj.js";
+import { prefixObjId, type IInputObjRecord, type IObj } from "../../definitions/obj.js";
 import { MongoQueryTransformer } from "../query/MongoQueryTransformer.js";
 import type {
   BulkDeleteParams,
@@ -713,7 +713,7 @@ export class MongoObjStorage implements IObjStorage {
     } = params;
 
     const newObjs: IObj[] = items.map((item) => ({
-      id: uuidv7(),
+      id: prefixObjId(tag, uuidv7()),
       projectId,
       tag,
       groupId,

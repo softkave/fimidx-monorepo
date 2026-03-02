@@ -31,7 +31,7 @@ export interface ILog {
 }
 
 export const ingestLogsSchema = z.object({
-  projectId: z.string(),
+  projectId: z.string().min(1),
   logs: inputObjRecordArraySchema,
 });
 
@@ -41,7 +41,7 @@ export const logsMetaQuerySchema = z.object({
 });
 
 export const logQuerySchema = z.object({
-  projectId: z.string(),
+  projectId: z.string().min(1),
   logsQuery: objPartLogicalQuerySchema.optional(),
   metaQuery: logsMetaQuerySchema.optional(),
 });
@@ -54,7 +54,7 @@ export const getLogsSchema = z.object({
 });
 
 export const getLogFieldsSchema = z.object({
-  projectId: z.string(),
+  projectId: z.string().min(1),
   page: z.number().optional(),
   limit: z.number().optional(),
 });

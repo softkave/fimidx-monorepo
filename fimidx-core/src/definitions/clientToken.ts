@@ -45,16 +45,16 @@ export interface IClientTokenObjRecordMeta
 }
 
 export const addClientTokenSchema = z.object({
-  groupId: z.string(),
-  projectId: z.string(),
-  name: z.string().optional(),
+  groupId: z.string().min(1),
+  projectId: z.string().min(1),
+  name: z.string().min(1).optional(),
   description: z.string().optional(),
-  meta: z.record(z.string(), z.string()).optional(),
+  meta: z.record(z.string().min(1), z.string()).optional(),
   permissions: z.array(permissionAtomSchema).optional(),
 });
 
 export const clientTokenQuerySchema = z.object({
-  projectId: z.string(),
+  projectId: z.string().min(1),
   id: stringMetaQuerySchema.optional(),
   name: stringMetaQuerySchema.optional(),
   meta: objPartQueryListSchema.optional(),
@@ -69,9 +69,9 @@ export const clientTokenQuerySchema = z.object({
 
 export const updateClientTokensSchema = z.object({
   update: z.object({
-    name: z.string().optional(),
+    name: z.string().min(1).optional(),
     description: z.string().optional(),
-    meta: z.record(z.string(), z.string()).optional(),
+    meta: z.record(z.string().min(1), z.string()).optional(),
     permissions: z.array(permissionAtomSchema).optional(),
   }),
   query: clientTokenQuerySchema,
@@ -81,8 +81,8 @@ export const updateClientTokensSchema = z.object({
 export const updateClientTokenPermissionsSchema = z.object({
   query: z.object({
     id: z.string().min(1),
-    groupId: z.string(),
-    projectId: z.string(),
+    groupId: z.string().min(1),
+    projectId: z.string().min(1),
   }),
   update: z.object({
     permissions: z.array(permissionAtomSchema),
@@ -90,10 +90,10 @@ export const updateClientTokenPermissionsSchema = z.object({
 });
 
 export const addClientTokenPermissionsSchema = z.object({
-  groupId: z.string(),
-  projectId: z.string(),
+  groupId: z.string().min(1),
+  projectId: z.string().min(1),
   permissions: z.array(permissionAtomSchema),
-  clientTokenId: z.string(),
+  clientTokenId: z.string().min(1),
 });
 
 export const deleteClientTokensSchema = z.object({
@@ -110,19 +110,19 @@ export const getClientTokensSchema = z.object({
 });
 
 export const encodeClientTokenJWTSchema = z.object({
-  id: z.string(),
+  id: z.string().min(1),
   refresh: z.boolean().optional(),
   expiresAt: z.date().optional(),
 });
 
 export const refreshClientTokenJWTSchema = z.object({
-  refreshToken: z.string(),
+  refreshToken: z.string().min(1),
 });
 
 export const checkClientTokenPermissionsSchema = z.object({
-  projectId: z.string(),
-  clientTokenId: z.string(),
-  groupId: z.string(),
+  projectId: z.string().min(1),
+  clientTokenId: z.string().min(1),
+  groupId: z.string().min(1),
   items: z.array(checkPermissionItemSchema),
 });
 

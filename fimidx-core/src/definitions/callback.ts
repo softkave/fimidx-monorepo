@@ -95,7 +95,7 @@ export const callbackMethodSchema = z.enum([
 ]);
 
 export const addCallbackSchema = z.object({
-  projectId: z.string(),
+  projectId: z.string().min(1),
   url: z.string().url(),
   method: callbackMethodSchema,
   requestHeaders: z.record(z.string(), z.string()).optional(),
@@ -103,13 +103,13 @@ export const addCallbackSchema = z.object({
   timeout: z.string().datetime().optional(),
   intervalFrom: z.string().datetime().optional(),
   intervalMs: z.number().optional(),
-  idempotencyKey: z.string().optional(),
+  idempotencyKey: z.string().min(1).optional(),
   description: z.string().optional(),
-  name: z.string().optional(),
+  name: z.string().min(1).optional(),
 });
 
 export const callbacksQuerySchema = z.object({
-  projectId: z.string(),
+  projectId: z.string().min(1),
   id: stringMetaQuerySchema.optional(),
   createdAt: numberMetaQuerySchema.optional(),
   updatedAt: numberMetaQuerySchema.optional(),
@@ -142,7 +142,7 @@ export const deleteCallbacksSchema = z.object({
 });
 
 export const getCallbackExecutionsSchema = z.object({
-  callbackId: z.string(),
+  callbackId: z.string().min(1),
   page: z.number().optional(),
   limit: z.number().optional(),
   sort: objSortListSchema.optional(),

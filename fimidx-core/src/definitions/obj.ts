@@ -97,7 +97,7 @@ export type IObj = {
   fieldsToIndex: string[] | null;
 };
 
-export const inputObjRecordSchema = z.record(z.string(), z.any());
+export const inputObjRecordSchema = z.record(z.string().min(1), z.any());
 export const inputObjRecordArraySchema = z.array(inputObjRecordSchema);
 export const onConflictSchema = z
   .enum([
@@ -112,19 +112,19 @@ export const onConflictSchema = z
   .default("replace");
 
 export const setManyObjsSchema = z.object({
-  projectId: z.string(),
+  projectId: z.string().min(1),
   items: inputObjRecordArraySchema.min(1).max(100),
   onConflict: onConflictSchema.optional(),
   /**
    * fields to check for conflicts. Only applies to contained fields within
    * `objRecord`.
    */
-  conflictOnKeys: z.array(z.string()).optional(),
+  conflictOnKeys: z.array(z.string().min(1)).optional(),
   shouldIndex: z.boolean().optional(),
   /**
    * fields to index. Only applies to contained fields within `objRecord`.
    */
-  fieldsToIndex: z.array(z.string()).optional(),
+  fieldsToIndex: z.array(z.string().min(1)).optional(),
 });
 
 export const objPartQueryItemOpSchema = z.enum([
@@ -274,7 +274,7 @@ export const topLevelFieldQuerySchema = z.object({
 
 // TODO: projectId shouldn't be optional for external use
 export const objQuerySchema = z.object({
-  projectId: z.string().optional(),
+  projectId: z.string().min(1).optional(),
   partQuery: objPartLogicalQuerySchema.optional(),
   metaQuery: objMetaQuerySchema.optional(),
   topLevelFields: topLevelFieldQuerySchema.optional(),
@@ -284,7 +284,7 @@ export const objSortSchema = z.object({
   /**
    * {@see IObjField.path}
    */
-  field: z.string(),
+  field: z.string().min(1),
   direction: z.enum(["asc", "desc"]),
 });
 
@@ -297,7 +297,7 @@ export const updateManyObjsSchema = z.object({
   /**
    * {@see IObjField.path}
    */
-  fieldsToIndex: z.array(z.string()).optional(),
+  fieldsToIndex: z.array(z.string().min(1)).optional(),
   shouldIndex: z.boolean().optional(),
   count: z.number().optional(),
 });
@@ -315,14 +315,14 @@ export const getManyObjsSchema = z.object({
 });
 
 export const getObjFieldsSchema = z.object({
-  projectId: z.string(),
+  projectId: z.string().min(1),
   page: z.number().optional(),
   limit: z.number().optional(),
 });
 
 export const getObjFieldValuesSchema = z.object({
-  projectId: z.string(),
-  field: z.string(),
+  projectId: z.string().min(1),
+  field: z.string().min(1),
   page: z.number().optional(),
   limit: z.number().optional(),
 });

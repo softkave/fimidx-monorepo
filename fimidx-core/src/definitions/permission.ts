@@ -120,7 +120,9 @@ export interface IPermissionObjRecord {
   meta?: IPermissionMeta;
 }
 
-export const entitySchema = z.record(z.string(), z.string()).or(z.string());
+export const entitySchema = z
+  .record(z.string().min(1), z.string())
+  .or(z.string().min(1));
 export const actionSchema = entitySchema;
 export const targetSchema = entitySchema;
 
@@ -132,11 +134,15 @@ export const permissionAtomSchema = z.object({
 
 export const addPermissionItemSchema = permissionAtomSchema.extend({
   description: z.string().optional(),
-  meta: z.record(z.string(), z.string()).optional().nullable().or(z.null()),
+  meta: z
+    .record(z.string().min(1), z.string())
+    .optional()
+    .nullable()
+    .or(z.null()),
 });
 
 export const addPermissionsSchema = z.object({
-  projectId: z.string(),
+  projectId: z.string().min(1),
   permissions: z.array(addPermissionItemSchema),
 });
 
@@ -147,7 +153,7 @@ export const actionQuerySchema = entityQuerySchema;
 export const targetQuerySchema = entityQuerySchema;
 
 export const permissionQuerySchema = z.object({
-  projectId: z.string(),
+  projectId: z.string().min(1),
   id: stringMetaQuerySchema.optional(),
   entity: entityQuerySchema.optional(),
   action: actionQuerySchema.optional(),
@@ -166,7 +172,7 @@ export const updatePermissionsSchema = z.object({
     action: actionSchema.optional(),
     target: targetSchema.optional(),
     description: z.string().optional(),
-    meta: z.record(z.string(), z.string()).optional().or(z.null()),
+    meta: z.record(z.string().min(1), z.string()).optional().or(z.null()),
   }),
   updateMany: z.boolean().optional(),
 });
@@ -190,7 +196,7 @@ export const checkPermissionItemSchema = z.object({
 });
 
 export const checkPermissionsSchema = z.object({
-  projectId: z.string(),
+  projectId: z.string().min(1),
   items: z.array(checkPermissionItemSchema),
 });
 

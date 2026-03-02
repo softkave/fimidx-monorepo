@@ -27,14 +27,14 @@ export interface IProjectObjRecord {
 }
 
 export const addProjectSchema = z.object({
-  orgId: z.string(),
-  name: z.string(),
+  orgId: z.string().min(1),
+  name: z.string().min(1),
   description: z.string().optional(),
   objFieldsToIndex: z.array(z.string()).optional(),
 });
 
 export const projectQuerySchema = z.object({
-  orgId: z.string().optional(),
+  orgId: z.string().min(1).optional(),
   id: stringMetaQuerySchema.optional(),
   name: stringMetaQuerySchema.optional(),
   createdAt: numberMetaQuerySchema.optional(),
@@ -46,9 +46,9 @@ export const projectQuerySchema = z.object({
 export const updateProjectsSchema = z.object({
   query: projectQuerySchema,
   update: z.object({
-    name: z.string().optional(),
+    name: z.string().min(1).optional(),
     description: z.string().optional(),
-    objFieldsToIndex: z.array(z.string()).optional().nullable(),
+    objFieldsToIndex: z.array(z.string().min(1)).optional().nullable(),
   }),
   updateMany: z.boolean().optional(),
 });
@@ -88,4 +88,3 @@ export interface GetProjectEndpointResponse {
 export interface UpdateProjectEndpointResponse {
   success: boolean;
 }
-

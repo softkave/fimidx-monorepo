@@ -49,7 +49,7 @@ export interface IMonitorObjRecord {
 }
 
 export const addMonitorSchema = z.object({
-  projectId: z.string(),
+  projectId: z.string().min(1),
   name: z.string().min(1),
   description: z.string().optional(),
   logsQuery: objPartLogicalQuerySchema,
@@ -59,7 +59,7 @@ export const addMonitorSchema = z.object({
 });
 
 export const monitorQuerySchema = z.object({
-  projectId: z.string(),
+  projectId: z.string().min(1),
   id: stringMetaQuerySchema.optional(),
   createdBy: stringMetaQuerySchema.optional(),
   updatedBy: stringMetaQuerySchema.optional(),

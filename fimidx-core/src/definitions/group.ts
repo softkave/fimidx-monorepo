@@ -28,10 +28,10 @@ export interface IGroupObjRecord {
 }
 
 export const addGroupSchema = z.object({
-  name: z.string(),
+  name: z.string().min(1),
   description: z.string().optional(),
-  meta: z.record(z.string(), z.string()).optional(),
-  projectId: z.string(),
+  meta: z.record(z.string().min(1), z.string()).optional(),
+  projectId: z.string().min(1),
 });
 
 export const groupQuerySchema = z.object({
@@ -42,14 +42,14 @@ export const groupQuerySchema = z.object({
   createdBy: stringMetaQuerySchema.optional(),
   updatedBy: stringMetaQuerySchema.optional(),
   meta: objPartQueryListSchema.optional(),
-  projectId: z.string(),
+  projectId: z.string().min(1),
 });
 
 export const updateGroupsSchema = z.object({
   update: z.object({
-    name: z.string().optional(),
+    name: z.string().min(1).optional(),
     description: z.string().optional(),
-    meta: z.record(z.string(), z.string()).optional(),
+    meta: z.record(z.string().min(1), z.string()).optional(),
   }),
   updateMany: z.boolean().optional(),
   query: groupQuerySchema,

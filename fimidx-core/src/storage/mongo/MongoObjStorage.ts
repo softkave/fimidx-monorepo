@@ -2,7 +2,11 @@ import { get, uniq } from "lodash-es";
 import type { Model, SortOrder } from "mongoose";
 import { mergeObjects, type AnyObject } from "softkave-js-utils";
 import { v7 as uuidv7 } from "uuid";
-import { prefixObjId, type IInputObjRecord, type IObj } from "../../definitions/obj.js";
+import {
+  prefixObjId,
+  type IInputObjRecord,
+  type IObj,
+} from "../../definitions/obj.js";
 import { MongoQueryTransformer } from "../query/MongoQueryTransformer.js";
 import type {
   BulkDeleteParams,

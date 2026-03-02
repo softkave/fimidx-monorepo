@@ -1,7 +1,7 @@
 import { GetOrgsEndpointResponse, getOrgsSchema } from "@/src/definitions/org";
 import { kMemberStatus } from "fimidx-core/definitions/member";
 import { kId0 } from "fimidx-core/definitions/system";
-import { getGroups, getMembers } from "fimidx-core/serverHelpers/index";
+import { getGroups, getMemberRequests } from "fimidx-core/serverHelpers/index";
 import { NextUserAuthenticatedEndpointFn } from "../../types";
 import { groupToOrg } from "./groupToOrg";
 
@@ -14,24 +14,19 @@ export const getOrgsEndpoint: NextUserAuthenticatedEndpointFn<
   } = params;
 
   const input = getOrgsSchema.parse(await req.nextUrl.searchParams);
-  const requests = await getMembers({
+  const requests = await getMemberRequests({
     args: {
       query: {
         projectId: kId0,
-        groupId: kId0,
-        memberId: {
-          eq: userId,
-        },
-        status: {
-          eq: kMemberStatus.accepted,
-        },
+        memberId: userId,
+        status: kMemberStatus.accepted,
       },
       page: input.page,
       limit: input.limit,
     },
   });
 
-  const groupIds = requests.members.map((member) => member.groupId);
+  const groupIds = requests.requests.map((request) => request.groupId);
   const { groups } =
     groupIds.length > 0
       ? await getGroups({

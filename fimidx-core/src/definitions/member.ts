@@ -78,20 +78,20 @@ export interface IMemberObjRecordMeta extends NonNullable<IPermissionMeta> {
 }
 
 export const addMemberSchema = z.object({
-  groupId: z.string(),
-  projectId: z.string(),
+  groupId: z.string().min(1),
+  projectId: z.string().min(1),
   email: z.string().email().optional(),
-  memberId: z.string(),
+  memberId: z.string().min(1),
   permissions: z.array(permissionAtomSchema),
-  meta: z.record(z.string(), z.string()).optional(),
-  name: z.string().optional(),
+  meta: z.record(z.string().min(1), z.string()).optional(),
+  name: z.string().min(1).optional(),
   description: z.string().optional(),
 });
 
 export const getMemberByMemberIdSchema = z.object({
   memberId: z.string().min(1),
-  groupId: z.string(),
-  projectId: z.string(),
+  groupId: z.string().min(1),
+  projectId: z.string().min(1),
 });
 
 export const memberQuerySchema = z.object({
@@ -105,8 +105,8 @@ export const memberQuerySchema = z.object({
   updatedBy: stringMetaQuerySchema.optional(),
   meta: objPartQueryListSchema.optional(),
   name: stringMetaQuerySchema.optional(),
-  groupId: z.string(),
-  projectId: z.string(),
+  groupId: z.string().min(1),
+  projectId: z.string().min(1),
 });
 
 export const updateMembersSchema = z.object({
@@ -114,7 +114,7 @@ export const updateMembersSchema = z.object({
   update: z.object({
     email: z.string().email().optional(),
     memberId: z.string().optional(),
-    meta: z.record(z.string(), z.string()).optional(),
+    meta: z.record(z.string().min(1), z.string()).optional(),
     name: z.string().optional(),
     description: z.string().optional(),
   }),
@@ -124,8 +124,8 @@ export const updateMembersSchema = z.object({
 export const updateMemberPermissionsSchema = z.object({
   query: z.object({
     memberId: z.string().min(1),
-    groupId: z.string(),
-    projectId: z.string(),
+    groupId: z.string().min(1),
+    projectId: z.string().min(1),
   }),
   update: z.object({
     permissions: z.array(permissionAtomSchema),
@@ -145,10 +145,35 @@ export const getMembersSchema = z.object({
   includePermissions: z.boolean().optional(),
 });
 
+export const respondToMemberRequestSchema = z.object({
+  projectId: z.string().min(1),
+  groupId: z.string().min(1),
+  requestId: z.string().min(1),
+  status: z.enum([kMemberStatus.accepted, kMemberStatus.rejected]),
+});
+
+export const getMemberRequestsSchema = z.object({
+  query: z.object({
+    memberId: z.string().min(1).optional(),
+    groupId: z.string().min(1).optional(),
+    projectId: z.string().min(1),
+    status: z
+      .enum([
+        kMemberStatus.pending,
+        kMemberStatus.accepted,
+        kMemberStatus.rejected,
+      ])
+      .optional(),
+  }),
+  page: z.number().min(1).optional(),
+  limit: z.number().min(1).optional(),
+  includePermissions: z.boolean().optional(),
+});
+
 export const checkMemberPermissionsSchema = z.object({
-  projectId: z.string(),
-  memberId: z.string(),
-  groupId: z.string(),
+  projectId: z.string().min(1),
+  memberId: z.string().min(1),
+  groupId: z.string().min(1),
   items: z.array(checkPermissionItemSchema),
 });
 
@@ -164,6 +189,12 @@ export type UpdateMemberPermissionsEndpointArgs = z.infer<
 >;
 export type CheckMemberPermissionsEndpointArgs = z.infer<
   typeof checkMemberPermissionsSchema
+>;
+export type RespondToMemberRequestEndpointArgs = z.infer<
+  typeof respondToMemberRequestSchema
+>;
+export type GetMemberRequestsEndpointArgs = z.infer<
+  typeof getMemberRequestsSchema
 >;
 
 export interface IGetMembersEndpointResponse {

@@ -5,6 +5,7 @@ import {
 import { addProjectSchema } from "fimidx-core/definitions/project";
 import { addProject } from "fimidx-core/serverHelpers/index";
 import { NextUserAuthenticatedEndpointFn } from "../../types";
+import { sanitizeAddProjectInput } from "../../utils/sanitizeKId0.js";
 
 export const addProjectEndpoint: NextUserAuthenticatedEndpointFn<
   AddProjectEndpointResponse
@@ -15,6 +16,7 @@ export const addProjectEndpoint: NextUserAuthenticatedEndpointFn<
   } = params;
 
   const input = addProjectSchema.parse(await req.json());
+  sanitizeAddProjectInput(input);
   const { project } = await addProject({
     args: input,
     by: userId,

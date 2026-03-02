@@ -5,6 +5,7 @@ import {
 import { kId0 } from "fimidx-core/definitions/index";
 import { updateGroups } from "fimidx-core/serverHelpers/index";
 import { NextUserAuthenticatedEndpointFn } from "../../types";
+import { sanitizeUpdateOrgInput } from "../../utils/sanitizeKId0.js";
 
 export const updateOrgEndpoint: NextUserAuthenticatedEndpointFn<
   UpdateOrgEndpointResponse
@@ -20,6 +21,7 @@ export const updateOrgEndpoint: NextUserAuthenticatedEndpointFn<
     id: pathParams.orgId,
     update: await req.json(),
   });
+  sanitizeUpdateOrgInput(input);
 
   await updateGroups({
     args: {

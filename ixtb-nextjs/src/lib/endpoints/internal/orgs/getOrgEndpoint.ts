@@ -5,6 +5,7 @@ import { kId0 } from "fimidx-core/definitions/index";
 import { getGroups } from "fimidx-core/serverHelpers/index";
 import { first } from "lodash-es";
 import { NextUserAuthenticatedEndpointFn } from "../../types";
+import { sanitizeGetOrgInput } from "../../utils/sanitizeKId0.js";
 import { groupToOrg } from "./groupToOrg";
 
 export const getOrgEndpoint: NextUserAuthenticatedEndpointFn<
@@ -16,6 +17,7 @@ export const getOrgEndpoint: NextUserAuthenticatedEndpointFn<
   const input = getOrgSchema.parse({
     id: pathParams.orgId,
   });
+  sanitizeGetOrgInput(input);
 
   const { groups } = await getGroups({
     args: {

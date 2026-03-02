@@ -5,6 +5,7 @@ import { kByTypes } from "fimidx-core/definitions/other";
 import { getProjects, ingestLogs } from "fimidx-core/serverHelpers/index";
 import { first } from "lodash-es";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
+import { sanitizeIngestLogsInput } from "../../utils/sanitizeKId0.js";
 
 export const ingestLogsEndpoint: NextClientTokenAuthenticatedEndpointFn<
   void
@@ -15,6 +16,7 @@ export const ingestLogsEndpoint: NextClientTokenAuthenticatedEndpointFn<
   } = params;
 
   const input = ingestLogsSchema.parse(await req.json());
+  sanitizeIngestLogsInput(input);
   const { projects } = await getProjects({
     args: {
       query: {

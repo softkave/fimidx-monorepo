@@ -8,6 +8,7 @@ import {
   getNodeServerURL,
 } from "../../../serverHelpers/nodeServer";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
+import { sanitizeDeleteCallbacksInput } from "../../utils/sanitizeKId0.js";
 
 async function callNodeServerDeleteCallback(
   input: DeleteCallbacksEndpointArgs & { clientTokenId: string }
@@ -38,6 +39,7 @@ export const deleteCallbacksEndpoint: NextClientTokenAuthenticatedEndpointFn<
   } = params;
 
   const input = deleteCallbacksSchema.parse(await req.json());
+  sanitizeDeleteCallbacksInput(input);
   await callNodeServerDeleteCallback({
     ...input,
     clientTokenId: clientToken.id,

@@ -6,6 +6,7 @@ import {
 import { kByTypes } from "fimidx-core/definitions/other";
 import { updateManyObjs } from "fimidx-core/serverHelpers/index";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
+import { sanitizeUpdateManyObjsInput } from "../../utils/sanitizeKId0.js";
 
 export const updateManyObjsEndpoint: NextClientTokenAuthenticatedEndpointFn<
   IUpdateManyObjsEndpointResponse
@@ -16,6 +17,7 @@ export const updateManyObjsEndpoint: NextClientTokenAuthenticatedEndpointFn<
   } = params;
 
   const input = updateManyObjsSchema.parse(await req.json());
+  sanitizeUpdateManyObjsInput(input);
   await updateManyObjs({
     by: clientToken.id,
     byType: kByTypes.clientToken,

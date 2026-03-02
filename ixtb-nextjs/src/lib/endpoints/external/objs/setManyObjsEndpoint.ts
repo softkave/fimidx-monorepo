@@ -7,6 +7,7 @@ import {
 import { kByTypes } from "fimidx-core/definitions/other";
 import { setManyObjs } from "fimidx-core/serverHelpers/index";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
+import { sanitizeSetManyObjsInput } from "../../utils/sanitizeKId0.js";
 
 export const setManyObjsEndpoint: NextClientTokenAuthenticatedEndpointFn<
   ISetManyObjsEndpointResponse
@@ -17,6 +18,7 @@ export const setManyObjsEndpoint: NextClientTokenAuthenticatedEndpointFn<
   } = params;
 
   const input = setManyObjsSchema.parse(await req.json());
+  sanitizeSetManyObjsInput(input);
   const { project } = await getProject({
     input: { projectId: input.projectId },
     clientToken,

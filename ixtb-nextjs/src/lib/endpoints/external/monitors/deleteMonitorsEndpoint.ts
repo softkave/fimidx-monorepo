@@ -1,6 +1,7 @@
 import { deleteMonitorsSchema } from "fimidx-core/definitions/monitor";
 import { deleteMonitors } from "fimidx-core/serverHelpers/index";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
+import { sanitizeDeleteMonitorsInput } from "../../utils/sanitizeKId0.js";
 
 export const deleteMonitorsEndpoint: NextMaybeAuthenticatedEndpointFn<
   void
@@ -11,6 +12,7 @@ export const deleteMonitorsEndpoint: NextMaybeAuthenticatedEndpointFn<
   } = params;
 
   const input = deleteMonitorsSchema.parse(await req.json());
+  sanitizeDeleteMonitorsInput(input);
   await deleteMonitors({
     ...input,
     by: getBy().by,

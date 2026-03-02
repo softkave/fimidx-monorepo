@@ -4,6 +4,7 @@ import {
 } from "fimidx-core/definitions/clientToken";
 import { updateClientTokens } from "fimidx-core/serverHelpers/index";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
+import { sanitizeUpdateClientTokensInput } from "../../utils/sanitizeKId0.js";
 
 export const updateClientTokensEndpoint: NextMaybeAuthenticatedEndpointFn<
   UpdateClientTokensEndpointResponse
@@ -14,6 +15,7 @@ export const updateClientTokensEndpoint: NextMaybeAuthenticatedEndpointFn<
   } = params;
 
   const input = updateClientTokensSchema.parse(await req.json());
+  sanitizeUpdateClientTokensInput(input);
   await updateClientTokens({
     args: input,
     by: getBy().by,

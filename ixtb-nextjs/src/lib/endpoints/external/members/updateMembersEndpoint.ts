@@ -5,6 +5,7 @@ import {
 import { kByTypes } from "fimidx-core/definitions/other";
 import { updateMembers } from "fimidx-core/serverHelpers/index";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
+import { sanitizeUpdateMembersInput } from "../../utils/sanitizeKId0.js";
 
 export const updateMembersEndpoint: NextClientTokenAuthenticatedEndpointFn<
   IUpdateMembersEndpointResponse
@@ -15,6 +16,7 @@ export const updateMembersEndpoint: NextClientTokenAuthenticatedEndpointFn<
   } = params;
 
   const input = updateMembersSchema.parse(await req.json());
+  sanitizeUpdateMembersInput(input);
   await updateMembers({
     args: input,
     by: clientToken.id,

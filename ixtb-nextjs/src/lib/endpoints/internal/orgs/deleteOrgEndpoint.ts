@@ -3,6 +3,7 @@ import { kByTypes } from "fimidx-core/definitions/index";
 import { kId0 } from "fimidx-core/definitions/system";
 import { deleteGroups } from "fimidx-core/serverHelpers/index";
 import { NextUserAuthenticatedEndpointFn } from "../../types";
+import { sanitizeDeleteOrgInput } from "../../utils/sanitizeKId0.js";
 
 export const deleteOrgEndpoint: NextUserAuthenticatedEndpointFn<void> = async (
   params
@@ -16,6 +17,7 @@ export const deleteOrgEndpoint: NextUserAuthenticatedEndpointFn<void> = async (
   const input = deleteOrgSchema.parse({
     id: pathParams.orgId,
   });
+  sanitizeDeleteOrgInput(input);
 
   await deleteGroups({
     query: {

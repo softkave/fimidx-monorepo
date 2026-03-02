@@ -11,6 +11,7 @@ import {
   getNodeServerURL,
 } from "../../../serverHelpers/nodeServer";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
+import { sanitizeAddCallbackInput } from "../../utils/sanitizeKId0.js";
 
 async function callNodeServerAddCallback(params: {
   item: AddCallbackEndpointArgs;
@@ -53,6 +54,7 @@ export const addCallbackEndpoint: NextClientTokenAuthenticatedEndpointFn<
   } = params;
 
   const input = addCallbackSchema.parse(await req.json());
+  sanitizeAddCallbackInput(input);
   const idempotencyKey =
     input.idempotencyKey ?? `__fimidx_generated_${uuidv7()}_${Date.now()}`;
   const callback = await callNodeServerAddCallback({

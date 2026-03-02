@@ -4,6 +4,7 @@ import {
 } from "fimidx-core/definitions/member";
 import { getMembers } from "fimidx-core/serverHelpers/index";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
+import { sanitizeGetMembersInput } from "../../utils/sanitizeKId0.js";
 
 export const getMembersEndpoint: NextClientTokenAuthenticatedEndpointFn<
   IGetMembersEndpointResponse
@@ -11,6 +12,7 @@ export const getMembersEndpoint: NextClientTokenAuthenticatedEndpointFn<
   const { req } = params;
 
   const input = getMembersSchema.parse(await req.json());
+  sanitizeGetMembersInput(input);
   const { members, hasMore, page, limit } = await getMembers({
     args: input,
   });

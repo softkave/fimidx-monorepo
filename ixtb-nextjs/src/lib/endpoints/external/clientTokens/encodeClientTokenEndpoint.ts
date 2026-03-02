@@ -5,6 +5,7 @@ import {
 } from "fimidx-core/definitions/clientToken";
 import { encodeClientTokenJWT } from "fimidx-core/serverHelpers/index";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
+import { sanitizeEncodeClientTokenJWTInput } from "../../utils/sanitizeKId0.js";
 
 export const encodeClientTokenEndpoint: NextMaybeAuthenticatedEndpointFn<
   EncodeClientTokenJWTEndpointResponse
@@ -15,6 +16,7 @@ export const encodeClientTokenEndpoint: NextMaybeAuthenticatedEndpointFn<
   } = params;
 
   const input = encodeClientTokenJWTSchema.parse(await req.json());
+  sanitizeEncodeClientTokenJWTInput(input);
   const { clientToken } = await getClientToken({
     input: { clientTokenId: input.id },
   });

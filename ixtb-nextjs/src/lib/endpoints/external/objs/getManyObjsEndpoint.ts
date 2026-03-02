@@ -5,6 +5,7 @@ import {
 } from "fimidx-core/definitions/obj";
 import { getManyObjs } from "fimidx-core/serverHelpers/index";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
+import { sanitizeGetManyObjsInput } from "../../utils/sanitizeKId0.js";
 
 export const getManyObjsEndpoint: NextMaybeAuthenticatedEndpointFn<
   IGetManyObjsEndpointResponse
@@ -12,6 +13,7 @@ export const getManyObjsEndpoint: NextMaybeAuthenticatedEndpointFn<
   const { req } = params;
 
   const input = getManyObjsSchema.parse(await req.json());
+  sanitizeGetManyObjsInput(input);
   const response = await getManyObjs({
     objQuery: input.query,
     tag: kObjTags.obj,

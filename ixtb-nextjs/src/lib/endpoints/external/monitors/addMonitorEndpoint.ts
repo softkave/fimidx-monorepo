@@ -5,6 +5,7 @@ import {
 } from "fimidx-core/definitions/monitor";
 import { addMonitor } from "fimidx-core/serverHelpers/index";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
+import { sanitizeAddMonitorInput } from "../../utils/sanitizeKId0.js";
 
 export const addMonitorEndpoint: NextMaybeAuthenticatedEndpointFn<
   IAddMonitorEndpointResponse
@@ -15,6 +16,7 @@ export const addMonitorEndpoint: NextMaybeAuthenticatedEndpointFn<
   } = params;
 
   const input = addMonitorSchema.parse(await req.json());
+  sanitizeAddMonitorInput(input);
   const { project } = await getProject({
     input: { projectId: input.projectId },
     clientToken,

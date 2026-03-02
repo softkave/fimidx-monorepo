@@ -5,6 +5,7 @@ import {
 } from "fimidx-core/definitions/obj";
 import { getObjFields } from "fimidx-core/serverHelpers/index";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
+import { sanitizeGetObjFieldsInput } from "../../utils/sanitizeKId0.js";
 
 // TODO: delineate between internal and external objs
 
@@ -14,6 +15,7 @@ export const getObjFieldsEndpoint: NextMaybeAuthenticatedEndpointFn<
   const { req } = params;
 
   const input = getObjFieldsSchema.parse(await req.json());
+  sanitizeGetObjFieldsInput(input);
   const response = await getObjFields({
     projectId: input.projectId,
     page: input.page,

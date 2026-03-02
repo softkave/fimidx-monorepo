@@ -133,8 +133,6 @@ export async function addMember(params: {
     storage,
   });
 
-  console.log("newObjs", newObjs);
-
   assert.ok(
     failedItems.length === 0,
     new OwnServerError(

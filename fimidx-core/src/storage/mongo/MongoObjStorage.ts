@@ -77,8 +77,8 @@ export class MongoObjStorage implements IObjStorage {
 
     // console.log("read params");
     // console.dir(params, { depth: null });
-    console.log("read filter");
-    console.dir(filter, { depth: null });
+    // console.log("read filter");
+    // console.dir(filter, { depth: null });
     // console.log("read sort");
     // console.dir(sort, { depth: null });
     // console.log("read pagination");

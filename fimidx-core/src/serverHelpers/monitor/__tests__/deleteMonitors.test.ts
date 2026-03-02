@@ -467,9 +467,6 @@ describe("deleteMonitors integration", () => {
 
     const result = await getMonitors({ args: getArgs, storage });
 
-    console.log("result");
-    console.dir(result, { depth: null });
-
     expect(result.monitors).toHaveLength(1);
     expect(result.monitors[0].name).toBe("Monitor 2");
     expect(result.monitors[0].updatedBy).toBe("updater2");

@@ -34,6 +34,7 @@ function makeGetMembersArgs(
     page: overrides.page,
     limit: overrides.limit,
     sort: overrides.sort,
+    includePermissions: overrides.includePermissions,
   };
 }
 
@@ -514,7 +515,7 @@ describe("getMembers integration", () => {
       storage,
     });
 
-    const args = makeGetMembersArgs();
+    const args = makeGetMembersArgs({ includePermissions: true });
     const result = await getMembers({
       args,
       storage,

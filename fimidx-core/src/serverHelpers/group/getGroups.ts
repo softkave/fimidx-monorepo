@@ -109,8 +109,6 @@ export async function getGroups(params: {
   });
 
   const objQuery = getGroupsObjQuery({ args });
-  console.log("objQuery groups");
-  console.dir(objQuery, { depth: null });
   const result = await getManyObjs({
     objQuery,
     page: storagePage,
@@ -119,8 +117,6 @@ export async function getGroups(params: {
     sort: transformedSort,
     storage,
   });
-
-  console.log("result groups", result);
 
   return {
     groups: result.objs.map(objToGroup),

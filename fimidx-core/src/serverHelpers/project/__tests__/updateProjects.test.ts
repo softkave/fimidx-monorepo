@@ -764,7 +764,6 @@ describe("updateProjects integration", () => {
 
   it("handles updating projects created by different users", async () => {
     const project1Args = makeAddProjectArgs({ name: "User A Project" });
-    console.log("project1Args", project1Args);
     await addProject({
       args: project1Args,
       by: "user-a",
@@ -773,7 +772,6 @@ describe("updateProjects integration", () => {
     });
 
     const project2Args = makeAddProjectArgs({ name: "User B Project" });
-    console.log("project2Args", project2Args);
     await addProject({
       args: project2Args,
       by: "user-b",
@@ -805,8 +803,6 @@ describe("updateProjects integration", () => {
       },
       storage,
     });
-
-    console.dir(result, { depth: null });
 
     const userAProject = result.projects.find(
       (project) => project.name === "User A Project"

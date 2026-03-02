@@ -80,7 +80,6 @@ export async function getProjects(params: {
   });
 
   const objQuery = getProjectsObjQuery({ args });
-  console.dir(objQuery, { depth: null });
   const result = await getManyObjs({
     objQuery,
     page: storagePage,

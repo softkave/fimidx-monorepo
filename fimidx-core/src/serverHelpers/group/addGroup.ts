@@ -38,8 +38,6 @@ export async function addGroup(params: {
     storage,
   });
 
-  console.log("newObjs group", newObjs);
-
   assert.ok(
     failedItems.length === 0,
     new OwnServerError(

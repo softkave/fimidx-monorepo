@@ -28,9 +28,6 @@ export async function addProject(params: {
       : null,
   };
 
-  console.log("objRecord", objRecord);
-  console.log("groupId", groupId);
-
   const { failedItems, newObjs } = await setManyObjs({
     by,
     byType,
@@ -47,9 +44,6 @@ export async function addProject(params: {
     },
     storage,
   });
-
-  // console.log("failedItems", failedItems);
-  console.log("newObjs", newObjs);
 
   assert.ok(
     failedItems.length === 0,

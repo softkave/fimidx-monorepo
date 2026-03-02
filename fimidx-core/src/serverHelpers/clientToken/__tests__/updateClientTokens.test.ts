@@ -8,6 +8,7 @@ import {
   it,
 } from "vitest";
 import type { UpdateClientTokensEndpointArgs } from "../../../definitions/clientToken.js";
+import type { IPermissionAtom } from "../../../definitions/permission.js";
 import { addClientToken } from "../addClientToken.js";
 import { getClientTokens } from "../getClientTokens.js";
 import { updateClientTokens } from "../updateClientTokens.js";
@@ -165,9 +166,21 @@ describe("updateClientTokens integration", () => {
     expect(updatedToken.description).toBe("Updated description");
     expect(updatedToken.meta).toEqual({ type: "admin" });
     expect(updatedToken.permissions).toHaveLength(3);
-    expect(updatedToken.permissions![0].entity).toBe("user");
-    expect(updatedToken.permissions![0].action).toBe("read");
+    updatedToken.permissions?.sort(
+      (a: IPermissionAtom, b: IPermissionAtom) =>
+        String(a.entity).localeCompare(String(b.entity)) ||
+        String(a.action).localeCompare(String(b.action)) ||
+        String(a.target).localeCompare(String(b.target))
+    );
+    expect(updatedToken.permissions![0].entity).toBe("admin");
+    expect(updatedToken.permissions![0].action).toBe("delete");
     expect(updatedToken.permissions![0].target).toBe("document");
+    expect(updatedToken.permissions![1].entity).toBe("admin");
+    expect(updatedToken.permissions![1].action).toBe("write");
+    expect(updatedToken.permissions![1].target).toBe("settings");
+    expect(updatedToken.permissions![2].entity).toBe("user");
+    expect(updatedToken.permissions![2].action).toBe("read");
+    expect(updatedToken.permissions![2].target).toBe("document");
     expect(updatedToken.updatedBy).toBe(by);
     expect(updatedToken.updatedByType).toBe(byType);
   });

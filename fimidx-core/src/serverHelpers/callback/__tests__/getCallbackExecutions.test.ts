@@ -331,8 +331,6 @@ describe("getCallbackExecutions integration", () => {
       storage,
     });
 
-    console.dir(resultAsc, { depth: null });
-
     expect(resultAsc.executions).toHaveLength(3);
     // Should be sorted by executedAt ASC, so execution 1 (oldest) should be first
     expect(resultAsc.executions[0].responseBodyJson).toEqual({ execution: 1 });

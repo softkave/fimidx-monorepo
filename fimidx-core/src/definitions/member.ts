@@ -137,36 +137,11 @@ export const deleteMembersSchema = z.object({
   deleteMany: z.boolean().optional(),
 });
 
-export const respondToMemberRequestSchema = z.object({
-  projectId: z.string(),
-  groupId: z.string(),
-  requestId: z.string().min(1),
-  status: z.enum([kMemberStatus.accepted, kMemberStatus.rejected]),
-});
-
 export const getMembersSchema = z.object({
   query: memberQuerySchema,
   page: z.number().min(1).optional(),
   limit: z.number().min(1).optional(),
   sort: objSortListSchema.optional(),
-  includePermissions: z.boolean().optional(),
-});
-
-export const getMemberRequestsSchema = z.object({
-  query: z.object({
-    memberId: z.string().min(1).optional(),
-    groupId: z.string().optional(),
-    projectId: z.string(),
-    status: z
-      .enum([
-        kMemberStatus.pending,
-        kMemberStatus.accepted,
-        kMemberStatus.rejected,
-      ])
-      .optional(),
-  }),
-  page: z.number().min(1).optional(),
-  limit: z.number().min(1).optional(),
   includePermissions: z.boolean().optional(),
 });
 
@@ -184,12 +159,6 @@ export type GetMemberByMemberIdEndpointArgs = z.infer<
 >;
 export type UpdateMembersEndpointArgs = z.infer<typeof updateMembersSchema>;
 export type DeleteMembersEndpointArgs = z.infer<typeof deleteMembersSchema>;
-export type RespondToMemberRequestEndpointArgs = z.infer<
-  typeof respondToMemberRequestSchema
->;
-export type GetMemberRequestsEndpointArgs = z.infer<
-  typeof getMemberRequestsSchema
->;
 export type UpdateMemberPermissionsEndpointArgs = z.infer<
   typeof updateMemberPermissionsSchema
 >;

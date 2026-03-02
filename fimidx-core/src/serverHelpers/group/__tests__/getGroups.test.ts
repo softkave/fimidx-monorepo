@@ -143,7 +143,7 @@ describe("getGroups integration", () => {
         "test-project-getGroups-1",
         "test-project-getGroups-2",
       ];
-      // console.log("Deleting groups for test projects", testProjectIds);
+
       for (const projectId of testProjectIds) {
         await storage.bulkDelete({
           query: { projectId },
@@ -156,7 +156,6 @@ describe("getGroups integration", () => {
       }
 
       // Clean up objFields for test projects
-      // console.log("Deleting objFields for test projects", testProjectIds);
       for (const projectId of testProjectIds) {
         await db
           .delete(objFieldsTable)
@@ -167,8 +166,6 @@ describe("getGroups integration", () => {
             )
           );
       }
-
-      // console.log("Done deleting groups and objFields for test projects");
     } catch (error) {
       console.error(error);
       // Ignore errors in cleanup

@@ -467,7 +467,7 @@ export class MongoObjStorage implements IObjStorage {
       // console.dir(deletedBy, { depth: null });
 
       const objs = await this.objModel
-        .find(filter, undefined, session ? { session } : undefined)
+        .find(filter, { id: 1, _id: 0 }, session ? { session } : undefined)
         .skip(page * effectiveBatchSize)
         .limit(effectiveBatchSize)
         .sort({ createdAt: -1 })

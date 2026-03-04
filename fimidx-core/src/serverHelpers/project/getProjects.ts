@@ -6,7 +6,10 @@ import {
   type IObjPartQueryItem,
   type IObjQuery,
 } from "../../definitions/obj.js";
-import type { GetProjectsEndpointArgs } from "../../definitions/project.js";
+import type {
+  GetProjectsEndpointArgs,
+  IProject,
+} from "../../definitions/project.js";
 import { kId0 } from "../../definitions/system.js";
 import type { IObjStorage } from "../../storage/types.js";
 import { getManyObjs } from "../obj/getObjs.js";
@@ -41,14 +44,12 @@ export function getProjectsObjQuery(params: { args: GetProjectsEndpointArgs }) {
     });
   }
 
-  // Handle groupId filtering
-  if (groupId) {
-    filterArr.push({
-      op: "eq",
-      field: "orgId",
-      value: groupId,
-    });
-  }
+  // Handle orgId filtering (required)
+  filterArr.push({
+    op: "eq",
+    field: "orgId",
+    value: groupId,
+  });
 
   const objQuery: IObjQuery = {
     projectId: kId0,
@@ -130,4 +131,30 @@ export async function getProjectById(params: {
   );
 
   return objToProject(obj);
+}
+
+/** Internal: fetch projects by id list (no orgId required). Used when project
+ * IDs are already known. */
+export async function getProjectsByIds(params: {
+  ids: string[];
+  storage?: IObjStorage;
+}): Promise<IProject[]> {
+  const { ids, storage } = params;
+  const validIds = ids.filter((id) => id !== kId0);
+  if (validIds.length === 0) {
+    return [];
+  }
+  const objQuery: IObjQuery = {
+    projectId: kId0,
+    metaQuery: {
+      id: { in: validIds },
+    },
+  };
+  const { objs } = await getManyObjs({
+    objQuery,
+    tag: kObjTags.project,
+    limit: validIds.length,
+    storage,
+  });
+  return objs.map(objToProject);
 }

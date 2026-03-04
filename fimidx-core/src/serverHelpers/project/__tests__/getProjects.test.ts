@@ -21,7 +21,9 @@ const defaultByType = "user";
 let testCounter = 0;
 
 function makeGetProjectsArgs(
-  overrides: Partial<GetProjectsEndpointArgs> = {}
+  overrides: Omit<Partial<GetProjectsEndpointArgs>, "query"> & {
+    query?: Partial<GetProjectsEndpointArgs["query"]>;
+  } = {}
 ): GetProjectsEndpointArgs {
   return {
     query: {

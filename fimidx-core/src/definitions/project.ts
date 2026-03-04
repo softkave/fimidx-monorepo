@@ -34,7 +34,7 @@ export const addProjectSchema = z.object({
 });
 
 export const projectQuerySchema = z.object({
-  orgId: z.string().min(1).optional(),
+  orgId: z.string().min(1),
   id: stringMetaQuerySchema.optional(),
   name: stringMetaQuerySchema.optional(),
   createdAt: numberMetaQuerySchema.optional(),

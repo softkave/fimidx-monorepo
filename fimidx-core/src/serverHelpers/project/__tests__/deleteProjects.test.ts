@@ -35,7 +35,9 @@ function makeAddProjectArgs(
 }
 
 function makeDeleteProjectsArgs(
-  overrides: Partial<DeleteProjectsEndpointArgs> = {}
+  overrides: Omit<Partial<DeleteProjectsEndpointArgs>, "query"> & {
+    query?: Partial<DeleteProjectsEndpointArgs["query"]>;
+  } = {}
 ): DeleteProjectsEndpointArgs {
   return {
     query: {

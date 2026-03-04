@@ -1,10 +1,10 @@
 import { kByTypes } from "fimidx-core/definitions/other";
 import { deleteProjectsSchema } from "fimidx-core/definitions/project";
 import { deleteProjects } from "fimidx-core/serverHelpers/index";
-import { NextUserAuthenticatedEndpointFn } from "../../types";
+import { NextUserAuthenticatedEndpointFn } from "../../types.js";
 import { sanitizeDeleteProjectsInput } from "../../utils/sanitizeKId0.js";
 
-export const deleteProjectEndpoint: NextUserAuthenticatedEndpointFn<
+export const deleteProjectsEndpoint: NextUserAuthenticatedEndpointFn<
   void
 > = async (params) => {
   const {

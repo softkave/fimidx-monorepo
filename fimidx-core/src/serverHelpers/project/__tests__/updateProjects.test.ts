@@ -19,22 +19,27 @@ const defaultByType = "user";
 let testCounter = 0;
 
 function makeUpdateProjectsArgs(
-  overrides: Partial<UpdateProjectsEndpointArgs> = {}
+  overrides: Omit<Partial<UpdateProjectsEndpointArgs>, "query" | "update"> & {
+    query?: Partial<UpdateProjectsEndpointArgs["query"]>;
+    update?: Partial<UpdateProjectsEndpointArgs["update"]>;
+  } = {}
 ): UpdateProjectsEndpointArgs {
   testCounter++;
   const uniqueId = `${testCounter}_${Date.now()}_${Math.random()
     .toString(36)
     .substr(2, 9)}`;
+  const { query: overridesQuery, update: overridesUpdate, ...restOverrides } =
+    overrides;
   return {
     query: {
       orgId: defaultGroupId,
-      ...overrides.query,
+      ...overridesQuery,
     },
     update: {
       name: `Updated Project Name ${uniqueId}`,
-      ...overrides.update,
+      ...overridesUpdate,
     },
-    ...overrides,
+    ...restOverrides,
   };
 }
 
@@ -295,7 +300,7 @@ describe("updateProjects integration", () => {
     // Verify the update
     const result = await getProjects({
       args: {
-        query: { id: { eq: testProject.project.id } },
+        query: { orgId: defaultGroupId, id: { eq: testProject.project.id } },
       },
       storage,
     });
@@ -447,7 +452,10 @@ describe("updateProjects integration", () => {
     // Verify the update
     const result = await getProjects({
       args: {
-        query: { name: { eq: "Fields Update Project" } },
+        query: {
+          orgId: defaultGroupId,
+          name: { eq: "Fields Update Project" },
+        },
       },
       storage,
     });
@@ -492,7 +500,10 @@ describe("updateProjects integration", () => {
     // Verify the update
     const result = await getProjects({
       args: {
-        query: { name: { eq: "Null Fields Project" } },
+        query: {
+          orgId: defaultGroupId,
+          name: { eq: "Null Fields Project" },
+        },
       },
       storage,
     });
@@ -533,7 +544,10 @@ describe("updateProjects integration", () => {
     // Verify the update - empty arrays should be converted to null
     const result = await getProjects({
       args: {
-        query: { name: { eq: "Empty Fields Project" } },
+        query: {
+          orgId: defaultGroupId,
+          name: { eq: "Empty Fields Project" },
+        },
       },
       storage,
     });
@@ -574,7 +588,10 @@ describe("updateProjects integration", () => {
     // Verify the update - duplicates should be deduplicated
     const result = await getProjects({
       args: {
-        query: { name: { eq: "Duplicate Fields Project" } },
+        query: {
+          orgId: defaultGroupId,
+          name: { eq: "Duplicate Fields Project" },
+        },
       },
       storage,
     });
@@ -616,7 +633,10 @@ describe("updateProjects integration", () => {
     // Verify the update
     const result = await getProjects({
       args: {
-        query: { name: { eq: "Updated with special chars: !@#$%^&*()" } },
+        query: {
+          orgId: defaultGroupId,
+          name: { eq: "Updated with special chars: !@#$%^&*()" },
+        },
       },
       storage,
     });
@@ -666,7 +686,10 @@ describe("updateProjects integration", () => {
     // Verify the update
     const result = await getProjects({
       args: {
-        query: { name: { eq: longName } },
+        query: {
+          orgId: defaultGroupId,
+          name: { eq: longName },
+        },
       },
       storage,
     });
@@ -710,7 +733,10 @@ describe("updateProjects integration", () => {
     // Verify the update
     const result = await getProjects({
       args: {
-        query: { name: { eq: "Many Fields Project" } },
+        query: {
+          orgId: defaultGroupId,
+          name: { eq: "Many Fields Project" },
+        },
       },
       storage,
     });
@@ -752,7 +778,10 @@ describe("updateProjects integration", () => {
     // Verify the update
     const result = await getProjects({
       args: {
-        query: { name: { eq: "" } },
+        query: {
+          orgId: defaultGroupId,
+          name: { eq: "" },
+        },
       },
       storage,
     });
@@ -851,7 +880,10 @@ describe("updateProjects integration", () => {
     // Verify the final state
     const result = await getProjects({
       args: {
-        query: { name: { eq: "Concurrent Update Project" } },
+        query: {
+          orgId: defaultGroupId,
+          name: { eq: "Concurrent Update Project" },
+        },
       },
       storage,
     });

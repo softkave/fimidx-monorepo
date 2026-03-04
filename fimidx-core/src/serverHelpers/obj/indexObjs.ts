@@ -12,7 +12,7 @@ import type { IObj, IObjField } from "../../definitions/obj.js";
 import type { IProject } from "../../definitions/project.js";
 import { createStorage, getDefaultStorageType } from "../../storage/config.js";
 import type { IObjStorage } from "../../storage/types.js";
-import { getProjects } from "../project/getProjects.js";
+import { getProjectsByIds } from "../project/getProjects.js";
 
 const batchSize = 1000;
 
@@ -150,17 +150,11 @@ function initProjectGetter() {
       return;
     }
 
-    const fetchedProjects = await getProjects({
-      args: {
-        query: {
-          id: {
-            in: projectsToFetch,
-          },
-        },
-      },
+    const fetchedProjects = await getProjectsByIds({
+      ids: projectsToFetch,
     });
 
-    fetchedProjects.projects.forEach((project) => {
+    fetchedProjects.forEach((project) => {
       cache.set(project.id, project);
     });
   };

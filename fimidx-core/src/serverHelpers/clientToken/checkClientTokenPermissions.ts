@@ -17,7 +17,8 @@ export async function checkClientTokenPermissions(params: {
 
   const permissions = await Promise.all(
     items.map(async (item) => {
-      // Transform the permission to the managed format that's stored in the database
+      // Transform the permission to the managed format that's stored in the
+      // database
       const managedPermission = getFimidxManagedClientTokenPermission({
         permission: item,
         clientTokenId,

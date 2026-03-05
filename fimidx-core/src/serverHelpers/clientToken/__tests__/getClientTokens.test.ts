@@ -113,6 +113,7 @@ describe("getClientTokens integration", () => {
     const args: GetClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
       },
     };
 
@@ -136,6 +137,7 @@ describe("getClientTokens integration", () => {
     const args: GetClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
       },
     };
 
@@ -163,6 +165,7 @@ describe("getClientTokens integration", () => {
     const args: GetClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         name: {
           eq: "Apple Token",
         },
@@ -187,6 +190,7 @@ describe("getClientTokens integration", () => {
     const args: GetClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         name: {
           in: ["Apple Token", "Banana Token"],
         },
@@ -215,6 +219,7 @@ describe("getClientTokens integration", () => {
     const args: GetClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         meta: [
           {
             op: "eq",
@@ -274,6 +279,7 @@ describe("getClientTokens integration", () => {
     const args: GetClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         permissionAction: {
           in: ["read", "write"],
         },
@@ -329,6 +335,7 @@ describe("getClientTokens integration", () => {
     const args: GetClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         permissionEntity: {
           eq: "user",
         },
@@ -377,6 +384,7 @@ describe("getClientTokens integration", () => {
     const args: GetClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         permissionTarget: {
           in: ["document", "settings"],
         },
@@ -431,6 +439,7 @@ describe("getClientTokens integration", () => {
 
     const args: GetClientTokensEndpointArgs = {
       query: {
+        groupId,
         projectId: projectId,
         permissionEntity: {
           eq: "user",
@@ -460,6 +469,7 @@ describe("getClientTokens integration", () => {
     const args: GetClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
       },
       page: 1,
       limit: 2,
@@ -485,6 +495,7 @@ describe("getClientTokens integration", () => {
     const args: GetClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
       },
       page: 2,
       limit: 2,
@@ -510,6 +521,7 @@ describe("getClientTokens integration", () => {
     const args: GetClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
       },
       page: 3,
       limit: 2,
@@ -542,6 +554,7 @@ describe("getClientTokens integration", () => {
     const args: GetClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
       },
       sort: [
         {
@@ -578,6 +591,7 @@ describe("getClientTokens integration", () => {
     const args: GetClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
       },
       sort: [
         {
@@ -606,6 +620,7 @@ describe("getClientTokens integration", () => {
     const args: GetClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         createdBy: {
           eq: by,
         },
@@ -630,6 +645,7 @@ describe("getClientTokens integration", () => {
     const args: GetClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         name: {
           in: ["Admin Token", "Admin Token 2"],
         },
@@ -665,6 +681,7 @@ describe("getClientTokens integration", () => {
     const args: GetClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
       },
     };
 
@@ -692,6 +709,7 @@ describe("getClientTokens integration", () => {
     const args: GetClientTokensEndpointArgs = {
       query: {
         projectId: "project1 - getClientTokens",
+        groupId,
       },
     };
 

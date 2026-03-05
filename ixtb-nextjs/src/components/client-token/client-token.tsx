@@ -6,6 +6,7 @@ import { ObfuscateText } from "../internal/obfuscate-text";
 import { Button } from "../ui/button";
 import { Separator } from "../ui/separator";
 import { ClientTokenItemMenu } from "./client-token-item-menu";
+import { PermissionSelector } from "./permission-selector";
 export interface IClientTokenProps {
   clientToken: IClientToken;
 }
@@ -24,11 +25,14 @@ export function ClientToken(props: IClientTokenProps) {
   const { data } = encodeClientTokenJWT;
 
   const orgId = props.clientToken.meta?.orgId;
-  const projectId = props.clientToken.meta?.projectId;
+  const projectId =
+    props.clientToken.meta?.projectId ?? props.clientToken.projectId;
 
   if (!orgId || !projectId) {
     return null;
   }
+
+  const permissions = props.clientToken.permissions ?? [];
 
   return (
     <div className="flex flex-col gap-4 p-4 pt-0">
@@ -61,6 +65,16 @@ export function ClientToken(props: IClientTokenProps) {
           </Copyable>
         </div>
         <Separator />
+        {permissions.length > 0 && (
+          <>
+            <PermissionSelector
+              value={permissions}
+              targetId={projectId}
+              readonly
+            />
+            <Separator />
+          </>
+        )}
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center gap-2">
             <h3 className="text-md font-medium">Encode Token</h3>

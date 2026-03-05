@@ -98,6 +98,7 @@ describe("updateClientTokens integration", () => {
       args: {
         query: {
           projectId: projectId,
+          groupId,
           name: {
             eq: "Original Token",
           },
@@ -110,6 +111,7 @@ describe("updateClientTokens integration", () => {
     const args: UpdateClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         name: {
           eq: "Original Token",
         },
@@ -151,6 +153,7 @@ describe("updateClientTokens integration", () => {
       args: {
         query: {
           projectId: projectId,
+          groupId,
           name: {
             eq: "Updated Token",
           },
@@ -194,6 +197,7 @@ describe("updateClientTokens integration", () => {
     const args: UpdateClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         meta: [
           {
             op: "eq",
@@ -232,6 +236,7 @@ describe("updateClientTokens integration", () => {
       args: {
         query: {
           projectId: projectId,
+          groupId,
           meta: [
             {
               op: "eq",
@@ -272,6 +277,7 @@ describe("updateClientTokens integration", () => {
     const args: UpdateClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         meta: [
           {
             op: "eq",
@@ -298,6 +304,7 @@ describe("updateClientTokens integration", () => {
       args: {
         query: {
           projectId: projectId,
+          groupId,
           meta: [
             {
               op: "eq",
@@ -321,6 +328,7 @@ describe("updateClientTokens integration", () => {
     const args: UpdateClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         id: {
           eq: token.id,
         },
@@ -344,6 +352,7 @@ describe("updateClientTokens integration", () => {
       args: {
         query: {
           projectId: projectId,
+          groupId,
           id: {
             eq: token.id,
           },
@@ -365,6 +374,7 @@ describe("updateClientTokens integration", () => {
     const args: UpdateClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         createdBy: {
           eq: by,
         },
@@ -387,6 +397,7 @@ describe("updateClientTokens integration", () => {
       args: {
         query: {
           projectId: projectId,
+          groupId,
           meta: [
             {
               op: "eq",
@@ -423,6 +434,7 @@ describe("updateClientTokens integration", () => {
     const args: UpdateClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         name: {
           eq: "Test Token",
         },
@@ -445,6 +457,7 @@ describe("updateClientTokens integration", () => {
       args: {
         query: {
           projectId: projectId,
+          groupId,
           name: {
             eq: "Test Token",
           },
@@ -474,6 +487,7 @@ describe("updateClientTokens integration", () => {
     const args: UpdateClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         name: {
           eq: "Test Token",
         },
@@ -496,6 +510,7 @@ describe("updateClientTokens integration", () => {
       args: {
         query: {
           projectId: projectId,
+          groupId,
           name: {
             eq: "Test Token",
           },
@@ -526,6 +541,7 @@ describe("updateClientTokens integration", () => {
     const args: UpdateClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         name: {
           eq: "Test Token",
         },
@@ -564,6 +580,7 @@ describe("updateClientTokens integration", () => {
       args: {
         query: {
           projectId: projectId,
+          groupId,
           name: {
             eq: "Test Token",
           },
@@ -600,6 +617,7 @@ describe("updateClientTokens integration", () => {
     const args: UpdateClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         name: {
           eq: "Test Token",
         },
@@ -622,6 +640,7 @@ describe("updateClientTokens integration", () => {
       args: {
         query: {
           projectId: projectId,
+          groupId,
           name: {
             eq: "Test Token",
           },
@@ -646,6 +665,7 @@ describe("updateClientTokens integration", () => {
     const args: UpdateClientTokensEndpointArgs = {
       query: {
         projectId: "project1",
+        groupId,
         name: {
           eq: "Token 1 - updateClientTokens",
         },
@@ -668,6 +688,7 @@ describe("updateClientTokens integration", () => {
       args: {
         query: {
           projectId: "project1",
+          groupId,
         },
       },
       storage,
@@ -677,6 +698,7 @@ describe("updateClientTokens integration", () => {
       args: {
         query: {
           projectId: "project2",
+          groupId,
         },
       },
       storage,

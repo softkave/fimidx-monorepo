@@ -2,8 +2,10 @@ import assert from "assert";
 import { kOwnServerErrorCodes, OwnServerError } from "fimidx-core/common/error";
 import { ingestLogsSchema } from "fimidx-core/definitions/log";
 import { kByTypes } from "fimidx-core/definitions/other";
+import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { getProjects, ingestLogs } from "fimidx-core/serverHelpers/index";
 import { first } from "lodash-es";
+import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
 import { sanitizeIngestLogsInput } from "../../utils/sanitizeKId0.js";
 
@@ -17,12 +19,18 @@ export const ingestLogsEndpoint: NextClientTokenAuthenticatedEndpointFn<
 
   const input = ingestLogsSchema.parse(await req.json());
   sanitizeIngestLogsInput(input);
+
+  await checkPermissionProjectThenOrg({
+    clientToken,
+    projectId: input.projectId,
+    action: kFimidxPermissions.log.ingest,
+  });
+
   const { projects } = await getProjects({
     args: {
       query: {
-        id: {
-          eq: input.projectId,
-        },
+        orgId: clientToken.groupId,
+        id: { eq: input.projectId },
       },
     },
   });

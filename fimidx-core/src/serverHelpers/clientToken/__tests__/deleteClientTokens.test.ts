@@ -85,6 +85,7 @@ describe("deleteClientTokens integration", () => {
     const args: DeleteClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         name: {
           eq: "Token to Delete",
         },
@@ -104,6 +105,7 @@ describe("deleteClientTokens integration", () => {
       args: {
         query: {
           projectId: projectId,
+          groupId,
         },
       },
       storage,
@@ -121,6 +123,7 @@ describe("deleteClientTokens integration", () => {
     const args: DeleteClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         meta: [
           {
             op: "eq",
@@ -144,6 +147,7 @@ describe("deleteClientTokens integration", () => {
       args: {
         query: {
           projectId: projectId,
+          groupId,
         },
       },
       storage,
@@ -160,7 +164,8 @@ describe("deleteClientTokens integration", () => {
 
     const args: DeleteClientTokensEndpointArgs = {
       query: {
-        projectId: projectId,
+        projectId,
+        groupId,
         meta: [
           {
             op: "eq",
@@ -184,6 +189,7 @@ describe("deleteClientTokens integration", () => {
       args: {
         query: {
           projectId: projectId,
+          groupId,
         },
       },
       storage,
@@ -199,6 +205,7 @@ describe("deleteClientTokens integration", () => {
     const args: DeleteClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         id: {
           eq: token.id,
         },
@@ -218,6 +225,7 @@ describe("deleteClientTokens integration", () => {
       args: {
         query: {
           projectId: projectId,
+          groupId,
         },
       },
       storage,
@@ -234,6 +242,7 @@ describe("deleteClientTokens integration", () => {
     const args: DeleteClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         createdBy: {
           eq: by,
         },
@@ -253,6 +262,7 @@ describe("deleteClientTokens integration", () => {
       args: {
         query: {
           projectId: projectId,
+          groupId,
         },
       },
       storage,
@@ -276,6 +286,7 @@ describe("deleteClientTokens integration", () => {
     const args: DeleteClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         meta: [
           {
             op: "eq",
@@ -304,6 +315,7 @@ describe("deleteClientTokens integration", () => {
       args: {
         query: {
           projectId: projectId,
+          groupId,
         },
       },
       storage,
@@ -329,6 +341,7 @@ describe("deleteClientTokens integration", () => {
     const args: DeleteClientTokensEndpointArgs = {
       query: {
         projectId: "project1 - deleteClientTokens - across projects",
+        groupId,
         name: {
           eq: "Token 1 - deleteClientTokens - across projects",
         },
@@ -348,6 +361,7 @@ describe("deleteClientTokens integration", () => {
       args: {
         query: {
           projectId: "project1 - deleteClientTokens - across projects",
+          groupId,
         },
       },
       storage,
@@ -357,6 +371,7 @@ describe("deleteClientTokens integration", () => {
       args: {
         query: {
           projectId: "project2 - deleteClientTokens - across projects",
+          groupId,
         },
       },
       storage,
@@ -375,6 +390,7 @@ describe("deleteClientTokens integration", () => {
     const args: DeleteClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         name: {
           in: ["Admin Token 1", "Admin Token 2"],
         },
@@ -394,6 +410,7 @@ describe("deleteClientTokens integration", () => {
       args: {
         query: {
           projectId: projectId,
+          groupId,
         },
       },
       storage,
@@ -441,6 +458,7 @@ describe("deleteClientTokens integration", () => {
     const args: DeleteClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         permissionAction: {
           in: ["read", "write"],
         },
@@ -460,6 +478,7 @@ describe("deleteClientTokens integration", () => {
       args: {
         query: {
           projectId: projectId,
+          groupId,
         },
         includePermissions: true,
       },
@@ -489,6 +508,7 @@ describe("deleteClientTokens integration", () => {
     const args: DeleteClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         createdAt: {
           eq: targetTime.toISOString(),
         },
@@ -508,6 +528,7 @@ describe("deleteClientTokens integration", () => {
       args: {
         query: {
           projectId: projectId,
+          groupId,
         },
       },
       storage,
@@ -521,6 +542,7 @@ describe("deleteClientTokens integration", () => {
     const args: DeleteClientTokensEndpointArgs = {
       query: {
         projectId: projectId,
+        groupId,
         name: {
           eq: "Non-existent Token",
         },

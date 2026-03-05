@@ -22,6 +22,7 @@ export async function updateClientTokenPermissions(params: {
     args: {
       query: {
         projectId: query.projectId,
+        groupId: query.groupId,
         id: {
           eq: query.id,
         },

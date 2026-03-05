@@ -1,5 +1,6 @@
 import { AddOrgEndpointResponse, addOrgSchema } from "@/src/definitions/org";
 import { kByTypes, kId0, kMemberStatus } from "fimidx-core/definitions/index";
+import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { addGroup, addMember } from "fimidx-core/serverHelpers/index";
 import { NextUserAuthenticatedEndpointFn } from "../../types";
 import { groupToOrg } from "./groupToOrg";
@@ -31,8 +32,13 @@ export const addOrgEndpoint: NextUserAuthenticatedEndpointFn<
       memberId: userId,
       email: user?.email ?? email,
       name: user?.name ?? email,
-      // TODO: add permissions
-      permissions: [],
+      permissions: [
+        {
+          entity: userId,
+          action: kFimidxPermissions.wildcard,
+          target: group.group.id,
+        },
+      ],
     },
     seed: {
       status: kMemberStatus.accepted,

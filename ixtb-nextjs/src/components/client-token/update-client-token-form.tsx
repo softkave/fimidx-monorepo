@@ -5,9 +5,9 @@ import {
   useUpdateClientTokens,
 } from "@/src/lib/clientApi/clientToken.ts";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { IPermissionAtom } from "fimidx-core/definitions/permission";
 import { IClientToken } from "fimidx-core/definitions/clientToken";
-import { kId0 } from "fimidx-core/definitions/system";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "../ui/button.tsx";
@@ -22,6 +22,7 @@ import {
 } from "../ui/form.tsx";
 import { Input } from "../ui/input.tsx";
 import { Textarea } from "../ui/textarea.tsx";
+import { PermissionSelector } from "./permission-selector";
 
 export interface IUpdateClientTokenFormProps {
   clientToken: IClientToken;
@@ -35,6 +36,9 @@ export const updateClientTokenFormSchema = z.object({
 
 export function UpdateClientTokenForm(props: IUpdateClientTokenFormProps) {
   const { clientToken, onSubmitComplete } = props;
+  const [permissions, setPermissions] = useState<IPermissionAtom[]>(
+    clientToken.permissions ?? []
+  );
 
   const form = useForm<z.infer<typeof updateClientTokenFormSchema>>({
     resolver: zodResolver(updateClientTokenFormSchema),
@@ -57,20 +61,30 @@ export function UpdateClientTokenForm(props: IUpdateClientTokenFormProps) {
 
   const onSubmit = useCallback(
     async (values: z.infer<typeof updateClientTokenFormSchema>) => {
+      const permissionsWithEntity = permissions.map((p) => ({
+        ...p,
+        entity: p.entity ?? "client-token",
+      }));
       await updateClientTokenHook.trigger({
         query: {
-          projectId: kId0,
-          id: {
-            eq: clientToken.id,
-          },
+          projectId: clientToken.projectId,
+          groupId: clientToken.groupId,
+          id: { eq: clientToken.id },
         },
         update: {
           name: values.name,
           description: values.description,
+          permissions: permissionsWithEntity,
         },
-      });
+      } as never);
     },
-    [updateClientTokenHook, clientToken.id]
+    [
+      updateClientTokenHook,
+      clientToken.id,
+      clientToken.projectId,
+      clientToken.groupId,
+      permissions,
+    ]
   );
 
   return (
@@ -113,6 +127,11 @@ export function UpdateClientTokenForm(props: IUpdateClientTokenFormProps) {
               <FormMessage />
             </FormItem>
           )}
+        />
+        <PermissionSelector
+          value={permissions}
+          onChange={setPermissions}
+          targetId={clientToken.projectId}
         />
         <Button type="submit" className="w-full">
           Update Client Token

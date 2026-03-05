@@ -179,8 +179,8 @@ describe("sanitizeKId0", () => {
     it("sanitizeGetClientTokensInput throws when query.projectId is kId0", () => {
       expectKId0Error(() =>
         sanitizeGetClientTokensInput({
-          query: { projectId: kId0 },
-        })
+          query: { projectId: kId0, groupId: "g1" },
+        } as Parameters<typeof sanitizeGetClientTokensInput>[0])
       );
     });
     it("sanitizeEncodeClientTokenJWTInput throws when id is kId0", () => {

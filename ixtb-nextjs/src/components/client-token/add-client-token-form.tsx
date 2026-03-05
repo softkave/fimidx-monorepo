@@ -5,9 +5,9 @@ import {
   useAddClientToken,
 } from "@/src/lib/clientApi/clientToken.ts";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { IPermissionAtom } from "fimidx-core/definitions/permission";
 import { IClientToken } from "fimidx-core/definitions/clientToken";
-import { kId0 } from "fimidx-core/definitions/system";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "../ui/button.tsx";
@@ -22,6 +22,7 @@ import {
 } from "../ui/form.tsx";
 import { Input } from "../ui/input.tsx";
 import { Textarea } from "../ui/textarea.tsx";
+import { PermissionSelector } from "./permission-selector";
 
 export interface IAddClientTokenFormProps {
   orgId: string;
@@ -40,6 +41,8 @@ function generateClientTokenName() {
 
 export function AddClientTokenForm(props: IAddClientTokenFormProps) {
   const { projectId, orgId, onSubmitComplete } = props;
+
+  const [permissions, setPermissions] = useState<IPermissionAtom[]>([]);
 
   const form = useForm<z.infer<typeof addClientTokenFormSchema>>({
     resolver: zodResolver(addClientTokenFormSchema),
@@ -63,18 +66,24 @@ export function AddClientTokenForm(props: IAddClientTokenFormProps) {
 
   const onSubmit = useCallback(
     async (values: z.infer<typeof addClientTokenFormSchema>) => {
+      const permissionsWithEntity = permissions.map((p) => ({
+        ...p,
+        entity: p.entity ?? "client-token",
+      }));
       await addClientTokenHook.trigger({
-        projectId: kId0,
-        groupId: kId0,
+        projectId,
+        groupId: orgId,
         name: values.name,
         description: values.description,
         meta: {
-          projectId: projectId,
-          orgId: orgId,
+          projectId,
+          orgId,
         },
+        permissions:
+          permissionsWithEntity.length > 0 ? permissionsWithEntity : undefined,
       });
     },
-    [addClientTokenHook, projectId, orgId]
+    [addClientTokenHook, projectId, orgId, permissions]
   );
 
   return (
@@ -117,6 +126,11 @@ export function AddClientTokenForm(props: IAddClientTokenFormProps) {
               <FormMessage />
             </FormItem>
           )}
+        />
+        <PermissionSelector
+          value={permissions}
+          onChange={setPermissions}
+          targetId={projectId}
         />
         <Button type="submit" className="w-full">
           Create Client Token

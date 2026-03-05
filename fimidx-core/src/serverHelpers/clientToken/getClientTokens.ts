@@ -24,6 +24,7 @@ export function getClientTokensObjQuery(params: {
     name,
     meta,
     projectId,
+    groupId,
     id,
     createdAt,
     updatedAt,
@@ -68,6 +69,7 @@ export function getClientTokensObjQuery(params: {
     projectId,
     partQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
     metaQuery: { id, createdAt, updatedAt, createdBy, updatedBy },
+    topLevelFields: { groupId: { eq: groupId } },
   };
 
   return objQuery;
@@ -88,8 +90,9 @@ export async function getClientTokensWithPermissionFilter(params: {
   }
 
   // First, get all client tokens to get their IDs for permission filtering
+  const objQuery = getClientTokensObjQuery({ args });
   const { objs } = await getManyObjs({
-    objQuery: { projectId },
+    objQuery,
     tag: kObjTags.clientToken,
     limit: 1000,
     page: 0,
@@ -343,7 +346,7 @@ export async function getClientTokens(params: {
     const { permissions } = await getClientTokensPermissions({
       projectId: args.query.projectId,
       clientTokenIds: paginatedObjs.map((obj) => obj.id),
-      groupId: paginatedObjs[0]?.groupId || "",
+      groupId: args.query.groupId,
       storage,
     });
 
@@ -391,7 +394,7 @@ export async function getClientTokens(params: {
     ? await getClientTokensPermissions({
         projectId: args.query.projectId,
         clientTokenIds: objs.map((obj) => obj.id),
-        groupId: objs[0]?.groupId || "",
+        groupId: args.query.groupId,
         storage,
       })
     : {

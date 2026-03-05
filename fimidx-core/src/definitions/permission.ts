@@ -58,6 +58,7 @@ export const kFimidxPermissions = {
 
 export const kFimidxPermissionsList = [
   kFimidxPermissions.wildcard,
+  kFimidxPermissions.group.read,
   kFimidxPermissions.group.mutate,
   kFimidxPermissions.group.delete,
   kFimidxPermissions.project.read,

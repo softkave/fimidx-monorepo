@@ -5,8 +5,10 @@ import {
 } from "fimidx-core/definitions/obj";
 import { kByTypes } from "fimidx-core/definitions/other";
 import { updateManyObjs } from "fimidx-core/serverHelpers/index";
+import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
 import { sanitizeUpdateManyObjsInput } from "../../utils/sanitizeKId0.js";
+import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 
 export const updateManyObjsEndpoint: NextClientTokenAuthenticatedEndpointFn<
   IUpdateManyObjsEndpointResponse
@@ -18,6 +20,15 @@ export const updateManyObjsEndpoint: NextClientTokenAuthenticatedEndpointFn<
 
   const input = updateManyObjsSchema.parse(await req.json());
   sanitizeUpdateManyObjsInput(input);
+  const projectId = input.query?.projectId;
+  if (projectId) {
+    await checkPermissionProjectThenOrg({
+      clientToken,
+      projectId,
+      action: kFimidxPermissions.obj.mutate,
+    });
+  }
+
   await updateManyObjs({
     by: clientToken.id,
     byType: kByTypes.clientToken,

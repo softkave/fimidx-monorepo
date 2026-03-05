@@ -256,9 +256,10 @@ export function sanitizeAddClientTokenInput(
 }
 
 function sanitizeClientTokenQuery(
-  query: GetClientTokensEndpointArgs["query"]
+  query: GetClientTokensEndpointArgs["query"] & { groupId?: string }
 ): void {
   rejectIfKId0(query.projectId, "query.projectId");
+  if (query.groupId) rejectIfKId0(query.groupId, "query.groupId");
   sanitizeStringMetaQuery(query.id, "query.id");
   sanitizeStringMetaQuery(query.createdBy, "query.createdBy");
   sanitizeStringMetaQuery(query.updatedBy, "query.updatedBy");

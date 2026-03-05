@@ -55,6 +55,7 @@ export const addClientTokenSchema = z.object({
 
 export const clientTokenQuerySchema = z.object({
   projectId: z.string().min(1),
+  groupId: z.string().min(1),
   id: stringMetaQuerySchema.optional(),
   name: stringMetaQuerySchema.optional(),
   meta: objPartQueryListSchema.optional(),

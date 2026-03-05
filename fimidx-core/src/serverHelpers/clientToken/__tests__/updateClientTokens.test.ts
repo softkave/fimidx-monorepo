@@ -592,9 +592,21 @@ describe("updateClientTokens integration", () => {
 
     expect(result.clientTokens).toHaveLength(1);
     expect(result.clientTokens[0].permissions).toHaveLength(3);
-    expect(result.clientTokens[0].permissions![0].entity).toBe("user");
-    expect(result.clientTokens[0].permissions![0].action).toBe("read");
+    result.clientTokens[0].permissions?.sort(
+      (a: IPermissionAtom, b: IPermissionAtom) =>
+        String(a.entity).localeCompare(String(b.entity)) ||
+        String(a.action).localeCompare(String(a.action)) ||
+        String(a.target).localeCompare(String(b.target))
+    );
+    expect(result.clientTokens[0].permissions![0].entity).toBe("admin");
+    expect(result.clientTokens[0].permissions![0].action).toBe("delete");
     expect(result.clientTokens[0].permissions![0].target).toBe("document");
+    expect(result.clientTokens[0].permissions![1].entity).toBe("admin");
+    expect(result.clientTokens[0].permissions![1].action).toBe("write");
+    expect(result.clientTokens[0].permissions![1].target).toBe("settings");
+    expect(result.clientTokens[0].permissions![2].entity).toBe("user");
+    expect(result.clientTokens[0].permissions![2].action).toBe("read");
+    expect(result.clientTokens[0].permissions![2].target).toBe("document");
   });
 
   it("sets permissions to null", async () => {

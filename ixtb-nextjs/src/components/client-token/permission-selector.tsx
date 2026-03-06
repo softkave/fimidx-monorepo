@@ -53,7 +53,7 @@ export const kPermissionLabels: Record<
   },
   [kFimidxPermissions.member.mutate]: {
     label: "Member – mutate",
-    description: "Add or update members",
+    description: "Add or update members and their permissions",
   },
   [kFimidxPermissions.member.remove]: {
     label: "Member – remove",
@@ -77,7 +77,7 @@ export const kPermissionLabels: Record<
   },
   [kFimidxPermissions.clientToken.mutate]: {
     label: "Client token – mutate",
-    description: "Create or update client tokens",
+    description: "Create or update client tokens and their permissions",
   },
   [kFimidxPermissions.clientToken.delete]: {
     label: "Client token – delete",

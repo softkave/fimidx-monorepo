@@ -1,5 +1,8 @@
 import { isString } from "lodash-es";
-import type { IClientTokenObjRecordMeta } from "../../definitions/clientToken.js";
+import type {
+  IClientTokenObjRecordMeta,
+  IClientTokenPermissionInput,
+} from "../../definitions/clientToken.js";
 import type {
   IPermission,
   IPermissionAction,
@@ -170,7 +173,7 @@ export async function addClientTokenPermissions(params: {
   byType: string;
   groupId: string;
   projectId: string;
-  permissions: IPermissionAtom[];
+  permissions: IClientTokenPermissionInput[] | IPermissionAtom[];
   clientTokenId: string;
   storage?: IObjStorage;
 }) {
@@ -179,17 +182,22 @@ export async function addClientTokenPermissions(params: {
     byType,
     groupId,
     projectId,
-    permissions,
+    permissions: inputPermissions,
     clientTokenId,
     storage,
   } = params;
+  const permissionAtoms: IPermissionAtom[] = inputPermissions.map((p) =>
+    "entity" in p && p.entity !== undefined
+      ? (p as IPermissionAtom)
+      : { entity: clientTokenId, action: p.action, target: p.target }
+  );
   const { permissions: newPermissions } = await addPermissions({
     by,
     byType,
     groupId,
     args: {
       projectId,
-      permissions: permissions.map((permission) =>
+      permissions: permissionAtoms.map((permission) =>
         getFimidxManagedClientTokenPermission({
           permission,
           clientTokenId,

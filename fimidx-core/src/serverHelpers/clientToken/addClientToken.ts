@@ -71,7 +71,7 @@ export async function addClientToken(params: {
 
   const clientToken = objToClientToken(newObjs[0], null);
 
-  // Add permissions if provided
+  // Add permissions if provided (entity is set by addClientTokenPermissions)
   if (permissions && permissions.length > 0) {
     const { permissions: managedPermissions } = await addClientTokenPermissions(
       {

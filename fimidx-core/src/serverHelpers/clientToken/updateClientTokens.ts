@@ -86,7 +86,7 @@ export async function updateClientTokens(params: {
           storage,
         });
 
-        // Add new permissions
+        // Add new permissions (entity is set by addClientTokenPermissions)
         await addClientTokenPermissions({
           by,
           byType,

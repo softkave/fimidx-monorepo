@@ -66,10 +66,10 @@ export function AddClientTokenForm(props: IAddClientTokenFormProps) {
 
   const onSubmit = useCallback(
     async (values: z.infer<typeof addClientTokenFormSchema>) => {
-      const permissionsWithEntity = permissions.map((p) => ({
-        ...p,
-        entity: p.entity ?? "client-token",
-      }));
+      const permissionsPayload =
+        permissions.length > 0
+          ? permissions.map((p) => ({ action: p.action, target: p.target }))
+          : undefined;
       await addClientTokenHook.trigger({
         projectId,
         groupId: orgId,
@@ -79,8 +79,7 @@ export function AddClientTokenForm(props: IAddClientTokenFormProps) {
           projectId,
           orgId,
         },
-        permissions:
-          permissionsWithEntity.length > 0 ? permissionsWithEntity : undefined,
+        permissions: permissionsPayload as never,
       });
     },
     [addClientTokenHook, projectId, orgId, permissions]

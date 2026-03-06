@@ -29,16 +29,8 @@ describe("addClientToken integration", () => {
       projectId,
       meta: { key: "value" },
       permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-        {
-          entity: "admin",
-          action: "write",
-          target: "settings",
-        },
+        { action: "read", target: "document" },
+        { action: "write", target: "settings" },
       ],
       ...overrides,
     };
@@ -53,16 +45,8 @@ describe("addClientToken integration", () => {
       projectId,
       meta: { key: "value" },
       permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-        {
-          entity: "admin",
-          action: "write",
-          target: "settings",
-        },
+        { action: "read", target: "document" },
+        { action: "write", target: "settings" },
       ],
       ...overrides,
     };
@@ -121,21 +105,9 @@ describe("addClientToken integration", () => {
       name: "My Test Token",
       description: "A test token description",
       permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-        {
-          entity: "admin",
-          action: "write",
-          target: "settings",
-        },
-        {
-          entity: "admin",
-          action: "delete",
-          target: "document",
-        },
+        { action: "read", target: "document" },
+        { action: "write", target: "settings" },
+        { action: "delete", target: "document" },
       ],
     });
 

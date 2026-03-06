@@ -29,16 +29,8 @@ describe("updateClientTokens integration", () => {
       description: "Test description",
       meta: { key: "value" },
       permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-        {
-          entity: "admin",
-          action: "write",
-          target: "settings",
-        },
+        { action: "read", target: "document" },
+        { action: "write", target: "settings" },
       ],
       projectId: overrides.projectId || projectId,
       ...overrides,
@@ -85,11 +77,7 @@ describe("updateClientTokens integration", () => {
       description: "Original description",
       meta: { type: "user" },
       permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
+        { action: "read", target: "document" },
       ],
     });
 
@@ -121,21 +109,9 @@ describe("updateClientTokens integration", () => {
         description: "Updated description",
         meta: { type: "admin" },
         permissions: [
-          {
-            entity: "user",
-            action: "read",
-            target: "document",
-          },
-          {
-            entity: "admin",
-            action: "write",
-            target: "settings",
-          },
-          {
-            entity: "admin",
-            action: "delete",
-            target: "document",
-          },
+          { action: "read", target: "document" },
+          { action: "write", target: "settings" },
+          { action: "delete", target: "document" },
         ],
       },
       updateMany: false,
@@ -175,15 +151,15 @@ describe("updateClientTokens integration", () => {
         String(a.action).localeCompare(String(b.action)) ||
         String(a.target).localeCompare(String(b.target))
     );
-    expect(updatedToken.permissions![0].entity).toBe("admin");
     expect(updatedToken.permissions![0].action).toBe("delete");
     expect(updatedToken.permissions![0].target).toBe("document");
-    expect(updatedToken.permissions![1].entity).toBe("admin");
     expect(updatedToken.permissions![1].action).toBe("write");
     expect(updatedToken.permissions![1].target).toBe("settings");
-    expect(updatedToken.permissions![2].entity).toBe("user");
     expect(updatedToken.permissions![2].action).toBe("read");
     expect(updatedToken.permissions![2].target).toBe("document");
+    updatedToken.permissions?.forEach((p) =>
+      expect(p.entity).toBe(updatedToken.id)
+    );
     expect(updatedToken.updatedBy).toBe(by);
     expect(updatedToken.updatedByType).toBe(byType);
   });
@@ -209,16 +185,8 @@ describe("updateClientTokens integration", () => {
       update: {
         meta: { type: "updated", status: "active" },
         permissions: [
-          {
-            entity: "user",
-            action: "read",
-            target: "document",
-          },
-          {
-            entity: "admin",
-            action: "write",
-            target: "settings",
-          },
+          { action: "read", target: "document" },
+          { action: "write", target: "settings" },
         ],
       },
       updateMany: true,
@@ -423,11 +391,7 @@ describe("updateClientTokens integration", () => {
       description: "Original description",
       meta: { type: "user" },
       permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
+        { action: "read", target: "document" },
       ],
     });
 
@@ -473,7 +437,7 @@ describe("updateClientTokens integration", () => {
     expect(updatedToken.description).toBe("Updated description only"); // Changed
     expect(updatedToken.meta).toEqual({ type: "user" }); // Unchanged
     expect(updatedToken.permissions).toHaveLength(1);
-    expect(updatedToken.permissions![0].entity).toBe("user");
+    expect(updatedToken.permissions![0].entity).toBe(updatedToken.id);
     expect(updatedToken.permissions![0].action).toBe("read");
     expect(updatedToken.permissions![0].target).toBe("document");
   });
@@ -530,11 +494,7 @@ describe("updateClientTokens integration", () => {
     // Create a test token
     const token = await createTestToken("Test Token", {
       permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
+        { action: "read", target: "document" },
       ],
     });
 
@@ -548,21 +508,9 @@ describe("updateClientTokens integration", () => {
       },
       update: {
         permissions: [
-          {
-            entity: "user",
-            action: "read",
-            target: "document",
-          },
-          {
-            entity: "admin",
-            action: "write",
-            target: "settings",
-          },
-          {
-            entity: "admin",
-            action: "delete",
-            target: "document",
-          },
+          { action: "read", target: "document" },
+          { action: "write", target: "settings" },
+          { action: "delete", target: "document" },
         ],
       },
       updateMany: false,
@@ -598,13 +546,19 @@ describe("updateClientTokens integration", () => {
         String(a.action).localeCompare(String(a.action)) ||
         String(a.target).localeCompare(String(b.target))
     );
-    expect(result.clientTokens[0].permissions![0].entity).toBe("admin");
+    expect(result.clientTokens[0].permissions![0].entity).toBe(
+      result.clientTokens[0].id
+    );
     expect(result.clientTokens[0].permissions![0].action).toBe("delete");
     expect(result.clientTokens[0].permissions![0].target).toBe("document");
-    expect(result.clientTokens[0].permissions![1].entity).toBe("admin");
+    expect(result.clientTokens[0].permissions![1].entity).toBe(
+      result.clientTokens[0].id
+    );
     expect(result.clientTokens[0].permissions![1].action).toBe("write");
     expect(result.clientTokens[0].permissions![1].target).toBe("settings");
-    expect(result.clientTokens[0].permissions![2].entity).toBe("user");
+    expect(result.clientTokens[0].permissions![2].entity).toBe(
+      result.clientTokens[0].id
+    );
     expect(result.clientTokens[0].permissions![2].action).toBe("read");
     expect(result.clientTokens[0].permissions![2].target).toBe("document");
   });
@@ -613,16 +567,8 @@ describe("updateClientTokens integration", () => {
     // Create a test token
     const token = await createTestToken("Test Token", {
       permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-        {
-          entity: "admin",
-          action: "write",
-          target: "settings",
-        },
+        { action: "read", target: "document" },
+        { action: "write", target: "settings" },
       ],
     });
 

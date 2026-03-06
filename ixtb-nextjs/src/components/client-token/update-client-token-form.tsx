@@ -61,9 +61,9 @@ export function UpdateClientTokenForm(props: IUpdateClientTokenFormProps) {
 
   const onSubmit = useCallback(
     async (values: z.infer<typeof updateClientTokenFormSchema>) => {
-      const permissionsWithEntity = permissions.map((p) => ({
-        ...p,
-        entity: p.entity ?? "client-token",
+      const permissionsPayload = permissions.map((p) => ({
+        action: p.action,
+        target: p.target,
       }));
       await updateClientTokenHook.trigger({
         query: {
@@ -74,7 +74,7 @@ export function UpdateClientTokenForm(props: IUpdateClientTokenFormProps) {
         update: {
           name: values.name,
           description: values.description,
-          permissions: permissionsWithEntity,
+          permissions: permissionsPayload,
         },
       } as never);
     },

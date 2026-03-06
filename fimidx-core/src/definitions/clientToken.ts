@@ -7,11 +7,23 @@ import {
 } from "./obj.js";
 import {
   actionQuerySchema,
+  actionSchema,
   checkPermissionItemSchema,
   entityQuerySchema,
-  permissionAtomSchema,
   targetQuerySchema,
+  targetSchema,
 } from "./permission.js";
+
+/** Permission input for client tokens: action + target only; entity is the
+ * client token id. */
+export const clientTokenPermissionSchema = z.object({
+  action: actionSchema,
+  target: targetSchema,
+});
+
+export type IClientTokenPermissionInput = z.infer<
+  typeof clientTokenPermissionSchema
+>;
 
 export interface IClientToken {
   id: string;
@@ -50,7 +62,7 @@ export const addClientTokenSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional(),
   meta: z.record(z.string().min(1), z.string()).optional(),
-  permissions: z.array(permissionAtomSchema).optional(),
+  permissions: z.array(clientTokenPermissionSchema).optional(),
 });
 
 export const clientTokenQuerySchema = z.object({
@@ -73,7 +85,7 @@ export const updateClientTokensSchema = z.object({
     name: z.string().min(1).optional(),
     description: z.string().optional(),
     meta: z.record(z.string().min(1), z.string()).optional(),
-    permissions: z.array(permissionAtomSchema).optional(),
+    permissions: z.array(clientTokenPermissionSchema).optional(),
   }),
   query: clientTokenQuerySchema,
   updateMany: z.boolean().optional(),
@@ -86,14 +98,14 @@ export const updateClientTokenPermissionsSchema = z.object({
     projectId: z.string().min(1),
   }),
   update: z.object({
-    permissions: z.array(permissionAtomSchema),
+    permissions: z.array(clientTokenPermissionSchema),
   }),
 });
 
 export const addClientTokenPermissionsSchema = z.object({
   groupId: z.string().min(1),
   projectId: z.string().min(1),
-  permissions: z.array(permissionAtomSchema),
+  permissions: z.array(clientTokenPermissionSchema),
   clientTokenId: z.string().min(1),
 });
 

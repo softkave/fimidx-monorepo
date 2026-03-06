@@ -33,7 +33,6 @@ export function getClientTokensObjQuery(params: {
     updatedAt,
     createdBy,
     updatedBy,
-    permissionEntity,
     permissionAction,
     permissionTarget,
   } = query;
@@ -84,11 +83,10 @@ export async function getClientTokensWithPermissionFilter(params: {
 }) {
   const { args, storage } = params;
   const { query } = args;
-  const { permissionEntity, permissionAction, permissionTarget, projectId } =
-    query;
+  const { permissionAction, permissionTarget, projectId } = query;
 
   // If no permission filters are specified, return all client tokens
-  if (!permissionEntity && !permissionAction && !permissionTarget) {
+  if (!permissionAction && !permissionTarget) {
     return null;
   }
 
@@ -109,52 +107,6 @@ export async function getClientTokensWithPermissionFilter(params: {
 
   for (const clientTokenId of clientTokenIds) {
     let matches = true;
-
-    if (permissionEntity) {
-      // Extract values from the entity query
-      let entityValues: string[] = [];
-      if (Array.isArray(permissionEntity)) {
-        entityValues = permissionEntity.map((item) => item.value as string);
-      } else {
-        if (permissionEntity.eq) entityValues.push(permissionEntity.eq);
-        if (permissionEntity.in) entityValues.push(...permissionEntity.in);
-      }
-
-      // Create managed entity values for this client token
-      const managedEntityValues = entityValues.map(
-        (value) =>
-          `__fimidx_managed_permission_entity_${value}:${clientTokenId}`
-      );
-
-      const entityQuery = Array.isArray(permissionEntity)
-        ? permissionEntity.map((item) => ({
-            ...item,
-            value: `__fimidx_managed_permission_entity_${item.value}:${clientTokenId}`,
-          }))
-        : ({ in: managedEntityValues } as any);
-
-      const { permissions } = await getPermissions({
-        args: {
-          query: {
-            projectId,
-            entity: entityQuery,
-            meta: [
-              {
-                op: "eq",
-                field: "__fimidx_managed_clientTokenId",
-                value: clientTokenId,
-              },
-            ],
-          },
-          limit: 1,
-        },
-        storage,
-      });
-
-      if (permissions.length === 0) {
-        matches = false;
-      }
-    }
 
     if (permissionAction && matches) {
       // Extract values from the action query

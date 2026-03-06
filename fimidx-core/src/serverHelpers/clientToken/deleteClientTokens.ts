@@ -18,9 +18,9 @@ export async function deleteClientTokens(
 
   // Check if we have permission filters
   const { query } = args;
-  const { permissionEntity, permissionAction, permissionTarget } = query;
+  const { permissionAction, permissionTarget } = query;
 
-  if (permissionEntity || permissionAction || permissionTarget) {
+  if (permissionAction || permissionTarget) {
     // Handle permission-based deletion
     const filteredClientTokenIds = await getClientTokensWithPermissionFilter({
       args,

@@ -9,7 +9,6 @@ import {
   actionQuerySchema,
   actionSchema,
   checkPermissionItemSchema,
-  entityQuerySchema,
   targetQuerySchema,
   targetSchema,
 } from "./permission.js";
@@ -71,7 +70,6 @@ export const clientTokenQuerySchema = z.object({
   id: stringMetaQuerySchema.optional(),
   name: stringMetaQuerySchema.optional(),
   meta: objPartQueryListSchema.optional(),
-  permissionEntity: entityQuerySchema.optional(),
   permissionAction: actionQuerySchema.optional(),
   permissionTarget: targetQuerySchema.optional(),
   createdAt: numberMetaQuerySchema.optional(),

@@ -30,16 +30,8 @@ describe("getClientTokens integration", () => {
       description: "Test description",
       meta: { key: "value" },
       permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-        {
-          entity: "admin",
-          action: "write",
-          target: "settings",
-        },
+        { action: "read", target: "document" },
+        { action: "write", target: "settings" },
       ],
       projectId: overrides.projectId || projectId,
       groupId,
@@ -245,35 +237,15 @@ describe("getClientTokens integration", () => {
     // Create test tokens with different permissions
     await createTestToken("Token 1", {
       permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-        {
-          entity: "admin",
-          action: "write",
-          target: "settings",
-        },
+        { action: "read", target: "document" },
+        { action: "write", target: "settings" },
       ],
     });
     await createTestToken("Token 2", {
-      permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-      ],
+      permissions: [{ action: "read", target: "document" }],
     });
     await createTestToken("Token 3", {
-      permissions: [
-        {
-          entity: "admin",
-          action: "delete",
-          target: "document",
-        },
-      ],
+      permissions: [{ action: "delete", target: "document" }],
     });
 
     const args: GetClientTokensEndpointArgs = {
@@ -302,83 +274,16 @@ describe("getClientTokens integration", () => {
     ).toBe(true);
   });
 
-  it("filters tokens by permission entity", async () => {
-    // Create test tokens with different permissions
-    await createTestToken("Token 1", {
-      permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-      ],
-    });
-    await createTestToken("Token 2", {
-      permissions: [
-        {
-          entity: "admin",
-          action: "write",
-          target: "settings",
-        },
-      ],
-    });
-    await createTestToken("Token 3", {
-      permissions: [
-        {
-          entity: "guest",
-          action: "read",
-          target: "public",
-        },
-      ],
-    });
-
-    const args: GetClientTokensEndpointArgs = {
-      query: {
-        projectId: projectId,
-        groupId,
-        permissionEntity: {
-          eq: "user",
-        },
-      },
-    };
-
-    const result = await getClientTokens({
-      args,
-      storage,
-    });
-
-    expect(result.clientTokens).toHaveLength(1);
-    expect(result.clientTokens[0].permissions?.[0].entity).toBe("user");
-  });
-
   it("filters tokens by permission target", async () => {
     // Create test tokens with different permissions
     await createTestToken("Token 1", {
-      permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-      ],
+      permissions: [{ action: "read", target: "document" }],
     });
     await createTestToken("Token 2", {
-      permissions: [
-        {
-          entity: "admin",
-          action: "write",
-          target: "settings",
-        },
-      ],
+      permissions: [{ action: "write", target: "settings" }],
     });
     await createTestToken("Token 3", {
-      permissions: [
-        {
-          entity: "guest",
-          action: "read",
-          target: "public",
-        },
-      ],
+      permissions: [{ action: "read", target: "public" }],
     });
 
     const args: GetClientTokensEndpointArgs = {
@@ -411,29 +316,17 @@ describe("getClientTokens integration", () => {
     // Create test tokens with different permissions
     await createTestToken("Token 1", {
       permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
+        { action: "read", target: "document" },
       ],
     });
     await createTestToken("Token 2", {
       permissions: [
-        {
-          entity: "admin",
-          action: "write",
-          target: "settings",
-        },
+        { action: "write", target: "settings" },
       ],
     });
     await createTestToken("Token 3", {
       permissions: [
-        {
-          entity: "user",
-          action: "write",
-          target: "document",
-        },
+        { action: "write", target: "document" },
       ],
     });
 
@@ -441,12 +334,8 @@ describe("getClientTokens integration", () => {
       query: {
         groupId,
         projectId: projectId,
-        permissionEntity: {
-          eq: "user",
-        },
-        permissionAction: {
-          eq: "read",
-        },
+        permissionAction: { eq: "read" },
+        permissionTarget: { eq: "document" },
       },
     };
 
@@ -456,8 +345,8 @@ describe("getClientTokens integration", () => {
     });
 
     expect(result.clientTokens).toHaveLength(1);
-    expect(result.clientTokens[0].permissions?.[0].entity).toBe("user");
     expect(result.clientTokens[0].permissions?.[0].action).toBe("read");
+    expect(result.clientTokens[0].permissions?.[0].target).toBe("document");
   });
 
   it("handles pagination correctly", async () => {

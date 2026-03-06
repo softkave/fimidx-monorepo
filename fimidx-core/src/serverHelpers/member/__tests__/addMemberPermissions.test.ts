@@ -45,13 +45,7 @@ function makeAddMemberPermissionsArgs(
     byType: defaultByType,
     groupId: defaultGroupId,
     projectId: defaultProjectId,
-    permissions: [
-      {
-        entity: "user",
-        action: "read",
-        target: "document",
-      },
-    ],
+    permissions: [{ action: "read", target: "document" }],
     memberId: `member-${uniqueId}`,
     ...overrides,
   };
@@ -138,16 +132,8 @@ describe("addMemberPermissions integration", () => {
     const permissionsArgs = makeAddMemberPermissionsArgs({
       memberId: member.member.memberId,
       permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-        {
-          entity: "admin",
-          action: "write",
-          target: "settings",
-        },
+        { action: "read", target: "document" },
+        { action: "write", target: "settings" },
       ],
     });
 
@@ -172,14 +158,14 @@ describe("addMemberPermissions integration", () => {
     );
     expect(permission2.meta?.__fimidx_managed_groupId).toBe(defaultGroupId);
 
-    // Verify the entity, action, and target are properly managed
-    expect(permission1.entity).toContain("__fimidx_managed_permission_entity_");
-    expect(permission1.action).toContain("__fimidx_managed_permission_action_");
-    expect(permission1.target).toContain("__fimidx_managed_permission_target_");
+    // Entity is stored as member id; action and target as-is
+    expect(permission1.entity).toBe(member.member.memberId);
+    expect(permission1.action).toBe("read");
+    expect(permission1.target).toBe("document");
 
-    expect(permission2.entity).toContain("__fimidx_managed_permission_entity_");
-    expect(permission2.action).toContain("__fimidx_managed_permission_action_");
-    expect(permission2.target).toContain("__fimidx_managed_permission_target_");
+    expect(permission2.entity).toBe(member.member.memberId);
+    expect(permission2.action).toBe("write");
+    expect(permission2.target).toBe("settings");
   });
 
   it("adds permissions with complex entity, action, and target objects", async () => {
@@ -214,10 +200,8 @@ describe("addMemberPermissions integration", () => {
     );
     expect(permission.meta?.__fimidx_managed_groupId).toBe(defaultGroupId);
 
-    // Verify complex objects are properly managed
-    expect(permission.entity).toHaveProperty(
-      "__fimidx_managed_permission_entity_memberId"
-    );
+    // Entity is stored as member id; object action/target keep memberId key
+    expect(permission.entity).toBe(member.member.memberId);
     expect(permission.action).toHaveProperty(
       "__fimidx_managed_permission_action_memberId"
     );
@@ -268,24 +252,12 @@ describe("addMemberPermissions integration", () => {
     // Add permissions to both members
     const permissions1Args = makeAddMemberPermissionsArgs({
       memberId: member1.member.memberId,
-      permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-      ],
+      permissions: [{ action: "read", target: "document" }],
     });
 
     const permissions2Args = makeAddMemberPermissionsArgs({
       memberId: member2.member.memberId,
-      permissions: [
-        {
-          entity: "admin",
-          action: "write",
-          target: "settings",
-        },
-      ],
+      permissions: [{ action: "write", target: "settings" }],
     });
 
     const result1 = await addMemberPermissions(permissions1Args);
@@ -314,13 +286,7 @@ describe("addMemberPermissions integration", () => {
     const permissionsArgs = makeAddMemberPermissionsArgs({
       memberId: member.member.memberId,
       groupId: "different-group",
-      permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-      ],
+      permissions: [{ action: "read", target: "document" }],
     });
 
     const result = await addMemberPermissions(permissionsArgs);
@@ -343,13 +309,7 @@ describe("addMemberPermissions integration", () => {
     const permissionsArgs = makeAddMemberPermissionsArgs({
       memberId: member.member.memberId,
       projectId: "different-project",
-      permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-      ],
+      permissions: [{ action: "read", target: "document" }],
     });
 
     const result = await addMemberPermissions(permissionsArgs);
@@ -371,13 +331,7 @@ describe("addMemberPermissions integration", () => {
       memberId: member.member.memberId,
       by: "different-user",
       byType: "admin",
-      permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-      ],
+      permissions: [{ action: "read", target: "document" }],
     });
 
     const result = await addMemberPermissions(permissionsArgs);

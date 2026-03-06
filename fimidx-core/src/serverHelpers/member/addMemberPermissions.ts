@@ -1,5 +1,8 @@
 import { isString } from "lodash-es";
-import type { IMemberObjRecordMeta } from "../../definitions/member.js";
+import type {
+  IMemberObjRecordMeta,
+  IMemberPermissionInput,
+} from "../../definitions/member.js";
 import type {
   IPermission,
   IPermissionAction,
@@ -10,17 +13,11 @@ import type {
 import type { IObjStorage } from "../../storage/types.js";
 import { addPermissions } from "../permission/addPermissions.js";
 
+/** Entity is always the member id; stored as-is. */
 export function getFimidxManagedMemberPermissionEntity(params: {
-  entity: IPermissionEntity;
   memberId: string;
 }) {
-  const { entity, memberId } = params;
-  return isString(entity)
-    ? `__fimidx_managed_permission_entity_${entity}:${memberId}`
-    : {
-        ...entity,
-        __fimidx_managed_permission_entity_memberId: memberId,
-      };
+  return params.memberId;
 }
 
 export function getFimidxManagedMemberPermissionAction(params: {
@@ -29,7 +26,7 @@ export function getFimidxManagedMemberPermissionAction(params: {
 }) {
   const { action, memberId } = params;
   return isString(action)
-    ? `__fimidx_managed_permission_action_${action}:${memberId}`
+    ? action
     : {
         ...action,
         __fimidx_managed_permission_action_memberId: memberId,
@@ -42,7 +39,7 @@ export function getFimidxManagedMemberPermissionTarget(params: {
 }) {
   const { target, memberId } = params;
   return isString(target)
-    ? `__fimidx_managed_permission_target_${target}:${memberId}`
+    ? target
     : {
         ...target,
         __fimidx_managed_permission_target_memberId: memberId,
@@ -61,10 +58,7 @@ export function getFimidxManagedMemberPermission(params: {
   };
   return {
     ...permission,
-    entity: getFimidxManagedMemberPermissionEntity({
-      entity: permission.entity,
-      memberId,
-    }),
+    entity: getFimidxManagedMemberPermissionEntity({ memberId }),
     action: getFimidxManagedMemberPermissionAction({
       action: permission.action,
       memberId,
@@ -78,64 +72,37 @@ export function getFimidxManagedMemberPermission(params: {
 }
 
 // Inverse functions to transform managed permissions back to original format
+/** Entity is stored as member id; return as-is. */
 export function getOriginalMemberPermissionEntity(params: {
   entity: IPermissionEntity;
-  memberId: string;
 }): IPermissionEntity {
-  const { entity, memberId } = params;
-  if (isString(entity)) {
-    const prefix = `__fimidx_managed_permission_entity_`;
-    const suffix = `:${memberId}`;
-    if (entity.startsWith(prefix) && entity.endsWith(suffix)) {
-      return entity.slice(prefix.length, -suffix.length);
-    }
-  } else {
-    // Handle object format
-    const { __fimidx_managed_permission_entity_memberId, ...originalEntity } =
-      entity;
-    return originalEntity;
-  }
-  return entity;
+  return params.entity;
 }
 
 export function getOriginalMemberPermissionAction(params: {
   action: IPermissionAction;
   memberId: string;
 }): IPermissionAction {
-  const { action, memberId } = params;
+  const { action } = params;
   if (isString(action)) {
-    const prefix = `__fimidx_managed_permission_action_`;
-    const suffix = `:${memberId}`;
-    if (action.startsWith(prefix) && action.endsWith(suffix)) {
-      return action.slice(prefix.length, -suffix.length);
-    }
-  } else {
-    // Handle object format
-    const { __fimidx_managed_permission_action_memberId, ...originalAction } =
-      action;
-    return originalAction;
+    return action;
   }
-  return action;
+  const { __fimidx_managed_permission_action_memberId, ...originalAction } =
+    action;
+  return originalAction as IPermissionAction;
 }
 
 export function getOriginalMemberPermissionTarget(params: {
   target: IPermissionTarget;
   memberId: string;
 }): IPermissionTarget {
-  const { target, memberId } = params;
+  const { target } = params;
   if (isString(target)) {
-    const prefix = `__fimidx_managed_permission_target_`;
-    const suffix = `:${memberId}`;
-    if (target.startsWith(prefix) && target.endsWith(suffix)) {
-      return target.slice(prefix.length, -suffix.length);
-    }
-  } else {
-    // Handle object format
-    const { __fimidx_managed_permission_target_memberId, ...originalTarget } =
-      target;
-    return originalTarget;
+    return target;
   }
-  return target;
+  const { __fimidx_managed_permission_target_memberId, ...originalTarget } =
+    target;
+  return originalTarget as IPermissionTarget;
 }
 
 export function getOriginalMemberPermission(params: {
@@ -146,7 +113,6 @@ export function getOriginalMemberPermission(params: {
   return {
     entity: getOriginalMemberPermissionEntity({
       entity: permission.entity,
-      memberId,
     }),
     action: getOriginalMemberPermissionAction({
       action: permission.action,
@@ -164,19 +130,31 @@ export async function addMemberPermissions(params: {
   byType: string;
   groupId: string;
   projectId: string;
-  permissions: IPermissionAtom[];
+  permissions: IMemberPermissionInput[] | IPermissionAtom[];
   memberId: string;
   storage?: IObjStorage;
 }) {
-  const { by, byType, groupId, projectId, permissions, memberId, storage } =
-    params;
+  const {
+    by,
+    byType,
+    groupId,
+    projectId,
+    permissions: inputPermissions,
+    memberId,
+    storage,
+  } = params;
+  const permissionAtoms: IPermissionAtom[] = inputPermissions.map((p) =>
+    "entity" in p && p.entity !== undefined
+      ? (p as IPermissionAtom)
+      : { entity: memberId, action: p.action, target: p.target }
+  );
   const { permissions: newPermissions } = await addPermissions({
     by,
     byType,
     groupId,
     args: {
       projectId,
-      permissions: permissions.map((permission) =>
+      permissions: permissionAtoms.map((permission) =>
         getFimidxManagedMemberPermission({
           permission,
           memberId,

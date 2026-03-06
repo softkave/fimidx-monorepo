@@ -63,7 +63,6 @@ export async function createTestOrg(params: {
       name: userName,
       permissions: [
         {
-          entity: userId,
           action: kFimidxPermissions.wildcard,
           target: group.id,
         },

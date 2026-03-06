@@ -47,13 +47,7 @@ function makeAddMemberPermissionsArgs(
     byType: defaultByType,
     groupId: defaultGroupId,
     projectId: defaultProjectId,
-    permissions: [
-      {
-        entity: "user",
-        action: "read",
-        target: "document",
-      },
-    ],
+    permissions: [{ action: "read", target: "document" }],
     memberId: `member-${uniqueId}`,
     ...overrides,
   };
@@ -158,16 +152,8 @@ describe("checkMemberPermissions integration", () => {
     const permissionsArgs = makeAddMemberPermissionsArgs({
       memberId: member.member.memberId,
       permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-        {
-          entity: "admin",
-          action: "write",
-          target: "settings",
-        },
+        { action: "read", target: "document" },
+        { action: "write", target: "settings" },
       ],
     });
 
@@ -213,13 +199,7 @@ describe("checkMemberPermissions integration", () => {
     // Add some permissions to the member
     const permissionsArgs = makeAddMemberPermissionsArgs({
       memberId: member.member.memberId,
-      permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-      ],
+      permissions: [{ action: "read", target: "document" }],
     });
 
     await addMemberPermissions(permissionsArgs);
@@ -265,16 +245,8 @@ describe("checkMemberPermissions integration", () => {
     const permissionsArgs = makeAddMemberPermissionsArgs({
       memberId: member.member.memberId,
       permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-        {
-          entity: "admin",
-          action: "write",
-          target: "settings",
-        },
+        { action: "read", target: "document" },
+        { action: "write", target: "settings" },
       ],
     });
 
@@ -396,13 +368,7 @@ describe("checkMemberPermissions integration", () => {
     // Add permissions to the member in the default group
     const permissionsArgs = makeAddMemberPermissionsArgs({
       memberId: member.member.memberId,
-      permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-      ],
+      permissions: [{ action: "read", target: "document" }],
     });
 
     await addMemberPermissions(permissionsArgs);

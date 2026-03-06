@@ -77,16 +77,8 @@ describe("addMember integration", () => {
   it("creates a member with permissions", async () => {
     const args = makeAddMemberArgs({
       permissions: [
-        {
-          entity: "test",
-          action: "read",
-          target: "data",
-        },
-        {
-          entity: "user",
-          action: "write",
-          target: "profile",
-        },
+        { action: "read", target: "data" },
+        { action: "write", target: "profile" },
       ],
     });
 
@@ -100,16 +92,13 @@ describe("addMember integration", () => {
     expect(result.member).toBeDefined();
     expect(result.member.permissions).not.toBeNull();
     expect(result.member.permissions).toHaveLength(2);
-    expect(result.member.permissions![0]).toEqual({
-      entity: "test",
-      action: "read",
-      target: "data",
-    });
-    expect(result.member.permissions![1]).toEqual({
-      entity: "user",
-      action: "write",
-      target: "profile",
-    });
+    // Entity is stored as member id
+    expect(result.member.permissions![0].entity).toBe(result.member.memberId);
+    expect(result.member.permissions![0].action).toBe("read");
+    expect(result.member.permissions![0].target).toBe("data");
+    expect(result.member.permissions![1].entity).toBe(result.member.memberId);
+    expect(result.member.permissions![1].action).toBe("write");
+    expect(result.member.permissions![1].target).toBe("profile");
   });
 
   it("creates a member with meta data", async () => {
@@ -230,13 +219,7 @@ describe("addMember integration", () => {
     const args = makeAddMemberArgs({
       description: "Optional description",
       meta: { key: "value" },
-      permissions: [
-        {
-          entity: "test",
-          action: "read",
-          target: "data",
-        },
-      ],
+      permissions: [{ action: "read", target: "data" }],
     });
 
     const result = await addMember({

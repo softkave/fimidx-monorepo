@@ -34,7 +34,6 @@ export const addOrgEndpoint: NextUserAuthenticatedEndpointFn<
       name: user?.name ?? email,
       permissions: [
         {
-          entity: userId,
           action: kFimidxPermissions.wildcard,
           target: group.group.id,
         },

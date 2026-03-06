@@ -8,11 +8,21 @@ import {
   stringMetaQuerySchema,
 } from "./obj.js";
 import {
+  actionSchema,
   checkPermissionItemSchema,
   permissionAtomSchema,
+  targetSchema,
   type IPermissionAtom,
   type IPermissionMeta,
 } from "./permission.js";
+
+/** Permission input for members: action + target only; entity is the member id. */
+export const memberPermissionSchema = z.object({
+  action: actionSchema,
+  target: targetSchema,
+});
+
+export type IMemberPermissionInput = z.infer<typeof memberPermissionSchema>;
 
 export const kMemberStatus = {
   pending: "pending",
@@ -82,7 +92,7 @@ export const addMemberSchema = z.object({
   projectId: z.string().min(1),
   email: z.string().email().optional(),
   memberId: z.string().min(1),
-  permissions: z.array(permissionAtomSchema),
+  permissions: z.array(memberPermissionSchema).optional(),
   meta: z.record(z.string().min(1), z.string()).optional(),
   name: z.string().min(1).optional(),
   description: z.string().optional(),
@@ -128,7 +138,7 @@ export const updateMemberPermissionsSchema = z.object({
     projectId: z.string().min(1),
   }),
   update: z.object({
-    permissions: z.array(permissionAtomSchema),
+    permissions: z.array(memberPermissionSchema),
   }),
 });
 

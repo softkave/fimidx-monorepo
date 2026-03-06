@@ -1,6 +1,8 @@
 import assert from "assert";
+import { first } from "lodash-es";
 import type {
   GetClientTokensEndpointArgs,
+  IClientToken,
   IClientTokenObjRecordMeta,
 } from "../../definitions/clientToken.js";
 import {
@@ -10,6 +12,7 @@ import {
 } from "../../definitions/obj.js";
 import type { IPermissionAtom } from "../../definitions/permission.js";
 import type { IObjStorage } from "../../storage/types.js";
+import { kOwnServerErrorCodes, OwnServerError } from "../../common/error.js";
 import { getManyObjs } from "../obj/getObjs.js";
 import { getPermissions } from "../permission/getPermissions.js";
 import { getOriginalClientTokenPermission } from "./addClientTokenPermissions.js";
@@ -429,4 +432,32 @@ export async function getClientTokens(params: {
     page: pageNumber, // Return 1-based page number
     limit: limitNumber,
   };
+}
+
+/** Fetch a single client token by id (no projectId/groupId required). */
+export async function getClientTokenById(params: {
+  id: string;
+  storage?: IObjStorage;
+}): Promise<IClientToken> {
+  const { id, storage } = params;
+  const objQuery: IObjQuery = {
+    metaQuery: {
+      id: { eq: id },
+    },
+  };
+  const { objs } = await getManyObjs({
+    objQuery,
+    tag: kObjTags.clientToken,
+    limit: 1,
+    storage,
+  });
+  const obj = first(objs);
+  assert.ok(
+    obj,
+    new OwnServerError(
+      "Client token not found",
+      kOwnServerErrorCodes.NotFound
+    )
+  );
+  return objToClientToken(obj, null);
 }

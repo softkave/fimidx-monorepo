@@ -1,10 +1,12 @@
-import { getClientToken } from "@/src/lib/serverHelpers/clientToken/getClientToken";
 import {
   EncodeClientTokenJWTEndpointResponse,
   encodeClientTokenJWTSchema,
 } from "fimidx-core/definitions/clientToken";
 import { kFimidxPermissions } from "fimidx-core/definitions/permission";
-import { encodeClientTokenJWT } from "fimidx-core/serverHelpers/index";
+import {
+  encodeClientTokenJWT,
+  getClientTokenById,
+} from "fimidx-core/serverHelpers/index";
 import { checkPermissionGroupThenProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
 import { sanitizeEncodeClientTokenJWTInput } from "../../utils/sanitizeKId0.js";
@@ -19,9 +21,7 @@ export const encodeClientTokenEndpoint: NextMaybeAuthenticatedEndpointFn<
 
   const input = encodeClientTokenJWTSchema.parse(await req.json());
   sanitizeEncodeClientTokenJWTInput(input);
-  const { clientToken } = await getClientToken({
-    input: { clientTokenId: input.id },
-  });
+  const clientToken = await getClientTokenById({ id: input.id });
 
   if (sessionClientToken) {
     await checkPermissionGroupThenProjectThenOrg({

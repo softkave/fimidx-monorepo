@@ -1,15 +1,16 @@
-import { getProject } from "@/src/lib/serverHelpers/project/getProject";
 import {
   ISetManyObjsEndpointResponse,
   kObjTags,
   setManyObjsSchema,
 } from "fimidx-core/definitions/obj";
 import { kByTypes } from "fimidx-core/definitions/other";
-import { setManyObjs } from "fimidx-core/serverHelpers/index";
+import { kFimidxPermissions } from "fimidx-core/definitions/permission";
+import { getProjectById, setManyObjs } from "fimidx-core/serverHelpers/index";
 import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
 import { sanitizeSetManyObjsInput } from "../../utils/sanitizeKId0.js";
-import { kFimidxPermissions } from "fimidx-core/definitions/permission";
+import assert from "assert";
+import { OwnServerError, kOwnServerErrorCodes } from "fimidx-core/common/error";
 
 export const setManyObjsEndpoint: NextClientTokenAuthenticatedEndpointFn<
   ISetManyObjsEndpointResponse
@@ -28,10 +29,11 @@ export const setManyObjsEndpoint: NextClientTokenAuthenticatedEndpointFn<
     action: kFimidxPermissions.obj.mutate,
   });
 
-  const { project } = await getProject({
-    input: { projectId: input.projectId },
-    clientToken,
-  });
+  const project = await getProjectById({ id: input.projectId });
+  assert.ok(
+    project,
+    new OwnServerError("Project not found", kOwnServerErrorCodes.NotFound)
+  );
   const response = await setManyObjs({
     by: clientToken.id,
     byType: kByTypes.clientToken,

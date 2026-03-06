@@ -14,7 +14,8 @@
     "email:build": "email build",
     "email:dev": "email dev",
     "email:export": "email export",
-    "test": "vitest run --config ./vitest.config.ts"
+    "test": "vitest run --config ./vitest.config.ts",
+    "test:e2e": "vitest run --config ./vitest.e2e.config.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.8.0",

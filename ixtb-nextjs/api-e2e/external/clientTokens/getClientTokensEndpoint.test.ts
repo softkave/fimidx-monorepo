@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { apiFetch } from "../../helpers/http.js";
-import { createTestUserSession } from "../../helpers/auth.js";
-import { createTestOrg, createTestProject } from "../../helpers/setup.js";
+import { bearerHeaders, createTestUserSession } from "../../helpers/auth.js";
+import {
+  createTestOrg,
+  createTestProject,
+  createTestClientToken,
+} from "../../helpers/setup.js";
+import { kFimidxPermissions } from "fimidx-core/definitions/permission";
+import { kByTypes } from "fimidx-core/definitions/other";
+import type { IPermissionAtom } from "fimidx-core/definitions/permission";
 
 const GET_CLIENT_TOKENS_PATH = "/api/client-tokens/fetch";
 
@@ -69,5 +76,65 @@ describe("getClientTokensEndpoint", () => {
     expect(typeof data.page).toBe("number");
     expect(typeof data.limit).toBe("number");
     expect(typeof data.hasMore).toBe("boolean");
+  });
+
+  it("returns 200 with client tokens including permissions when user has read and readPermissions", async () => {
+    const cookie = await createTestUserSession();
+    if (!cookie) return;
+    const email = process.env.E2E_TEST_USER_EMAIL;
+    const userId = process.env.E2E_TEST_USER_ID ?? email;
+    if (!userId || !email) return;
+    const { orgId } = await createTestOrg({ userId, userEmail: email });
+    const { projectId } = await createTestProject({ orgId, by: userId });
+    const res = await apiFetch(GET_CLIENT_TOKENS_PATH, {
+      method: "POST",
+      body: {
+        query: { projectId, groupId: orgId },
+        page: 1,
+        limit: 10,
+        includePermissions: true,
+      },
+      cookie,
+    });
+    expect(res.status).toBe(200);
+    const data = (await res.json()) as {
+      clientTokens: unknown[];
+      page: number;
+      limit: number;
+      hasMore: boolean;
+    };
+    expect(Array.isArray(data.clientTokens)).toBe(true);
+  });
+
+  it("returns 403 when includePermissions is true but caller has only clientToken:read", async () => {
+    const email = process.env.E2E_TEST_USER_EMAIL;
+    const userId = process.env.E2E_TEST_USER_ID ?? email;
+    if (!userId || !email) return;
+    const { orgId } = await createTestOrg({ userId, userEmail: email });
+    const { projectId } = await createTestProject({ orgId, by: userId });
+    const { bearerToken } = await createTestClientToken({
+      projectId,
+      groupId: orgId,
+      by: userId,
+      byType: kByTypes.user,
+      // addClientToken accepts action+target; entity is filled by the helper
+      permissions: [
+        {
+          action: kFimidxPermissions.clientToken.read,
+          target: projectId,
+        },
+      ] as IPermissionAtom[],
+    });
+    const res = await apiFetch(GET_CLIENT_TOKENS_PATH, {
+      method: "POST",
+      body: {
+        query: { projectId, groupId: orgId },
+        page: 1,
+        limit: 10,
+        includePermissions: true,
+      },
+      headers: bearerHeaders(bearerToken),
+    });
+    expect(res.status).toBe(403);
   });
 });

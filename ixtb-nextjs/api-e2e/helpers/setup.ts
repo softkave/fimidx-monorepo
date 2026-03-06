@@ -1,4 +1,7 @@
-import type { IClientToken } from "fimidx-core/definitions/clientToken";
+import type {
+  AddClientTokenEndpointArgs,
+  IClientToken,
+} from "fimidx-core/definitions/clientToken";
 import { kMemberStatus } from "fimidx-core/definitions/member";
 import { kByTypes } from "fimidx-core/definitions/other";
 import type { IPermissionAtom } from "fimidx-core/definitions/permission";
@@ -135,7 +138,7 @@ export async function createTestClientToken(params: {
       groupId,
       name,
       description: "E2E test token",
-      permissions: permissions ?? [],
+      permissions: (permissions ?? []) as AddClientTokenEndpointArgs["permissions"],
     },
     by,
     byType,

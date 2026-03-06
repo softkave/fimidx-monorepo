@@ -36,6 +36,14 @@ export const getClientTokensEndpoint: NextMaybeAuthenticatedEndpointFn<
       projectId,
       action: kFimidxPermissions.clientToken.read,
     });
+    if (input.includePermissions) {
+      await checkPermissionGroupThenProjectThenOrg({
+        clientToken,
+        groupId,
+        projectId,
+        action: kFimidxPermissions.clientToken.readPermissions,
+      });
+    }
   } else if (userId) {
     await checkPermissionGroupThenProjectThenOrg({
       userId,
@@ -43,6 +51,14 @@ export const getClientTokensEndpoint: NextMaybeAuthenticatedEndpointFn<
       projectId,
       action: kFimidxPermissions.clientToken.read,
     });
+    if (input.includePermissions) {
+      await checkPermissionGroupThenProjectThenOrg({
+        userId,
+        groupId,
+        projectId,
+        action: kFimidxPermissions.clientToken.readPermissions,
+      });
+    }
   }
 
   const { clientTokens, page, limit, hasMore } = await getClientTokens({

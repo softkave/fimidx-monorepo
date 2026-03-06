@@ -26,6 +26,15 @@ export const getMembersEndpoint: NextClientTokenAuthenticatedEndpointFn<
     action: kFimidxPermissions.member.read,
   });
 
+  if (input.includePermissions) {
+    await checkPermissionGroupThenProjectThenOrg({
+      clientToken,
+      groupId: input.query.groupId,
+      projectId: input.query.projectId,
+      action: kFimidxPermissions.member.readPermissions,
+    });
+  }
+
   const { members, hasMore, page, limit } = await getMembers({
     args: input,
   });

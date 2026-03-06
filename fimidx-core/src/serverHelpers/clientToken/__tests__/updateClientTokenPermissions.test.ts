@@ -135,11 +135,11 @@ describe("updateClientTokenPermissions integration", () => {
     const permission1 = result.clientToken.permissions![0];
     const permission2 = result.clientToken.permissions![1];
 
-    expect(permission1.entity).toBe("admin");
+    expect(permission1.entity).toBe(result.clientToken.id);
     expect(permission1.action).toBe("write");
     expect(permission1.target).toBe("settings");
 
-    expect(permission2.entity).toBe("user");
+    expect(permission2.entity).toBe(result.clientToken.id);
     expect(permission2.action).toBe("delete");
     expect(permission2.target).toBe("document");
   });
@@ -263,7 +263,7 @@ describe("updateClientTokenPermissions integration", () => {
     expect(result.clientToken.permissions).toHaveLength(1);
 
     const permission = result.clientToken.permissions![0];
-    expect(permission.entity).toEqual({ type: "user", id: "123" });
+    expect(permission.entity).toEqual(token.clientToken.id);
     expect(permission.action).toEqual({ operation: "read", scope: "full" });
     expect(permission.target).toEqual({ resource: "document", id: "456" });
   });

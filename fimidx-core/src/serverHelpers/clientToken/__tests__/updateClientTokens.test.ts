@@ -76,9 +76,7 @@ describe("updateClientTokens integration", () => {
     const token = await createTestToken("Original Token", {
       description: "Original description",
       meta: { type: "user" },
-      permissions: [
-        { action: "read", target: "document" },
-      ],
+      permissions: [{ action: "read", target: "document" }],
     });
 
     // First, let's verify the token was created with 1 permission
@@ -153,10 +151,10 @@ describe("updateClientTokens integration", () => {
     );
     expect(updatedToken.permissions![0].action).toBe("delete");
     expect(updatedToken.permissions![0].target).toBe("document");
-    expect(updatedToken.permissions![1].action).toBe("write");
-    expect(updatedToken.permissions![1].target).toBe("settings");
-    expect(updatedToken.permissions![2].action).toBe("read");
-    expect(updatedToken.permissions![2].target).toBe("document");
+    expect(updatedToken.permissions![1].action).toBe("read");
+    expect(updatedToken.permissions![1].target).toBe("document");
+    expect(updatedToken.permissions![2].action).toBe("write");
+    expect(updatedToken.permissions![2].target).toBe("settings");
     updatedToken.permissions?.forEach((p) =>
       expect(p.entity).toBe(updatedToken.id)
     );
@@ -227,12 +225,12 @@ describe("updateClientTokens integration", () => {
     );
     expect(
       result.clientTokens.every((t) =>
-        t.permissions?.some((p) => p.entity === "user" && p.action === "read")
+        t.permissions?.some((p) => p.entity === t.id && p.action === "read")
       )
     ).toBe(true);
     expect(
       result.clientTokens.every((t) =>
-        t.permissions?.some((p) => p.entity === "admin" && p.action === "write")
+        t.permissions?.some((p) => p.entity === t.id && p.action === "write")
       )
     ).toBe(true);
   });
@@ -390,9 +388,7 @@ describe("updateClientTokens integration", () => {
     const token = await createTestToken("Test Token", {
       description: "Original description",
       meta: { type: "user" },
-      permissions: [
-        { action: "read", target: "document" },
-      ],
+      permissions: [{ action: "read", target: "document" }],
     });
 
     const args: UpdateClientTokensEndpointArgs = {
@@ -493,9 +489,7 @@ describe("updateClientTokens integration", () => {
   it("updates permissions field", async () => {
     // Create a test token
     const token = await createTestToken("Test Token", {
-      permissions: [
-        { action: "read", target: "document" },
-      ],
+      permissions: [{ action: "read", target: "document" }],
     });
 
     const args: UpdateClientTokensEndpointArgs = {
@@ -554,13 +548,13 @@ describe("updateClientTokens integration", () => {
     expect(result.clientTokens[0].permissions![1].entity).toBe(
       result.clientTokens[0].id
     );
-    expect(result.clientTokens[0].permissions![1].action).toBe("write");
-    expect(result.clientTokens[0].permissions![1].target).toBe("settings");
+    expect(result.clientTokens[0].permissions![1].action).toBe("read");
+    expect(result.clientTokens[0].permissions![1].target).toBe("document");
     expect(result.clientTokens[0].permissions![2].entity).toBe(
       result.clientTokens[0].id
     );
-    expect(result.clientTokens[0].permissions![2].action).toBe("read");
-    expect(result.clientTokens[0].permissions![2].target).toBe("document");
+    expect(result.clientTokens[0].permissions![2].action).toBe("write");
+    expect(result.clientTokens[0].permissions![2].target).toBe("settings");
   });
 
   it("sets permissions to null", async () => {

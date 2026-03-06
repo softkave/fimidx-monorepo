@@ -7,6 +7,10 @@ import {
   expect,
   it,
 } from "vitest";
+import type {
+  AddClientTokenEndpointArgs,
+  AddClientTokenPermissionsEndpointArgs,
+} from "../../../definitions/clientToken.js";
 import { addClientToken } from "../addClientToken.js";
 import { addClientTokenPermissions } from "../addClientTokenPermissions.js";
 import { createTestSetup, makeTestData } from "./testUtils.js";
@@ -18,7 +22,9 @@ describe("addClientTokenPermissions integration", () => {
 
   const { projectId, groupId, by, byType } = testData;
 
-  function makeAddClientTokenArgs(overrides: any = {}) {
+  function makeAddClientTokenArgs(
+    overrides: Partial<AddClientTokenEndpointArgs> = {}
+  ): AddClientTokenEndpointArgs {
     const testData = makeTestData({ testName: "token" });
     return {
       groupId,
@@ -30,16 +36,15 @@ describe("addClientTokenPermissions integration", () => {
     };
   }
 
-  function makeAddClientTokenPermissionsArgs(overrides: any = {}) {
+  function makeAddClientTokenPermissionsArgs(
+    overrides: Partial<AddClientTokenPermissionsEndpointArgs> = {}
+  ): AddClientTokenPermissionsEndpointArgs {
     const testData = makeTestData({ testName: "permissions" });
     return {
-      by,
-      byType,
       groupId,
       projectId,
       permissions: [
         {
-          entity: "user",
           action: "read",
           target: "document",
         },
@@ -82,19 +87,21 @@ describe("addClientTokenPermissions integration", () => {
       clientTokenId: token.clientToken.id,
       permissions: [
         {
-          entity: "user",
           action: "read",
           target: "document",
         },
         {
-          entity: "admin",
           action: "write",
           target: "settings",
         },
       ],
     });
 
-    const result = await addClientTokenPermissions(permissionsArgs);
+    const result = await addClientTokenPermissions({
+      ...permissionsArgs,
+      by,
+      byType,
+    });
 
     expect(result.permissions).toBeDefined();
     expect(result.permissions).toHaveLength(2);
@@ -141,7 +148,11 @@ describe("addClientTokenPermissions integration", () => {
       permissions: [],
     });
 
-    const result = await addClientTokenPermissions(permissionsArgs);
+    const result = await addClientTokenPermissions({
+      ...permissionsArgs,
+      by,
+      byType,
+    });
 
     expect(result.permissions).toBeDefined();
     expect(result.permissions).toHaveLength(0);
@@ -162,14 +173,17 @@ describe("addClientTokenPermissions integration", () => {
       clientTokenId: token.clientToken.id,
       permissions: [
         {
-          entity: { type: "user", id: "123" },
           action: { operation: "read", scope: "full" },
           target: { resource: "document", id: "456" },
         },
       ],
     });
 
-    const result = await addClientTokenPermissions(permissionsArgs);
+    const result = await addClientTokenPermissions({
+      ...permissionsArgs,
+      by,
+      byType,
+    });
 
     expect(result.permissions).toBeDefined();
     expect(result.permissions).toHaveLength(1);
@@ -214,7 +228,6 @@ describe("addClientTokenPermissions integration", () => {
       clientTokenId: token1.clientToken.id,
       permissions: [
         {
-          entity: "user",
           action: "read",
           target: "document",
         },
@@ -225,15 +238,22 @@ describe("addClientTokenPermissions integration", () => {
       clientTokenId: token2.clientToken.id,
       permissions: [
         {
-          entity: "admin",
           action: "write",
           target: "settings",
         },
       ],
     });
 
-    const result1 = await addClientTokenPermissions(permissions1Args);
-    const result2 = await addClientTokenPermissions(permissions2Args);
+    const result1 = await addClientTokenPermissions({
+      ...permissions1Args,
+      by,
+      byType,
+    });
+    const result2 = await addClientTokenPermissions({
+      ...permissions2Args,
+      by,
+      byType,
+    });
 
     expect(result1.permissions).toHaveLength(1);
     expect(result2.permissions).toHaveLength(1);

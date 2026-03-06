@@ -501,7 +501,6 @@ describe("getMembers integration", () => {
     const memberArgs = makeAddMemberArgs({
       permissions: [
         {
-          entity: "test",
           action: "read",
           target: "data",
         },
@@ -536,7 +535,6 @@ describe("getMembers integration", () => {
     const memberArgs = makeAddMemberArgs({
       permissions: [
         {
-          entity: "test",
           action: "read",
           target: "data",
         },

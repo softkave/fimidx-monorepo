@@ -122,7 +122,9 @@ describe("addClientToken integration", () => {
     expect(result.clientToken.name).toBe("My Test Token");
     expect(result.clientToken.description).toBe("A test token description");
     expect(result.clientToken.permissions).toHaveLength(3);
-    expect(result.clientToken.permissions![0].entity).toBe("user");
+    expect(result.clientToken.permissions![0].entity).toBe(
+      result.clientToken.id
+    );
     expect(result.clientToken.permissions![0].action).toBe("read");
     expect(result.clientToken.permissions![0].target).toBe("document");
     expect(result.clientToken.projectId).toBe(projectId);
@@ -281,7 +283,9 @@ describe("addClientToken integration", () => {
     });
 
     expect(result.clientToken.permissions).toHaveLength(3);
-    expect(result.clientToken.permissions![0].entity).toBe("user");
+    expect(result.clientToken.permissions![0].entity).toBe(
+      result.clientToken.id
+    );
     expect(result.clientToken.permissions![0].action).toBe("read");
     expect(result.clientToken.permissions![0].target).toBe("document");
   });

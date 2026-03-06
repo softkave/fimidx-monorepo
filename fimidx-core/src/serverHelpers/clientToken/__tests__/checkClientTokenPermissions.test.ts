@@ -7,6 +7,11 @@ import {
   expect,
   it,
 } from "vitest";
+import type {
+  AddClientTokenEndpointArgs,
+  AddClientTokenPermissionsEndpointArgs,
+  CheckClientTokenPermissionsEndpointArgs,
+} from "../../../definitions/clientToken.js";
 import { addClientToken } from "../addClientToken.js";
 import { addClientTokenPermissions } from "../addClientTokenPermissions.js";
 import { checkClientTokenPermissions } from "../checkClientTokenPermissions.js";
@@ -19,7 +24,9 @@ describe("checkClientTokenPermissions integration", () => {
 
   const { projectId, groupId, by, byType } = testData;
 
-  function makeAddClientTokenArgs(overrides: any = {}) {
+  function makeAddClientTokenArgs(
+    overrides: Partial<AddClientTokenEndpointArgs> = {}
+  ): AddClientTokenEndpointArgs {
     const testData = makeTestData({ testName: "token" });
     return {
       groupId,
@@ -31,16 +38,15 @@ describe("checkClientTokenPermissions integration", () => {
     };
   }
 
-  function makeAddClientTokenPermissionsArgs(overrides: any = {}) {
+  function makeAddClientTokenPermissionsArgs(
+    overrides: Partial<AddClientTokenPermissionsEndpointArgs> = {}
+  ): AddClientTokenPermissionsEndpointArgs {
     const testData = makeTestData({ testName: "permissions" });
     return {
-      by,
-      byType,
       groupId,
       projectId,
       permissions: [
         {
-          entity: "user",
           action: "read",
           target: "document",
         },
@@ -50,14 +56,16 @@ describe("checkClientTokenPermissions integration", () => {
     };
   }
 
-  function makeCheckClientTokenPermissionsArgs(overrides: any = {}) {
+  function makeCheckClientTokenPermissionsArgs(
+    overrides: Partial<CheckClientTokenPermissionsEndpointArgs> = {}
+  ): CheckClientTokenPermissionsEndpointArgs {
     return {
       projectId,
       clientTokenId: "test-token-id",
       groupId,
       items: [
         {
-          entity: "user",
+          entity: "test-token-id",
           action: "read",
           target: "document",
         },
@@ -99,31 +107,33 @@ describe("checkClientTokenPermissions integration", () => {
       clientTokenId: token.clientToken.id,
       permissions: [
         {
-          entity: "user",
           action: "read",
           target: "document",
         },
         {
-          entity: "admin",
           action: "write",
           target: "settings",
         },
       ],
     });
 
-    await addClientTokenPermissions(permissionsArgs);
+    await addClientTokenPermissions({
+      ...permissionsArgs,
+      by: by,
+      byType: byType,
+    });
 
     // Check if the client token has the permissions
     const checkArgs = makeCheckClientTokenPermissionsArgs({
       clientTokenId: token.clientToken.id,
       items: [
         {
-          entity: "user",
+          entity: token.clientToken.id,
           action: "read",
           target: "document",
         },
         {
-          entity: "admin",
+          entity: token.clientToken.id,
           action: "write",
           target: "settings",
         },
@@ -155,26 +165,29 @@ describe("checkClientTokenPermissions integration", () => {
       clientTokenId: token.clientToken.id,
       permissions: [
         {
-          entity: "user",
           action: "read",
           target: "document",
         },
       ],
     });
 
-    await addClientTokenPermissions(permissionsArgs);
+    await addClientTokenPermissions({
+      ...permissionsArgs,
+      by: by,
+      byType: byType,
+    });
 
     // Check for permissions that don't exist
     const checkArgs = makeCheckClientTokenPermissionsArgs({
       clientTokenId: token.clientToken.id,
       items: [
         {
-          entity: "user",
+          entity: token.clientToken.id,
           action: "write",
           target: "document",
         },
         {
-          entity: "admin",
+          entity: token.clientToken.id,
           action: "delete",
           target: "settings",
         },
@@ -206,41 +219,43 @@ describe("checkClientTokenPermissions integration", () => {
       clientTokenId: token.clientToken.id,
       permissions: [
         {
-          entity: "user",
           action: "read",
           target: "document",
         },
         {
-          entity: "admin",
           action: "write",
           target: "settings",
         },
       ],
     });
 
-    await addClientTokenPermissions(permissionsArgs);
+    await addClientTokenPermissions({
+      ...permissionsArgs,
+      by: by,
+      byType: byType,
+    });
 
     // Check for mixed permissions
     const checkArgs = makeCheckClientTokenPermissionsArgs({
       clientTokenId: token.clientToken.id,
       items: [
         {
-          entity: "user",
+          entity: token.clientToken.id,
           action: "read",
           target: "document",
         },
         {
-          entity: "user",
+          entity: token.clientToken.id,
           action: "write",
           target: "document",
         },
         {
-          entity: "admin",
+          entity: token.clientToken.id,
           action: "write",
           target: "settings",
         },
         {
-          entity: "admin",
+          entity: token.clientToken.id,
           action: "delete",
           target: "settings",
         },
@@ -272,7 +287,7 @@ describe("checkClientTokenPermissions integration", () => {
     expect(result.results).toHaveLength(0);
   });
 
-  it("handles object-based permission entities, actions, and targets", async () => {
+  it("handles object-based permission actions, and targets", async () => {
     // First create a client token
     const tokenArgs = makeAddClientTokenArgs();
     const token = await addClientToken({
@@ -282,33 +297,36 @@ describe("checkClientTokenPermissions integration", () => {
       storage,
     });
 
-    // Add permissions with object-based entities, actions, and targets
+    // Add permissions with object-based action and target
     const permissionsArgs = makeAddClientTokenPermissionsArgs({
       clientTokenId: token.clientToken.id,
       permissions: [
         {
-          entity: { type: "user", id: "123" },
           action: { operation: "read", scope: "full" },
           target: { resource: "document", id: "doc-1" },
         },
       ],
     });
 
-    await addClientTokenPermissions(permissionsArgs);
+    await addClientTokenPermissions({
+      ...permissionsArgs,
+      by: by,
+      byType: byType,
+    });
 
     // Check for the same object-based permissions
     const checkArgs = makeCheckClientTokenPermissionsArgs({
       clientTokenId: token.clientToken.id,
       items: [
         {
-          entity: { type: "user", id: "123" },
+          entity: token.clientToken.id,
           action: { operation: "read", scope: "full" },
           target: { resource: "document", id: "doc-1" },
         },
         {
-          entity: { type: "user", id: "456" },
-          action: { operation: "read", scope: "full" },
-          target: { resource: "document", id: "doc-1" },
+          entity: token.clientToken.id,
+          action: { operation: "write", scope: "full" },
+          target: { resource: "document", id: "doc-2" },
         },
       ],
     });
@@ -338,14 +356,17 @@ describe("checkClientTokenPermissions integration", () => {
       clientTokenId: token.clientToken.id,
       permissions: [
         {
-          entity: "user",
           action: "read",
           target: "document",
         },
       ],
     });
 
-    await addClientTokenPermissions(permissionsArgs);
+    await addClientTokenPermissions({
+      ...permissionsArgs,
+      by: by,
+      byType: byType,
+    });
 
     // Check for permissions in a different group
     const checkArgs = makeCheckClientTokenPermissionsArgs({

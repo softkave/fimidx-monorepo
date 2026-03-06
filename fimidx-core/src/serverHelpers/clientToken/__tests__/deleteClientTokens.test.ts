@@ -7,7 +7,11 @@ import {
   expect,
   it,
 } from "vitest";
-import type { DeleteClientTokensEndpointArgs } from "../../../definitions/clientToken.js";
+import type {
+  AddClientTokenEndpointArgs,
+  DeleteClientTokensEndpointArgs,
+  IClientToken,
+} from "../../../definitions/clientToken.js";
 import { addClientToken } from "../addClientToken.js";
 import { deleteClientTokens } from "../deleteClientTokens.js";
 import { getClientTokens } from "../getClientTokens.js";
@@ -20,7 +24,9 @@ describe("deleteClientTokens integration", () => {
 
   const { projectId, groupId, by, byType } = testData;
 
-  function makeAddClientTokenArgs(overrides: any = {}) {
+  function makeAddClientTokenArgs(
+    overrides: Partial<AddClientTokenEndpointArgs> = {}
+  ): AddClientTokenEndpointArgs {
     const testData = makeTestData({ testName: "token" });
     return {
       groupId,
@@ -29,12 +35,10 @@ describe("deleteClientTokens integration", () => {
       meta: { key: "value" },
       permissions: [
         {
-          entity: "user",
           action: "read",
           target: "document",
         },
         {
-          entity: "admin",
           action: "write",
           target: "settings",
         },
@@ -44,7 +48,10 @@ describe("deleteClientTokens integration", () => {
     };
   }
 
-  async function createTestToken(name: string, overrides: any = {}) {
+  async function createTestToken(
+    name: string,
+    overrides: Partial<AddClientTokenEndpointArgs> = {}
+  ): Promise<IClientToken> {
     const args = makeAddClientTokenArgs({
       name,
       ...overrides,
@@ -425,12 +432,10 @@ describe("deleteClientTokens integration", () => {
     await createTestToken("Token 1", {
       permissions: [
         {
-          entity: "user",
           action: "read",
           target: "document",
         },
         {
-          entity: "admin",
           action: "write",
           target: "settings",
         },
@@ -439,7 +444,6 @@ describe("deleteClientTokens integration", () => {
     await createTestToken("Token 2", {
       permissions: [
         {
-          entity: "user",
           action: "read",
           target: "document",
         },
@@ -448,7 +452,6 @@ describe("deleteClientTokens integration", () => {
     await createTestToken("Token 3", {
       permissions: [
         {
-          entity: "admin",
           action: "delete",
           target: "document",
         },
@@ -489,7 +492,7 @@ describe("deleteClientTokens integration", () => {
     // Check that the remaining token has only the delete permission
     expect(result.clientTokens[0].permissions).toEqual([
       {
-        entity: "admin",
+        entity: result.clientTokens[0].id,
         action: "delete",
         target: "document",
       },

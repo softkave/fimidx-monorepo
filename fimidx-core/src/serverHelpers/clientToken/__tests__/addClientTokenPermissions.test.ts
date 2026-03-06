@@ -115,14 +115,14 @@ describe("addClientTokenPermissions integration", () => {
     );
     expect(permission2.meta?.__fimidx_managed_groupId).toBe(groupId);
 
-    // Verify the entity, action, and target are properly managed
-    expect(permission1.entity).toContain("__fimidx_managed_permission_entity_");
-    expect(permission1.action).toContain("__fimidx_managed_permission_action_");
-    expect(permission1.target).toContain("__fimidx_managed_permission_target_");
+    // Entity is stored as client token id; action and target as-is
+    expect(permission1.entity).toBe(token.clientToken.id);
+    expect(permission1.action).toBe("read");
+    expect(permission1.target).toBe("document");
 
-    expect(permission2.entity).toContain("__fimidx_managed_permission_entity_");
-    expect(permission2.action).toContain("__fimidx_managed_permission_action_");
-    expect(permission2.target).toContain("__fimidx_managed_permission_target_");
+    expect(permission2.entity).toBe(token.clientToken.id);
+    expect(permission2.action).toBe("write");
+    expect(permission2.target).toBe("settings");
   });
 
   it("handles empty permissions array", async () => {
@@ -181,10 +181,8 @@ describe("addClientTokenPermissions integration", () => {
     );
     expect(permission.meta?.__fimidx_managed_groupId).toBe(groupId);
 
-    // Verify the complex objects are properly managed
-    expect(permission.entity).toHaveProperty(
-      "__fimidx_managed_permission_entity_clientTokenId"
-    );
+    // Entity is stored as client token id; object action/target keep clientTokenId key
+    expect(permission.entity).toBe(token.clientToken.id);
     expect(permission.action).toHaveProperty(
       "__fimidx_managed_permission_action_clientTokenId"
     );

@@ -109,32 +109,16 @@ export async function getClientTokensWithPermissionFilter(params: {
     let matches = true;
 
     if (permissionAction && matches) {
-      // Extract values from the action query
-      let actionValues: string[] = [];
-      if (Array.isArray(permissionAction)) {
-        actionValues = permissionAction.map((item) => item.value as string);
-      } else {
-        if (permissionAction.eq) actionValues.push(permissionAction.eq);
-        if (permissionAction.in) actionValues.push(...permissionAction.in);
-      }
-
-      // Create managed action values for this client token
-      const managedActionValues = actionValues.map(
-        (value) =>
-          `__fimidx_managed_permission_action_${value}:${clientTokenId}`
-      );
-
+      // Action is stored as-is; filter by entity (client token id) and meta
       const actionQuery = Array.isArray(permissionAction)
-        ? permissionAction.map((item) => ({
-            ...item,
-            value: `__fimidx_managed_permission_action_${item.value}:${clientTokenId}`,
-          }))
-        : ({ in: managedActionValues } as any);
+        ? permissionAction
+        : permissionAction;
 
       const { permissions } = await getPermissions({
         args: {
           query: {
             projectId,
+            entity: { eq: clientTokenId },
             action: actionQuery,
             meta: [
               {
@@ -155,32 +139,16 @@ export async function getClientTokensWithPermissionFilter(params: {
     }
 
     if (permissionTarget && matches) {
-      // Extract values from the target query
-      let targetValues: string[] = [];
-      if (Array.isArray(permissionTarget)) {
-        targetValues = permissionTarget.map((item) => item.value as string);
-      } else {
-        if (permissionTarget.eq) targetValues.push(permissionTarget.eq);
-        if (permissionTarget.in) targetValues.push(...permissionTarget.in);
-      }
-
-      // Create managed target values for this client token
-      const managedTargetValues = targetValues.map(
-        (value) =>
-          `__fimidx_managed_permission_target_${value}:${clientTokenId}`
-      );
-
+      // Target is stored as-is; filter by entity (client token id) and meta
       const targetQuery = Array.isArray(permissionTarget)
-        ? permissionTarget.map((item) => ({
-            ...item,
-            value: `__fimidx_managed_permission_target_${item.value}:${clientTokenId}`,
-          }))
-        : ({ in: managedTargetValues } as any);
+        ? permissionTarget
+        : permissionTarget;
 
       const { permissions } = await getPermissions({
         args: {
           query: {
             projectId,
+            entity: { eq: clientTokenId },
             target: targetQuery,
             meta: [
               {

@@ -1,5 +1,4 @@
 import type { EmailRecordStatus } from "../../definitions/email.js";
-import type { IMemberObjRecord } from "../../definitions/member.js";
 import { kObjTags } from "../../definitions/obj.js";
 import { kId0 } from "../../definitions/system.js";
 import type { IObjStorage } from "../../storage/types.js";
@@ -23,7 +22,7 @@ export async function updateMemberSendEmailStatus(params: {
     emailLastSentStatus,
     storage,
   } = params;
-  const update: Partial<IMemberObjRecord> = {
+  const update: Record<string, unknown> = {
     sentEmailCount,
     emailLastSentAt,
     emailLastSentStatus,
@@ -32,9 +31,7 @@ export async function updateMemberSendEmailStatus(params: {
   await updateManyObjs({
     objQuery: {
       projectId,
-      partQuery: {
-        and: [{ value: id, op: "eq", field: "memberId" }],
-      },
+      metaQuery: { id: { eq: id } },
       topLevelFields: { groupId: { eq: groupId } },
     },
     tag: kObjTags.member,

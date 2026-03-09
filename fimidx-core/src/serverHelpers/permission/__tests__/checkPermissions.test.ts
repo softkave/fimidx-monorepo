@@ -156,7 +156,7 @@ describe("checkPermissions integration", () => {
     });
 
     expect(result.results).toHaveLength(1);
-    expect(result.results[0].hasPermission).toBe(true);
+    expect(result.results[0].isPermitted).toBe(true);
   });
 
   it("returns false for non-existing permission", async () => {
@@ -179,7 +179,7 @@ describe("checkPermissions integration", () => {
     });
 
     expect(result.results).toHaveLength(1);
-    expect(result.results[0].hasPermission).toBe(false);
+    expect(result.results[0].isPermitted).toBe(false);
   });
 
   it("checks multiple permissions and returns correct results", async () => {
@@ -238,9 +238,9 @@ describe("checkPermissions integration", () => {
     });
 
     expect(result.results).toHaveLength(3);
-    expect(result.results[0].hasPermission).toBe(true); // user read
-    expect(result.results[1].hasPermission).toBe(true); // admin delete
-    expect(result.results[2].hasPermission).toBe(false); // guest write
+    expect(result.results[0].isPermitted).toBe(true); // user read
+    expect(result.results[1].isPermitted).toBe(true); // admin delete
+    expect(result.results[2].isPermitted).toBe(false); // guest write
   });
 
   it("checks permissions with complex entity objects", async () => {
@@ -283,7 +283,7 @@ describe("checkPermissions integration", () => {
     });
 
     expect(result.results).toHaveLength(1);
-    expect(result.results[0].hasPermission).toBe(true);
+    expect(result.results[0].isPermitted).toBe(true);
   });
 
   it("returns false for complex entity with different values", async () => {
@@ -326,7 +326,7 @@ describe("checkPermissions integration", () => {
     });
 
     expect(result.results).toHaveLength(1);
-    expect(result.results[0].hasPermission).toBe(false);
+    expect(result.results[0].isPermitted).toBe(false);
   });
 
   it("checks permissions with complex action objects", async () => {
@@ -369,7 +369,7 @@ describe("checkPermissions integration", () => {
     });
 
     expect(result.results).toHaveLength(1);
-    expect(result.results[0].hasPermission).toBe(true);
+    expect(result.results[0].isPermitted).toBe(true);
   });
 
   it("checks permissions with complex target objects", async () => {
@@ -412,7 +412,7 @@ describe("checkPermissions integration", () => {
     });
 
     expect(result.results).toHaveLength(1);
-    expect(result.results[0].hasPermission).toBe(true);
+    expect(result.results[0].isPermitted).toBe(true);
   });
 
   it("handles empty items array", async () => {
@@ -490,7 +490,7 @@ describe("checkPermissions integration", () => {
     });
 
     expect(result1.results).toHaveLength(1);
-    expect(result1.results[0].hasPermission).toBe(true);
+    expect(result1.results[0].isPermitted).toBe(true);
 
     // Check permissions in project2
     const checkArgs2 = makeCheckPermissionsArgs({
@@ -512,7 +512,7 @@ describe("checkPermissions integration", () => {
     });
 
     expect(result2.results).toHaveLength(1);
-    expect(result2.results[0].hasPermission).toBe(true);
+    expect(result2.results[0].isPermitted).toBe(true);
 
     // Check permissions in non-existent project
     const checkArgs3 = makeCheckPermissionsArgs({
@@ -534,6 +534,6 @@ describe("checkPermissions integration", () => {
     });
 
     expect(result3.results).toHaveLength(1);
-    expect(result3.results[0].hasPermission).toBe(false);
+    expect(result3.results[0].isPermitted).toBe(false);
   });
 });

@@ -2,7 +2,6 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
   kMemberStatus,
   type AddMemberEndpointArgs,
-  type IMemberObjRecord,
 } from "../../../definitions/member.js";
 import { kObjTags } from "../../../definitions/obj.js";
 import { createDefaultStorage } from "../../../storage/config.js";
@@ -27,13 +26,10 @@ function makeAddMemberArgs(
     .toString(36)
     .substr(2, 9)}`;
   return {
-    name: `Test Member ${uniqueId}`,
-    description: "Test description",
     projectId: defaultProjectId,
     groupId: defaultGroupId,
-    email: `test${uniqueId}@example.com`,
-    memberId: `member-${uniqueId}`,
     permissions: [],
+    meta: { userId: `member-${uniqueId}` },
     ...overrides,
   };
 }
@@ -94,15 +90,17 @@ describe("deleteMembers integration", () => {
     }
   });
 
-  it("deletes a single member by memberId", async () => {
+  it("deletes a single member by id", async () => {
     // Create a test member
     const memberArgs = makeAddMemberArgs();
-    await addMember({
+    const added = await addMember({
       args: memberArgs,
       by: defaultBy,
       byType: defaultByType,
       storage,
     });
+
+    const memberId = added.member.id;
 
     // Verify member exists
     let result = await getMembers({
@@ -110,7 +108,7 @@ describe("deleteMembers integration", () => {
         query: {
           projectId: defaultProjectId,
           groupId: defaultGroupId,
-          memberId: { eq: memberArgs.memberId },
+          id: { eq: memberId },
         },
         includePermissions: false,
       },
@@ -123,7 +121,7 @@ describe("deleteMembers integration", () => {
       query: {
         projectId: defaultProjectId,
         groupId: defaultGroupId,
-        memberId: { eq: memberArgs.memberId },
+        id: { eq: memberId },
       },
       by: defaultBy,
       byType: defaultByType,
@@ -136,7 +134,7 @@ describe("deleteMembers integration", () => {
         query: {
           projectId: defaultProjectId,
           groupId: defaultGroupId,
-          memberId: { eq: memberArgs.memberId },
+          id: { eq: memberId },
         },
         includePermissions: false,
       },
@@ -145,23 +143,23 @@ describe("deleteMembers integration", () => {
     expect(result.members).toHaveLength(0);
   });
 
-  it("deletes a single member by name", async () => {
-    // Create a test member
-    const memberArgs = makeAddMemberArgs({ name: "Member to Delete" });
-    await addMember({
+  it("deletes a single member by meta", async () => {
+    const memberArgs = makeAddMemberArgs({
+      meta: { customLabel: "Member to Delete" },
+    });
+    const added = await addMember({
       args: memberArgs,
       by: defaultBy,
       byType: defaultByType,
       storage,
     });
 
-    // Verify member exists
     let result = await getMembers({
       args: {
         query: {
           projectId: defaultProjectId,
           groupId: defaultGroupId,
-          name: { eq: "Member to Delete" },
+          id: { eq: added.member.id },
         },
         includePermissions: false,
       },
@@ -169,25 +167,23 @@ describe("deleteMembers integration", () => {
     });
     expect(result.members).toHaveLength(1);
 
-    // Delete the member
     await deleteMembers({
       query: {
         projectId: defaultProjectId,
         groupId: defaultGroupId,
-        name: { eq: "Member to Delete" },
+        id: { eq: added.member.id },
       },
       by: defaultBy,
       byType: defaultByType,
       storage,
     });
 
-    // Verify member is deleted
     result = await getMembers({
       args: {
         query: {
           projectId: defaultProjectId,
           groupId: defaultGroupId,
-          name: { eq: "Member to Delete" },
+          id: { eq: added.member.id },
         },
         includePermissions: false,
       },
@@ -196,23 +192,23 @@ describe("deleteMembers integration", () => {
     expect(result.members).toHaveLength(0);
   });
 
-  it("deletes a single member by email", async () => {
-    // Create a test member
-    const memberArgs = makeAddMemberArgs({ email: "delete@example.com" });
-    await addMember({
+  it("deletes a single member by id (from meta)", async () => {
+    const memberArgs = makeAddMemberArgs({
+      meta: { email: "delete@example.com" },
+    });
+    const added = await addMember({
       args: memberArgs,
       by: defaultBy,
       byType: defaultByType,
       storage,
     });
 
-    // Verify member exists
     let result = await getMembers({
       args: {
         query: {
           projectId: defaultProjectId,
           groupId: defaultGroupId,
-          email: { eq: "delete@example.com" },
+          id: { eq: added.member.id },
         },
         includePermissions: false,
       },
@@ -220,25 +216,23 @@ describe("deleteMembers integration", () => {
     });
     expect(result.members).toHaveLength(1);
 
-    // Delete the member
     await deleteMembers({
       query: {
         projectId: defaultProjectId,
         groupId: defaultGroupId,
-        email: { eq: "delete@example.com" },
+        id: { eq: added.member.id },
       },
       by: defaultBy,
       byType: defaultByType,
       storage,
     });
 
-    // Verify member is deleted
     result = await getMembers({
       args: {
         query: {
           projectId: defaultProjectId,
           groupId: defaultGroupId,
-          email: { eq: "delete@example.com" },
+          id: { eq: added.member.id },
         },
         includePermissions: false,
       },
@@ -249,9 +243,9 @@ describe("deleteMembers integration", () => {
 
   it("deletes multiple members when deleteMany is true", async () => {
     // Create multiple test members
-    const member1Args = makeAddMemberArgs({ name: "Member 1" });
-    const member2Args = makeAddMemberArgs({ name: "Member 2" });
-    const member3Args = makeAddMemberArgs({ name: "Member 3" });
+    const member1Args = makeAddMemberArgs({ meta: { label: "Member 1" } });
+    const member2Args = makeAddMemberArgs({ meta: { label: "Member 2" } });
+    const member3Args = makeAddMemberArgs({ meta: { label: "Member 3" } });
 
     await addMember({
       args: member1Args,
@@ -315,8 +309,8 @@ describe("deleteMembers integration", () => {
 
   it("deletes only one member when deleteMany is false", async () => {
     // Create multiple test members
-    const member1Args = makeAddMemberArgs({ name: "Member 1" });
-    const member2Args = makeAddMemberArgs({ name: "Member 2" });
+    const member1Args = makeAddMemberArgs({ meta: { label: "Member 1" } });
+    const member2Args = makeAddMemberArgs({ meta: { label: "Member 2" } });
 
     await addMember({
       args: member1Args,
@@ -374,12 +368,10 @@ describe("deleteMembers integration", () => {
   it("deletes members by meta field", async () => {
     // Create test members with different meta data
     const member1Args = makeAddMemberArgs({
-      name: "Alice",
-      meta: { department: "engineering" },
+      meta: { name: "Alice", department: "engineering" },
     });
     const member2Args = makeAddMemberArgs({
-      name: "Bob",
-      meta: { department: "marketing" },
+      meta: { name: "Bob", department: "marketing" },
     });
 
     await addMember({
@@ -439,27 +431,22 @@ describe("deleteMembers integration", () => {
       storage,
     });
     expect(result.members).toHaveLength(1);
-    expect(result.members[0].name).toBe("Bob");
+    expect(result.members[0].meta?.name).toBe("Bob");
     expect(result.members[0].meta?.department).toBe("marketing");
   });
 
   it("deletes members by status", async () => {
-    // Create test members with different statuses
     const member1Args = makeAddMemberArgs({
-      name: "Alice",
+      meta: { userId: "alice", status: kMemberStatus.pending },
     });
     const member2Args = makeAddMemberArgs({
-      name: "Bob",
+      meta: { userId: "bob", status: kMemberStatus.accepted },
     });
-
-    const seed1: Partial<IMemberObjRecord> = { status: kMemberStatus.pending };
-    const seed2: Partial<IMemberObjRecord> = { status: kMemberStatus.accepted };
 
     await addMember({
       args: member1Args,
       by: defaultBy,
       byType: defaultByType,
-      seed: seed1,
       storage,
     });
 
@@ -467,7 +454,6 @@ describe("deleteMembers integration", () => {
       args: member2Args,
       by: defaultBy,
       byType: defaultByType,
-      seed: seed2,
       storage,
     });
 
@@ -484,19 +470,17 @@ describe("deleteMembers integration", () => {
     });
     expect(result.members).toHaveLength(2);
 
-    // Delete only pending members
     await deleteMembers({
       query: {
         projectId: defaultProjectId,
         groupId: defaultGroupId,
-        status: { eq: "pending" },
+        meta: [{ op: "eq" as const, field: "status", value: "pending" }],
       },
       by: defaultBy,
       byType: defaultByType,
       storage,
     });
 
-    // Verify only pending member is deleted
     result = await getMembers({
       args: {
         query: {
@@ -508,18 +492,17 @@ describe("deleteMembers integration", () => {
       storage,
     });
     expect(result.members).toHaveLength(1);
-    expect(result.members[0].name).toBe("Bob");
-    expect(result.members[0].status).toBe("accepted");
+    expect(result.members[0].meta?.status).toBe("accepted");
   });
 
   it("deletes members from specific group only", async () => {
     // Create members in different groups
     const member1Args = makeAddMemberArgs({
-      name: "Alice",
+      meta: { name: "Alice" },
       groupId: "group-1",
     });
     const member2Args = makeAddMemberArgs({
-      name: "Bob",
+      meta: { name: "Bob" },
       groupId: "group-2",
     });
 
@@ -597,17 +580,17 @@ describe("deleteMembers integration", () => {
       storage,
     });
     expect(result.members).toHaveLength(1);
-    expect(result.members[0].name).toBe("Bob");
+    expect(result.members[0].meta?.name).toBe("Bob");
   });
 
   it("deletes members from specific project only", async () => {
     // Create members in different projects
     const member1Args = makeAddMemberArgs({
-      name: "Alice",
+      meta: { name: "Alice", userId: "alice", email: "a@test.com" },
       projectId: "project-1",
     });
     const member2Args = makeAddMemberArgs({
-      name: "Bob",
+      meta: { name: "Bob", userId: "bob", email: "b@test.com" },
       projectId: "project-2",
     });
 
@@ -685,6 +668,6 @@ describe("deleteMembers integration", () => {
       storage,
     });
     expect(result.members).toHaveLength(1);
-    expect(result.members[0].name).toBe("Bob");
+    expect(result.members[0].meta?.name).toBe("Bob");
   });
 });

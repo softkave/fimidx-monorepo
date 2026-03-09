@@ -1,5 +1,3 @@
-have a check member permission item schema without entity, because entity is memberId. update dependent code @fimidx-monorepo/fimidx-core/src/definitions/member.ts
-
 @fimidx-monorepo/fimidx-core/src/definitions/member.ts:43 @fimidx-monorepo/fimidx-core/src/definitions/member.ts:49-50 @fimidx-monorepo/fimidx-core/src/definitions/member.ts:51-56 @fimidx-monorepo/fimidx-core/src/definitions/member.ts:66-67 @fimidx-monorepo/fimidx-core/src/definitions/member.ts:68-70 move from main member/member obj to only internal fimidx member usage. fimidx also uses member to handle org members, and members (resource) can be used by customers to manage members withing a group. status and email, etc. are fimidx specific and shouldn't be pushed to external users. so put them in meta when adding members (for now, that's only when an org is created in ixtb-nextjs). update dependent code (like member requests) and tests. also remove @fimidx-monorepo/fimidx-core/src/definitions/member.ts:92 and if we're using it for managing our own org members, put it in meta.
 
 @fimidx-monorepo/fimidx-core/src/definitions/member.ts:77 have memberId, make it optional, and have id too, and make it optional.
@@ -60,3 +58,8 @@ have a check member permission item schema without entity, because entity is mem
 do the same for @fimidx-monorepo/fimidx-core/src/definitions/member.ts:115-125 and @fimidx-monorepo/fimidx-core/src/definitions/member.ts:127-136 and implement them.
 
 for all requests, update dependent code. update tests. see if there's need for new tests. remove tests no longer needed.
+
+limits
+parallelize for loops in reasonable chunks
+support or and and query in obj and use for delete permissions
+make similar permissions updates for client tokens

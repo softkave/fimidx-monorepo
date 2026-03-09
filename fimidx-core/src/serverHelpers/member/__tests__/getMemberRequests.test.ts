@@ -42,12 +42,13 @@ describe("getMemberRequests integration", () => {
   ): AddMemberEndpointArgs {
     const testData = makeTestData({ testName: "member" });
     return {
-      name: testData.name,
-      description: "Test description",
       projectId,
       groupId,
-      email: testData.email,
-      memberId: testData.memberId,
+      meta: {
+        name: testData.name,
+        userId: testData.memberId,
+        email: testData.email,
+      },
       permissions: [],
       ...overrides,
     };
@@ -98,11 +99,11 @@ describe("getMemberRequests integration", () => {
 
     // Create test members
     const member1Args = makeAddMemberArgs({
-      memberId: "member-1",
+      meta: { name: "Member 1", userId: "member-1", email: "m1@test.com" },
       groupId: group.id,
     });
     const member2Args = makeAddMemberArgs({
-      memberId: "member-2",
+      meta: { name: "Member 2", userId: "member-2", email: "m2@test.com" },
       groupId: group.id,
     });
 
@@ -140,13 +141,13 @@ describe("getMemberRequests integration", () => {
 
     // Verify request structure
     const request = result.requests[0];
-    expect(request).toHaveProperty("requestId");
+    expect(request).toHaveProperty("id");
     expect(request).toHaveProperty("groupName");
     expect(request).toHaveProperty("status");
     expect(request).toHaveProperty("updatedAt");
   });
 
-  it("filters member requests by memberId", async () => {
+  it("filters member requests by id", async () => {
     // Create test group first
     const groupArgs = makeAddGroupArgs({ name: "Test Group" });
     const { group } = await addGroup({
@@ -157,17 +158,17 @@ describe("getMemberRequests integration", () => {
       storage,
     });
 
-    // Create test members
+    // Create test members and get first member's id
     const member1Args = makeAddMemberArgs({
-      memberId: "member-1",
+      meta: { name: "Member 1", userId: "member-1", email: "m1@test.com" },
       groupId: group.id,
     });
     const member2Args = makeAddMemberArgs({
-      memberId: "member-2",
+      meta: { name: "Member 2", userId: "member-2", email: "m2@test.com" },
       groupId: group.id,
     });
 
-    await addMember({
+    const add1 = await addMember({
       args: member1Args,
       by,
       byType,
@@ -183,9 +184,9 @@ describe("getMemberRequests integration", () => {
 
     const args = makeGetMemberRequestsArgs({
       query: {
-        memberId: "member-1",
+        id: add1.member.id,
         projectId,
-        groupId: undefined,
+        groupId: group.id,
       },
     });
 
@@ -196,7 +197,7 @@ describe("getMemberRequests integration", () => {
 
     expect(result.requests).toBeDefined();
     expect(result.requests).toHaveLength(1);
-    expect(result.requests[0].requestId).toBeDefined();
+    expect(result.requests[0].id).toBe(add1.member.id);
   });
 
   it("handles pagination correctly", async () => {
@@ -215,7 +216,7 @@ describe("getMemberRequests integration", () => {
     await Promise.all(
       range(5).map(async (i) => {
         const memberArgs = makeAddMemberArgs({
-          memberId: `member-${i}`,
+          meta: { name: `Member ${i}`, userId: `member-${i}`, email: `m${i}@test.com` },
           groupId: group.id,
         });
         await addMember({
@@ -292,7 +293,7 @@ describe("getMemberRequests integration", () => {
   it("handles empty results", async () => {
     const args = makeGetMemberRequestsArgs({
       query: {
-        memberId: "non-existent-member",
+        id: "non-existent-member-id",
         projectId,
         groupId,
       },
@@ -333,11 +334,11 @@ describe("getMemberRequests integration", () => {
 
     // Create members in different groups
     const member1Args = makeAddMemberArgs({
-      memberId: "member-1",
+      meta: { name: "Member 1", userId: "member-1", email: "m1@test.com" },
       groupId: group1.id,
     });
     const member2Args = makeAddMemberArgs({
-      memberId: "member-2",
+      meta: { name: "Member 2", userId: "member-2", email: "m2@test.com" },
       groupId: group2.id,
     });
 
@@ -369,7 +370,7 @@ describe("getMemberRequests integration", () => {
     });
 
     expect(result1.requests).toHaveLength(1);
-    expect(result1.requests[0].requestId).toBeDefined();
+    expect(result1.requests[0].id).toBeDefined();
 
     // Test filtering by group-2
     const args2 = makeGetMemberRequestsArgs({
@@ -385,7 +386,7 @@ describe("getMemberRequests integration", () => {
     });
 
     expect(result2.requests).toHaveLength(1);
-    expect(result2.requests[0].requestId).toBeDefined();
+    expect(result2.requests[0].id).toBeDefined();
   });
 
   it("handles large result sets", async () => {
@@ -404,7 +405,7 @@ describe("getMemberRequests integration", () => {
     await Promise.all(
       range(memberCount).map(async (i) => {
         const memberArgs = makeAddMemberArgs({
-          memberId: `member-${i}`,
+          meta: { name: `Member ${i}`, userId: `member-${i}`, email: `m${i}@test.com` },
           groupId: group.id,
         });
         await addMember({
@@ -451,7 +452,7 @@ describe("getMemberRequests integration", () => {
     await Promise.all(
       range(10).map(async (i) => {
         const memberArgs = makeAddMemberArgs({
-          memberId: `member-${i}`,
+          meta: { name: `Member ${i}`, userId: `member-${i}`, email: `m${i}@test.com` },
           groupId: group.id,
         });
         await addMember({

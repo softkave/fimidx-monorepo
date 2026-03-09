@@ -31,7 +31,7 @@ export async function hasPermission(params: {
             query: {
               projectId,
               groupId,
-              memberId: { eq: memberId },
+              id: { eq: memberId },
             },
             limit: 1,
             includePermissions: true,

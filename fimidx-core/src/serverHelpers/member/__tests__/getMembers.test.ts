@@ -6,7 +6,6 @@ import {
   kMemberStatus,
   type AddMemberEndpointArgs,
   type GetMembersEndpointArgs,
-  type IMemberObjRecord,
 } from "../../../definitions/member.js";
 import { kObjTags } from "../../../definitions/obj.js";
 import { createDefaultStorage } from "../../../storage/config.js";
@@ -46,12 +45,13 @@ function makeAddMemberArgs(
     .toString(36)
     .substr(2, 9)}`;
   return {
-    name: `Test Member ${uniqueId}`,
-    description: "Test description",
     projectId: defaultProjectId,
     groupId: defaultGroupId,
-    email: `test${uniqueId}@example.com`,
-    memberId: `member-${uniqueId}`,
+    meta: {
+      name: `Test Member ${uniqueId}`,
+      userId: `member-${uniqueId}`,
+      email: `test${uniqueId}@example.com`,
+    },
     permissions: [],
     ...overrides,
   };
@@ -185,8 +185,12 @@ describe("getMembers integration", () => {
 
   it("returns members when they exist", async () => {
     // Create test members
-    const member1Args = makeAddMemberArgs({ name: "Member A" });
-    const member2Args = makeAddMemberArgs({ name: "Member B" });
+    const member1Args = makeAddMemberArgs({
+      meta: { name: "Member A", userId: "member-a", email: "a@test.com" },
+    });
+    const member2Args = makeAddMemberArgs({
+      meta: { name: "Member B", userId: "member-b", email: "b@test.com" },
+    });
 
     await addMember({
       args: member1Args,
@@ -214,14 +218,18 @@ describe("getMembers integration", () => {
     expect(result.limit).toBe(100);
 
     // Verify member properties
-    const memberNames = result.members.map((m) => m.name).sort();
+    const memberNames = result.members.map((m) => m.meta?.name).sort();
     expect(memberNames).toEqual(["Member A", "Member B"].sort());
   });
 
   it("filters by name", async () => {
-    // Create test members
-    const member1Args = makeAddMemberArgs({ name: "Alice Member" });
-    const member2Args = makeAddMemberArgs({ name: "Bob Member" });
+    // Create test members (filter by meta.name)
+    const member1Args = makeAddMemberArgs({
+      meta: { name: "Alice Member", userId: "alice-m", email: "alice@test.com" },
+    });
+    const member2Args = makeAddMemberArgs({
+      meta: { name: "Bob Member", userId: "bob-m", email: "bob@test.com" },
+    });
 
     await addMember({
       args: member1Args,
@@ -241,7 +249,7 @@ describe("getMembers integration", () => {
       query: {
         projectId: defaultProjectId,
         groupId: defaultGroupId,
-        name: { eq: "Alice Member" },
+        meta: [{ op: "eq" as const, field: "name", value: "Alice Member" }],
       },
     });
 
@@ -251,18 +259,16 @@ describe("getMembers integration", () => {
     });
 
     expect(result.members).toHaveLength(1);
-    expect(result.members[0].name).toBe("Alice Member");
+    expect(result.members[0].meta?.name).toBe("Alice Member");
   });
 
   it("filters by email", async () => {
-    // Create test members
+    // Create test members (filter by meta.email)
     const member1Args = makeAddMemberArgs({
-      name: "Alice",
-      email: "alice@example.com",
+      meta: { name: "Alice", userId: "alice", email: "alice@example.com" },
     });
     const member2Args = makeAddMemberArgs({
-      name: "Bob",
-      email: "bob@example.com",
+      meta: { name: "Bob", userId: "bob", email: "bob@example.com" },
     });
 
     await addMember({
@@ -283,7 +289,7 @@ describe("getMembers integration", () => {
       query: {
         projectId: defaultProjectId,
         groupId: defaultGroupId,
-        email: { eq: "alice@example.com" },
+        meta: [{ op: "eq" as const, field: "email", value: "alice@example.com" }],
       },
     });
 
@@ -293,21 +299,19 @@ describe("getMembers integration", () => {
     });
 
     expect(result.members).toHaveLength(1);
-    expect(result.members[0].email).toBe("alice@example.com");
+    expect(result.members[0].meta?.email).toBe("alice@example.com");
   });
 
-  it("filters by memberId", async () => {
-    // Create test members
+  it("filters by id (member obj id)", async () => {
+    // Create test members, then query by first member's id
     const member1Args = makeAddMemberArgs({
-      name: "Alice",
-      memberId: "alice-123",
+      meta: { name: "Alice", userId: "alice-123", email: "alice@test.com" },
     });
     const member2Args = makeAddMemberArgs({
-      name: "Bob",
-      memberId: "bob-456",
+      meta: { name: "Bob", userId: "bob-456", email: "bob@test.com" },
     });
 
-    await addMember({
+    const add1 = await addMember({
       args: member1Args,
       by: defaultBy,
       byType: defaultByType,
@@ -325,7 +329,7 @@ describe("getMembers integration", () => {
       query: {
         projectId: defaultProjectId,
         groupId: defaultGroupId,
-        memberId: { eq: "alice-123" },
+        id: { eq: add1.member.id },
       },
     });
 
@@ -335,17 +339,17 @@ describe("getMembers integration", () => {
     });
 
     expect(result.members).toHaveLength(1);
-    expect(result.members[0].memberId).toBe("alice-123");
+    expect(result.members[0].id).toBe(add1.member.id);
   });
 
   it("filters by groupId", async () => {
     // Create test members in different groups
     const member1Args = makeAddMemberArgs({
-      name: "Alice",
+      meta: { name: "Alice", userId: "alice", email: "a@test.com" },
       groupId: "group-1",
     });
     const member2Args = makeAddMemberArgs({
-      name: "Bob",
+      meta: { name: "Bob", userId: "bob", email: "b@test.com" },
       groupId: "group-2",
     });
 
@@ -383,7 +387,9 @@ describe("getMembers integration", () => {
     // Create multiple test members
     const members = [];
     for (let i = 0; i < 5; i++) {
-      const memberArgs = makeAddMemberArgs({ name: `Member ${i}` });
+      const memberArgs = makeAddMemberArgs({
+        meta: { name: `Member ${i}`, userId: `member-${i}`, email: `m${i}@test.com` },
+      });
       members.push(memberArgs);
 
       await addMember({
@@ -432,7 +438,7 @@ describe("getMembers integration", () => {
   });
 
   it("sorts by name when objFields are set up", async () => {
-    // Set up objFields for name sorting
+    // Set up objFields for name sorting (meta.name)
     await insertNameFieldForSorting({
       projectId: defaultProjectId,
       groupId: defaultGroupId,
@@ -440,9 +446,15 @@ describe("getMembers integration", () => {
     });
 
     // Create test members
-    const member1Args = makeAddMemberArgs({ name: "Charlie" });
-    const member2Args = makeAddMemberArgs({ name: "Alice" });
-    const member3Args = makeAddMemberArgs({ name: "Bob" });
+    const member1Args = makeAddMemberArgs({
+      meta: { name: "Charlie", userId: "charlie", email: "c@test.com" },
+    });
+    const member2Args = makeAddMemberArgs({
+      meta: { name: "Alice", userId: "alice", email: "a@test.com" },
+    });
+    const member3Args = makeAddMemberArgs({
+      meta: { name: "Bob", userId: "bob", email: "b@test.com" },
+    });
 
     await addMember({
       args: member1Args,
@@ -474,7 +486,7 @@ describe("getMembers integration", () => {
       storage,
     });
 
-    expect(resultAsc.members.map((m) => m.name)).toEqual([
+    expect(resultAsc.members.map((m) => m.meta?.name)).toEqual([
       "Alice",
       "Bob",
       "Charlie",
@@ -489,7 +501,7 @@ describe("getMembers integration", () => {
       storage,
     });
 
-    expect(resultDesc.members.map((m) => m.name)).toEqual([
+    expect(resultDesc.members.map((m) => m.meta?.name)).toEqual([
       "Charlie",
       "Bob",
       "Alice",
@@ -507,7 +519,7 @@ describe("getMembers integration", () => {
       ],
     });
 
-    await addMember({
+    const addResult = await addMember({
       args: memberArgs,
       by: defaultBy,
       byType: defaultByType,
@@ -523,8 +535,8 @@ describe("getMembers integration", () => {
     expect(result.members).toHaveLength(1);
     expect(result.members[0].permissions).not.toBeNull();
     expect(result.members[0].permissions).toHaveLength(1);
-    expect(result.members[0].permissions![0]).toEqual({
-      entity: "test",
+    expect(result.members[0].permissions![0]).toMatchObject({
+      entity: addResult.member.id,
       action: "read",
       target: "data",
     });
@@ -561,12 +573,22 @@ describe("getMembers integration", () => {
   it("filters by meta fields", async () => {
     // Create test members with meta
     const member1Args = makeAddMemberArgs({
-      name: "Alice",
-      meta: { department: "engineering", level: "senior" },
+      meta: {
+        name: "Alice",
+        userId: "alice",
+        email: "a@test.com",
+        department: "engineering",
+        level: "senior",
+      },
     });
     const member2Args = makeAddMemberArgs({
-      name: "Bob",
-      meta: { department: "marketing", level: "junior" },
+      meta: {
+        name: "Bob",
+        userId: "bob",
+        email: "b@test.com",
+        department: "marketing",
+        level: "junior",
+      },
     });
 
     await addMember({
@@ -603,28 +625,33 @@ describe("getMembers integration", () => {
     });
 
     expect(result.members).toHaveLength(1);
-    expect(result.members[0].name).toBe("Alice");
+    expect(result.members[0].meta?.name).toBe("Alice");
     expect(result.members[0].meta?.department).toBe("engineering");
   });
 
   it("filters by status", async () => {
-    // Create test members with different statuses
+    // Create test members with different statuses (status in meta)
     const member1Args = makeAddMemberArgs({
-      name: "Alice",
+      meta: {
+        name: "Alice",
+        userId: "alice",
+        email: "a@test.com",
+        status: kMemberStatus.pending,
+      },
     });
     const member2Args = makeAddMemberArgs({
-      name: "Bob",
+      meta: {
+        name: "Bob",
+        userId: "bob",
+        email: "b@test.com",
+        status: kMemberStatus.accepted,
+      },
     });
-
-    // Extract seed from memberArgs
-    const seed1: Partial<IMemberObjRecord> = { status: kMemberStatus.pending };
-    const seed2: Partial<IMemberObjRecord> = { status: kMemberStatus.accepted };
 
     await addMember({
       args: member1Args,
       by: defaultBy,
       byType: defaultByType,
-      seed: seed1,
       storage,
     });
 
@@ -632,13 +659,6 @@ describe("getMembers integration", () => {
       args: member2Args,
       by: defaultBy,
       byType: defaultByType,
-      seed: seed2,
-      storage,
-    });
-
-    // Debug: Check what members exist before filtering
-    const allMembers = await getMembers({
-      args: makeGetMembersArgs(),
       storage,
     });
 
@@ -646,7 +666,9 @@ describe("getMembers integration", () => {
       query: {
         projectId: defaultProjectId,
         groupId: defaultGroupId,
-        status: { eq: "pending" },
+        meta: [
+          { op: "eq" as const, field: "status", value: kMemberStatus.pending },
+        ],
       },
     });
 
@@ -656,7 +678,7 @@ describe("getMembers integration", () => {
     });
 
     expect(result.members).toHaveLength(1);
-    expect(result.members[0].name).toBe("Alice");
-    expect(result.members[0].status).toBe("pending");
+    expect(result.members[0].meta?.name).toBe("Alice");
+    expect(result.members[0].meta?.status).toBe("pending");
   });
 });

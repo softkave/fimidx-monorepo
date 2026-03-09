@@ -1,11 +1,15 @@
 import assert from "assert";
+import { isString } from "lodash-es";
 import { first } from "lodash-es";
 import { kOwnServerErrorCodes, OwnServerError } from "../../common/error.js";
+import { jsRecordToObjPartQueryList } from "../../common/obj.js";
 import type { UpdateMemberPermissionsEndpointArgs } from "../../definitions/member.js";
+import type { GetPermissionsEndpointArgs } from "../../definitions/permission.js";
 import type { IObjStorage } from "../../storage/types.js";
+import { deletePermissions } from "../permission/deletePermissions.js";
 import {
   addMemberPermissions,
-  getOriginalMemberPermission,
+  getFimidxManagedMemberPermission,
 } from "./addMemberPermissions.js";
 import { getMembers } from "./getMembers.js";
 
@@ -23,9 +27,7 @@ export async function updateMemberPermissions(params: {
       query: {
         projectId: query.projectId,
         groupId: query.groupId,
-        memberId: {
-          eq: query.memberId,
-        },
+        id: { eq: query.id },
       },
       includePermissions: true,
     },
@@ -41,27 +43,70 @@ export async function updateMemberPermissions(params: {
     )
   );
 
-  const { permissions: managedPermissions } = await addMemberPermissions({
-    by,
-    byType,
-    groupId: member.groupId,
-    projectId: member.projectId,
-    permissions: update.permissions,
-    memberId: member.memberId,
-    storage,
-  });
+  const memberId = member.id;
 
-  // Transform managed permissions back to original format
-  const originalPermissions = managedPermissions.map((permission) =>
-    getOriginalMemberPermission({
-      permission,
-      memberId: member.memberId,
-    })
-  );
+  if (update.removeAllPermissions) {
+    await deletePermissions({
+      query: {
+        projectId: member.projectId,
+        entity: { eq: memberId },
+      },
+      deleteMany: true,
+      by,
+      byType,
+      storage,
+    });
+  }
 
-  member.permissions = originalPermissions;
+  if (update.removePermissions?.length) {
+    const queries: GetPermissionsEndpointArgs["query"][] =
+      update.removePermissions.map((item) => {
+        const managed = getFimidxManagedMemberPermission({
+          permission: {
+            entity: memberId,
+            action: item.action,
+            target: item.target,
+          },
+          memberId,
+          groupId: member.groupId,
+        });
+        return {
+          projectId: member.projectId,
+          entity: isString(managed.entity)
+            ? { eq: managed.entity }
+            : jsRecordToObjPartQueryList(
+                managed.entity as Record<string, string>
+              ),
+          action: isString(managed.action)
+            ? { eq: managed.action }
+            : jsRecordToObjPartQueryList(
+                managed.action as Record<string, string>
+              ),
+          target: isString(managed.target)
+            ? { eq: managed.target }
+            : jsRecordToObjPartQueryList(
+                managed.target as Record<string, string>
+              ),
+        };
+      });
+    await deletePermissions({
+      queries,
+      deleteMany: true,
+      by,
+      byType,
+      storage,
+    });
+  }
 
-  return {
-    member,
-  };
+  if (update.addPermissions?.length) {
+    await addMemberPermissions({
+      by,
+      byType,
+      groupId: member.groupId,
+      projectId: member.projectId,
+      permissions: update.addPermissions,
+      memberId,
+      storage,
+    });
+  }
 }

@@ -19,17 +19,19 @@ export async function requirePermissionForUser(params: {
   const { userId, orgId, action, target } = params;
   const { results } = await checkMemberPermissions({
     args: {
-      projectId: kId0,
-      memberId: userId,
-      groupId: orgId,
+      query: {
+        projectId: kId0,
+        groupId: orgId,
+        id: userId,
+      },
       items: [
         { action, target },
         { action: kFimidxPermissions.wildcard, target },
       ],
     },
   });
-  const hasAction = results[0]?.hasPermission ?? false;
-  const hasWildcard = results[1]?.hasPermission ?? false;
+  const hasAction = results[0]?.isPermitted ?? false;
+  const hasWildcard = results[1]?.isPermitted ?? false;
   if (!hasAction && !hasWildcard) {
     throw new OwnServerError("Forbidden", kOwnServerErrorCodes.Forbidden);
   }

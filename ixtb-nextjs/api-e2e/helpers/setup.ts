@@ -58,9 +58,13 @@ export async function createTestOrg(params: {
     args: {
       projectId: kId0,
       groupId: group.id,
-      memberId: userId,
-      email: userEmail,
-      name: userName,
+      meta: {
+        userId,
+        status: kMemberStatus.accepted,
+        statusUpdatedAt: new Date().toISOString(),
+        email: userEmail,
+        name: userName,
+      },
       permissions: [
         {
           action: kFimidxPermissions.wildcard,
@@ -68,7 +72,6 @@ export async function createTestOrg(params: {
         },
       ],
     },
-    seed: { status: kMemberStatus.accepted },
     by: userId,
     byType: kByTypes.user,
   });

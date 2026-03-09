@@ -20,6 +20,7 @@ export function getPermissionsObjQuery(params: {
       entity,
       action,
       target,
+      groupId,
       meta,
       createdAt,
       updatedAt,
@@ -97,6 +98,7 @@ export function getPermissionsObjQuery(params: {
     projectId,
     partQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
     metaQuery: { id, createdAt, updatedAt, createdBy, updatedBy },
+    topLevelFields: groupId ? { groupId } : undefined,
   };
 
   return objQuery;

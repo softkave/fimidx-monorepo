@@ -236,14 +236,14 @@ export function sanitizeGetMemberRequestsInput(input: {
 }
 
 export function sanitizeRespondToMemberRequestInput(input: {
-  requestId?: string;
-  projectId?: string;
-  groupId?: string;
+  query?: { id?: string; projectId?: string; groupId?: string };
   [key: string]: unknown;
 }): void {
-  if (input.requestId !== undefined) rejectIfKId0(input.requestId, "requestId");
-  if (input.projectId !== undefined) rejectIfKId0(input.projectId, "projectId");
-  if (input.groupId !== undefined) rejectIfKId0(input.groupId, "groupId");
+  if (input.query?.id !== undefined) rejectIfKId0(input.query.id, "query.id");
+  if (input.query?.projectId !== undefined)
+    rejectIfKId0(input.query.projectId, "query.projectId");
+  if (input.query?.groupId !== undefined)
+    rejectIfKId0(input.query.groupId, "query.groupId");
 }
 
 // --- Client token ---

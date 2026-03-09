@@ -93,6 +93,8 @@ export type IPermissionAtom = {
   entity: IPermissionEntity;
   action: IPermissionAction;
   target: IPermissionTarget;
+  /** When true, this atom grants the permission; when false, it denies. Default true for backward compatibility. */
+  granted?: boolean;
 };
 
 export type IPermissionMeta = Record<string, string> | null;
@@ -115,6 +117,7 @@ export interface IPermissionObjRecord {
   entity: IPermissionEntity;
   action: IPermissionAction;
   target: IPermissionTarget;
+  granted?: boolean;
   description?: string | null;
   meta?: IPermissionMeta;
 }
@@ -129,6 +132,8 @@ export const permissionAtomSchema = z.object({
   entity: entitySchema,
   action: actionSchema,
   target: targetSchema,
+  /** When true, this atom grants the permission; when false, it denies. Optional, default true. */
+  granted: z.boolean().optional(),
 });
 
 export const addPermissionItemSchema = permissionAtomSchema.extend({
@@ -157,6 +162,7 @@ export const permissionQuerySchema = z.object({
   entity: entityQuerySchema.optional(),
   action: actionQuerySchema.optional(),
   target: targetQuerySchema.optional(),
+  groupId: stringMetaQuerySchema.optional(),
   createdAt: numberMetaQuerySchema.optional(),
   updatedAt: numberMetaQuerySchema.optional(),
   createdBy: stringMetaQuerySchema.optional(),
@@ -164,20 +170,30 @@ export const permissionQuerySchema = z.object({
   meta: objPartQueryListSchema.optional(),
 });
 
+/** Minimal schema for matching a permission to remove (entity, action, target,
+ * optional granted). */
+export const removePermissionMatchSchema = z.object({
+  entity: entitySchema,
+  action: actionSchema,
+  target: targetSchema,
+  granted: z.boolean().optional(),
+});
+
 export const updatePermissionsSchema = z.object({
   query: permissionQuerySchema,
   update: z.object({
-    entity: entitySchema.optional(),
-    action: actionSchema.optional(),
-    target: targetSchema.optional(),
-    description: z.string().optional(),
-    meta: z.record(z.string().min(1), z.string()).optional().or(z.null()),
+    addPermissions: z.array(addPermissionItemSchema).optional(),
+    removePermissions: z.array(removePermissionMatchSchema).optional(),
+    removeAllPermissions: z.boolean().optional(),
   }),
   updateMany: z.boolean().optional(),
 });
 
 export const deletePermissionsSchema = z.object({
-  query: permissionQuerySchema,
+  query: permissionQuerySchema.optional(),
+  /** When provided, delete in one pass (one deleteManyObjs per query). Use
+   * instead of looping. */
+  queries: z.array(permissionQuerySchema).optional(),
   deleteMany: z.boolean().optional(),
 });
 
@@ -192,6 +208,7 @@ export const checkPermissionItemSchema = z.object({
   entity: entitySchema,
   action: actionSchema,
   target: targetSchema,
+  granted: z.boolean().optional(),
 });
 
 export const checkPermissionsSchema = z.object({
@@ -220,6 +237,6 @@ export interface GetPermissionsEndpointResponse {
 
 export interface CheckPermissionsEndpointResponse {
   results: {
-    hasPermission: boolean;
+    isPermitted: boolean;
   }[];
 }

@@ -126,6 +126,7 @@ export function getOriginalClientTokenPermission(params: {
       target: permission.target,
       clientTokenId,
     }),
+    granted: permission.granted !== false,
   };
 }
 
@@ -150,7 +151,12 @@ export async function addClientTokenPermissions(params: {
   const permissionAtoms: IPermissionAtom[] = inputPermissions.map((p) =>
     "entity" in p && p.entity !== undefined
       ? (p as IPermissionAtom)
-      : { entity: clientTokenId, action: p.action, target: p.target }
+      : {
+          entity: clientTokenId,
+          action: p.action,
+          target: p.target,
+          granted: (p as IClientTokenPermissionInput).granted ?? true,
+        }
   );
   const { permissions: newPermissions } = await addPermissions({
     by,

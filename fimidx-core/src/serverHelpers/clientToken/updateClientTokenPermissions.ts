@@ -1,11 +1,15 @@
 import assert from "assert";
 import { first } from "lodash-es";
+import { isString } from "lodash-es";
 import { kOwnServerErrorCodes, OwnServerError } from "../../common/error.js";
+import { jsRecordToObjPartQueryList } from "../../common/obj.js";
 import type { UpdateClientTokenPermissionsEndpointArgs } from "../../definitions/clientToken.js";
+import type { GetPermissionsEndpointArgs } from "../../definitions/permission.js";
 import type { IObjStorage } from "../../storage/types.js";
+import { deletePermissions } from "../permission/deletePermissions.js";
 import {
   addClientTokenPermissions,
-  getOriginalClientTokenPermission,
+  getFimidxManagedClientTokenPermission,
 } from "./addClientTokenPermissions.js";
 import { getClientTokens } from "./getClientTokens.js";
 
@@ -23,9 +27,7 @@ export async function updateClientTokenPermissions(params: {
       query: {
         projectId: query.projectId,
         groupId: query.groupId,
-        id: {
-          eq: query.id,
-        },
+        id: { eq: query.id },
       },
       includePermissions: true,
     },
@@ -41,27 +43,70 @@ export async function updateClientTokenPermissions(params: {
     )
   );
 
-  const { permissions: newPermissions } = await addClientTokenPermissions({
-    by,
-    byType,
-    groupId: clientToken.groupId,
-    projectId: clientToken.projectId,
-    permissions: update.permissions,
-    clientTokenId: clientToken.id,
-    storage,
-  });
+  const clientTokenId = clientToken.id;
 
-  // Transform managed permissions back to original format
-  const originalPermissions = newPermissions.map((permission) =>
-    getOriginalClientTokenPermission({
-      permission,
-      clientTokenId: clientToken.id,
-    })
-  );
+  if (update.removeAllPermissions) {
+    await deletePermissions({
+      query: {
+        projectId: clientToken.projectId,
+        entity: { eq: clientTokenId },
+      },
+      deleteMany: true,
+      by,
+      byType,
+      storage,
+    });
+  }
 
-  clientToken.permissions = originalPermissions;
+  if (update.removePermissions?.length) {
+    const queries: GetPermissionsEndpointArgs["query"][] =
+      update.removePermissions.map((item) => {
+        const managed = getFimidxManagedClientTokenPermission({
+          permission: {
+            entity: clientTokenId,
+            action: item.action,
+            target: item.target,
+          },
+          clientTokenId,
+          groupId: clientToken.groupId,
+        });
+        return {
+          projectId: clientToken.projectId,
+          entity: isString(managed.entity)
+            ? { eq: managed.entity }
+            : jsRecordToObjPartQueryList(
+                managed.entity as Record<string, string>
+              ),
+          action: isString(managed.action)
+            ? { eq: managed.action }
+            : jsRecordToObjPartQueryList(
+                managed.action as Record<string, string>
+              ),
+          target: isString(managed.target)
+            ? { eq: managed.target }
+            : jsRecordToObjPartQueryList(
+                managed.target as Record<string, string>
+              ),
+        };
+      });
+    await deletePermissions({
+      queries,
+      deleteMany: true,
+      by,
+      byType,
+      storage,
+    });
+  }
 
-  return {
-    clientToken,
-  };
+  if (update.addPermissions?.length) {
+    await addClientTokenPermissions({
+      by,
+      byType,
+      groupId: clientToken.groupId,
+      projectId: clientToken.projectId,
+      permissions: update.addPermissions,
+      clientTokenId,
+      storage,
+    });
+  }
 }

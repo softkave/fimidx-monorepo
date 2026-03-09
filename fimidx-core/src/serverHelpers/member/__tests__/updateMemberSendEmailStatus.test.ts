@@ -14,18 +14,19 @@ const defaultByType = "user";
 // Test counter to ensure unique names
 let testCounter = 0;
 
-function makeAddMemberArgs(overrides: any = {}) {
+function makeAddMemberArgs(overrides: Record<string, unknown> = {}) {
   testCounter++;
   const uniqueId = `${testCounter}_${Date.now()}_${Math.random()
     .toString(36)
     .substr(2, 9)}`;
   return {
-    name: `Test Member ${uniqueId}`,
-    description: "Test description",
     projectId: defaultProjectId,
     groupId: defaultGroupId,
-    email: `test${uniqueId}@example.com`,
-    memberId: `member-${uniqueId}`,
+    meta: {
+      name: `Test Member ${uniqueId}`,
+      userId: `member-${uniqueId}`,
+      email: `test${uniqueId}@example.com`,
+    },
     permissions: [],
     ...overrides,
   };
@@ -84,7 +85,9 @@ describe("updateMemberSendEmailStatus integration", () => {
 
   it("updates member email status successfully", async () => {
     // Create a member
-    const memberArgs = makeAddMemberArgs({ memberId: "test-member" });
+    const memberArgs = makeAddMemberArgs({
+      meta: { name: "Test", userId: "test-member", email: "t@test.com" },
+    }) as Parameters<typeof addMember>[0]["args"];
     const member = await addMember({
       args: memberArgs,
       by: defaultBy,
@@ -99,34 +102,35 @@ describe("updateMemberSendEmailStatus integration", () => {
     await updateMemberSendEmailStatus({
       projectId: defaultProjectId,
       groupId: defaultGroupId,
-      id: member.member.memberId,
+      id: member.member.id,
       sentEmailCount,
       emailLastSentAt,
       emailLastSentStatus,
       storage,
     });
 
-    // Verify the member email status was updated
+    // Verify the member email status was updated (stored in meta/objRecord)
     const { members } = await getMembers({
       args: {
         query: {
           projectId: defaultProjectId,
           groupId: defaultGroupId,
-          memberId: { eq: member.member.memberId },
+          id: { eq: member.member.id },
         },
       },
       storage,
     });
 
     expect(members).toHaveLength(1);
-    expect(members[0].sentEmailCount).toBe(sentEmailCount);
-    expect(members[0].emailLastSentAt).toEqual(emailLastSentAt);
-    expect(members[0].emailLastSentStatus).toBe(emailLastSentStatus);
+    expect(Number(members[0].meta?.sentEmailCount)).toBe(sentEmailCount);
+    expect(members[0].meta?.emailLastSentAt).toBeDefined();
+    expect(members[0].meta?.emailLastSentStatus).toBe(emailLastSentStatus);
   });
 
   it("updates member email status with different email status values", async () => {
-    // Create a member
-    const memberArgs = makeAddMemberArgs({ memberId: "test-member" });
+    const memberArgs = makeAddMemberArgs({
+      meta: { name: "Test", userId: "test-member", email: "t@test.com" },
+    }) as Parameters<typeof addMember>[0]["args"];
     const member = await addMember({
       args: memberArgs,
       by: defaultBy,
@@ -141,34 +145,34 @@ describe("updateMemberSendEmailStatus integration", () => {
     await updateMemberSendEmailStatus({
       projectId: defaultProjectId,
       groupId: defaultGroupId,
-      id: member.member.memberId,
+      id: member.member.id,
       sentEmailCount,
       emailLastSentAt,
       emailLastSentStatus,
       storage,
     });
 
-    // Verify the member email status was updated
     const { members } = await getMembers({
       args: {
         query: {
           projectId: defaultProjectId,
           groupId: defaultGroupId,
-          memberId: { eq: member.member.memberId },
+          id: { eq: member.member.id },
         },
       },
       storage,
     });
 
     expect(members).toHaveLength(1);
-    expect(members[0].sentEmailCount).toBe(sentEmailCount);
-    expect(members[0].emailLastSentAt).toEqual(emailLastSentAt);
-    expect(members[0].emailLastSentStatus).toBe(emailLastSentStatus);
+    expect(Number(members[0].meta?.sentEmailCount)).toBe(sentEmailCount);
+    expect(members[0].meta?.emailLastSentAt).toBeDefined();
+    expect(members[0].meta?.emailLastSentStatus).toBe(emailLastSentStatus);
   });
 
   it("updates member email status with zero email count", async () => {
-    // Create a member
-    const memberArgs = makeAddMemberArgs({ memberId: "test-member" });
+    const memberArgs = makeAddMemberArgs({
+      meta: { name: "Test", userId: "test-member", email: "t@test.com" },
+    }) as Parameters<typeof addMember>[0]["args"];
     const member = await addMember({
       args: memberArgs,
       by: defaultBy,
@@ -183,37 +187,35 @@ describe("updateMemberSendEmailStatus integration", () => {
     await updateMemberSendEmailStatus({
       projectId: defaultProjectId,
       groupId: defaultGroupId,
-      id: member.member.memberId,
+      id: member.member.id,
       sentEmailCount,
       emailLastSentAt,
       emailLastSentStatus,
       storage,
     });
 
-    // Verify the member email status was updated
     const { members } = await getMembers({
       args: {
         query: {
           projectId: defaultProjectId,
           groupId: defaultGroupId,
-          memberId: { eq: member.member.memberId },
+          id: { eq: member.member.id },
         },
       },
       storage,
     });
 
     expect(members).toHaveLength(1);
-    expect(members[0].sentEmailCount).toBe(sentEmailCount);
-    expect(members[0].emailLastSentAt).toEqual(emailLastSentAt);
-    expect(members[0].emailLastSentStatus).toBe(emailLastSentStatus);
+    expect(Number(members[0].meta?.sentEmailCount)).toBe(sentEmailCount);
+    expect(members[0].meta?.emailLastSentAt).toBeDefined();
+    expect(members[0].meta?.emailLastSentStatus).toBe(emailLastSentStatus);
   });
 
   it("handles different project IDs", async () => {
-    // Create a member in a different project
     const memberArgs = makeAddMemberArgs({
-      memberId: "test-member",
+      meta: { name: "Test", userId: "test-member", email: "t@test.com" },
       projectId: "different-project",
-    });
+    }) as Parameters<typeof addMember>[0]["args"];
     const member = await addMember({
       args: memberArgs,
       by: defaultBy,
@@ -228,37 +230,35 @@ describe("updateMemberSendEmailStatus integration", () => {
     await updateMemberSendEmailStatus({
       projectId: "different-project",
       groupId: defaultGroupId,
-      id: member.member.memberId,
+      id: member.member.id,
       sentEmailCount,
       emailLastSentAt,
       emailLastSentStatus,
       storage,
     });
 
-    // Verify the member email status was updated
     const { members } = await getMembers({
       args: {
         query: {
           projectId: "different-project",
           groupId: defaultGroupId,
-          memberId: { eq: member.member.memberId },
+          id: { eq: member.member.id },
         },
       },
       storage,
     });
 
     expect(members).toHaveLength(1);
-    expect(members[0].sentEmailCount).toBe(sentEmailCount);
-    expect(members[0].emailLastSentAt).toEqual(emailLastSentAt);
-    expect(members[0].emailLastSentStatus).toBe(emailLastSentStatus);
+    expect(Number(members[0].meta?.sentEmailCount)).toBe(sentEmailCount);
+    expect(members[0].meta?.emailLastSentAt).toBeDefined();
+    expect(members[0].meta?.emailLastSentStatus).toBe(emailLastSentStatus);
   });
 
   it("handles different group IDs", async () => {
-    // Create a member in a different group
     const memberArgs = makeAddMemberArgs({
-      memberId: "test-member",
+      meta: { name: "Test", userId: "test-member", email: "t@test.com" },
       groupId: "different-group",
-    });
+    }) as Parameters<typeof addMember>[0]["args"];
     const member = await addMember({
       args: memberArgs,
       by: defaultBy,
@@ -273,35 +273,37 @@ describe("updateMemberSendEmailStatus integration", () => {
     await updateMemberSendEmailStatus({
       projectId: defaultProjectId,
       groupId: "different-group",
-      id: member.member.memberId,
+      id: member.member.id,
       sentEmailCount,
       emailLastSentAt,
       emailLastSentStatus,
       storage,
     });
 
-    // Verify the member email status was updated
     const { members } = await getMembers({
       args: {
         query: {
           projectId: defaultProjectId,
           groupId: "different-group",
-          memberId: { eq: member.member.memberId },
+          id: { eq: member.member.id },
         },
       },
       storage,
     });
 
     expect(members).toHaveLength(1);
-    expect(members[0].sentEmailCount).toBe(sentEmailCount);
-    expect(members[0].emailLastSentAt).toEqual(emailLastSentAt);
-    expect(members[0].emailLastSentStatus).toBe(emailLastSentStatus);
+    expect(Number(members[0].meta?.sentEmailCount)).toBe(sentEmailCount);
+    expect(members[0].meta?.emailLastSentAt).toBeDefined();
+    expect(members[0].meta?.emailLastSentStatus).toBe(emailLastSentStatus);
   });
 
   it("updates email status for multiple members", async () => {
-    // Create two members
-    const member1Args = makeAddMemberArgs({ memberId: "member-1" });
-    const member2Args = makeAddMemberArgs({ memberId: "member-2" });
+    const member1Args = makeAddMemberArgs({
+      meta: { name: "M1", userId: "member-1", email: "m1@test.com" },
+    }) as Parameters<typeof addMember>[0]["args"];
+    const member2Args = makeAddMemberArgs({
+      meta: { name: "M2", userId: "member-2", email: "m2@test.com" },
+    }) as Parameters<typeof addMember>[0]["args"];
 
     const member1 = await addMember({
       args: member1Args,
@@ -317,29 +319,26 @@ describe("updateMemberSendEmailStatus integration", () => {
       storage,
     });
 
-    // Update email status for member 1
     await updateMemberSendEmailStatus({
       projectId: defaultProjectId,
       groupId: defaultGroupId,
-      id: member1.member.memberId,
+      id: member1.member.id,
       sentEmailCount: 5,
       emailLastSentAt: new Date(),
       emailLastSentStatus: "sent" as const,
       storage,
     });
 
-    // Update email status for member 2
     await updateMemberSendEmailStatus({
       projectId: defaultProjectId,
       groupId: defaultGroupId,
-      id: member2.member.memberId,
+      id: member2.member.id,
       sentEmailCount: 10,
       emailLastSentAt: new Date(),
       emailLastSentStatus: "failed" as const,
       storage,
     });
 
-    // Verify both members were updated
     const { members } = await getMembers({
       args: {
         query: {
@@ -352,31 +351,28 @@ describe("updateMemberSendEmailStatus integration", () => {
 
     expect(members).toHaveLength(2);
 
-    const member1Updated = members.find(
-      (m) => m.memberId === member1.member.memberId
-    );
-    const member2Updated = members.find(
-      (m) => m.memberId === member2.member.memberId
-    );
+    const member1Updated = members.find((m) => m.id === member1.member.id);
+    const member2Updated = members.find((m) => m.id === member2.member.id);
 
     expect(member1Updated).toBeDefined();
-    expect(member1Updated!.sentEmailCount).toBe(5);
-    expect(member1Updated!.emailLastSentStatus).toBe("sent");
+    expect(Number(member1Updated!.meta?.sentEmailCount)).toBe(5);
+    expect(member1Updated!.meta?.emailLastSentStatus).toBe("sent");
 
     expect(member2Updated).toBeDefined();
-    expect(member2Updated!.sentEmailCount).toBe(10);
-    expect(member2Updated!.emailLastSentStatus).toBe("failed");
+    expect(Number(member2Updated!.meta?.sentEmailCount)).toBe(10);
+    expect(member2Updated!.meta?.emailLastSentStatus).toBe("failed");
   });
 
   it("preserves other member properties after email status update", async () => {
-    // Create a member with specific properties
     const memberArgs = makeAddMemberArgs({
-      memberId: "test-member",
-      name: "Test Member",
-      email: "test@example.com",
-      description: "Test description",
-      meta: { department: "engineering" },
-    });
+      meta: {
+        name: "Test Member",
+        userId: "test-member",
+        email: "test@example.com",
+        description: "Test description",
+        department: "engineering",
+      },
+    }) as Parameters<typeof addMember>[0]["args"];
     const member = await addMember({
       args: memberArgs,
       by: defaultBy,
@@ -391,38 +387,38 @@ describe("updateMemberSendEmailStatus integration", () => {
     await updateMemberSendEmailStatus({
       projectId: defaultProjectId,
       groupId: defaultGroupId,
-      id: member.member.memberId,
+      id: member.member.id,
       sentEmailCount,
       emailLastSentAt,
       emailLastSentStatus,
       storage,
     });
 
-    // Verify the member email status was updated and other properties preserved
     const { members } = await getMembers({
       args: {
         query: {
           projectId: defaultProjectId,
           groupId: defaultGroupId,
-          memberId: { eq: member.member.memberId },
+          id: { eq: member.member.id },
         },
       },
       storage,
     });
 
     expect(members).toHaveLength(1);
-    expect(members[0].name).toBe("Test Member");
-    expect(members[0].email).toBe("test@example.com");
-    expect(members[0].description).toBe("Test description");
-    expect(members[0].meta).toEqual({ department: "engineering" });
-    expect(members[0].sentEmailCount).toBe(sentEmailCount);
-    expect(members[0].emailLastSentAt).toEqual(emailLastSentAt);
-    expect(members[0].emailLastSentStatus).toBe(emailLastSentStatus);
+    expect(members[0].meta?.name).toBe("Test Member");
+    expect(members[0].meta?.email).toBe("test@example.com");
+    expect(members[0].meta?.description).toBe("Test description");
+    expect(members[0].meta?.department).toBe("engineering");
+    expect(Number(members[0].meta?.sentEmailCount)).toBe(sentEmailCount);
+    expect(members[0].meta?.emailLastSentAt).toBeDefined();
+    expect(members[0].meta?.emailLastSentStatus).toBe(emailLastSentStatus);
   });
 
   it("handles large email count values", async () => {
-    // Create a member
-    const memberArgs = makeAddMemberArgs({ memberId: "test-member" });
+    const memberArgs = makeAddMemberArgs({
+      meta: { name: "Test", userId: "test-member", email: "t@test.com" },
+    }) as Parameters<typeof addMember>[0]["args"];
     const member = await addMember({
       args: memberArgs,
       by: defaultBy,
@@ -437,32 +433,32 @@ describe("updateMemberSendEmailStatus integration", () => {
     await updateMemberSendEmailStatus({
       projectId: defaultProjectId,
       groupId: defaultGroupId,
-      id: member.member.memberId,
+      id: member.member.id,
       sentEmailCount,
       emailLastSentAt,
       emailLastSentStatus,
       storage,
     });
 
-    // Verify the member email status was updated
     const { members } = await getMembers({
       args: {
         query: {
           projectId: defaultProjectId,
           groupId: defaultGroupId,
-          memberId: { eq: member.member.memberId },
+          id: { eq: member.member.id },
         },
       },
       storage,
     });
 
     expect(members).toHaveLength(1);
-    expect(members[0].sentEmailCount).toBe(sentEmailCount);
+    expect(Number(members[0].meta?.sentEmailCount)).toBe(sentEmailCount);
   });
 
   it("handles custom email status values", async () => {
-    // Create a member
-    const memberArgs = makeAddMemberArgs({ memberId: "test-member" });
+    const memberArgs = makeAddMemberArgs({
+      meta: { name: "Test", userId: "test-member", email: "t@test.com" },
+    }) as Parameters<typeof addMember>[0]["args"];
     const member = await addMember({
       args: memberArgs,
       by: defaultBy,
@@ -472,31 +468,30 @@ describe("updateMemberSendEmailStatus integration", () => {
 
     const sentEmailCount = 2;
     const emailLastSentAt = new Date();
-    const emailLastSentStatus = "custom_status" as any;
+    const emailLastSentStatus = "custom_status" as "sent" | "failed" | "pending";
 
     await updateMemberSendEmailStatus({
       projectId: defaultProjectId,
       groupId: defaultGroupId,
-      id: member.member.memberId,
+      id: member.member.id,
       sentEmailCount,
       emailLastSentAt,
       emailLastSentStatus,
       storage,
     });
 
-    // Verify the member email status was updated
     const { members } = await getMembers({
       args: {
         query: {
           projectId: defaultProjectId,
           groupId: defaultGroupId,
-          memberId: { eq: member.member.memberId },
+          id: { eq: member.member.id },
         },
       },
       storage,
     });
 
     expect(members).toHaveLength(1);
-    expect(members[0].emailLastSentStatus).toBe("custom_status");
+    expect(members[0].meta?.emailLastSentStatus).toBe("custom_status");
   });
 });

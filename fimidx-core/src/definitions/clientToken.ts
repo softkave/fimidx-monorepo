@@ -18,9 +18,13 @@ import {
 export const clientTokenPermissionSchema = z.object({
   action: actionSchema,
   target: targetSchema,
+  /** When true, this atom grants the permission; when false, it denies.
+   * Optional, default true when omitted. */
+  granted: z.boolean().optional(),
 });
 
-export type IClientTokenPermissionInput = z.infer<
+/** Input type (granted optional); output after parse has granted: boolean. */
+export type IClientTokenPermissionInput = z.input<
   typeof clientTokenPermissionSchema
 >;
 
@@ -83,7 +87,9 @@ export const updateClientTokensSchema = z.object({
     name: z.string().min(1).optional(),
     description: z.string().optional(),
     meta: z.record(z.string().min(1), z.string()).optional(),
-    permissions: z.array(clientTokenPermissionSchema).optional(),
+    addPermissions: z.array(clientTokenPermissionSchema).optional(),
+    removePermissions: z.array(clientTokenPermissionSchema).optional(),
+    removeAllPermissions: z.boolean().optional(),
   }),
   query: clientTokenQuerySchema,
   updateMany: z.boolean().optional(),
@@ -96,7 +102,9 @@ export const updateClientTokenPermissionsSchema = z.object({
     projectId: z.string().min(1),
   }),
   update: z.object({
-    permissions: z.array(clientTokenPermissionSchema),
+    addPermissions: z.array(clientTokenPermissionSchema).optional(),
+    removePermissions: z.array(clientTokenPermissionSchema).optional(),
+    removeAllPermissions: z.boolean().optional(),
   }),
 });
 
@@ -192,7 +200,7 @@ export interface RefreshClientTokenJWTEndpointResponse {
 
 export interface CheckClientTokenPermissionsEndpointResponse {
   results: {
-    hasPermission: boolean;
+    isPermitted: boolean;
   }[];
 }
 

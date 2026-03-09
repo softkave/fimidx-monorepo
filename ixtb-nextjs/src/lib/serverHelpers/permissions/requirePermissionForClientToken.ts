@@ -27,8 +27,8 @@ export async function requirePermissionForClientToken(params: {
       ],
     },
   });
-  const hasAction = results[0]?.hasPermission ?? false;
-  const hasWildcard = results[1]?.hasPermission ?? false;
+  const hasAction = results[0]?.isPermitted ?? false;
+  const hasWildcard = results[1]?.isPermitted ?? false;
   if (!hasAction && !hasWildcard) {
     throw new OwnServerError("Forbidden", kOwnServerErrorCodes.Forbidden);
   }

@@ -106,7 +106,8 @@ describe("updateClientTokens integration", () => {
         name: "Updated Token",
         description: "Updated description",
         meta: { type: "admin" },
-        permissions: [
+        removeAllPermissions: true,
+        addPermissions: [
           { action: "read", target: "document" },
           { action: "write", target: "settings" },
           { action: "delete", target: "document" },
@@ -182,7 +183,8 @@ describe("updateClientTokens integration", () => {
       },
       update: {
         meta: { type: "updated", status: "active" },
-        permissions: [
+        removeAllPermissions: true,
+        addPermissions: [
           { action: "read", target: "document" },
           { action: "write", target: "settings" },
         ],
@@ -501,7 +503,8 @@ describe("updateClientTokens integration", () => {
         },
       },
       update: {
-        permissions: [
+        removeAllPermissions: true,
+        addPermissions: [
           { action: "read", target: "document" },
           { action: "write", target: "settings" },
           { action: "delete", target: "document" },
@@ -574,9 +577,7 @@ describe("updateClientTokens integration", () => {
           eq: "Test Token",
         },
       },
-      update: {
-        permissions: undefined,
-      },
+      update: {},
       updateMany: false,
     };
 

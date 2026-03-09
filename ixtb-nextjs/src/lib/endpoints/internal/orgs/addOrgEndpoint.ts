@@ -29,18 +29,19 @@ export const addOrgEndpoint: NextUserAuthenticatedEndpointFn<
     args: {
       projectId: kId0,
       groupId: group.group.id,
-      memberId: userId,
-      email: user?.email ?? email,
-      name: user?.name ?? email,
+      meta: {
+        userId,
+        status: kMemberStatus.accepted,
+        statusUpdatedAt: new Date().toISOString(),
+        email: user?.email ?? email ?? "",
+        name: user?.name ?? email ?? "",
+      },
       permissions: [
         {
           action: kFimidxPermissions.wildcard,
           target: group.group.id,
         },
       ],
-    },
-    seed: {
-      status: kMemberStatus.accepted,
     },
     by: userId,
     byType: kByTypes.user,

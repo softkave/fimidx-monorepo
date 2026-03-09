@@ -1,8 +1,4 @@
-import assert from "assert";
-import type {
-  GetMembersEndpointArgs,
-  IMemberObjRecordMeta,
-} from "../../definitions/member.js";
+import type { GetMembersEndpointArgs } from "../../definitions/member.js";
 import {
   kObjTags,
   type IObjPartQueryItem,
@@ -19,7 +15,6 @@ export function getMembersObjQuery(params: { args: GetMembersEndpointArgs }) {
   const { args } = params;
   const { query } = args;
   const {
-    name,
     createdAt,
     updatedAt,
     createdBy,
@@ -28,28 +23,10 @@ export function getMembersObjQuery(params: { args: GetMembersEndpointArgs }) {
     projectId,
     id,
     groupId,
-    email,
-    memberId,
-    status,
   } = query;
 
   const filterArr: Array<IObjPartQueryItem> = [];
 
-  // Handle name filtering - name is stored in objRecord.name
-  if (name) {
-    // Convert name query to partQuery for the name field
-    Object.entries(name).forEach(([op, value]) => {
-      if (value !== undefined) {
-        filterArr.push({
-          op: op as any,
-          field: "name",
-          value,
-        });
-      }
-    });
-  }
-
-  // Handle meta field filtering
   const metaPartQuery = meta?.map(
     (part) =>
       ({
@@ -61,45 +38,6 @@ export function getMembersObjQuery(params: { args: GetMembersEndpointArgs }) {
 
   if (metaPartQuery) {
     filterArr.push(...metaPartQuery);
-  }
-
-  // Handle email filtering
-  if (email) {
-    Object.entries(email).forEach(([op, value]) => {
-      if (value !== undefined) {
-        filterArr.push({
-          op: op as any,
-          field: "email",
-          value,
-        });
-      }
-    });
-  }
-
-  // Handle memberId filtering
-  if (memberId) {
-    Object.entries(memberId).forEach(([op, value]) => {
-      if (value !== undefined) {
-        filterArr.push({
-          op: op as any,
-          field: "memberId",
-          value,
-        });
-      }
-    });
-  }
-
-  // Handle status filtering
-  if (status) {
-    Object.entries(status).forEach(([op, value]) => {
-      if (value !== undefined) {
-        filterArr.push({
-          op: op as any,
-          field: "status",
-          value,
-        });
-      }
-    });
   }
 
   const objQuery: IObjQuery = {
@@ -127,29 +65,16 @@ export async function getMembersPermissions(params: {
     };
   }
 
-  // Build meta query conditions
-  const metaConditions: IObjPartQueryItem[] = [
-    {
-      op: "in",
-      field: "__fimidx_managed_memberId",
-      value: memberIds,
-    },
-  ];
-
-  // Only add groupId condition if it's a valid non-empty string
-  if (groupId && typeof groupId === "string" && groupId.trim() !== "") {
-    metaConditions.push({
-      op: "eq",
-      field: "__fimidx_managed_groupId",
-      value: groupId,
-    });
-  }
-
+  // Query permissions by entity (member id) and groupId present on the
+  // permission obj
   const { permissions } = await getPermissions({
     args: {
       query: {
         projectId,
-        meta: metaConditions,
+        entity: { in: memberIds },
+        ...(groupId && typeof groupId === "string" && groupId.trim() !== ""
+          ? { groupId: { eq: groupId } }
+          : {}),
       },
     },
     storage,
@@ -172,13 +97,7 @@ export async function getMembers(params: {
   const limitNumber = inputLimit ?? 100;
   const storagePage = pageNumber - 1; // Convert to 0-based
 
-  // Transform sort fields to use objRecord prefix for name field
-  const transformedSort = sort?.map((sortItem) => {
-    if (sortItem.field === "name") {
-      return { ...sortItem, field: "objRecord.name" };
-    }
-    return sortItem;
-  });
+  const transformedSort = sort;
 
   const objQuery = getMembersObjQuery({ args });
   const { objs, hasMore, page, limit } = await getManyObjs({
@@ -193,7 +112,7 @@ export async function getMembers(params: {
   const { permissions } = includePermissions
     ? await getMembersPermissions({
         projectId: args.query.projectId,
-        memberIds: objs.map((obj) => obj.objRecord.memberId),
+        memberIds: objs.map((o) => o.id),
         groupId: args.query.groupId,
         storage,
       })
@@ -202,13 +121,13 @@ export async function getMembers(params: {
       };
 
   const permissionsMap = permissions.reduce((acc, permission) => {
-    assert.ok(permission.meta, "Permission meta is required");
-    const meta = permission.meta as IMemberObjRecordMeta;
-    const memberId = meta.__fimidx_managed_memberId;
+    // Entity is the member id (string) for member permissions
+    const memberId =
+      typeof permission.entity === "string" ? permission.entity : undefined;
+    if (memberId == null) return acc;
     if (!acc[memberId]) {
       acc[memberId] = [];
     }
-    // Transform the permission back to original format
     const originalPermission = getOriginalMemberPermission({
       permission,
       memberId,
@@ -218,9 +137,8 @@ export async function getMembers(params: {
   }, {} as Record<string, IPermissionAtom[]>);
 
   const members = objs.map((obj) => {
-    const memberPermissions = permissionsMap[obj.objRecord.memberId] || null;
-    const member = objToMember(obj, memberPermissions);
-    return member;
+    const memberPermissions = permissionsMap[obj.id] ?? null;
+    return objToMember(obj, memberPermissions);
   });
 
   return {

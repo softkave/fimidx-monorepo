@@ -74,7 +74,8 @@ export function UpdateClientTokenForm(props: IUpdateClientTokenFormProps) {
         update: {
           name: values.name,
           description: values.description,
-          permissions: permissionsPayload,
+          removeAllPermissions: true,
+          addPermissions: permissionsPayload,
         },
       } as never);
     },

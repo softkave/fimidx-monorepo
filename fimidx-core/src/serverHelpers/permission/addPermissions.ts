@@ -24,6 +24,7 @@ export async function addPermissions(params: {
       action: permission.action,
       target: permission.target,
       entity: permission.entity,
+      granted: permission.granted ?? true,
       description: permission.description,
       meta: permission.meta,
     };

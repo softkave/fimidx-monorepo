@@ -43,7 +43,7 @@ export async function checkPermissions(params: {
 
   const response: CheckPermissionsEndpointResponse = {
     results: permissions.map((permission) => ({
-      hasPermission: !!permission,
+      isPermitted: !!permission && permission.granted !== false,
     })),
   };
 

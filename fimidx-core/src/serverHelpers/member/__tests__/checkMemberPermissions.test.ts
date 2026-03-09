@@ -28,9 +28,8 @@ function makeAddMemberArgs(
   return {
     groupId: defaultGroupId,
     projectId: defaultProjectId,
-    email: `test-${uniqueId}@example.com`,
-    memberId: `member-${uniqueId}`,
     permissions: [],
+    meta: { userId: `member-${uniqueId}` },
     ...overrides,
   };
 }
@@ -56,13 +55,16 @@ function makeAddMemberPermissionsArgs(
 function makeCheckMemberPermissionsArgs(
   overrides: Partial<CheckMemberPermissionsEndpointArgs> = {}
 ): CheckMemberPermissionsEndpointArgs {
+  const { query: queryOverrides, ...rest } = overrides;
   return {
-    projectId: defaultProjectId,
-    memberId: "test-member-id",
-    groupId: defaultGroupId,
+    query: {
+      projectId: queryOverrides?.projectId ?? defaultProjectId,
+      groupId: queryOverrides?.groupId ?? defaultGroupId,
+      id: queryOverrides?.id ?? "test-member-id",
+    },
     items: [{ action: "read", target: "document" }],
-    ...overrides,
-  };
+    ...rest,
+  } as CheckMemberPermissionsEndpointArgs;
 }
 
 describe("checkMemberPermissions integration", () => {
@@ -144,7 +146,7 @@ describe("checkMemberPermissions integration", () => {
 
     // Add permissions to the member
     const permissionsArgs = makeAddMemberPermissionsArgs({
-      memberId: member.member.memberId,
+      memberId: member.member.id,
       permissions: [
         { action: "read", target: "document" },
         { action: "write", target: "settings" },
@@ -154,8 +156,8 @@ describe("checkMemberPermissions integration", () => {
     await addMemberPermissions(permissionsArgs);
 
     // Check if the member has the permissions
-    const checkArgs = makeCheckMemberPermissionsArgs({
-      memberId: member.member.memberId,
+    const checkArgs: CheckMemberPermissionsEndpointArgs = makeCheckMemberPermissionsArgs({
+      query: { projectId: defaultProjectId, groupId: defaultGroupId, id: member.member.id },
       items: [
         { action: "read", target: "document" },
         { action: "write", target: "settings" },
@@ -168,8 +170,8 @@ describe("checkMemberPermissions integration", () => {
     });
 
     expect(result.results).toHaveLength(2);
-    expect(result.results[0].hasPermission).toBe(true);
-    expect(result.results[1].hasPermission).toBe(true);
+    expect(result.results[0].isPermitted).toBe(true);
+    expect(result.results[1].isPermitted).toBe(true);
   });
 
   it("returns false for permissions that don't exist", async () => {
@@ -184,15 +186,15 @@ describe("checkMemberPermissions integration", () => {
 
     // Add some permissions to the member
     const permissionsArgs = makeAddMemberPermissionsArgs({
-      memberId: member.member.memberId,
+      memberId: member.member.id,
       permissions: [{ action: "read", target: "document" }],
     });
 
     await addMemberPermissions(permissionsArgs);
 
     // Check for permissions that don't exist
-    const checkArgs = makeCheckMemberPermissionsArgs({
-      memberId: member.member.memberId,
+    const checkArgs: CheckMemberPermissionsEndpointArgs = makeCheckMemberPermissionsArgs({
+      query: { projectId: defaultProjectId, groupId: defaultGroupId, id: member.member.id },
       items: [
         { action: "write", target: "document" },
         { action: "delete", target: "settings" },
@@ -205,8 +207,8 @@ describe("checkMemberPermissions integration", () => {
     });
 
     expect(result.results).toHaveLength(2);
-    expect(result.results[0].hasPermission).toBe(false);
-    expect(result.results[1].hasPermission).toBe(false);
+    expect(result.results[0].isPermitted).toBe(false);
+    expect(result.results[1].isPermitted).toBe(false);
   });
 
   it("handles mixed permissions (some exist, some don't)", async () => {
@@ -221,7 +223,7 @@ describe("checkMemberPermissions integration", () => {
 
     // Add some permissions to the member
     const permissionsArgs = makeAddMemberPermissionsArgs({
-      memberId: member.member.memberId,
+      memberId: member.member.id,
       permissions: [
         { action: "read", target: "document" },
         { action: "write", target: "settings" },
@@ -231,8 +233,8 @@ describe("checkMemberPermissions integration", () => {
     await addMemberPermissions(permissionsArgs);
 
     // Check for mixed permissions
-    const checkArgs = makeCheckMemberPermissionsArgs({
-      memberId: member.member.memberId,
+    const checkArgs: CheckMemberPermissionsEndpointArgs = makeCheckMemberPermissionsArgs({
+      query: { projectId: defaultProjectId, groupId: defaultGroupId, id: member.member.id },
       items: [
         { action: "read", target: "document" },
         { action: "write", target: "document" },
@@ -247,10 +249,10 @@ describe("checkMemberPermissions integration", () => {
     });
 
     expect(result.results).toHaveLength(4);
-    expect(result.results[0].hasPermission).toBe(true); // user:read:document
-    expect(result.results[1].hasPermission).toBe(false); // user:write:document
-    expect(result.results[2].hasPermission).toBe(true); // admin:write:settings
-    expect(result.results[3].hasPermission).toBe(false); // admin:delete:settings
+    expect(result.results[0].isPermitted).toBe(true); // user:read:document
+    expect(result.results[1].isPermitted).toBe(false); // user:write:document
+    expect(result.results[2].isPermitted).toBe(true); // admin:write:settings
+    expect(result.results[3].isPermitted).toBe(false); // admin:delete:settings
   });
 
   it("handles empty items array", async () => {
@@ -278,7 +280,7 @@ describe("checkMemberPermissions integration", () => {
 
     // Add permissions with object-based entities, actions, and targets
     const permissionsArgs = makeAddMemberPermissionsArgs({
-      memberId: member.member.memberId,
+      memberId: member.member.id,
       permissions: [
         {
           action: { operation: "read", scope: "full" },
@@ -290,8 +292,8 @@ describe("checkMemberPermissions integration", () => {
     await addMemberPermissions(permissionsArgs);
 
     // Check for the same object-based permission and one that does not exist
-    const checkArgs = makeCheckMemberPermissionsArgs({
-      memberId: member.member.memberId,
+    const checkArgs: CheckMemberPermissionsEndpointArgs = makeCheckMemberPermissionsArgs({
+      query: { projectId: defaultProjectId, groupId: defaultGroupId, id: member.member.id },
       items: [
         {
           action: { operation: "read", scope: "full" },
@@ -310,8 +312,8 @@ describe("checkMemberPermissions integration", () => {
     });
 
     expect(result.results).toHaveLength(2);
-    expect(result.results[0].hasPermission).toBe(true);
-    expect(result.results[1].hasPermission).toBe(false);
+    expect(result.results[0].isPermitted).toBe(true);
+    expect(result.results[1].isPermitted).toBe(false);
   });
 
   it("handles different group IDs correctly", async () => {
@@ -326,16 +328,15 @@ describe("checkMemberPermissions integration", () => {
 
     // Add permissions to the member in the default group
     const permissionsArgs = makeAddMemberPermissionsArgs({
-      memberId: member.member.memberId,
+      memberId: member.member.id,
       permissions: [{ action: "read", target: "document" }],
     });
 
     await addMemberPermissions(permissionsArgs);
 
     // Check for permissions in a different group
-    const checkArgs = makeCheckMemberPermissionsArgs({
-      memberId: member.member.memberId,
-      groupId: "different-group",
+    const checkArgs: CheckMemberPermissionsEndpointArgs = makeCheckMemberPermissionsArgs({
+      query: { projectId: defaultProjectId, groupId: "different-group", id: member.member.id },
       items: [{ action: "read", target: "document" }],
     });
 
@@ -345,6 +346,6 @@ describe("checkMemberPermissions integration", () => {
     });
 
     expect(result.results).toHaveLength(1);
-    expect(result.results[0].hasPermission).toBe(false);
+    expect(result.results[0].isPermitted).toBe(false);
   });
 });

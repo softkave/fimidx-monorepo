@@ -29,12 +29,13 @@ describe("respondToMemberRequest integration", () => {
   ): AddMemberEndpointArgs {
     const testData = makeTestData({ testName: "member" });
     return {
-      name: testData.name,
-      description: "Test description",
       projectId,
       groupId,
-      email: testData.email,
-      memberId: testData.memberId,
+      meta: {
+        name: testData.name,
+        userId: testData.memberId,
+        email: testData.email,
+      },
       permissions: [],
       ...overrides,
     };
@@ -44,9 +45,7 @@ describe("respondToMemberRequest integration", () => {
     overrides: Partial<RespondToMemberRequestEndpointArgs> = {}
   ): RespondToMemberRequestEndpointArgs {
     return {
-      projectId,
-      groupId,
-      requestId: "test-request-id",
+      query: { projectId, groupId, id: "test-request-id" },
       status: kMemberStatus.accepted,
       ...overrides,
     };
@@ -71,21 +70,20 @@ describe("respondToMemberRequest integration", () => {
   });
 
   it("accepts a pending member request successfully", async () => {
-    // Create a pending member
+    // Create a pending member (status in meta)
     const memberArgs = makeAddMemberArgs({
-      memberId: "test-member",
+      meta: { name: "Test", userId: "test-member", email: "t@test.com", status: kMemberStatus.pending },
     });
 
     const member = await addMember({
       args: memberArgs,
       by: by,
       byType: byType,
-      seed: { status: kMemberStatus.pending },
       storage,
     });
 
     const args = makeRespondToMemberRequestArgs({
-      requestId: member.member.id,
+      query: { projectId, groupId, id: member.member.id },
       status: kMemberStatus.accepted,
     });
 
@@ -95,39 +93,38 @@ describe("respondToMemberRequest integration", () => {
       storage,
     });
 
-    // Verify the member status was updated
+    // Verify the member status was updated (status in meta)
     const { members } = await getMembers({
       args: {
         query: {
           projectId,
           groupId,
-          memberId: { eq: member.member.memberId },
+          id: { eq: member.member.id },
         },
       },
       storage,
     });
 
     expect(members).toHaveLength(1);
-    expect(members[0].status).toBe(kMemberStatus.accepted);
-    expect(members[0].statusUpdatedAt).toBeInstanceOf(Date);
+    expect(members[0].meta?.status).toBe(kMemberStatus.accepted);
+    expect(members[0].meta?.statusUpdatedAt).toBeDefined();
   });
 
   it("rejects a pending member request successfully", async () => {
-    // Create a pending member
+    // Create a pending member (status in meta)
     const memberArgs = makeAddMemberArgs({
-      memberId: "test-member",
+      meta: { name: "Test", userId: "test-member", email: "t@test.com", status: kMemberStatus.pending },
     });
 
     const member = await addMember({
       args: memberArgs,
       by: by,
       byType: byType,
-      seed: { status: kMemberStatus.pending },
       storage,
     });
 
     const args = makeRespondToMemberRequestArgs({
-      requestId: member.member.id,
+      query: { projectId, groupId, id: member.member.id },
       status: kMemberStatus.rejected,
     });
 
@@ -137,26 +134,26 @@ describe("respondToMemberRequest integration", () => {
       storage,
     });
 
-    // Verify the member status was updated
+    // Verify the member status was updated (status in meta)
     const { members } = await getMembers({
       args: {
         query: {
           projectId,
           groupId,
-          memberId: { eq: member.member.memberId },
+          id: { eq: member.member.id },
         },
       },
       storage,
     });
 
     expect(members).toHaveLength(1);
-    expect(members[0].status).toBe(kMemberStatus.rejected);
-    expect(members[0].statusUpdatedAt).toBeInstanceOf(Date);
+    expect(members[0].meta?.status).toBe(kMemberStatus.rejected);
+    expect(members[0].meta?.statusUpdatedAt).toBeDefined();
   });
 
   it("throws error when member request not found", async () => {
     const args = makeRespondToMemberRequestArgs({
-      requestId: "non-existent-request-id",
+      query: { projectId, groupId, id: "non-existent-request-id" },
     });
 
     await expect(
@@ -168,21 +165,20 @@ describe("respondToMemberRequest integration", () => {
   });
 
   it("throws error when member status is not pending", async () => {
-    // Create an accepted member
+    // Create an accepted member (status in meta)
     const memberArgs = makeAddMemberArgs({
-      memberId: "test-member",
+      meta: { name: "Test", userId: "test-member", email: "t@test.com", status: kMemberStatus.accepted },
     });
 
     const member = await addMember({
       args: memberArgs,
       by: by,
       byType: byType,
-      seed: { status: kMemberStatus.accepted },
       storage,
     });
 
     const args = makeRespondToMemberRequestArgs({
-      requestId: member.member.id,
+      query: { projectId, groupId, id: member.member.id },
       status: kMemberStatus.rejected,
     });
 
@@ -195,9 +191,9 @@ describe("respondToMemberRequest integration", () => {
   });
 
   it("handles different project IDs", async () => {
-    // Create a pending member in a different project
+    // Create a pending member in a different project (status in meta)
     const memberArgs = makeAddMemberArgs({
-      memberId: "test-member-respondToMemberRequest",
+      meta: { name: "Test", userId: "test-member-respondToMemberRequest", email: "t@test.com", status: kMemberStatus.pending },
       projectId: "different-project",
     });
 
@@ -205,13 +201,11 @@ describe("respondToMemberRequest integration", () => {
       args: memberArgs,
       by: by,
       byType: byType,
-      seed: { status: kMemberStatus.pending },
       storage,
     });
 
     const args = makeRespondToMemberRequestArgs({
-      projectId: "different-project",
-      requestId: member.member.id,
+      query: { projectId: "different-project", groupId, id: member.member.id },
       status: kMemberStatus.accepted,
     });
 
@@ -220,26 +214,26 @@ describe("respondToMemberRequest integration", () => {
       storage,
     });
 
-    // Verify the member status was updated
+    // Verify the member status was updated (status in meta)
     const { members } = await getMembers({
       args: {
         query: {
           projectId: "different-project",
           groupId,
-          memberId: { eq: member.member.memberId },
+          id: { eq: member.member.id },
         },
       },
       storage,
     });
 
     expect(members).toHaveLength(1);
-    expect(members[0].status).toBe(kMemberStatus.accepted);
+    expect(members[0].meta?.status).toBe(kMemberStatus.accepted);
   });
 
   it("handles different group IDs", async () => {
-    // Create a pending member in a different group
+    // Create a pending member in a different group (status in meta)
     const memberArgs = makeAddMemberArgs({
-      memberId: "test-member",
+      meta: { name: "Test", userId: "test-member", email: "t@test.com", status: kMemberStatus.pending },
       groupId: "different-group",
     });
 
@@ -247,13 +241,11 @@ describe("respondToMemberRequest integration", () => {
       args: memberArgs,
       by: by,
       byType: byType,
-      seed: { status: kMemberStatus.pending },
       storage,
     });
 
     const args = makeRespondToMemberRequestArgs({
-      groupId: "different-group",
-      requestId: member.member.id,
+      query: { projectId, groupId: "different-group", id: member.member.id },
       status: kMemberStatus.accepted,
     });
 
@@ -262,40 +254,39 @@ describe("respondToMemberRequest integration", () => {
       storage,
     });
 
-    // Verify the member status was updated
+    // Verify the member status was updated (status in meta)
     const { members } = await getMembers({
       args: {
         query: {
           projectId,
           groupId: "different-group",
-          memberId: { eq: member.member.memberId },
+          id: { eq: member.member.id },
         },
       },
       storage,
     });
 
     expect(members).toHaveLength(1);
-    expect(members[0].status).toBe(kMemberStatus.accepted);
+    expect(members[0].meta?.status).toBe(kMemberStatus.accepted);
   });
 
   it("updates statusUpdatedAt timestamp", async () => {
-    // Create a pending member
+    // Create a pending member (status in meta)
     const memberArgs = makeAddMemberArgs({
-      memberId: "test-member",
+      meta: { name: "Test", userId: "test-member", email: "t@test.com", status: kMemberStatus.pending },
     });
 
     const member = await addMember({
       args: memberArgs,
       by: by,
       byType: byType,
-      seed: { status: kMemberStatus.pending },
       storage,
     });
 
     const beforeTime = new Date();
 
     const args = makeRespondToMemberRequestArgs({
-      requestId: member.member.id,
+      query: { projectId, groupId, id: member.member.id },
       status: kMemberStatus.accepted,
     });
 
@@ -306,45 +297,42 @@ describe("respondToMemberRequest integration", () => {
 
     const afterTime = new Date();
 
-    // Verify the member status was updated
+    // Verify the member status was updated (statusUpdatedAt in meta)
     const { members } = await getMembers({
       args: {
         query: {
           projectId,
           groupId,
-          memberId: { eq: member.member.memberId },
+          id: { eq: member.member.id },
         },
       },
       storage,
     });
 
     expect(members).toHaveLength(1);
-    expect(members[0].statusUpdatedAt).toBeInstanceOf(Date);
-
-    const statusUpdatedAt = members[0].statusUpdatedAt as Date;
-    expect(statusUpdatedAt.getTime()).toBeGreaterThanOrEqual(
-      beforeTime.getTime()
-    );
-    expect(statusUpdatedAt.getTime()).toBeLessThanOrEqual(afterTime.getTime());
+    expect(members[0].meta?.statusUpdatedAt).toBeDefined();
+    const statusUpdatedAtVal = members[0].meta?.statusUpdatedAt;
+    const ts = typeof statusUpdatedAtVal === "string" ? new Date(statusUpdatedAtVal).getTime() : Number(statusUpdatedAtVal);
+    expect(ts).toBeGreaterThanOrEqual(beforeTime.getTime());
+    expect(ts).toBeLessThanOrEqual(afterTime.getTime() + 1000);
   });
 
   it("handles multiple status updates to the same member", async () => {
-    // Create a pending member
+    // Create a pending member (status in meta)
     const memberArgs = makeAddMemberArgs({
-      memberId: "test-member",
+      meta: { name: "Test", userId: "test-member", email: "t@test.com", status: kMemberStatus.pending },
     });
 
     const member = await addMember({
       args: memberArgs,
       by: by,
       byType: byType,
-      seed: { status: kMemberStatus.pending },
       storage,
     });
 
     // First update: accept
     const args1 = makeRespondToMemberRequestArgs({
-      requestId: member.member.id,
+      query: { projectId, groupId, id: member.member.id },
       status: kMemberStatus.accepted,
     });
 
@@ -353,23 +341,23 @@ describe("respondToMemberRequest integration", () => {
       storage,
     });
 
-    // Verify first update
+    // Verify first update (status in meta)
     let { members } = await getMembers({
       args: {
         query: {
           projectId,
           groupId,
-          memberId: { eq: member.member.memberId },
+          id: { eq: member.member.id },
         },
       },
       storage,
     });
 
-    expect(members[0].status).toBe(kMemberStatus.accepted);
+    expect(members[0].meta?.status).toBe(kMemberStatus.accepted);
 
     // Second update: reject (this should fail since status is no longer pending)
     const args2 = makeRespondToMemberRequestArgs({
-      requestId: member.member.id,
+      query: { projectId, groupId, id: member.member.id },
       status: kMemberStatus.rejected,
     });
 

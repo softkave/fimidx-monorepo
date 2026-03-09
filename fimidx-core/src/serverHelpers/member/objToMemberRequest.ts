@@ -1,45 +1,46 @@
-import {
-  type IMember,
-  type IMemberRequest,
-  type MemberStatus,
-} from "../../definitions/member.js";
+import type { IFimidxMemberInternal, IMemberRequest } from "../../definitions/member.js";
+import type { IObj } from "../../definitions/obj.js";
 import { getGroups } from "../group/getGroups.js";
 
-export async function objToMemberRequest(params: { requests: IMember[] }) {
-  const { requests } = params;
+export async function objToMemberRequest(params: {
+  objs: IObj[];
+}) {
+  const { objs } = params;
 
-  if (requests.length === 0) {
+  if (objs.length === 0) {
     return [];
   }
 
-  // Get all groups for the project (since we need to filter by groupId)
+  const projectId = objs[0]?.projectId ?? "";
+  const groupIds = [...new Set(objs.map((o) => o.groupId))];
+
   const { groups } = await getGroups({
     args: {
       query: {
-        projectId: requests[0]?.projectId || "",
-        id: { in: requests.map((request) => request.groupId) },
+        projectId,
+        id: { in: groupIds },
       },
     },
   });
 
-  // Create a map of groupId to group
-  const groupMap = new Map();
-  groups.forEach((group) => {
-    groupMap.set(group.id, group);
-  });
+  const groupMap = new Map(groups.map((g) => [g.id, g.name]));
 
-  const requestsWithGroup = requests
-    .map((request): IMemberRequest => {
-      const group = groupMap.get(request.groupId);
+  return objs
+    .map((obj): IMemberRequest | null => {
+      const record = obj.objRecord as IFimidxMemberInternal | undefined;
+      const status = record?.status;
+      const updatedAt = record?.statusUpdatedAt;
+      const groupName = groupMap.get(obj.groupId) ?? "";
+      if (!groupName || status == null || updatedAt == null) {
+        return null;
+      }
       return {
-        requestId: request.id,
-        groupName: group?.name ?? "",
-        status: request.status as MemberStatus,
-        updatedAt: request.updatedAt,
-        groupId: request.groupId,
+        id: obj.id,
+        groupId: obj.groupId,
+        groupName,
+        status,
+        updatedAt: updatedAt instanceof Date ? updatedAt : new Date(updatedAt),
       };
     })
-    .filter((request) => request.groupName !== "");
-
-  return requestsWithGroup;
+    .filter((r): r is IMemberRequest => r != null);
 }

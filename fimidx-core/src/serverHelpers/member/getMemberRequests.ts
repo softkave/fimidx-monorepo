@@ -2,10 +2,7 @@ import assert from "assert";
 import { isArray, uniq } from "lodash-es";
 import { indexArray } from "softkave-js-utils";
 import { kOwnServerErrorCodes, OwnServerError } from "../../common/error.js";
-import type {
-  GetMemberRequestsEndpointArgs,
-  IMemberObjRecordMeta,
-} from "../../definitions/member.js";
+import type { GetMemberRequestsEndpointArgs } from "../../definitions/member.js";
 import {
   kObjTags,
   type IObjPartQueryItem,
@@ -23,24 +20,15 @@ export function getMemberRequestsObjQuery(params: {
 }) {
   const { args } = params;
   const { query } = args;
-  const { projectId, groupId, memberId, status } = query;
+  const { projectId, groupId, id, status } = query;
 
   const filterArr: Array<IObjPartQueryItem> = [];
 
-  if (!groupId && !memberId) {
+  if (!groupId && !id) {
     throw new OwnServerError(
-      "Either groupId or memberId is required",
+      "Either groupId or id is required",
       kOwnServerErrorCodes.InvalidRequest
     );
-  }
-
-  // Handle memberId filtering
-  if (memberId) {
-    filterArr.push({
-      op: "eq",
-      field: "memberId",
-      value: memberId,
-    });
   }
 
   if (status) {
@@ -54,6 +42,7 @@ export function getMemberRequestsObjQuery(params: {
   const objQuery: IObjQuery = {
     projectId,
     partQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
+    metaQuery: id ? { id: { eq: id } } : undefined,
     topLevelFields: groupId ? { groupId: { eq: groupId } } : undefined,
   };
 
@@ -82,9 +71,8 @@ export async function getMemberRequests(params: {
     storage,
   });
 
-  const memberIds = uniq(objs.map((obj) => obj.objRecord.memberId));
+  const memberIds = uniq(objs.map((obj) => obj.id));
 
-  // Return early if no memberIds found (schema requires at least one member)
   if (!memberIds.length) {
     return {
       requests: [],
@@ -127,7 +115,7 @@ export async function getMemberRequests(params: {
     {
       indexer: (permission) => {
         assert.ok(permission.meta, "Permission meta is required");
-        const meta = permission.meta as IMemberObjRecordMeta;
+        const meta = permission.meta as Record<string, string>;
         return meta.__fimidx_managed_memberId;
       },
       reducer: (permission, _index, _arr, acc) => {
@@ -139,11 +127,10 @@ export async function getMemberRequests(params: {
   );
 
   const members = objs.map((obj) => {
-    const memberId = obj.objRecord.memberId;
-    const memberPermissions = memberPermissionsMap[memberId] ?? null;
-    return objToMember(obj, memberPermissions);
+    const perms = memberPermissionsMap[obj.id] ?? null;
+    return objToMember(obj, perms);
   });
-  const requests = await objToMemberRequest({ requests: members });
+  const requests = await objToMemberRequest({ objs });
 
   return {
     requests,

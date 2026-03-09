@@ -146,8 +146,8 @@ describe("checkClientTokenPermissions integration", () => {
     });
 
     expect(result.results).toHaveLength(2);
-    expect(result.results[0].hasPermission).toBe(true);
-    expect(result.results[1].hasPermission).toBe(true);
+    expect(result.results[0].isPermitted).toBe(true);
+    expect(result.results[1].isPermitted).toBe(true);
   });
 
   it("returns false for permissions that don't exist", async () => {
@@ -200,8 +200,8 @@ describe("checkClientTokenPermissions integration", () => {
     });
 
     expect(result.results).toHaveLength(2);
-    expect(result.results[0].hasPermission).toBe(false);
-    expect(result.results[1].hasPermission).toBe(false);
+    expect(result.results[0].isPermitted).toBe(false);
+    expect(result.results[1].isPermitted).toBe(false);
   });
 
   it("handles mixed permissions (some exist, some don't)", async () => {
@@ -268,10 +268,10 @@ describe("checkClientTokenPermissions integration", () => {
     });
 
     expect(result.results).toHaveLength(4);
-    expect(result.results[0].hasPermission).toBe(true); // user:read:document
-    expect(result.results[1].hasPermission).toBe(false); // user:write:document
-    expect(result.results[2].hasPermission).toBe(true); // admin:write:settings
-    expect(result.results[3].hasPermission).toBe(false); // admin:delete:settings
+    expect(result.results[0].isPermitted).toBe(true); // user:read:document
+    expect(result.results[1].isPermitted).toBe(false); // user:write:document
+    expect(result.results[2].isPermitted).toBe(true); // admin:write:settings
+    expect(result.results[3].isPermitted).toBe(false); // admin:delete:settings
   });
 
   it("handles empty items array", async () => {
@@ -337,8 +337,8 @@ describe("checkClientTokenPermissions integration", () => {
     });
 
     expect(result.results).toHaveLength(2);
-    expect(result.results[0].hasPermission).toBe(true);
-    expect(result.results[1].hasPermission).toBe(false);
+    expect(result.results[0].isPermitted).toBe(true);
+    expect(result.results[1].isPermitted).toBe(false);
   });
 
   it("handles different group IDs correctly", async () => {
@@ -387,6 +387,6 @@ describe("checkClientTokenPermissions integration", () => {
     });
 
     expect(result.results).toHaveLength(1);
-    expect(result.results[0].hasPermission).toBe(false);
+    expect(result.results[0].isPermitted).toBe(false);
   });
 });

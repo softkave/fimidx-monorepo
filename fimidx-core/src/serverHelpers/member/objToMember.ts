@@ -9,31 +9,14 @@ export function objToMember(
   return {
     id: obj.id,
     createdAt: obj.createdAt,
-    updatedAt: obj.updatedAt,
-    email: obj.objRecord.email ?? null,
-    memberId: obj.objRecord.memberId,
-    groupId: obj.groupId,
-    permissions: permissions,
-    status: obj.objRecord.status,
-    statusUpdatedAt:
-      obj.objRecord.statusUpdatedAt instanceof Date
-        ? obj.objRecord.statusUpdatedAt
-        : new Date(obj.objRecord.statusUpdatedAt),
-    sentEmailCount: obj.objRecord.sentEmailCount,
-    emailLastSentAt:
-      obj.objRecord.emailLastSentAt instanceof Date
-        ? obj.objRecord.emailLastSentAt
-        : obj.objRecord.emailLastSentAt
-        ? new Date(obj.objRecord.emailLastSentAt)
-        : null,
-    emailLastSentStatus: obj.objRecord.emailLastSentStatus,
     createdBy: obj.createdBy,
-    updatedBy: obj.updatedBy,
-    projectId: obj.projectId,
     createdByType: obj.createdByType,
+    updatedAt: obj.updatedAt,
+    updatedBy: obj.updatedBy,
     updatedByType: obj.updatedByType,
-    description: obj.objRecord.description ?? null,
-    name: obj.objRecord.name,
-    meta: obj.objRecord.meta,
+    projectId: obj.projectId,
+    groupId: obj.groupId,
+    permissions,
+    meta: obj.objRecord && Object.keys(obj.objRecord).length > 0 ? (obj.objRecord as Record<string, string>) : undefined,
   };
 }

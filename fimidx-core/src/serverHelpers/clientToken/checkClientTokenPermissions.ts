@@ -62,7 +62,7 @@ export async function checkClientTokenPermissions(params: {
 
   const response: CheckClientTokenPermissionsEndpointResponse = {
     results: permissions.map((permission) => ({
-      hasPermission: !!permission,
+      isPermitted: !!permission && permission.granted !== false,
     })),
   };
 

@@ -15,6 +15,7 @@ export function objToPermission(obj: IObj): IPermission {
     action: obj.objRecord.action,
     target: obj.objRecord.target,
     entity: obj.objRecord.entity,
+    granted: obj.objRecord.granted !== false,
     description: obj.objRecord.description,
     meta: obj.objRecord.meta,
   };

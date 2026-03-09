@@ -2,9 +2,12 @@ import type { UpdateClientTokensEndpointArgs } from "../../definitions/clientTok
 import { kObjTags } from "../../definitions/obj.js";
 import type { IObjStorage } from "../../storage/types.js";
 import { updateManyObjs } from "../obj/updateObjs.js";
-import { deletePermissions } from "../permission/deletePermissions.js";
-import { addClientTokenPermissions } from "./addClientTokenPermissions.js";
+import {
+  addClientTokenPermissions,
+  getFimidxManagedClientTokenPermission,
+} from "./addClientTokenPermissions.js";
 import { getClientTokens, getClientTokensObjQuery } from "./getClientTokens.js";
+import { deletePermissions } from "../permission/deletePermissions.js";
 
 export async function updateClientTokens(params: {
   args: UpdateClientTokensEndpointArgs;
@@ -15,12 +18,15 @@ export async function updateClientTokens(params: {
   const { args, by, byType, storage } = params;
   const { update, updateMany } = args;
 
-  // Extract permissions from update to handle separately
-  const { permissions, ...otherUpdates } = update;
+  const hasPermissionUpdates =
+    update.removeAllPermissions ||
+    (update.removePermissions?.length ?? 0) > 0 ||
+    (update.addPermissions?.length ?? 0) > 0;
 
-  // Get the tokens to update BEFORE updating the object (so we have the right IDs)
-  let tokensToUpdate: any[] = [];
-  if (permissions !== undefined) {
+  let tokensToUpdate: Awaited<
+    ReturnType<typeof getClientTokens>
+  >["clientTokens"] = [];
+  if (hasPermissionUpdates) {
     const result = await getClientTokens({
       args: {
         query: args.query,
@@ -31,10 +37,15 @@ export async function updateClientTokens(params: {
     tokensToUpdate = result.clientTokens;
   }
 
+  const {
+    addPermissions: addPerms,
+    removePermissions: removePerms,
+    removeAllPermissions: removeAllPerms,
+    ...otherUpdates
+  } = update;
+
   const objQuery = getClientTokensObjQuery({ args });
 
-  // Use merge strategy for partial updates, but handle meta field specially
-  // The meta field will be completely replaced when present in the update
   await updateManyObjs({
     objQuery,
     tag: kObjTags.clientToken,
@@ -46,54 +57,57 @@ export async function updateClientTokens(params: {
     storage,
   });
 
-  // Handle permissions separately if provided
-  if (permissions !== undefined) {
+  if (hasPermissionUpdates) {
     for (const clientToken of tokensToUpdate) {
-      if (permissions.length === 0) {
-        // Clear all existing permissions for this client token
-        await deletePermissions({
-          query: {
-            projectId: clientToken.projectId,
-            meta: [
-              {
-                op: "eq",
-                field: "__fimidx_managed_clientTokenId",
-                value: clientToken.id,
-              },
-            ],
-          },
-          deleteMany: true,
-          by,
-          byType,
-          storage,
-        });
-      } else {
-        // Clear existing permissions first, then add new ones
-        await deletePermissions({
-          query: {
-            projectId: clientToken.projectId,
-            meta: [
-              {
-                op: "eq",
-                field: "__fimidx_managed_clientTokenId",
-                value: clientToken.id,
-              },
-            ],
-          },
-          deleteMany: true,
-          by,
-          byType,
-          storage,
-        });
+      const clientTokenId = clientToken.id;
 
-        // Add new permissions (entity is set by addClientTokenPermissions)
+      if (removeAllPerms) {
+        await deletePermissions({
+          query: {
+            projectId: clientToken.projectId,
+            entity: { eq: clientTokenId },
+          },
+          deleteMany: true,
+          by,
+          byType,
+          storage,
+        });
+      }
+
+      if (removePerms?.length) {
+        for (const item of removePerms) {
+          const managed = getFimidxManagedClientTokenPermission({
+            permission: {
+              entity: clientTokenId,
+              action: item.action,
+              target: item.target,
+            },
+            clientTokenId,
+            groupId: clientToken.groupId,
+          });
+          await deletePermissions({
+            query: {
+              projectId: clientToken.projectId,
+              entity: { eq: managed.entity as string },
+              action: { eq: managed.action as string },
+              target: { eq: managed.target as string },
+            },
+            deleteMany: true,
+            by,
+            byType,
+            storage,
+          });
+        }
+      }
+
+      if (addPerms?.length) {
         await addClientTokenPermissions({
           by,
           byType,
           groupId: clientToken.groupId,
           projectId: clientToken.projectId,
-          permissions,
-          clientTokenId: clientToken.id,
+          permissions: addPerms,
+          clientTokenId,
           storage,
         });
       }

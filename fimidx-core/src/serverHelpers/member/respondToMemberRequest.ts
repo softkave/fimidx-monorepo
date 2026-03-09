@@ -3,42 +3,43 @@ import { first } from "lodash-es";
 import { OwnServerError } from "../../common/error.js";
 import {
   kMemberStatus,
-  type IMemberObjRecord,
   type RespondToMemberRequestEndpointArgs,
 } from "../../definitions/member.js";
+import type { IFimidxMemberInternal } from "../../definitions/member.js";
 import { kObjTags } from "../../definitions/obj.js";
 import { kId0 } from "../../definitions/system.js";
 import type { IObjStorage } from "../../storage/types.js";
+import { getManyObjs } from "../obj/getObjs.js";
 import { updateManyObjs } from "../obj/updateObjs.js";
-import { getMembers } from "./getMembers.js";
 
 export async function respondToMemberRequest(params: {
   args: RespondToMemberRequestEndpointArgs;
   storage?: IObjStorage;
 }) {
   const { args, storage } = params;
-  const { status, requestId, projectId, groupId } = args;
+  const { status, query } = args;
+  const { projectId, groupId, id } = query;
 
-  const { members } = await getMembers({
-    args: {
-      query: {
-        projectId,
-        groupId,
-        id: { eq: requestId },
-      },
-      limit: 1,
+  const { objs } = await getManyObjs({
+    objQuery: {
+      projectId,
+      metaQuery: { id: { eq: id } },
+      topLevelFields: { groupId: { eq: groupId } },
     },
+    tag: kObjTags.member,
+    limit: 1,
     storage,
   });
 
-  const member = first(members);
-  assert.ok(member, new OwnServerError("Member request not found", 404));
+  const obj = first(objs);
+  assert.ok(obj, new OwnServerError("Member request not found", 404));
+  const record = obj.objRecord as IFimidxMemberInternal | undefined;
   assert.ok(
-    member.status === kMemberStatus.pending,
+    record?.status === kMemberStatus.pending,
     new OwnServerError("Invalid status", 400)
   );
 
-  const update: Partial<IMemberObjRecord> = {
+  const update: Record<string, unknown> = {
     status,
     statusUpdatedAt: new Date(),
   };
@@ -46,9 +47,8 @@ export async function respondToMemberRequest(params: {
   await updateManyObjs({
     objQuery: {
       projectId,
-      metaQuery: {
-        id: { eq: requestId },
-      },
+      metaQuery: { id: { eq: id } },
+      topLevelFields: { groupId: { eq: groupId } },
     },
     tag: kObjTags.member,
     update,

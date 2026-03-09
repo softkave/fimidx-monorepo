@@ -1,8 +1,5 @@
 import { isString } from "lodash-es";
-import type {
-  IMemberObjRecordMeta,
-  IMemberPermissionInput,
-} from "../../definitions/member.js";
+import type { IMemberPermissionInput } from "../../definitions/member.js";
 import type {
   IPermission,
   IPermissionAction,
@@ -50,12 +47,8 @@ export function getFimidxManagedMemberPermission(params: {
   permission: IPermissionAtom;
   memberId: string;
   groupId: string;
-}): IPermissionAtom & Pick<IPermission, "meta"> {
-  const { permission, memberId, groupId } = params;
-  const meta: IMemberObjRecordMeta = {
-    __fimidx_managed_memberId: memberId,
-    __fimidx_managed_groupId: groupId,
-  };
+}): IPermissionAtom {
+  const { permission, memberId } = params;
   return {
     ...permission,
     entity: getFimidxManagedMemberPermissionEntity({ memberId }),
@@ -67,7 +60,6 @@ export function getFimidxManagedMemberPermission(params: {
       target: permission.target,
       memberId,
     }),
-    meta,
   };
 }
 
@@ -122,6 +114,7 @@ export function getOriginalMemberPermission(params: {
       target: permission.target,
       memberId,
     }),
+    granted: permission.granted !== false,
   };
 }
 
@@ -146,7 +139,19 @@ export async function addMemberPermissions(params: {
   const permissionAtoms: IPermissionAtom[] = inputPermissions.map((p) =>
     "entity" in p && p.entity !== undefined
       ? (p as IPermissionAtom)
-      : { entity: memberId, action: p.action, target: p.target }
+      : {
+          entity: memberId,
+          action: p.action,
+          target: p.target,
+          granted: (p as IMemberPermissionInput).granted ?? true,
+        }
+  );
+  const managed = permissionAtoms.map((permission) =>
+    getFimidxManagedMemberPermission({
+      permission,
+      memberId,
+      groupId,
+    })
   );
   const { permissions: newPermissions } = await addPermissions({
     by,
@@ -154,13 +159,10 @@ export async function addMemberPermissions(params: {
     groupId,
     args: {
       projectId,
-      permissions: permissionAtoms.map((permission) =>
-        getFimidxManagedMemberPermission({
-          permission,
-          memberId,
-          groupId,
-        })
-      ),
+      permissions: managed.map((p) => ({
+        ...p,
+        granted: p.granted !== false,
+      })),
     },
     storage,
   });

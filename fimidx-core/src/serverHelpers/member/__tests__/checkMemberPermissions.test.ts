@@ -60,13 +60,7 @@ function makeCheckMemberPermissionsArgs(
     projectId: defaultProjectId,
     memberId: "test-member-id",
     groupId: defaultGroupId,
-    items: [
-      {
-        entity: "user",
-        action: "read",
-        target: "document",
-      },
-    ],
+    items: [{ action: "read", target: "document" }],
     ...overrides,
   };
 }
@@ -163,16 +157,8 @@ describe("checkMemberPermissions integration", () => {
     const checkArgs = makeCheckMemberPermissionsArgs({
       memberId: member.member.memberId,
       items: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-        {
-          entity: "admin",
-          action: "write",
-          target: "settings",
-        },
+        { action: "read", target: "document" },
+        { action: "write", target: "settings" },
       ],
     });
 
@@ -208,16 +194,8 @@ describe("checkMemberPermissions integration", () => {
     const checkArgs = makeCheckMemberPermissionsArgs({
       memberId: member.member.memberId,
       items: [
-        {
-          entity: "user",
-          action: "write",
-          target: "document",
-        },
-        {
-          entity: "admin",
-          action: "delete",
-          target: "settings",
-        },
+        { action: "write", target: "document" },
+        { action: "delete", target: "settings" },
       ],
     });
 
@@ -256,26 +234,10 @@ describe("checkMemberPermissions integration", () => {
     const checkArgs = makeCheckMemberPermissionsArgs({
       memberId: member.member.memberId,
       items: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-        {
-          entity: "user",
-          action: "write",
-          target: "document",
-        },
-        {
-          entity: "admin",
-          action: "write",
-          target: "settings",
-        },
-        {
-          entity: "admin",
-          action: "delete",
-          target: "settings",
-        },
+        { action: "read", target: "document" },
+        { action: "write", target: "document" },
+        { action: "write", target: "settings" },
+        { action: "delete", target: "settings" },
       ],
     });
 
@@ -327,18 +289,16 @@ describe("checkMemberPermissions integration", () => {
 
     await addMemberPermissions(permissionsArgs);
 
-    // Check for the same object-based permissions
+    // Check for the same object-based permission and one that does not exist
     const checkArgs = makeCheckMemberPermissionsArgs({
       memberId: member.member.memberId,
       items: [
         {
-          entity: { type: "user", id: "123" },
           action: { operation: "read", scope: "full" },
           target: { resource: "document", id: "doc-1" },
         },
         {
-          entity: { type: "user", id: "456" },
-          action: { operation: "read", scope: "full" },
+          action: { operation: "write", scope: "full" },
           target: { resource: "document", id: "doc-1" },
         },
       ],
@@ -376,13 +336,7 @@ describe("checkMemberPermissions integration", () => {
     const checkArgs = makeCheckMemberPermissionsArgs({
       memberId: member.member.memberId,
       groupId: "different-group",
-      items: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-      ],
+      items: [{ action: "read", target: "document" }],
     });
 
     const result = await checkMemberPermissions({

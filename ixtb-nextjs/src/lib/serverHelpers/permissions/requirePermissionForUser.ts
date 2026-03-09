@@ -23,8 +23,8 @@ export async function requirePermissionForUser(params: {
       memberId: userId,
       groupId: orgId,
       items: [
-        { entity: userId, action, target },
-        { entity: userId, action: kFimidxPermissions.wildcard, target },
+        { action, target },
+        { action: kFimidxPermissions.wildcard, target },
       ],
     },
   });

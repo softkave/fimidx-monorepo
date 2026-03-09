@@ -9,7 +9,6 @@ import {
 } from "./obj.js";
 import {
   actionSchema,
-  checkPermissionItemSchema,
   targetSchema,
   type IPermissionAtom,
   type IPermissionMeta,
@@ -22,6 +21,12 @@ export const memberPermissionSchema = z.object({
 });
 
 export type IMemberPermissionInput = z.infer<typeof memberPermissionSchema>;
+
+/** Item for check member permissions: action + target only; entity is the member id from request. */
+export const checkMemberPermissionItemSchema = memberPermissionSchema;
+export type ICheckMemberPermissionItem = z.infer<
+  typeof checkMemberPermissionItemSchema
+>;
 
 export const kMemberStatus = {
   pending: "pending",
@@ -177,7 +182,7 @@ export const checkMemberPermissionsSchema = z.object({
   projectId: z.string().min(1),
   memberId: z.string().min(1),
   groupId: z.string().min(1),
-  items: z.array(checkPermissionItemSchema),
+  items: z.array(checkMemberPermissionItemSchema),
 });
 
 export type AddMemberEndpointArgs = z.infer<typeof addMemberSchema>;

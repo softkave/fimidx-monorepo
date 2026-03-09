@@ -17,9 +17,14 @@ export async function checkMemberPermissions(params: {
 
   const permissions = await Promise.all(
     items.map(async (item) => {
-      // Transform the permission to the managed format that's stored in the database
+      // Entity is memberId; build full atom from item (action + target only)
+      const permission = {
+        entity: memberId,
+        action: item.action,
+        target: item.target,
+      };
       const managedPermission = getFimidxManagedMemberPermission({
-        permission: item,
+        permission,
         memberId,
         groupId,
       });

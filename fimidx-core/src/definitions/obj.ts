@@ -18,21 +18,21 @@ export const kObjTags = {
 
 export type ObjTag = (typeof kObjTags)[keyof typeof kObjTags];
 
-/** Short form of each tag, used as prefix for obj ids (e.g. project -> "p", member -> "m"). */
+/** Short form of each tag (4 letters), used as prefix for obj ids (e.g. project -> "proj", member -> "memb"). */
 export const kObjTagShortForms: Record<ObjTag, string> = {
-  [kObjTags.obj]: "o",
-  [kObjTags.log]: "l",
-  [kObjTags.callback]: "cb",
-  [kObjTags.callbackExecution]: "cbe",
-  [kObjTags.group]: "g",
-  [kObjTags.clientToken]: "ct",
-  [kObjTags.member]: "m",
-  [kObjTags.project]: "p",
-  [kObjTags.monitor]: "mon",
+  [kObjTags.obj]: "obje",
+  [kObjTags.log]: "logs",
+  [kObjTags.callback]: "call",
+  [kObjTags.callbackExecution]: "cbex",
+  [kObjTags.group]: "grou",
+  [kObjTags.clientToken]: "ctok",
+  [kObjTags.member]: "memb",
+  [kObjTags.project]: "proj",
+  [kObjTags.monitor]: "moni",
   [kObjTags.permission]: "perm",
 } as const;
 
-/** Separator between tag short form and the rest of the id (e.g. "p_01933..."). */
+/** Separator between tag short form and the rest of the id (e.g. "proj_01933..."). */
 export const kObjIdPrefixSeparator = "_";
 
 /**

@@ -130,7 +130,7 @@ export async function addMemberPermissions(params: {
   byType: string;
   groupId: string;
   projectId: string;
-  permissions: IMemberPermissionInput[] | IPermissionAtom[];
+  permissions: IMemberPermissionInput[];
   memberId: string;
   storage?: IObjStorage;
 }) {

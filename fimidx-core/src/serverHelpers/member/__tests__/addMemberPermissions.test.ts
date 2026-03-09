@@ -181,7 +181,6 @@ describe("addMemberPermissions integration", () => {
       memberId: member.member.memberId,
       permissions: [
         {
-          entity: { type: "user", id: "123" },
           action: { operation: "read", scope: "document" },
           target: { resource: "document", id: "456" },
         },

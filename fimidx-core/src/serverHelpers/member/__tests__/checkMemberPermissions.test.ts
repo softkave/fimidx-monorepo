@@ -319,7 +319,6 @@ describe("checkMemberPermissions integration", () => {
       memberId: member.member.memberId,
       permissions: [
         {
-          entity: { type: "user", id: "123" },
           action: { operation: "read", scope: "full" },
           target: { resource: "document", id: "doc-1" },
         },

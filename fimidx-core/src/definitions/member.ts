@@ -10,7 +10,6 @@ import {
 import {
   actionSchema,
   checkPermissionItemSchema,
-  permissionAtomSchema,
   targetSchema,
   type IPermissionAtom,
   type IPermissionMeta,
@@ -98,12 +97,6 @@ export const addMemberSchema = z.object({
   description: z.string().optional(),
 });
 
-export const getMemberByMemberIdSchema = z.object({
-  memberId: z.string().min(1),
-  groupId: z.string().min(1),
-  projectId: z.string().min(1),
-});
-
 export const memberQuerySchema = z.object({
   id: stringMetaQuerySchema.optional(),
   email: stringMetaQuerySchema.optional(),
@@ -189,9 +182,6 @@ export const checkMemberPermissionsSchema = z.object({
 
 export type AddMemberEndpointArgs = z.infer<typeof addMemberSchema>;
 export type GetMembersEndpointArgs = z.infer<typeof getMembersSchema>;
-export type GetMemberByMemberIdEndpointArgs = z.infer<
-  typeof getMemberByMemberIdSchema
->;
 export type UpdateMembersEndpointArgs = z.infer<typeof updateMembersSchema>;
 export type DeleteMembersEndpointArgs = z.infer<typeof deleteMembersSchema>;
 export type UpdateMemberPermissionsEndpointArgs = z.infer<

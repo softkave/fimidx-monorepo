@@ -147,7 +147,7 @@ export const addPermissionItemSchema = permissionAtomSchema.extend({
 
 export const addPermissionsSchema = z.object({
   projectId: z.string().min(1),
-  permissions: z.array(addPermissionItemSchema),
+  permissions: z.array(addPermissionItemSchema).max(100),
 });
 
 export const entityQuerySchema = stringMetaQuerySchema.or(
@@ -182,8 +182,8 @@ export const removePermissionMatchSchema = z.object({
 export const updatePermissionsSchema = z.object({
   query: permissionQuerySchema,
   update: z.object({
-    addPermissions: z.array(addPermissionItemSchema).optional(),
-    removePermissions: z.array(removePermissionMatchSchema).optional(),
+    addPermissions: z.array(addPermissionItemSchema).max(100).optional(),
+    removePermissions: z.array(removePermissionMatchSchema).max(100).optional(),
     removeAllPermissions: z.boolean().optional(),
   }),
   updateMany: z.boolean().optional(),
@@ -193,7 +193,7 @@ export const deletePermissionsSchema = z.object({
   query: permissionQuerySchema.optional(),
   /** When provided, delete in one pass (one deleteManyObjs per query). Use
    * instead of looping. */
-  queries: z.array(permissionQuerySchema).optional(),
+  queries: z.array(permissionQuerySchema).max(100).optional(),
   deleteMany: z.boolean().optional(),
 });
 
@@ -213,7 +213,7 @@ export const checkPermissionItemSchema = z.object({
 
 export const checkPermissionsSchema = z.object({
   projectId: z.string().min(1),
-  items: z.array(checkPermissionItemSchema),
+  items: z.array(checkPermissionItemSchema).max(100),
 });
 
 export type AddPermissionsEndpointArgs = z.infer<typeof addPermissionsSchema>;

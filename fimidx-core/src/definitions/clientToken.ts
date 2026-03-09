@@ -56,7 +56,7 @@ export const addClientTokenSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional(),
   meta: z.record(z.string().min(1), z.string()).optional(),
-  permissions: z.array(clientTokenPermissionSchema).optional(),
+  permissions: z.array(clientTokenPermissionSchema).max(100).optional(),
 });
 
 export const clientTokenQuerySchema = z.object({
@@ -76,8 +76,8 @@ export const updateClientTokensSchema = z.object({
     name: z.string().min(1).optional(),
     description: z.string().optional(),
     meta: z.record(z.string().min(1), z.string()).optional(),
-    addPermissions: z.array(clientTokenPermissionSchema).optional(),
-    removePermissions: z.array(clientTokenPermissionSchema).optional(),
+    addPermissions: z.array(clientTokenPermissionSchema).max(100).optional(),
+    removePermissions: z.array(clientTokenPermissionSchema).max(100).optional(),
     removeAllPermissions: z.boolean().optional(),
   }),
   query: clientTokenQuerySchema,
@@ -91,8 +91,8 @@ export const updateClientTokenPermissionsSchema = z.object({
     projectId: z.string().min(1),
   }),
   update: z.object({
-    addPermissions: z.array(clientTokenPermissionSchema).optional(),
-    removePermissions: z.array(clientTokenPermissionSchema).optional(),
+    addPermissions: z.array(clientTokenPermissionSchema).max(100).optional(),
+    removePermissions: z.array(clientTokenPermissionSchema).max(100).optional(),
     removeAllPermissions: z.boolean().optional(),
   }),
 });
@@ -103,7 +103,7 @@ export const addClientTokenPermissionsSchema = z.object({
     projectId: z.string().min(1),
     clientTokenId: z.string().min(1),
   }),
-  permissions: z.array(clientTokenPermissionSchema),
+  permissions: z.array(clientTokenPermissionSchema).max(100),
 });
 
 export const deleteClientTokensSchema = z.object({
@@ -135,7 +135,7 @@ export const checkClientTokenPermissionsSchema = z.object({
     clientTokenId: z.string().min(1),
     groupId: z.string().min(1),
   }),
-  items: z.array(checkPermissionItemSchema),
+  items: z.array(checkPermissionItemSchema).max(100),
 });
 
 export type AddClientTokenEndpointArgs = z.infer<typeof addClientTokenSchema>;

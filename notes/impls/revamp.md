@@ -59,8 +59,6 @@ do the same for @fimidx-monorepo/fimidx-core/src/definitions/member.ts:115-125 a
 
 for all requests, update dependent code. update tests. see if there's need for new tests. remove tests no longer needed.
 
-limits
 parallelize for loops in reasonable chunks
 support or and and query in obj and use for delete permissions
-make similar permissions updates for client tokens
 query member/client token by permissions

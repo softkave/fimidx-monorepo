@@ -18,7 +18,7 @@ export const coreConfigSchema = z.object({
     uri: z.string(),
     dbName: z.string(),
   }),
-  adminEmails: z.array(z.string()).optional(),
+  adminEmails: z.array(z.string()).max(100).optional(),
   storage: z.object({
     type: z.enum(["postgres", "mongo"]),
   }),

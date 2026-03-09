@@ -30,7 +30,7 @@ export const addProjectSchema = z.object({
   orgId: z.string().min(1),
   name: z.string().min(1),
   description: z.string().optional(),
-  objFieldsToIndex: z.array(z.string()).optional(),
+  objFieldsToIndex: z.array(z.string()).max(50).optional(),
 });
 
 export const projectQuerySchema = z.object({
@@ -48,7 +48,11 @@ export const updateProjectsSchema = z.object({
   update: z.object({
     name: z.string().min(1).optional(),
     description: z.string().optional(),
-    objFieldsToIndex: z.array(z.string().min(1)).optional().nullable(),
+    objFieldsToIndex: z
+      .array(z.string().min(1))
+      .max(50)
+      .optional()
+      .nullable(),
   }),
   updateMany: z.boolean().optional(),
 });

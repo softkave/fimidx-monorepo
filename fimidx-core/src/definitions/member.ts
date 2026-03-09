@@ -80,7 +80,7 @@ export interface IMemberRequest {
 export const addMemberSchema = z.object({
   groupId: z.string().min(1),
   projectId: z.string().min(1),
-  permissions: z.array(memberPermissionSchema).optional(),
+  permissions: z.array(memberPermissionSchema).max(100).optional(),
   /** Passed through as obj record as-is (no transformation). For internal use,
    * include reserved keys (e.g. status, statusUpdatedAt, userId) in meta. */
   meta: z.record(z.string().min(1), z.string()).optional(),
@@ -101,8 +101,8 @@ export const updateMembersSchema = z.object({
   query: memberQuerySchema,
   update: z.object({
     meta: z.record(z.string().min(1), z.string()).optional(),
-    addPermissions: z.array(memberPermissionSchema).optional(),
-    removePermissions: z.array(memberPermissionSchema).optional(),
+    addPermissions: z.array(memberPermissionSchema).max(100).optional(),
+    removePermissions: z.array(memberPermissionSchema).max(100).optional(),
     removeAllPermissions: z.boolean().optional(),
   }),
   updateMany: z.boolean().optional(),
@@ -115,8 +115,8 @@ export const updateMemberPermissionsSchema = z.object({
     projectId: z.string().min(1),
   }),
   update: z.object({
-    addPermissions: z.array(memberPermissionSchema).optional(),
-    removePermissions: z.array(memberPermissionSchema).optional(),
+    addPermissions: z.array(memberPermissionSchema).max(100).optional(),
+    removePermissions: z.array(memberPermissionSchema).max(100).optional(),
     removeAllPermissions: z.boolean().optional(),
   }),
 });
@@ -167,7 +167,7 @@ export const checkMemberPermissionsSchema = z.object({
     groupId: z.string().min(1),
     id: z.string().min(1),
   }),
-  items: z.array(checkMemberPermissionItemSchema),
+  items: z.array(checkMemberPermissionItemSchema).max(100),
 });
 
 export type AddMemberEndpointArgs = z.infer<typeof addMemberSchema>;

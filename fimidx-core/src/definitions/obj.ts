@@ -98,7 +98,10 @@ export type IObj = {
 };
 
 export const inputObjRecordSchema = z.record(z.string().min(1), z.any());
-export const inputObjRecordArraySchema = z.array(inputObjRecordSchema);
+/** Max 1000 items per request (e.g. log ingest); callers may further restrict. */
+export const inputObjRecordArraySchema = z
+  .array(inputObjRecordSchema)
+  .max(1000);
 export const onConflictSchema = z
   .enum([
     "replace",
@@ -113,18 +116,18 @@ export const onConflictSchema = z
 
 export const setManyObjsSchema = z.object({
   projectId: z.string().min(1),
-  items: inputObjRecordArraySchema.min(1).max(100),
+  items: inputObjRecordArraySchema.min(1),
   onConflict: onConflictSchema.optional(),
   /**
    * fields to check for conflicts. Only applies to contained fields within
    * `objRecord`.
    */
-  conflictOnKeys: z.array(z.string().min(1)).optional(),
+  conflictOnKeys: z.array(z.string().min(1)).max(50).optional(),
   shouldIndex: z.boolean().optional(),
   /**
    * fields to index. Only applies to contained fields within `objRecord`.
    */
-  fieldsToIndex: z.array(z.string().min(1)).optional(),
+  fieldsToIndex: z.array(z.string().min(1)).max(50).optional(),
 });
 
 export const objPartQueryItemOpSchema = z.enum([
@@ -220,7 +223,8 @@ export const objPartQueryItemSchema = z.discriminatedUnion("op", [
   }),
 ]);
 
-export const objPartQueryListSchema = z.array(objPartQueryItemSchema);
+/** Max 100 conditions per and/or group to avoid overly large queries. */
+export const objPartQueryListSchema = z.array(objPartQueryItemSchema).max(100);
 export const objPartLogicalQuerySchema = z.object({
   and: objPartQueryListSchema.optional(),
   or: objPartQueryListSchema.optional(),
@@ -229,15 +233,21 @@ export const objPartLogicalQuerySchema = z.object({
 export const stringMetaQuerySchema = z.object({
   eq: z.string().optional(),
   neq: z.string().optional(),
-  in: z.array(z.string()).optional(),
-  not_in: z.array(z.string()).optional(),
+  in: z.array(z.string()).max(100).optional(),
+  not_in: z.array(z.string()).max(100).optional(),
 });
 
 export const numberMetaQuerySchema = z.object({
   eq: z.union([z.number(), z.string().datetime()]).optional(),
   neq: z.union([z.number(), z.string().datetime()]).optional(),
-  in: z.array(z.union([z.number(), z.string().datetime()])).optional(),
-  not_in: z.array(z.union([z.number(), z.string().datetime()])).optional(),
+  in: z
+    .array(z.union([z.number(), z.string().datetime()]))
+    .max(100)
+    .optional(),
+  not_in: z
+    .array(z.union([z.number(), z.string().datetime()]))
+    .max(100)
+    .optional(),
   gt: objPartQueryItemNumberValueSchema.optional(),
   gte: objPartQueryItemNumberValueSchema.optional(),
   lt: objPartQueryItemNumberValueSchema.optional(),
@@ -264,7 +274,7 @@ export const topLevelFieldQuerySchema = z.object({
   /**
    * {@see IObjField.path}
    */
-  fieldsToIndex: z.array(z.string()).optional(),
+  fieldsToIndex: z.array(z.string()).max(50).optional(),
   tag: stringMetaQuerySchema.optional(),
   groupId: stringMetaQuerySchema.optional(),
   deletedAt: z.union([z.null(), numberMetaQuerySchema]).optional(),
@@ -288,7 +298,8 @@ export const objSortSchema = z.object({
   direction: z.enum(["asc", "desc"]),
 });
 
-export const objSortListSchema = z.array(objSortSchema);
+/** Max 20 sort fields per request. */
+export const objSortListSchema = z.array(objSortSchema).max(20);
 export const updateManyObjsSchema = z.object({
   query: objQuerySchema,
   update: inputObjRecordSchema,
@@ -297,7 +308,7 @@ export const updateManyObjsSchema = z.object({
   /**
    * {@see IObjField.path}
    */
-  fieldsToIndex: z.array(z.string().min(1)).optional(),
+  fieldsToIndex: z.array(z.string().min(1)).max(50).optional(),
   shouldIndex: z.boolean().optional(),
   count: z.number().optional(),
 });

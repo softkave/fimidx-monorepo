@@ -54,7 +54,7 @@ export const addMonitorSchema = z.object({
   description: z.string().optional(),
   query: objPartLogicalQuerySchema,
   status: z.nativeEnum(kMonitorStatus),
-  reportsTo: z.array(z.string().min(1)),
+  reportsTo: z.array(z.string().min(1)).max(100),
   interval: durationSchema,
 });
 
@@ -77,7 +77,7 @@ export const updateMonitorsSchema = z.object({
     description: z.string().min(1).optional(),
     query: objPartLogicalQuerySchema.optional(),
     status: z.nativeEnum(kMonitorStatus).optional(),
-    reportsTo: z.array(z.string().min(1)).optional(),
+    reportsTo: z.array(z.string().min(1)).max(100).optional(),
     interval: durationSchema.optional(),
   }),
 });

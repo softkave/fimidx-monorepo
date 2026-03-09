@@ -46,7 +46,7 @@ function makeAddMonitorArgs(
     status: "enabled",
     reportsTo: ["user1", "user2"],
     interval: { days: 1 },
-    logsQuery: {
+    query: {
       and: [
         {
           op: "eq",
@@ -276,12 +276,12 @@ describe("updateMonitors integration", () => {
     expect(result.monitors[0].interval).toEqual({ hours: 6 });
   });
 
-  it("updates monitor logsQuery", async () => {
+  it("updates monitor query", async () => {
     // Create a monitor
     const monitor = await addMonitor({
       args: makeAddMonitorArgs({
         name: "Test Monitor",
-        logsQuery: {
+        query: {
           and: [
             {
               op: "eq",
@@ -318,7 +318,7 @@ describe("updateMonitors integration", () => {
         id: { eq: monitor.monitor.id },
       },
       update: {
-        logsQuery: newLogsQuery,
+        query: newLogsQuery,
       },
     });
 
@@ -340,7 +340,7 @@ describe("updateMonitors integration", () => {
     const result = await getMonitors({ args: getArgs, storage });
 
     expect(result.monitors).toHaveLength(1);
-    expect(result.monitors[0].logsQuery).toEqual(newLogsQuery);
+    expect(result.monitors[0].query).toEqual(newLogsQuery);
   });
 
   it("updates monitors by name filter", async () => {

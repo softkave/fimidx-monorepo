@@ -6,10 +6,8 @@ import {
   stringMetaQuerySchema,
 } from "./obj.js";
 import {
-  actionQuerySchema,
   actionSchema,
   checkPermissionItemSchema,
-  targetQuerySchema,
   targetSchema,
 } from "./permission.js";
 
@@ -30,7 +28,7 @@ export type IClientTokenPermissionInput = z.input<
 
 export interface IClientToken {
   id: string;
-  name: string;
+  name?: string;
   description?: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -47,16 +45,9 @@ export interface IClientToken {
 }
 
 export interface IClientTokenObjRecord {
-  name: string;
+  name?: string;
   description?: string | null;
   meta?: Record<string, string> | null;
-  permissions: import("./permission.js").IPermissionAtom[] | null;
-}
-
-export interface IClientTokenObjRecordMeta
-  extends NonNullable<import("./permission.js").IPermissionMeta> {
-  __fimidx_managed_clientTokenId: string;
-  __fimidx_managed_groupId: string;
 }
 
 export const addClientTokenSchema = z.object({
@@ -74,8 +65,6 @@ export const clientTokenQuerySchema = z.object({
   id: stringMetaQuerySchema.optional(),
   name: stringMetaQuerySchema.optional(),
   meta: objPartQueryListSchema.optional(),
-  permissionAction: actionQuerySchema.optional(),
-  permissionTarget: targetQuerySchema.optional(),
   createdAt: numberMetaQuerySchema.optional(),
   updatedAt: numberMetaQuerySchema.optional(),
   createdBy: stringMetaQuerySchema.optional(),
@@ -109,10 +98,12 @@ export const updateClientTokenPermissionsSchema = z.object({
 });
 
 export const addClientTokenPermissionsSchema = z.object({
-  groupId: z.string().min(1),
-  projectId: z.string().min(1),
+  query: z.object({
+    groupId: z.string().min(1),
+    projectId: z.string().min(1),
+    clientTokenId: z.string().min(1),
+  }),
   permissions: z.array(clientTokenPermissionSchema),
-  clientTokenId: z.string().min(1),
 });
 
 export const deleteClientTokensSchema = z.object({
@@ -139,9 +130,11 @@ export const refreshClientTokenJWTSchema = z.object({
 });
 
 export const checkClientTokenPermissionsSchema = z.object({
-  projectId: z.string().min(1),
-  clientTokenId: z.string().min(1),
-  groupId: z.string().min(1),
+  query: z.object({
+    projectId: z.string().min(1),
+    clientTokenId: z.string().min(1),
+    groupId: z.string().min(1),
+  }),
   items: z.array(checkPermissionItemSchema),
 });
 

@@ -13,7 +13,8 @@ export async function checkClientTokenPermissions(params: {
   storage?: IObjStorage;
 }) {
   const { args, storage } = params;
-  const { projectId, clientTokenId, groupId, items } = args;
+  const { query, items } = args;
+  const { projectId, clientTokenId, groupId } = query;
 
   const permissions = await Promise.all(
     items.map(async (item) => {
@@ -29,6 +30,7 @@ export async function checkClientTokenPermissions(params: {
         args: {
           query: {
             projectId,
+            groupId: groupId ? { eq: groupId } : undefined,
             entity: isString(managedPermission.entity)
               ? { eq: managedPermission.entity }
               : jsRecordToObjPartQueryList(managedPermission.entity),
@@ -38,18 +40,6 @@ export async function checkClientTokenPermissions(params: {
             target: isString(managedPermission.target)
               ? { eq: managedPermission.target }
               : jsRecordToObjPartQueryList(managedPermission.target),
-            meta: [
-              {
-                op: "eq",
-                field: "__fimidx_managed_clientTokenId",
-                value: clientTokenId,
-              },
-              {
-                op: "eq",
-                field: "__fimidx_managed_groupId",
-                value: groupId,
-              },
-            ],
           },
           limit: 1,
         },

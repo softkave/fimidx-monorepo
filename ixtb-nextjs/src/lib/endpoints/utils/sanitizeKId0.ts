@@ -298,7 +298,7 @@ export function sanitizeEncodeClientTokenJWTInput(input: {
 export function sanitizeGetLogFieldsInput(
   input: GetLogFieldsEndpointArgs
 ): void {
-  rejectIfKId0(input.projectId, "projectId");
+  rejectIfKId0(input.query.projectId, "projectId");
 }
 
 export function sanitizeIngestLogsInput(input: IngestLogsEndpointArgs): void {

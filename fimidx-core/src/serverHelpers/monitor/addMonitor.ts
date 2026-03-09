@@ -23,7 +23,7 @@ export async function addMonitor(params: {
     interval,
     reportsTo,
     projectId,
-    logsQuery,
+    query,
     description,
   } = args;
   const objRecord: IMonitorObjRecord = {
@@ -31,7 +31,7 @@ export async function addMonitor(params: {
     status,
     interval,
     reportsTo: reportsTo.map((userId) => ({ userId })),
-    logsQuery,
+    query,
     description,
   };
 

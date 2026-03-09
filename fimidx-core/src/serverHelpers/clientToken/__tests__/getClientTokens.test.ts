@@ -197,7 +197,7 @@ describe("getClientTokens integration", () => {
     expect(result.clientTokens).toHaveLength(2);
     expect(
       result.clientTokens.every((t) =>
-        ["Apple Token", "Banana Token"].includes(t.name)
+        ["Apple Token", "Banana Token"].includes(t.name ?? "")
       )
     ).toBe(true);
   });
@@ -231,122 +231,6 @@ describe("getClientTokens integration", () => {
     expect(result.clientTokens.every((t) => t.meta?.type === "admin")).toBe(
       true
     );
-  });
-
-  it("filters tokens by permission action", async () => {
-    // Create test tokens with different permissions
-    await createTestToken("Token 1", {
-      permissions: [
-        { action: "read", target: "document" },
-        { action: "write", target: "settings" },
-      ],
-    });
-    await createTestToken("Token 2", {
-      permissions: [{ action: "read", target: "document" }],
-    });
-    await createTestToken("Token 3", {
-      permissions: [{ action: "delete", target: "document" }],
-    });
-
-    const args: GetClientTokensEndpointArgs = {
-      query: {
-        projectId: projectId,
-        groupId,
-        permissionAction: {
-          in: ["read", "write"],
-        },
-      },
-    };
-
-    const result = await getClientTokens({
-      args,
-      storage,
-    });
-
-    expect(result.clientTokens).toHaveLength(2);
-    // Verify that the returned tokens have read or write permissions
-    expect(
-      result.clientTokens.every((token) =>
-        token.permissions?.some((permission) =>
-          ["read", "write"].includes(permission.action as string)
-        )
-      )
-    ).toBe(true);
-  });
-
-  it("filters tokens by permission target", async () => {
-    // Create test tokens with different permissions
-    await createTestToken("Token 1", {
-      permissions: [{ action: "read", target: "document" }],
-    });
-    await createTestToken("Token 2", {
-      permissions: [{ action: "write", target: "settings" }],
-    });
-    await createTestToken("Token 3", {
-      permissions: [{ action: "read", target: "public" }],
-    });
-
-    const args: GetClientTokensEndpointArgs = {
-      query: {
-        projectId: projectId,
-        groupId,
-        permissionTarget: {
-          in: ["document", "settings"],
-        },
-      },
-    };
-
-    const result = await getClientTokens({
-      args,
-      storage,
-    });
-
-    expect(result.clientTokens).toHaveLength(2);
-    // Verify that the returned tokens have document or settings as targets
-    expect(
-      result.clientTokens.every((token) =>
-        token.permissions?.some((permission) =>
-          ["document", "settings"].includes(permission.target as string)
-        )
-      )
-    ).toBe(true);
-  });
-
-  it("filters tokens by multiple permission criteria", async () => {
-    // Create test tokens with different permissions
-    await createTestToken("Token 1", {
-      permissions: [
-        { action: "read", target: "document" },
-      ],
-    });
-    await createTestToken("Token 2", {
-      permissions: [
-        { action: "write", target: "settings" },
-      ],
-    });
-    await createTestToken("Token 3", {
-      permissions: [
-        { action: "write", target: "document" },
-      ],
-    });
-
-    const args: GetClientTokensEndpointArgs = {
-      query: {
-        groupId,
-        projectId: projectId,
-        permissionAction: { eq: "read" },
-        permissionTarget: { eq: "document" },
-      },
-    };
-
-    const result = await getClientTokens({
-      args,
-      storage,
-    });
-
-    expect(result.clientTokens).toHaveLength(1);
-    expect(result.clientTokens[0].permissions?.[0].action).toBe("read");
-    expect(result.clientTokens[0].permissions?.[0].target).toBe("document");
   });
 
   it("handles pagination correctly", async () => {
@@ -554,7 +438,7 @@ describe("getClientTokens integration", () => {
     });
 
     expect(result.clientTokens).toHaveLength(2);
-    expect(result.clientTokens.every((t) => t.name.includes("Admin"))).toBe(
+    expect(result.clientTokens.every((t) => (t.name ?? "").includes("Admin"))).toBe(
       true
     );
     expect(result.clientTokens.every((t) => t.meta?.type === "admin")).toBe(

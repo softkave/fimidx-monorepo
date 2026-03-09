@@ -17,6 +17,6 @@ export function objToMonitor(obj: IObj): IMonitor {
     updatedBy: obj.updatedBy,
     updatedByType: obj.updatedByType,
     groupId: obj.groupId,
-    logsQuery: obj.objRecord.logsQuery,
+    query: obj.objRecord.query,
   };
 }

@@ -1231,10 +1231,10 @@ describe("MongoObjStorage (integration)", () => {
     expect(result.objs[0].id).toBe(obj.id);
   });
 
-  it("should handle array field queries with logsQuery.and.op", async () => {
+  it("should handle array field queries with query.and.op", async () => {
     const obj = makeObjFields({
       objRecord: {
-        logsQuery: {
+        query: {
           and: [
             { op: "eq", field: "status", value: "active" },
             { op: "in", field: "type", value: ["error", "warning"] },
@@ -1248,11 +1248,11 @@ describe("MongoObjStorage (integration)", () => {
     // Create array field metadata
     const arrayFieldsMap = new Map([
       [
-        "logsQuery.and",
+        "query.and",
         {
           id: "array-field-2",
-          field: "logsQuery.and",
-          path: "logsQuery.and",
+          field: "query.and",
+          path: "query.and",
           type: "string" as const,
           arrayTypes: [],
           isArrayCompressed: false,
@@ -1269,7 +1269,7 @@ describe("MongoObjStorage (integration)", () => {
       query: {
         projectId: obj.projectId,
         partQuery: {
-          and: [{ op: "eq", field: "logsQuery.and.op", value: "eq" }],
+          and: [{ op: "eq", field: "query.and.op", value: "eq" }],
         },
       },
       tag: obj.tag,
@@ -1283,7 +1283,7 @@ describe("MongoObjStorage (integration)", () => {
   it("should handle deeply nested array field queries", async () => {
     const obj = makeObjFields({
       objRecord: {
-        logsQuery: {
+        query: {
           and: [
             {
               op: [
@@ -1301,11 +1301,11 @@ describe("MongoObjStorage (integration)", () => {
     // Create array field metadata for both levels
     const arrayFieldsMap = new Map([
       [
-        "logsQuery.and",
+        "query.and",
         {
           id: "array-field-3",
-          field: "logsQuery.and",
-          path: "logsQuery.and",
+          field: "query.and",
+          path: "query.and",
           type: "string" as const,
           arrayTypes: [],
           isArrayCompressed: false,
@@ -1317,11 +1317,11 @@ describe("MongoObjStorage (integration)", () => {
         },
       ],
       [
-        "logsQuery.and.op",
+        "query.and.op",
         {
           id: "array-field-4",
-          field: "logsQuery.and.op",
-          path: "logsQuery.and.op",
+          field: "query.and.op",
+          path: "query.and.op",
           type: "string" as const,
           arrayTypes: [],
           isArrayCompressed: false,
@@ -1338,7 +1338,7 @@ describe("MongoObjStorage (integration)", () => {
       query: {
         projectId: obj.projectId,
         partQuery: {
-          and: [{ op: "eq", field: "logsQuery.and.op.subOp", value: "eq" }],
+          and: [{ op: "eq", field: "query.and.op.subOp", value: "eq" }],
         },
       },
       tag: obj.tag,

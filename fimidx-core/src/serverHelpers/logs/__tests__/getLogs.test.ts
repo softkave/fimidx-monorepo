@@ -69,7 +69,8 @@ function makeGetLogsArgs(
     query: {
       projectId: projectId,
       logsQuery: undefined,
-      metaQuery: undefined,
+      id: undefined,
+      createdBy: undefined,
     },
     page: undefined,
     limit: undefined,
@@ -311,11 +312,7 @@ describe("getLogs integration", () => {
     const args = makeGetLogsArgs({
       query: {
         projectId: projectId,
-        metaQuery: {
-          createdBy: {
-            eq: "user1",
-          },
-        },
+        createdBy: { eq: "user1" },
       },
     });
 

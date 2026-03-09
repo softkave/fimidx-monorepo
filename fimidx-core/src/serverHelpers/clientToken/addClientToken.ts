@@ -37,7 +37,6 @@ export async function addClientToken(params: {
     name,
     description,
     meta,
-    permissions: null, // Permissions are now managed separately
   };
 
   const { failedItems, newObjs } = await setManyObjs({

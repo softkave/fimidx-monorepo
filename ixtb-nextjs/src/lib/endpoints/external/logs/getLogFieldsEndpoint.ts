@@ -18,16 +18,17 @@ export const getLogFieldsEndpoint: NextMaybeAuthenticatedEndpointFn<
   const input = getLogFieldsSchema.parse(await req.json());
   sanitizeGetLogFieldsInput(input);
 
+  const projectId = input.query.projectId;
   if (clientToken) {
     await checkPermissionProjectThenOrg({
       clientToken,
-      projectId: input.projectId,
+      projectId,
       action: kFimidxPermissions.log.read,
     });
   } else if (userId) {
     await checkPermissionProjectThenOrg({
       userId,
-      projectId: input.projectId,
+      projectId,
       action: kFimidxPermissions.log.read,
     });
   }

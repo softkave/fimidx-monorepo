@@ -32,7 +32,7 @@ export interface IMonitor {
   createdByType: string;
   updatedByType: string;
   projectId: string;
-  logsQuery: IObjPartLogicalQuery;
+  query: IObjPartLogicalQuery;
   groupId: string;
   status: MonitorStatus;
   reportsTo: IMonitorReportsTo[];
@@ -42,7 +42,7 @@ export interface IMonitor {
 export interface IMonitorObjRecord {
   name: string;
   description?: string | null;
-  logsQuery: IObjPartLogicalQuery;
+  query: IObjPartLogicalQuery;
   status: MonitorStatus;
   reportsTo: IMonitorReportsTo[];
   interval: Duration;
@@ -52,7 +52,7 @@ export const addMonitorSchema = z.object({
   projectId: z.string().min(1),
   name: z.string().min(1),
   description: z.string().optional(),
-  logsQuery: objPartLogicalQuerySchema,
+  query: objPartLogicalQuerySchema,
   status: z.nativeEnum(kMonitorStatus),
   reportsTo: z.array(z.string().min(1)),
   interval: durationSchema,
@@ -75,7 +75,7 @@ export const updateMonitorsSchema = z.object({
   update: z.object({
     name: z.string().min(1).optional(),
     description: z.string().min(1).optional(),
-    logsQuery: objPartLogicalQuerySchema.optional(),
+    query: objPartLogicalQuerySchema.optional(),
     status: z.nativeEnum(kMonitorStatus).optional(),
     reportsTo: z.array(z.string().min(1)).optional(),
     interval: durationSchema.optional(),

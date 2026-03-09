@@ -11,7 +11,8 @@ export async function getLogFields(params: {
   args: GetLogFieldsEndpointArgs;
 }): Promise<GetLogFieldsEndpointResponse> {
   const { args } = params;
-  const { projectId, page, limit } = args;
+  const { query, page, limit } = args;
+  const { projectId } = query;
 
   // Convert 1-based pagination to 0-based for storage layer
   const pageNumber = page ?? 1;

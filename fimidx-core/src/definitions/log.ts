@@ -35,15 +35,11 @@ export const ingestLogsSchema = z.object({
   logs: inputObjRecordArraySchema,
 });
 
-export const logsMetaQuerySchema = z.object({
-  id: stringMetaQuerySchema.optional(),
-  createdBy: stringMetaQuerySchema.optional(),
-});
-
 export const logQuerySchema = z.object({
   projectId: z.string().min(1),
+  id: stringMetaQuerySchema.optional(),
+  createdBy: stringMetaQuerySchema.optional(),
   logsQuery: objPartLogicalQuerySchema.optional(),
-  metaQuery: logsMetaQuerySchema.optional(),
 });
 
 export const getLogsSchema = z.object({
@@ -54,7 +50,9 @@ export const getLogsSchema = z.object({
 });
 
 export const getLogFieldsSchema = z.object({
-  projectId: z.string().min(1),
+  query: z.object({
+    projectId: z.string().min(1),
+  }),
   page: z.number().optional(),
   limit: z.number().optional(),
 });

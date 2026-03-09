@@ -27,7 +27,7 @@ function makeAddMonitorArgs(
     status: "enabled",
     reportsTo: ["user1", "user2"],
     interval: { days: 1 },
-    logsQuery: {
+    query: {
       and: [
         {
           op: "eq",
@@ -119,7 +119,7 @@ describe("addMonitor integration", () => {
       status: "enabled",
       reportsTo: ["user1", "user2", "user3"],
       interval: { hours: 6 },
-      logsQuery: {
+      query: {
         and: [
           {
             op: "eq",
@@ -153,7 +153,7 @@ describe("addMonitor integration", () => {
       { userId: "user3" },
     ]);
     expect(result.monitor.interval).toEqual({ hours: 6 });
-    expect(result.monitor.logsQuery).toEqual({
+    expect(result.monitor.query).toEqual({
       and: [
         {
           op: "eq",
@@ -322,10 +322,10 @@ describe("addMonitor integration", () => {
     expect(result.monitor.reportsTo).toEqual([]);
   });
 
-  it("creates a monitor with complex logsQuery", async () => {
+  it("creates a monitor with complex query", async () => {
     const args = makeAddMonitorArgs({
       name: "Complex Query Monitor",
-      logsQuery: {
+      query: {
         or: [
           {
             op: "eq",
@@ -349,7 +349,7 @@ describe("addMonitor integration", () => {
       storage,
     });
 
-    expect(result.monitor.logsQuery).toEqual({
+    expect(result.monitor.query).toEqual({
       or: [
         {
           op: "eq",

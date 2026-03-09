@@ -18,9 +18,11 @@ export async function requirePermissionForClientToken(params: {
   const { clientToken, action, target } = params;
   const { results } = await checkClientTokenPermissions({
     args: {
-      projectId: clientToken.projectId,
-      clientTokenId: clientToken.id,
-      groupId: clientToken.groupId,
+      query: {
+        projectId: clientToken.projectId,
+        clientTokenId: clientToken.id,
+        groupId: clientToken.groupId,
+      },
       items: [
         { entity: clientToken.id, action, target },
         { entity: clientToken.id, action: kFimidxPermissions.wildcard, target },

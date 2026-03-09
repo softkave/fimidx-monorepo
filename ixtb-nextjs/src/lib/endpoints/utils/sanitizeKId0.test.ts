@@ -224,12 +224,12 @@ describe("sanitizeKId0", () => {
   describe("logs", () => {
     it("sanitizeGetLogFieldsInput throws when projectId is kId0", () => {
       expectKId0Error(() =>
-        sanitizeGetLogFieldsInput({ projectId: kId0 })
+        sanitizeGetLogFieldsInput({ query: { projectId: kId0 } })
       );
     });
     it("sanitizeGetLogFieldsInput does not throw for valid projectId", () => {
       expect(() =>
-        sanitizeGetLogFieldsInput({ projectId: "p1" })
+        sanitizeGetLogFieldsInput({ query: { projectId: "p1" } })
       ).not.toThrow();
     });
     it("sanitizeIngestLogsInput throws when projectId is kId0", () => {

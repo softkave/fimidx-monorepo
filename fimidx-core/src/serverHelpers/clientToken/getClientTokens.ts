@@ -3,7 +3,6 @@ import { first } from "lodash-es";
 import type {
   GetClientTokensEndpointArgs,
   IClientToken,
-  IClientTokenObjRecordMeta,
 } from "../../definitions/clientToken.js";
 import {
   kObjTags,
@@ -33,8 +32,6 @@ export function getClientTokensObjQuery(params: {
     updatedAt,
     createdBy,
     updatedBy,
-    permissionAction,
-    permissionTarget,
   } = query;
 
   const filterArr: Array<IObjPartQueryItem> = [];
@@ -77,105 +74,6 @@ export function getClientTokensObjQuery(params: {
   return objQuery;
 }
 
-export async function getClientTokensWithPermissionFilter(params: {
-  args: GetClientTokensEndpointArgs;
-  storage?: IObjStorage;
-}) {
-  const { args, storage } = params;
-  const { query } = args;
-  const { permissionAction, permissionTarget, projectId } = query;
-
-  // If no permission filters are specified, return all client tokens
-  if (!permissionAction && !permissionTarget) {
-    return null;
-  }
-
-  // First, get all client tokens to get their IDs for permission filtering
-  const objQuery = getClientTokensObjQuery({ args });
-  const { objs } = await getManyObjs({
-    objQuery,
-    tag: kObjTags.clientToken,
-    limit: 1000,
-    page: 0,
-    storage,
-  });
-
-  const clientTokenIds = objs.map((obj) => obj.id);
-
-  // For each permission filter, we need to check if any of the client tokens have matching permissions
-  const matchingClientTokenIds = new Set<string>();
-
-  for (const clientTokenId of clientTokenIds) {
-    let matches = true;
-
-    if (permissionAction && matches) {
-      // Action is stored as-is; filter by entity (client token id) and meta
-      const actionQuery = Array.isArray(permissionAction)
-        ? permissionAction
-        : permissionAction;
-
-      const { permissions } = await getPermissions({
-        args: {
-          query: {
-            projectId,
-            entity: { eq: clientTokenId },
-            action: actionQuery,
-            meta: [
-              {
-                op: "eq",
-                field: "__fimidx_managed_clientTokenId",
-                value: clientTokenId,
-              },
-            ],
-          },
-          limit: 1,
-        },
-        storage,
-      });
-
-      if (permissions.length === 0) {
-        matches = false;
-      }
-    }
-
-    if (permissionTarget && matches) {
-      // Target is stored as-is; filter by entity (client token id) and meta
-      const targetQuery = Array.isArray(permissionTarget)
-        ? permissionTarget
-        : permissionTarget;
-
-      const { permissions } = await getPermissions({
-        args: {
-          query: {
-            projectId,
-            entity: { eq: clientTokenId },
-            target: targetQuery,
-            meta: [
-              {
-                op: "eq",
-                field: "__fimidx_managed_clientTokenId",
-                value: clientTokenId,
-              },
-            ],
-          },
-          limit: 1,
-        },
-        storage,
-      });
-
-      if (permissions.length === 0) {
-        matches = false;
-      }
-    }
-
-    if (matches) {
-      matchingClientTokenIds.add(clientTokenId);
-    }
-  }
-
-  return Array.from(matchingClientTokenIds);
-}
-
 export async function getClientTokensPermissions(params: {
   projectId: string;
   clientTokenIds: string[];
@@ -187,18 +85,8 @@ export async function getClientTokensPermissions(params: {
     args: {
       query: {
         projectId,
-        meta: [
-          {
-            op: "in",
-            field: "__fimidx_managed_clientTokenId",
-            value: clientTokenIds,
-          },
-          {
-            op: "eq",
-            field: "__fimidx_managed_groupId",
-            value: groupId,
-          },
-        ],
+        entity: { in: clientTokenIds },
+        groupId: groupId ? { eq: groupId } : undefined,
       },
     },
     storage,
@@ -236,74 +124,6 @@ export async function getClientTokens(params: {
 
   const objQuery = getClientTokensObjQuery({ args });
 
-  // Get permission-filtered client token IDs if permission filters are specified
-  const filteredClientTokenIds = await getClientTokensWithPermissionFilter({
-    args,
-    storage,
-  });
-
-  // If we have permission filters, we need to get all client tokens and filter them
-  // since we can't easily paginate with permission filters
-  if (filteredClientTokenIds) {
-    const { objs } = await getManyObjs({
-      objQuery,
-      tag: kObjTags.clientToken,
-      limit: 1000, // Get a large number to ensure we get all matching tokens
-      page: 0,
-      sort: transformedSort,
-      storage,
-    });
-
-    // Filter by permission criteria
-    const filteredObjs = objs.filter((obj) =>
-      filteredClientTokenIds.includes(obj.id)
-    );
-
-    // Apply pagination manually
-    const startIndex = storagePage * limitNumber;
-    const endIndex = startIndex + limitNumber;
-    const paginatedObjs = filteredObjs.slice(startIndex, endIndex);
-    const hasMore = endIndex < filteredObjs.length;
-
-    // Always include permissions when filtering by permissions
-    const { permissions } = await getClientTokensPermissions({
-      projectId: args.query.projectId,
-      clientTokenIds: paginatedObjs.map((obj) => obj.id),
-      groupId: args.query.groupId,
-      storage,
-    });
-
-    const permissionsMap = permissions.reduce((acc, permission) => {
-      assert.ok(permission.meta, "Permission meta is required");
-      const meta = permission.meta as IClientTokenObjRecordMeta;
-      const clientTokenId = meta.__fimidx_managed_clientTokenId;
-      if (!acc[clientTokenId]) {
-        acc[clientTokenId] = [];
-      }
-      // Transform the permission back to original format
-      const originalPermission = getOriginalClientTokenPermission({
-        permission,
-        clientTokenId,
-      });
-      acc[clientTokenId].push(originalPermission);
-      return acc;
-    }, {} as Record<string, IPermissionAtom[]>);
-
-    const clientTokens = paginatedObjs.map((obj) => {
-      const clientTokenPermissions = permissionsMap[obj.id] || null;
-      const clientToken = objToClientToken(obj, clientTokenPermissions);
-      return clientToken;
-    });
-
-    return {
-      clientTokens,
-      hasMore,
-      page: pageNumber, // Return 1-based page number
-      limit: limitNumber,
-    };
-  }
-
-  // No permission filters, use normal flow
   const { objs, hasMore, page, limit } = await getManyObjs({
     objQuery,
     tag: kObjTags.clientToken,
@@ -325,13 +145,12 @@ export async function getClientTokens(params: {
       };
 
   const permissionsMap = permissions.reduce((acc, permission) => {
-    assert.ok(permission.meta, "Permission meta is required");
-    const meta = permission.meta as IClientTokenObjRecordMeta;
-    const clientTokenId = meta.__fimidx_managed_clientTokenId;
+    const clientTokenId =
+      typeof permission.entity === "string" ? permission.entity : undefined;
+    if (clientTokenId == null) return acc;
     if (!acc[clientTokenId]) {
       acc[clientTokenId] = [];
     }
-    // Transform the permission back to original format
     const originalPermission = getOriginalClientTokenPermission({
       permission,
       clientTokenId,

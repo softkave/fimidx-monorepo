@@ -63,3 +63,4 @@ limits
 parallelize for loops in reasonable chunks
 support or and and query in obj and use for delete permissions
 make similar permissions updates for client tokens
+query member/client token by permissions

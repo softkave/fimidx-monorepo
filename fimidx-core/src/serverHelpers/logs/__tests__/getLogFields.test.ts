@@ -25,7 +25,7 @@ function makeGetLogFieldsArgs(
 ): GetLogFieldsEndpointArgs {
   testCounter++;
   return {
-    projectId: projectId,
+    query: { projectId: projectId },
     page: undefined,
     limit: undefined,
     ...overrides,
@@ -77,7 +77,7 @@ describe("getLogFields integration", () => {
   }
 
   it("returns empty result when no log fields exist", async () => {
-    const args = makeGetLogFieldsArgs({ projectId: projectId });
+    const args = makeGetLogFieldsArgs({ query: { projectId } });
     const result = await getLogFields({
       args,
     });
@@ -107,7 +107,7 @@ describe("getLogFields integration", () => {
     });
     // Index only the objects created in this test
     await indexObjectsAfter(beforeIngest);
-    const args = makeGetLogFieldsArgs({ projectId: projectId });
+    const args = makeGetLogFieldsArgs({ query: { projectId } });
     const result = await getLogFields({
       args,
     });
@@ -151,9 +151,9 @@ describe("getLogFields integration", () => {
     await indexObjectsAfter(beforeIngest);
     // Test first page with limit 2
     const args1 = makeGetLogFieldsArgs({
+      query: { projectId },
       page: 1,
       limit: 2,
-      projectId: projectId,
     });
     const result1 = await getLogFields({
       args: args1,
@@ -164,9 +164,9 @@ describe("getLogFields integration", () => {
     expect(result1.hasMore).toBe(true);
     // Test second page
     const args2 = makeGetLogFieldsArgs({
+      query: { projectId },
       page: 2,
       limit: 2,
-      projectId: projectId,
     });
     const result2 = await getLogFields({
       args: args2,
@@ -208,7 +208,7 @@ describe("getLogFields integration", () => {
     await indexObjectsAfter(beforeIngest);
     // Query for project-1 fields
     const args = makeGetLogFieldsArgs({
-      projectId: projectId1,
+      query: { projectId: projectId1 },
     });
     const result = await getLogFields({
       args,
@@ -244,7 +244,7 @@ describe("getLogFields integration", () => {
     });
     // Index only the objects created in this test
     await indexObjectsAfter(beforeIngest);
-    const args = makeGetLogFieldsArgs({ projectId: projectId });
+    const args = makeGetLogFieldsArgs({ query: { projectId } });
     const result = await getLogFields({
       args,
     });
@@ -280,7 +280,7 @@ describe("getLogFields integration", () => {
     });
     // Index only the objects created in this test
     await indexObjectsAfter(beforeIngest);
-    const args = makeGetLogFieldsArgs({ projectId: projectId });
+    const args = makeGetLogFieldsArgs({ query: { projectId } });
     const result = await getLogFields({
       args,
     });

@@ -1,8 +1,5 @@
 import { isString } from "lodash-es";
-import type {
-  IClientTokenObjRecordMeta,
-  IClientTokenPermissionInput,
-} from "../../definitions/clientToken.js";
+import type { IClientTokenPermissionInput } from "../../definitions/clientToken.js";
 import type {
   IPermission,
   IPermissionAction,
@@ -50,12 +47,8 @@ export function getFimidxManagedClientTokenPermission(params: {
   permission: IPermissionAtom;
   clientTokenId: string;
   groupId: string;
-}): IPermissionAtom & Pick<IPermission, "meta"> {
-  const { permission, clientTokenId, groupId } = params;
-  const meta: IClientTokenObjRecordMeta = {
-    __fimidx_managed_clientTokenId: clientTokenId,
-    __fimidx_managed_groupId: groupId,
-  };
+}): IPermissionAtom {
+  const { permission, clientTokenId } = params;
   return {
     ...permission,
     entity: getFimidxManagedClientTokenPermissionEntity({ clientTokenId }),
@@ -67,7 +60,6 @@ export function getFimidxManagedClientTokenPermission(params: {
       target: permission.target,
       clientTokenId,
     }),
-    meta,
   };
 }
 

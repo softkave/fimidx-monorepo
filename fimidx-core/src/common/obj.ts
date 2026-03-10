@@ -1,8 +1,5 @@
 import { isString } from "lodash-es";
-import type {
-  IObjRecordLogicalQuery,
-  IObjRecordQueryItemNumberValue,
-} from "../definitions/obj.js";
+import type { IObjRecordQueryItemNumberValue } from "../definitions/obj.js";
 
 import assert from "assert";
 import type {
@@ -24,16 +21,6 @@ export function isObjRecordQueryItem(query: unknown): query is IObjRecordQueryIt
 export function isObjRecordQueryList(query: unknown): query is IObjRecordQueryList {
   return (
     Array.isArray(query) && query.every((item) => isObjRecordQueryItem(item))
-  );
-}
-
-export function isObjRecordLogicalQuery(
-  query: unknown
-): query is IObjRecordLogicalQuery {
-  return (
-    typeof query === "object" &&
-    query !== null &&
-    ("and" in query || "or" in query || "not" in query)
   );
 }
 

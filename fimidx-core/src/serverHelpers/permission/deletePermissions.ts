@@ -37,16 +37,14 @@ export async function deletePermissions(
     return;
   }
 
-  const orQueries = toRun.map((q) =>
-    getPermissionsObjQuery({ args: { query: q } })
-  );
+  const orQueries = toRun.map((q) => getPermissionsObjQuery({ args: { query: q } }));
+  const objQuery = { or: orQueries };
   await deleteManyObjs({
-    objQuery: orQueries[0],
+    objQuery,
     tag: kObjTags.permission,
     deletedBy: by,
     deletedByType: byType,
     deleteMany,
     storage,
-    orQueries,
   });
 }

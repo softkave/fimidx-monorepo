@@ -40,7 +40,7 @@ export function getMemberRequestsObjQuery(params: {
   }
 
   const objQuery: IObjQuery = {
-    recordQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
+    recordQuery: filterArr.length > 0 ? filterArr : undefined,
     metaQuery: {
       ...(projectId ? { projectId: { eq: projectId } } : {}),
       ...(id ? { id: { eq: id } } : {}),

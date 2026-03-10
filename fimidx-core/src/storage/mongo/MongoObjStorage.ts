@@ -325,12 +325,13 @@ export class MongoObjStorage implements IObjStorage {
       count,
       shouldIndex,
       fieldsToIndex,
+      fields,
       batchSize = 1000,
       onProgress,
     } = params;
 
     const date = new Date();
-    const filter = this.queryTransformer.transformFilter(query, date);
+    const filter = this.queryTransformer.transformFilter(query, date, fields);
 
     // Add tag filter
     if (tag) {
@@ -439,28 +440,14 @@ export class MongoObjStorage implements IObjStorage {
       deleteMany = false,
       batchSize = 1000,
       hardDelete = false,
-      orQueries,
+      fields,
     } = params;
 
-    let filter: Record<string, any>;
-    if (orQueries?.length) {
-      const orFilters = orQueries.map((q) =>
-        this.queryTransformer.transformFilter(q, date)
-      );
-      filter = {
-        $and: [
-          ...(tag ? [{ tag }] : []),
-          { deletedAt: null },
-          { $or: orFilters },
-        ],
-      };
-    } else {
-      filter = this.queryTransformer.transformFilter(query, date);
-      if (tag) {
-        filter.tag = tag;
-      }
-      filter.deletedAt = null;
+    const filter = this.queryTransformer.transformFilter(query, date, fields);
+    if (tag) {
+      filter.tag = tag;
     }
+    filter.deletedAt = null;
 
     let totalProcessed = 0;
     let page = 0;

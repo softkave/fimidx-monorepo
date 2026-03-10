@@ -194,15 +194,19 @@ export function getCallbacksObjQuery(params: {
   }
 
   const objQuery: IObjQuery = {
-    recordQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
-    metaQuery: {
-      ...(projectId ? { projectId: { eq: projectId } } : {}),
-      id,
-      createdAt,
-      updatedAt,
-      createdBy,
-      updatedBy,
-    },
+    and: [
+      {
+        recordQuery: filterArr.length > 0 ? filterArr : undefined,
+        metaQuery: {
+          ...(projectId ? { projectId: { eq: projectId } } : {}),
+          id,
+          createdAt,
+          updatedAt,
+          createdBy,
+          updatedBy,
+        },
+      },
+    ],
   };
 
   return objQuery;

@@ -37,9 +37,7 @@ export async function addMember(params: {
           projectId: { eq: projectId },
           groupId: { eq: groupId },
         },
-        recordQuery: {
-          and: [{ op: "eq", field: kMetaUserId, value: userId }],
-        },
+        recordQuery: [{ op: "eq", field: kMetaUserId, value: userId }],
       },
       tag: kObjTags.member,
       limit: 1,

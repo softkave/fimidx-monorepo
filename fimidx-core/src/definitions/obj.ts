@@ -223,33 +223,10 @@ export const objRecordQueryItemSchema = z.discriminatedUnion("op", [
   }),
 ]);
 
-/** Max 100 conditions per and/or group to avoid overly large queries. */
+/** Max 100 record conditions per leaf query (implicit AND across items). */
 export const objRecordQueryListSchema = z
   .array(objRecordQueryItemSchema)
   .max(100);
-
-/** Recursive type for logical query (and/or can contain items or nested logical
- * queries). */
-export type IObjRecordLogicalQuery = {
-  and?: (z.infer<typeof objRecordQueryItemSchema> | IObjRecordLogicalQuery)[];
-  or?: (z.infer<typeof objRecordQueryItemSchema> | IObjRecordLogicalQuery)[];
-};
-
-/** Recursive logical query: and/or arrays can contain items or nested logical
- * queries. */
-export const objRecordLogicalQuerySchema: z.ZodType<IObjRecordLogicalQuery> =
-  z.lazy(() =>
-    z.object({
-      and: z
-        .array(z.union([objRecordQueryItemSchema, objRecordLogicalQuerySchema]))
-        .max(100)
-        .optional(),
-      or: z
-        .array(z.union([objRecordQueryItemSchema, objRecordLogicalQuerySchema]))
-        .max(100)
-        .optional(),
-    })
-  );
 
 export const stringMetaQuerySchema = z.object({
   eq: z.string().optional(),
@@ -332,14 +309,46 @@ export const objMetaQuerySchema = z.object({
 export { META_QUERY_KEYS };
 
 /**
- * Internal storage query schema. projectId is optional here because many
- * internal helpers legitimately query without a project scope (e.g. by id
- * only, or by tag).
+ * A single leaf query: flat recordQuery (implicit AND across items) plus merged
+ * metaQuery.
  */
-export const objQuerySchema = z.object({
-  recordQuery: objRecordLogicalQuerySchema.optional(),
+export const objQueryLeafSchema = z.object({
+  recordQuery: objRecordQueryListSchema.optional(),
   metaQuery: objMetaQuerySchema.optional(),
 });
+
+export type IObjQueryLeaf = z.infer<typeof objQueryLeafSchema>;
+
+export interface IObjQueryLogical {
+  and?: IObjQueryBranch[];
+  or?: IObjQueryBranch[];
+}
+
+export type IObjQueryBranch = IObjQueryLeaf | IObjQueryLogical;
+
+export const objQueryLogicalSchema: z.ZodType<IObjQueryLogical> = z.lazy(() =>
+  z.object({
+    and: z
+      .array(z.union([objQueryLeafSchema, objQueryLogicalSchema]))
+      .max(100)
+      .optional(),
+    or: z
+      .array(z.union([objQueryLeafSchema, objQueryLogicalSchema]))
+      .max(100)
+      .optional(),
+  })
+);
+
+/**
+ * Internal storage query schema.
+ *
+ * Convenience: callers may provide a single leaf directly. Use logical and/or
+ * only when composition is needed.
+ */
+export const objQuerySchema = z.union([
+  objQueryLeafSchema,
+  objQueryLogicalSchema,
+]);
 
 /**
  * External query schema: require projectId so that public helpers like
@@ -349,10 +358,17 @@ export const objExternalMetaQuerySchema = objMetaQuerySchema.extend({
   projectId: stringMetaQuerySchema,
 });
 
-export const objExternalQuerySchema = z.object({
-  recordQuery: objRecordLogicalQuerySchema.optional(),
+export const objExternalQueryLeafSchema = objQueryLeafSchema.extend({
   metaQuery: objExternalMetaQuerySchema,
 });
+
+export const objExternalQueryLogicalSchema: z.ZodType<IObjQueryLogical> =
+  objQueryLogicalSchema;
+
+export const objExternalQuerySchema = z.union([
+  objExternalQueryLeafSchema,
+  objExternalQueryLogicalSchema,
+]);
 
 export const objSortSchema = z.object({
   /**
@@ -439,6 +455,31 @@ export function getProjectIdFromMetaQuery(
     return p.in[0];
   return undefined;
 }
+
+/** Type guard: query is a leaf (has recordQuery and/or metaQuery, not and/or). */
+export function isObjQueryLeaf(query: IObjQueryBranch): query is IObjQueryLeaf {
+  return (
+    typeof query === "object" &&
+    query !== null &&
+    !("and" in query && Array.isArray((query as IObjQueryLogical).and)) &&
+    !("or" in query && Array.isArray((query as IObjQueryLogical).or))
+  );
+}
+
+/**
+ * Resolves projectId from the first leaf of an obj query (for field resolution).
+ */
+export function getProjectIdFromObjQuery(
+  query: IObjQueryBranch | undefined
+): string | undefined {
+  if (!query) return undefined;
+  if (isObjQueryLeaf(query)) return getProjectIdFromMetaQuery(query.metaQuery);
+  const logical = query as IObjQueryLogical;
+  const firstBranch = logical.and?.[0] ?? logical.or?.[0];
+  if (!firstBranch) return undefined;
+  return getProjectIdFromObjQuery(firstBranch as IObjQueryBranch);
+}
+
 export type IObjSort = z.infer<typeof objSortSchema>;
 export type IObjSortList = z.infer<typeof objSortListSchema>;
 export type OnConflict = z.infer<typeof onConflictSchema>;

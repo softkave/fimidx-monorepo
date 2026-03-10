@@ -206,15 +206,13 @@ describe("getLogs integration", () => {
     const args = makeGetLogsArgs({
       query: {
         projectId: projectId,
-        logsQuery: {
-          and: [
-            {
-              op: "eq",
-              field: "level",
-              value: "error",
-            },
-          ],
-        },
+        logsQuery: [
+          {
+            op: "eq",
+            field: "level",
+            value: "error",
+          },
+        ],
       },
     });
 
@@ -251,20 +249,18 @@ describe("getLogs integration", () => {
     const args = makeGetLogsArgs({
       query: {
         projectId: projectId,
-        logsQuery: {
-          and: [
-            {
-              op: "eq",
-              field: "level",
-              value: "info",
-            },
-            {
-              op: "eq",
-              field: "source",
-              value: "api",
-            },
-          ],
-        },
+        logsQuery: [
+          {
+            op: "eq",
+            field: "level",
+            value: "info",
+          },
+          {
+            op: "eq",
+            field: "source",
+            value: "api",
+          },
+        ],
       },
     });
 
@@ -470,15 +466,13 @@ describe("getLogs integration", () => {
     const args = makeGetLogsArgs({
       query: {
         projectId: projectId,
-        logsQuery: {
-          and: [
-            {
-              op: "eq",
-              field: "metadata.user.role",
-              value: "admin",
-            },
-          ],
-        },
+        logsQuery: [
+          {
+            op: "eq",
+            field: "metadata.user.role",
+            value: "admin",
+          },
+        ],
       },
     });
 

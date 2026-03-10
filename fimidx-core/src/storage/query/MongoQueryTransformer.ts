@@ -7,14 +7,16 @@ import {
   type IObj,
   type IObjField,
   type IObjMetaQuery,
-  type IObjRecordLogicalQuery,
+  type IObjQuery,
+  type IObjQueryLeaf,
+  type IObjQueryLogical,
   type IObjRecordQueryItem,
   type IObjRecordQueryList,
-  type IObjQuery,
   type IObjSortList,
   type IStringMetaQuery,
   type ITopLevelFieldQuery,
 } from "../../definitions/obj.js";
+import { isObjQueryLeaf } from "../../definitions/obj.js";
 import { BaseQueryTransformer } from "./BaseQueryTransformer.js";
 
 export class MongoQueryTransformer extends BaseQueryTransformer<
@@ -25,23 +27,29 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
     date: Date,
     fields?: Map<string, IObjField>
   ): FilterQuery<IObj> {
+    // Breaking change: boolean logic is now expressed at obj-query level only.
+    // Still support callers passing a single leaf by treating it as { and: [leaf] }.
+    return isObjQueryLeaf(query)
+      ? this.transformObjLogicalQuery({ and: [query] }, date, fields)
+      : this.transformObjLogicalQuery(query as IObjQueryLogical, date, fields);
+  }
+
+  private transformLeafQuery(
+    leaf: IObjQueryLeaf,
+    date: Date,
+    fields?: Map<string, IObjField>
+  ): FilterQuery<IObj> {
     const filters: FilterQuery<IObj>[] = [];
 
-    // Record query filter
-    if (query.recordQuery) {
-      const recordFilter = this.transformLogicalQuery(
-        query.recordQuery,
-        date,
-        fields
-      );
+    if (leaf.recordQuery?.length) {
+      const recordFilter = this.transformRecordQuery(leaf.recordQuery, date, fields);
       if (Object.keys(recordFilter).length > 0) filters.push(recordFilter);
     }
 
-    // Merged metaQuery: split into meta keys vs top-level keys
-    if (query.metaQuery) {
+    if (leaf.metaQuery) {
       const metaOnly: IObjMetaQuery = {};
       const topLevelOnly: ITopLevelFieldQuery = {};
-      Object.entries(query.metaQuery).forEach(([key, value]) => {
+      Object.entries(leaf.metaQuery).forEach(([key, value]) => {
         if (value === undefined) return;
         if (META_QUERY_KEYS.has(key)) {
           (metaOnly as Record<string, unknown>)[key] = value;
@@ -49,23 +57,57 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
           (topLevelOnly as Record<string, unknown>)[key] = value;
         }
       });
+
       if (Object.keys(metaOnly).length > 0) {
         const metaFilter = this.transformMetaQuery(metaOnly, date);
         if (Object.keys(metaFilter).length > 0) filters.push(metaFilter);
       }
+
       if (Object.keys(topLevelOnly).length > 0) {
-        const topLevelFilter = this.transformTopLevelFields(
-          topLevelOnly,
-          date
-        );
-        if (Object.keys(topLevelFilter).length > 0)
-          filters.push(topLevelFilter);
+        const topLevelFilter = this.transformTopLevelFields(topLevelOnly, date);
+        if (Object.keys(topLevelFilter).length > 0) filters.push(topLevelFilter);
       }
     }
 
     if (filters.length === 0) return {};
     if (filters.length === 1) return filters[0];
     return { $and: filters };
+  }
+
+  private transformObjLogicalQuery(
+    logicalQuery: IObjQueryLogical,
+    date: Date,
+    fields?: Map<string, IObjField>
+  ): FilterQuery<IObj> {
+    let filter: FilterQuery<IObj> = {};
+
+    const hasAnd = !!logicalQuery.and?.length;
+    const hasOr = !!logicalQuery.or?.length;
+
+    const branchToFilter = (branch: IObjQuery): FilterQuery<IObj> =>
+      isObjQueryLeaf(branch)
+        ? this.transformLeafQuery(branch, date, fields)
+        : this.transformObjLogicalQuery(branch as IObjQueryLogical, date, fields);
+
+    if (hasAnd && hasOr) {
+      const andFilters = logicalQuery.and!.map((b) => branchToFilter(b as IObjQuery));
+      const orFilters = logicalQuery.or!.map((b) => branchToFilter(b as IObjQuery));
+      filter = { $or: [{ $and: andFilters }, ...orFilters] };
+    } else if (hasAnd) {
+      const andFilters = logicalQuery.and!.map((b) => branchToFilter(b as IObjQuery));
+      filter =
+        andFilters.length === 1
+          ? andFilters[0]
+          : ({ $and: andFilters } as FilterQuery<IObj>);
+    } else if (hasOr) {
+      const orFilters = logicalQuery.or!.map((b) => branchToFilter(b as IObjQuery));
+      filter =
+        orFilters.length === 1
+          ? orFilters[0]
+          : ({ $or: orFilters } as FilterQuery<IObj>);
+    }
+
+    return filter;
   }
 
   transformSort(
@@ -155,52 +197,6 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
       mongoQuery[field] = { ...ops };
     }
     return mongoQuery;
-  }
-
-  /** Type guard: branch is a single condition item (not a nested logical query). */
-  private isRecordItem(
-    branch: IObjRecordQueryItem | IObjRecordLogicalQuery
-  ): branch is IObjRecordQueryItem {
-    return "op" in branch && "field" in branch;
-  }
-
-  protected transformLogicalQuery(
-    logicalQuery: IObjRecordLogicalQuery,
-    date: Date,
-    fields?: Map<string, IObjField>
-  ): FilterQuery<IObj> {
-    let filter: FilterQuery<IObj> = {};
-
-    const hasAnd = !!logicalQuery.and?.length;
-    const hasOr = !!logicalQuery.or?.length;
-
-    const branchToFilter = (
-      branch: IObjRecordQueryItem | IObjRecordLogicalQuery
-    ): FilterQuery<IObj> =>
-      this.isRecordItem(branch)
-        ? this.transformRecordQuery([branch], date, fields)
-        : this.transformLogicalQuery(branch as IObjRecordLogicalQuery, date, fields);
-
-    if (hasAnd && hasOr) {
-      // When both AND and OR are present: (AND conditions) OR (OR conditions)
-      const andFilters = logicalQuery.and!.map(branchToFilter);
-      const orFilters = logicalQuery.or!.map(branchToFilter);
-      filter = { $or: [{ $and: andFilters }, ...orFilters] };
-    } else if (hasAnd) {
-      const andFilters = logicalQuery.and!.map(branchToFilter);
-      filter =
-        andFilters.length === 1
-          ? andFilters[0]
-          : ({ $and: andFilters } as FilterQuery<IObj>);
-    } else if (hasOr) {
-      const orFilters = logicalQuery.or!.map(branchToFilter);
-      filter =
-        orFilters.length === 1
-          ? orFilters[0]
-          : ({ $or: orFilters } as FilterQuery<IObj>);
-    }
-
-    return filter;
   }
 
   protected transformMetaQuery(

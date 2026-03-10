@@ -27,15 +27,7 @@ function makeAddMonitorArgs(
     status: "enabled",
     reportsTo: ["user1", "user2"],
     interval: { days: 1 },
-    query: {
-      and: [
-        {
-          op: "eq",
-          field: "level",
-          value: "error",
-        },
-      ],
-    },
+    query: [{ op: "eq", field: "level", value: "error" }],
     ...overrides,
   };
 }
@@ -119,20 +111,18 @@ describe("addMonitor integration", () => {
       status: "enabled",
       reportsTo: ["user1", "user2", "user3"],
       interval: { hours: 6 },
-      query: {
-        and: [
-          {
-            op: "eq",
-            field: "level",
-            value: "error",
-          },
-          {
-            op: "gt",
-            field: "count",
-            value: 10,
-          },
-        ],
-      },
+      query: [
+        {
+          op: "eq",
+          field: "level",
+          value: "error",
+        },
+        {
+          op: "gt",
+          field: "count",
+          value: 10,
+        },
+      ],
     });
 
     const result = await addMonitor({
@@ -325,20 +315,18 @@ describe("addMonitor integration", () => {
   it("creates a monitor with complex query", async () => {
     const args = makeAddMonitorArgs({
       name: "Complex Query Monitor",
-      query: {
-        or: [
-          {
-            op: "eq",
-            field: "level",
-            value: "error",
-          },
-          {
-            op: "like",
-            field: "message",
-            value: "critical",
-          },
-        ],
-      },
+      query: [
+        {
+          op: "eq",
+          field: "level",
+          value: "error",
+        },
+        {
+          op: "like",
+          field: "message",
+          value: "critical",
+        },
+      ],
     });
 
     const result = await addMonitor({

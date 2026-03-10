@@ -123,6 +123,59 @@ describe("MongoObjStorage (integration)", () => {
     expect(deleted.deletedBy ?? "").toBe("deleter");
   });
 
+  it("should bulk delete using obj-level OR query", async () => {
+    const tag = "bulk-delete-or-tag";
+    const projectId = "bulk-delete-or-project";
+
+    const objA1 = makeObjFields({
+      objRecord: { type: "A" },
+      tag,
+      projectId,
+    });
+    const objA2 = makeObjFields({
+      objRecord: { type: "A", extra: 1 },
+      tag,
+      projectId,
+    });
+    const objB1 = makeObjFields({
+      objRecord: { type: "B" },
+      tag,
+      projectId,
+    });
+    const controlObj = makeObjFields({
+      objRecord: { type: "C" },
+      tag,
+      projectId,
+    });
+
+    await objModel.insertMany([objA1, objA2, objB1, controlObj]);
+
+    const result = await storage.bulkDelete({
+      query: {
+        or: [
+          {
+            metaQuery: { projectId: { eq: projectId } },
+            recordQuery: [{ op: "eq", field: "type", value: "A" }],
+          },
+          {
+            metaQuery: { projectId: { eq: projectId } },
+            recordQuery: [{ op: "eq", field: "type", value: "B" }],
+          },
+        ],
+      },
+      tag,
+      deletedBy: "bulk-deleter",
+      deletedByType: "user",
+      deleteMany: true,
+    });
+
+    expect(result.deletedCount).toBe(3);
+
+    const remaining = await objModel.find({ tag }).lean();
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].objRecord?.type).toBe("C");
+  });
+
   it("should bulk upsert objects", async () => {
     const items = [
       makeInputObjRecord({ name: "Bulk1" }),
@@ -374,9 +427,7 @@ describe("MongoObjStorage (integration)", () => {
       const result = await storage.read({
         query: {
           metaQuery: { projectId: { eq: "nested-project" } },
-          recordQuery: {
-            and: [{ op: "eq", field: "user.name", value: "john" }],
-          },
+          recordQuery: [{ op: "eq", field: "user.name", value: "john" }],
         },
         tag: "nested-tag",
       });
@@ -399,15 +450,13 @@ describe("MongoObjStorage (integration)", () => {
       const result = await storage.read({
         query: {
           metaQuery: { projectId: { eq: "array-project" } },
-          recordQuery: {
-            and: [
-              {
-                op: "in",
-                field: "metadata.tags",
-                value: ["important", "urgent"],
-              },
-            ],
-          },
+          recordQuery: [
+            {
+              op: "in",
+              field: "metadata.tags",
+              value: ["important", "urgent"],
+            },
+          ],
         },
         tag: "array-tag",
       });
@@ -430,9 +479,9 @@ describe("MongoObjStorage (integration)", () => {
       const result = await storage.read({
         query: {
           metaQuery: { projectId: { eq: "exists-project" } },
-          recordQuery: {
-            and: [{ op: "exists", field: "settings.enabled", value: true }],
-          },
+          recordQuery: [
+            { op: "exists", field: "settings.enabled", value: true },
+          ],
         },
         tag: "exists-tag",
       });
@@ -455,9 +504,7 @@ describe("MongoObjStorage (integration)", () => {
       const result = await storage.read({
         query: {
           metaQuery: { projectId: { eq: "num-project" } },
-          recordQuery: {
-            and: [{ op: "gte", field: "stats.views", value: 1000 }],
-          },
+          recordQuery: [{ op: "gte", field: "stats.views", value: 1000 }],
         },
         tag: "num-tag",
       });
@@ -480,9 +527,9 @@ describe("MongoObjStorage (integration)", () => {
       const result = await storage.read({
         query: {
           metaQuery: { projectId: { eq: "between-project" } },
-          recordQuery: {
-            and: [{ op: "between", field: "created", value: [2020, 2025] }],
-          },
+          recordQuery: [
+            { op: "between", field: "created", value: [2020, 2025] },
+          ],
         },
         tag: "between-tag",
       });
@@ -490,7 +537,7 @@ describe("MongoObjStorage (integration)", () => {
       expect(result.objs[0].objRecord.created).toBe(2022);
     });
 
-    it("should support logical AND/OR", async () => {
+    it("should support logical OR at obj-level", async () => {
       const obj1 = makeObjFields({
         objRecord: { status: "active", score: 200 },
         tag: "logic-tag",
@@ -509,21 +556,27 @@ describe("MongoObjStorage (integration)", () => {
       await objModel.insertMany([obj1, obj2, obj3]);
       const result = await storage.read({
         query: {
-          metaQuery: { projectId: { eq: "logic-project" } },
-          recordQuery: {
-            and: [
-              { op: "eq", field: "status", value: "active" },
-              { op: "gt", field: "score", value: 100 },
-            ],
-            or: [
-              { op: "eq", field: "status", value: "inactive" },
-              { op: "lt", field: "score", value: 100 },
-            ],
-          },
+          or: [
+            {
+              metaQuery: { projectId: { eq: "logic-project" } },
+              recordQuery: [
+                { op: "eq", field: "status", value: "active" },
+                { op: "gt", field: "score", value: 100 },
+              ],
+            },
+            {
+              metaQuery: { projectId: { eq: "logic-project" } },
+              recordQuery: [{ op: "eq", field: "status", value: "inactive" }],
+            },
+            {
+              metaQuery: { projectId: { eq: "logic-project" } },
+              recordQuery: [{ op: "lt", field: "score", value: 100 }],
+            },
+          ],
         },
         tag: "logic-tag",
       });
-      // Should match obj1 (AND) and obj2/obj3 (OR)
+      // Should match obj1 (leaf A) and obj2/obj3 (leaf B/C)
       const ids = result.objs.map((o) => o.id);
       expect(ids).toContain(obj1.id);
       expect(ids).toContain(obj2.id);
@@ -1217,9 +1270,7 @@ describe("MongoObjStorage (integration)", () => {
     const result = await storage.read({
       query: {
         metaQuery: { projectId: { eq: obj.projectId } },
-        recordQuery: {
-          and: [{ op: "eq", field: "reportsTo.userId", value: "user1" }],
-        },
+        recordQuery: [{ op: "eq", field: "reportsTo.userId", value: "user1" }],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1266,9 +1317,7 @@ describe("MongoObjStorage (integration)", () => {
     const result = await storage.read({
       query: {
         metaQuery: { projectId: { eq: obj.projectId } },
-        recordQuery: {
-          and: [{ op: "eq", field: "query.and.op", value: "eq" }],
-        },
+        recordQuery: [{ op: "eq", field: "query.and.op", value: "eq" }],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1335,9 +1384,7 @@ describe("MongoObjStorage (integration)", () => {
     const result = await storage.read({
       query: {
         metaQuery: { projectId: { eq: obj.projectId } },
-        recordQuery: {
-          and: [{ op: "eq", field: "query.and.op.subOp", value: "eq" }],
-        },
+        recordQuery: [{ op: "eq", field: "query.and.op.subOp", value: "eq" }],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1382,11 +1429,9 @@ describe("MongoObjStorage (integration)", () => {
     const result = await storage.read({
       query: {
         metaQuery: { projectId: { eq: obj.projectId } },
-        recordQuery: {
-          and: [
-            { op: "in", field: "reportsTo.userId", value: ["user1", "user3"] },
-          ],
-        },
+        recordQuery: [
+          { op: "in", field: "reportsTo.userId", value: ["user1", "user3"] },
+        ],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1430,15 +1475,13 @@ describe("MongoObjStorage (integration)", () => {
     const result = await storage.read({
       query: {
         metaQuery: { projectId: { eq: obj.projectId } },
-        recordQuery: {
-          and: [
-            {
-              op: "not_in",
-              field: "reportsTo.userId",
-              value: ["user3", "user4"],
-            },
-          ],
-        },
+        recordQuery: [
+          {
+            op: "not_in",
+            field: "reportsTo.userId",
+            value: ["user3", "user4"],
+          },
+        ],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1483,9 +1526,7 @@ describe("MongoObjStorage (integration)", () => {
     const result = await storage.read({
       query: {
         metaQuery: { projectId: { eq: obj.projectId } },
-        recordQuery: {
-          and: [{ op: "gte", field: "scores.value", value: 90 }],
-        },
+        recordQuery: [{ op: "gte", field: "scores.value", value: 90 }],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1529,9 +1570,9 @@ describe("MongoObjStorage (integration)", () => {
     const result = await storage.read({
       query: {
         metaQuery: { projectId: { eq: obj.projectId } },
-        recordQuery: {
-          and: [{ op: "exists", field: "reportsTo.permissions", value: true }],
-        },
+        recordQuery: [
+          { op: "exists", field: "reportsTo.permissions", value: true },
+        ],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1575,11 +1616,9 @@ describe("MongoObjStorage (integration)", () => {
     const result = await storage.read({
       query: {
         metaQuery: { projectId: { eq: obj.projectId } },
-        recordQuery: {
-          and: [
-            { op: "like", field: "reportsTo.email", value: ".*@example\\.com" },
-          ],
-        },
+        recordQuery: [
+          { op: "like", field: "reportsTo.email", value: ".*@example\\.com" },
+        ],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1624,12 +1663,10 @@ describe("MongoObjStorage (integration)", () => {
     const result = await storage.read({
       query: {
         metaQuery: { projectId: { eq: obj.projectId } },
-        recordQuery: {
-          and: [
-            { op: "eq", field: "name", value: "Test Object" },
-            { op: "eq", field: "reportsTo.userId", value: "user1" },
-          ],
-        },
+        recordQuery: [
+          { op: "eq", field: "name", value: "Test Object" },
+          { op: "eq", field: "reportsTo.userId", value: "user1" },
+        ],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1670,9 +1707,7 @@ describe("MongoObjStorage (integration)", () => {
     const result = await storage.read({
       query: {
         metaQuery: { projectId: { eq: obj.projectId } },
-        recordQuery: {
-          and: [{ op: "eq", field: "reportsTo.userId", value: "user1" }],
-        },
+        recordQuery: [{ op: "eq", field: "reportsTo.userId", value: "user1" }],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1716,9 +1751,9 @@ describe("MongoObjStorage (integration)", () => {
     const result = await storage.read({
       query: {
         metaQuery: { projectId: { eq: obj.projectId } },
-        recordQuery: {
-          and: [{ op: "between", field: "scores.value", value: [80, 95] }],
-        },
+        recordQuery: [
+          { op: "between", field: "scores.value", value: [80, 95] },
+        ],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1760,9 +1795,7 @@ describe("MongoObjStorage (integration)", () => {
     const result = await storage.read({
       query: {
         metaQuery: { projectId: { eq: obj.projectId } },
-        recordQuery: {
-          and: [{ op: "eq", field: "tags", value: "typescript" }],
-        },
+        recordQuery: [{ op: "eq", field: "tags", value: "typescript" }],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1806,9 +1839,7 @@ describe("MongoObjStorage (integration)", () => {
     const result = await storage.read({
       query: {
         metaQuery: { projectId: { eq: obj.projectId } },
-        recordQuery: {
-          and: [{ op: "neq", field: "reportsTo.userId", value: "user3" }],
-        },
+        recordQuery: [{ op: "neq", field: "reportsTo.userId", value: "user3" }],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1881,11 +1912,9 @@ describe("MongoObjStorage (integration)", () => {
     const result = await storage.read({
       query: {
         metaQuery: { projectId: { eq: obj.projectId } },
-        recordQuery: {
-          and: [
-            { op: "eq", field: "workflow.steps.actions.type", value: "email" },
-          ],
-        },
+        recordQuery: [
+          { op: "eq", field: "workflow.steps.actions.type", value: "email" },
+        ],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1925,9 +1954,7 @@ describe("MongoObjStorage (integration)", () => {
     const result1 = await storage.read({
       query: {
         metaQuery: { projectId: { eq: obj1.projectId } },
-        recordQuery: {
-          and: [{ op: "eq", field: "reportsTo.userId", value: "user1" }],
-        },
+        recordQuery: [{ op: "eq", field: "reportsTo.userId", value: "user1" }],
       },
       tag: obj1.tag,
       fields: arrayFieldsMap,
@@ -1935,14 +1962,395 @@ describe("MongoObjStorage (integration)", () => {
     const result2 = await storage.read({
       query: {
         metaQuery: { projectId: { eq: obj2.projectId } },
-        recordQuery: {
-          and: [{ op: "eq", field: "reportsTo.userId", value: "user2" }],
-        },
+        recordQuery: [{ op: "eq", field: "reportsTo.userId", value: "user2" }],
       },
       tag: obj2.tag,
       fields: new Map(),
     });
     expect(result1.objs.some((o) => o.id === obj1.id)).toBe(true);
     expect(result2.objs.some((o) => o.id === obj2.id)).toBe(true);
+  });
+
+  describe("read (pagination, includeDeleted, date)", () => {
+    it("should return page, limit, and hasMore correctly", async () => {
+      const tag = "page-tag";
+      const projectId = "page-project";
+      const objs = Array.from({ length: 5 }, (_, i) =>
+        makeObjFields({
+          objRecord: { name: `Item${i}` },
+          tag,
+          projectId,
+        })
+      );
+      await objModel.insertMany(objs);
+      const result = await storage.read({
+        query: { metaQuery: { projectId: { eq: projectId } } },
+        tag,
+        page: 0,
+        limit: 2,
+      });
+      expect(result.page).toBe(0);
+      expect(result.limit).toBe(2);
+      expect(result.objs).toHaveLength(2);
+      expect(result.hasMore).toBe(true);
+      const result2 = await storage.read({
+        query: { metaQuery: { projectId: { eq: projectId } } },
+        tag,
+        page: 2,
+        limit: 2,
+      });
+      expect(result2.page).toBe(2);
+      expect(result2.objs).toHaveLength(1);
+      expect(result2.hasMore).toBe(false);
+    });
+
+    it("should exclude deleted by default and include them when includeDeleted is true", async () => {
+      const objLive = makeObjFields({
+        tag: "del-tag",
+        projectId: "del-project",
+        deletedAt: null,
+      });
+      const objDeleted = makeObjFields({
+        tag: "del-tag",
+        projectId: "del-project",
+        deletedAt: new Date(),
+        deletedBy: "user",
+        deletedByType: "user",
+      });
+      await objModel.insertMany([objLive, objDeleted]);
+      const resultDefault = await storage.read({
+        query: { metaQuery: { projectId: { eq: "del-project" } } },
+        tag: "del-tag",
+      });
+      expect(resultDefault.objs).toHaveLength(1);
+      expect(resultDefault.objs[0].id).toBe(objLive.id);
+      const resultInclude = await storage.read({
+        query: { metaQuery: { projectId: { eq: "del-project" } } },
+        tag: "del-tag",
+        includeDeleted: true,
+      });
+      expect(resultInclude.objs).toHaveLength(2);
+    });
+
+    it("should use custom date when provided", async () => {
+      const obj = makeObjFields({
+        tag: "date-tag",
+        projectId: "date-project",
+      });
+      await objModel.create(obj);
+      const customDate = new Date("2020-06-01T00:00:00Z");
+      const result = await storage.read({
+        query: { metaQuery: { projectId: { eq: "date-project" } } },
+        tag: "date-tag",
+        date: customDate,
+      });
+      expect(result.objs.length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  describe("update (no matches, shouldIndex, fieldsToIndex)", () => {
+    it("should return updatedCount 0 and empty updatedObjs when no objects match", async () => {
+      const result = await storage.update({
+        query: { metaQuery: { projectId: { eq: "nonexistent-project" } } },
+        tag: "nonexistent-tag",
+        update: { name: "Noop" },
+        by: "user",
+        byType: "user",
+      });
+      expect(result.updatedCount).toBe(0);
+      expect(result.updatedObjs).toEqual([]);
+    });
+
+    it("should apply shouldIndex and fieldsToIndex on update", async () => {
+      const obj = makeObjFields({
+        objRecord: { name: "Original" },
+        shouldIndex: true,
+        fieldsToIndex: ["name"],
+        tag: "idx-tag",
+        projectId: "idx-project",
+      });
+      await objModel.create(obj);
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "idx-project" } } },
+        tag: "idx-tag",
+        update: { name: "Updated" },
+        by: "user",
+        byType: "user",
+        shouldIndex: false,
+        fieldsToIndex: ["name", "other"],
+      });
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      expect(updated?.shouldIndex).toBe(false);
+      expect(updated?.fieldsToIndex).toEqual(["name", "other"]);
+    });
+  });
+
+  describe("delete (no matches, date override)", () => {
+    it("should return deletedCount 0 when no objects match", async () => {
+      const result = await storage.delete({
+        query: { metaQuery: { projectId: { eq: "nonexistent" } } },
+        tag: "nonexistent-tag",
+        deletedBy: "user",
+        deletedByType: "user",
+      });
+      expect(result.deletedCount).toBe(0);
+    });
+
+    it("should use provided date for deletedAt", async () => {
+      const obj = makeObjFields({ tag: "deldate-tag", projectId: "deldate-project" });
+      await objModel.create(obj);
+      const deleteDate = new Date("2022-05-15T12:00:00Z");
+      await storage.delete({
+        query: { metaQuery: { projectId: { eq: "deldate-project" } } },
+        tag: "deldate-tag",
+        date: deleteDate,
+        deletedBy: "user",
+        deletedByType: "user",
+      });
+      const doc = await objModel.findOne({ id: obj.id }).lean();
+      expect(doc?.deletedAt).toEqual(deleteDate);
+    });
+  });
+
+  describe("bulkUpsert (edge cases)", () => {
+    it("should treat all items as new when conflictOnKeys is empty", async () => {
+      const items = [
+        makeInputObjRecord({ name: "A" }),
+        makeInputObjRecord({ name: "B" }),
+      ];
+      const result = await storage.bulkUpsert({
+        items,
+        conflictOnKeys: [],
+        tag: "empty-conflict-tag",
+        projectId: "empty-conflict-project",
+        groupId: "g",
+        createdBy: "u",
+        createdByType: "user",
+      });
+      expect(result.newObjs.length).toBe(2);
+      expect(result.updatedObjs.length).toBe(0);
+      const result2 = await storage.bulkUpsert({
+        items,
+        conflictOnKeys: [],
+        tag: "empty-conflict-tag",
+        projectId: "empty-conflict-project",
+        groupId: "g",
+        createdBy: "u",
+        createdByType: "user",
+      });
+      expect(result2.newObjs.length).toBe(2);
+    });
+
+    it("should apply fieldsToIndex and dedupe", async () => {
+      const items = [makeInputObjRecord({ name: "F1", x: 1 })];
+      const result = await storage.bulkUpsert({
+        items,
+        conflictOnKeys: ["name"],
+        onConflict: "replace",
+        tag: "fti-tag",
+        projectId: "fti-project",
+        groupId: "g",
+        createdBy: "u",
+        createdByType: "user",
+        fieldsToIndex: ["name", "x", "name"],
+      });
+      expect(result.newObjs.length).toBe(1);
+      const created = await objModel.findOne({ "objRecord.name": "F1" }).lean();
+      expect(created?.fieldsToIndex).toEqual(["name", "x"]);
+    });
+
+    it("should handle empty items array", async () => {
+      const result = await storage.bulkUpsert({
+        items: [],
+        conflictOnKeys: ["name"],
+        tag: "empty-items-tag",
+        projectId: "empty-items-project",
+        groupId: "g",
+        createdBy: "u",
+        createdByType: "user",
+      });
+      expect(result.newObjs).toHaveLength(0);
+      expect(result.updatedObjs).toHaveLength(0);
+      expect(result.totalProcessed).toBe(0);
+    });
+  });
+
+  describe("bulkUpdate (count, onProgress, no matches)", () => {
+    it("should limit updates when count is provided", async () => {
+      const objs = Array.from({ length: 5 }, (_, i) =>
+        makeObjFields({
+          objRecord: { name: `CU${i}` },
+          tag: "count-tag",
+          projectId: "count-project",
+        })
+      );
+      await objModel.insertMany(objs);
+      const result = await storage.bulkUpdate({
+        query: { metaQuery: { projectId: { eq: "count-project" } } },
+        tag: "count-tag",
+        update: { touched: true },
+        by: "u",
+        byType: "user",
+        count: 2,
+      });
+      expect(result.updatedCount).toBe(2);
+      expect(result.totalProcessed).toBe(2);
+      const touched = await objModel.countDocuments({ "objRecord.touched": true });
+      expect(touched).toBe(2);
+    });
+
+    it("should call onProgress with totalProcessed and total", async () => {
+      const objs = Array.from({ length: 3 }, (_, i) =>
+        makeObjFields({
+          objRecord: { name: `OP${i}` },
+          tag: "progress-tag",
+          projectId: "progress-project",
+        })
+      );
+      await objModel.insertMany(objs);
+      const progressCalls: [number, number][] = [];
+      await storage.bulkUpdate({
+        query: { metaQuery: { projectId: { eq: "progress-project" } } },
+        tag: "progress-tag",
+        update: { x: 1 },
+        by: "u",
+        byType: "user",
+        onProgress: (processed, total) => progressCalls.push([processed, total]),
+      });
+      expect(progressCalls.length).toBeGreaterThanOrEqual(1);
+      expect(progressCalls.some(([p]) => p === 3)).toBe(true);
+    });
+
+    it("should return empty when no objects match", async () => {
+      const result = await storage.bulkUpdate({
+        query: { metaQuery: { projectId: { eq: "no-match-project" } } },
+        tag: "no-match-tag",
+        update: { x: 1 },
+        by: "u",
+        byType: "user",
+      });
+      expect(result.updatedCount).toBe(0);
+      expect(result.updatedObjs).toHaveLength(0);
+      expect(result.totalProcessed).toBe(0);
+    });
+
+    it("should apply shouldIndex and fieldsToIndex in bulkUpdate", async () => {
+      const obj = makeObjFields({
+        objRecord: { name: "BU" },
+        shouldIndex: true,
+        fieldsToIndex: ["name"],
+        tag: "bu-idx-tag",
+        projectId: "bu-idx-project",
+      });
+      await objModel.create(obj);
+      await storage.bulkUpdate({
+        query: { metaQuery: { projectId: { eq: "bu-idx-project" } } },
+        tag: "bu-idx-tag",
+        update: { extra: 1 },
+        by: "u",
+        byType: "user",
+        shouldIndex: false,
+        fieldsToIndex: ["name", "extra"],
+      });
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated?.shouldIndex).toBe(false);
+      expect(updated?.fieldsToIndex).toEqual(["name", "extra"]);
+    });
+  });
+
+  describe("bulkDelete (deleteMany false, hardDelete)", () => {
+    it("should delete only one when deleteMany is false", async () => {
+      const objs = Array.from({ length: 3 }, (_, i) =>
+        makeObjFields({
+          objRecord: { type: "T" },
+          tag: "dm-false-tag",
+          projectId: "dm-false-project",
+        })
+      );
+      await objModel.insertMany(objs);
+      const result = await storage.bulkDelete({
+        query: { metaQuery: { projectId: { eq: "dm-false-project" } } },
+        tag: "dm-false-tag",
+        deletedBy: "u",
+        deletedByType: "user",
+        deleteMany: false,
+      });
+      expect(result.deletedCount).toBe(1);
+      const remaining = await objModel.find({
+        projectId: "dm-false-project",
+        tag: "dm-false-tag",
+        deletedAt: null,
+      });
+      expect(remaining).toHaveLength(2);
+    });
+
+    it("should hard delete when hardDelete is true", async () => {
+      const obj = makeObjFields({
+        tag: "hard-tag",
+        projectId: "hard-project",
+      });
+      await objModel.create(obj);
+      const result = await storage.bulkDelete({
+        query: { metaQuery: { projectId: { eq: "hard-project" } } },
+        tag: "hard-tag",
+        deletedBy: "u",
+        deletedByType: "user",
+        deleteMany: true,
+        hardDelete: true,
+      });
+      expect(result.deletedCount).toBe(1);
+      const doc = await objModel.findOne({ id: obj.id }).lean();
+      expect(doc).toBeNull();
+    });
+  });
+
+  describe("cleanupDeletedObjs", () => {
+    it("should permanently remove soft-deleted objects in batches", async () => {
+      const obj1 = makeObjFields({
+        tag: "cleanup-tag",
+        projectId: "cleanup-project",
+        deletedAt: new Date(),
+        deletedBy: "u",
+        deletedByType: "user",
+      });
+      const obj2 = makeObjFields({
+        tag: "cleanup-tag",
+        projectId: "cleanup-project",
+        deletedAt: new Date(),
+        deletedBy: "u",
+        deletedByType: "user",
+      });
+      await objModel.insertMany([obj1, obj2]);
+      const result = await storage.cleanupDeletedObjs({ batchSize: 10 });
+      expect(result.cleanedCount).toBe(2);
+      const found1 = await objModel.findOne({ id: obj1.id }).lean();
+      const found2 = await objModel.findOne({ id: obj2.id }).lean();
+      expect(found1).toBeNull();
+      expect(found2).toBeNull();
+    });
+
+    it("should call onProgress with cleaned count", async () => {
+      const obj = makeObjFields({
+        tag: "cleanup-progress-tag",
+        projectId: "cleanup-progress-project",
+        deletedAt: new Date(),
+        deletedBy: "u",
+        deletedByType: "user",
+      });
+      await objModel.insertMany([obj]);
+      const progressCalls: number[] = [];
+      await storage.cleanupDeletedObjs({
+        batchSize: 10,
+        onProgress: (count) => progressCalls.push(count),
+      });
+      expect(progressCalls).toContain(1);
+      expect(progressCalls[progressCalls.length - 1]).toBe(1);
+    });
+
+    it("should return cleanedCount 0 when no deleted objects exist", async () => {
+      const result = await storage.cleanupDeletedObjs();
+      expect(result.cleanedCount).toBe(0);
+    });
   });
 });

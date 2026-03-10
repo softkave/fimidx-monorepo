@@ -217,7 +217,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     const result = await getManyObjs({
       objQuery: {
         metaQuery: { projectId: { eq: obj.projectId } },
-        recordQuery: { and: [{ op: "eq", field: "foo", value: "bar" }] },
+        recordQuery: [{ op: "eq", field: "foo", value: "bar" }],
       },
       tag: obj.tag,
       storageType: backend.type,
@@ -252,7 +252,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     const result = await getManyObjs({
       objQuery: {
         metaQuery: { projectId: { eq: defaultProjectId } },
-        recordQuery: { and: [{ op: "neq", field: "foo", value: "bar" }] },
+        recordQuery: [{ op: "neq", field: "foo", value: "bar" }],
       },
       tag: defaultTag,
       storageType: backend.type,
@@ -293,7 +293,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     const result = await getManyObjs({
       objQuery: {
         metaQuery: { projectId: { eq: defaultProjectId } },
-        recordQuery: { and: [{ op: "in", field: "foo", value: ["bar", "baz"] }] },
+        recordQuery: [{ op: "in", field: "foo", value: ["bar", "baz"] }],
       },
       tag: defaultTag,
       storageType: backend.type,
@@ -335,9 +335,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     const result = await getManyObjs({
       objQuery: {
         metaQuery: { projectId: { eq: defaultProjectId } },
-        recordQuery: {
-          and: [{ op: "not_in", field: "foo", value: ["bar", "baz"] }],
-        },
+        recordQuery: [{ op: "not_in", field: "foo", value: ["bar", "baz"] }],
       },
       tag: defaultTag,
       storageType: backend.type,
@@ -381,7 +379,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     let result = await getManyObjs({
       objQuery: {
         metaQuery: { projectId: { eq: defaultProjectId } },
-        recordQuery: { and: [{ op: "gt", field: "num", value: 5 }] },
+        recordQuery: [{ op: "gt", field: "num", value: 5 }],
       },
       tag: defaultTag,
       storageType: backend.type,
@@ -395,7 +393,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     result = await getManyObjs({
       objQuery: {
         metaQuery: { projectId: { eq: defaultProjectId } },
-        recordQuery: { and: [{ op: "gte", field: "num", value: 10 }] },
+        recordQuery: [{ op: "gte", field: "num", value: 10 }],
       },
       tag: defaultTag,
       storageType: backend.type,
@@ -409,7 +407,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     result = await getManyObjs({
       objQuery: {
         metaQuery: { projectId: { eq: defaultProjectId } },
-        recordQuery: { and: [{ op: "lt", field: "num", value: 15 }] },
+        recordQuery: [{ op: "lt", field: "num", value: 15 }],
       },
       tag: defaultTag,
       storageType: backend.type,
@@ -423,7 +421,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     result = await getManyObjs({
       objQuery: {
         metaQuery: { projectId: { eq: defaultProjectId } },
-        recordQuery: { and: [{ op: "lte", field: "num", value: 10 }] },
+        recordQuery: [{ op: "lte", field: "num", value: 10 }],
       },
       tag: defaultTag,
       storageType: backend.type,
@@ -465,7 +463,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     const result = await getManyObjs({
       objQuery: {
         metaQuery: { projectId: { eq: defaultProjectId } },
-        recordQuery: { and: [{ op: "between", field: "num", value: [8, 12] }] },
+        recordQuery: [{ op: "between", field: "num", value: [8, 12] }],
       },
       tag: defaultTag,
       storageType: backend.type,
@@ -516,12 +514,10 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     const result = await getManyObjs({
       objQuery: {
         metaQuery: { projectId: { eq: defaultProjectId } },
-        recordQuery: {
-          and: [
-            { op: "eq", field: "foo", value: "bar" },
-            { op: "lt", field: "num", value: 10 },
-          ],
-        },
+        recordQuery: [
+          { op: "eq", field: "foo", value: "bar" },
+          { op: "lt", field: "num", value: 10 },
+        ],
       },
       tag: defaultTag,
       storageType: backend.type,

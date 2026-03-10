@@ -6,7 +6,7 @@ import type {
   IObjSortList,
   IStringMetaQuery,
 } from "../../definitions/obj.js";
-import { getProjectIdFromMetaQuery } from "../../definitions/obj.js";
+import { getProjectIdFromObjQuery, isObjQueryLeaf } from "../../definitions/obj.js";
 import { createStorage, getDefaultStorageType } from "../../storage/config.js";
 import type { IObjStorage } from "../../storage/types.js";
 import { getObjFields } from "./getObjFields.js";
@@ -123,7 +123,7 @@ export async function getManyObjs(params: {
   // Fetch fields for query generation
   let fields: IObjField[] = [];
 
-  const projectId = getProjectIdFromMetaQuery(objQuery.metaQuery);
+  const projectId = getProjectIdFromObjQuery(objQuery);
   if (projectId) {
     // Fetch fields
     const fieldsResult = await getObjFields({
@@ -140,9 +140,20 @@ export async function getManyObjs(params: {
   // Convert to Maps for O(1) lookup
   const fieldsMap = new Map(fields.map((f) => [f.path, f]));
 
+  const getIncludeDeletedFromObjQuery = (query: IObjQuery): boolean => {
+    if (isObjQueryLeaf(query)) {
+      return query.metaQuery?.deletedAt === null;
+    }
+    const logical = query as any as { and?: IObjQuery[]; or?: IObjQuery[] };
+    return (
+      (logical.and?.some(getIncludeDeletedFromObjQuery) ?? false) ||
+      (logical.or?.some(getIncludeDeletedFromObjQuery) ?? false)
+    );
+  };
+
   // Determine if we should include deleted objects
   // If metaQuery.deletedAt is explicitly set to null, include deleted objects
-  const includeDeleted = objQuery.metaQuery?.deletedAt === null;
+  const includeDeleted = getIncludeDeletedFromObjQuery(objQuery);
 
   // Use the new read method from the storage abstraction
   const result = await storage.read({

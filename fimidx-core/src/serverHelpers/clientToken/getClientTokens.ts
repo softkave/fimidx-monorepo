@@ -65,16 +65,20 @@ export function getClientTokensObjQuery(params: {
   }
 
   const objQuery: IObjQuery = {
-    recordQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
-    metaQuery: {
-      ...(projectId ? { projectId: { eq: projectId } } : {}),
-      id,
-      createdAt,
-      updatedAt,
-      createdBy,
-      updatedBy,
-      ...(groupId ? { groupId: { eq: groupId } } : {}),
-    },
+    and: [
+      {
+        recordQuery: filterArr.length > 0 ? filterArr : undefined,
+        metaQuery: {
+          ...(projectId ? { projectId: { eq: projectId } } : {}),
+          id,
+          createdAt,
+          updatedAt,
+          createdBy,
+          updatedBy,
+          ...(groupId ? { groupId: { eq: groupId } } : {}),
+        },
+      },
+    ],
   };
 
   return objQuery;
@@ -188,11 +192,15 @@ export async function getClientTokenById(params: {
 }): Promise<IClientToken> {
   const { id, projectId, groupId, storage } = params;
   const objQuery: IObjQuery = {
-    metaQuery: {
-      id: { eq: id },
-      projectId: { eq: projectId },
-      ...(groupId ? { groupId: { eq: groupId } } : {}),
-    },
+    and: [
+      {
+        metaQuery: {
+          id: { eq: id },
+          projectId: { eq: projectId },
+          ...(groupId ? { groupId: { eq: groupId } } : {}),
+        },
+      },
+    ],
   };
   const { objs } = await getManyObjs({
     objQuery,

@@ -52,7 +52,7 @@ export function getProjectsObjQuery(params: { args: GetProjectsEndpointArgs }) {
   });
 
   const objQuery: IObjQuery = {
-    recordQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
+    recordQuery: filterArr.length > 0 ? filterArr : undefined,
     metaQuery: {
       projectId: { eq: kId0 },
       id,

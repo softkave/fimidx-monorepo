@@ -78,10 +78,14 @@ export async function addCallback(params: {
     // The object already exists, we need to fetch it
     const existingCallback = await storage?.read({
       query: {
-        metaQuery: { projectId: { eq: projectId } },
-        recordQuery: {
-          and: [{ field: "idempotencyKey", op: "eq", value: idempotencyKey }],
-        },
+        and: [
+          {
+            metaQuery: { projectId: { eq: projectId } },
+            recordQuery: [
+              { field: "idempotencyKey", op: "eq", value: idempotencyKey },
+            ],
+          },
+        ],
       },
       tag: kObjTags.callback,
     });

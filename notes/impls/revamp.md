@@ -1,5 +1,5 @@
 query member/client token by permissions
-obj projectId should be required
-add tests for nested and/or queries
-orQueries in deleteManyObjs
-why do we need fields in deleteObjs, getObjs, updateObjs
+monitor should use objQuery
+handle [*] in query fields (remove them for \* and transform them for numbers)
+cache project id field resolutions
+collect project ids from query

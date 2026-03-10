@@ -1,6 +1,6 @@
 import { fimidxLogger } from "../../common/logger/fimidx-logger.js";
 import type { IObjField, IObjQuery } from "../../definitions/obj.js";
-import { getProjectIdFromMetaQuery } from "../../definitions/obj.js";
+import { getProjectIdFromObjQuery } from "../../definitions/obj.js";
 import { createStorage, getDefaultStorageType } from "../../storage/config.js";
 import type { IObjStorage } from "../../storage/types.js";
 import { getObjFields } from "./getObjFields.js";
@@ -14,9 +14,6 @@ export async function deleteManyObjs(params: {
   deleteMany?: boolean;
   storageType?: "mongo" | "postgres";
   storage?: IObjStorage;
-  /** When set, delete objs matching any of these queries (OR). objQuery is
-   * ignored for the filter. */
-  orQueries?: IObjQuery[];
 }) {
   const {
     objQuery,
@@ -27,13 +24,11 @@ export async function deleteManyObjs(params: {
     deleteMany = false,
     storageType = getDefaultStorageType(),
     storage = createStorage({ type: storageType }),
-    orQueries,
   } = params;
 
-  // Fetch fields for query generation (use first query's projectId when using orQueries)
+  // Fetch fields for query generation
   let fields: IObjField[] = [];
-  const queryForFields = orQueries?.length ? orQueries[0] : objQuery;
-  const projectId = getProjectIdFromMetaQuery(queryForFields.metaQuery);
+  const projectId = getProjectIdFromObjQuery(objQuery);
   if (projectId) {
     const fieldsResult = await getObjFields({
       projectId,
@@ -58,7 +53,6 @@ export async function deleteManyObjs(params: {
     batchSize: 1000,
     hardDelete: false,
     fields: fieldsMap,
-    ...(orQueries?.length ? { orQueries } : {}),
   });
 
   return result;

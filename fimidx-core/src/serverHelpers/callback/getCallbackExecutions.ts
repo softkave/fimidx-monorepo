@@ -18,16 +18,18 @@ export async function getCallbackExecutions(params: {
   const storagePage = pageNumber - 1; // Convert to 0-based
 
   const objQuery: IObjQuery = {
-    metaQuery: { projectId: { eq: projectId } },
-    recordQuery: {
-      and: [
-        {
-          field: "callbackId",
-          value: args.callbackId,
-          op: "eq",
-        },
-      ],
-    },
+    and: [
+      {
+        metaQuery: { projectId: { eq: projectId } },
+        recordQuery: [
+          {
+            field: "callbackId",
+            value: args.callbackId,
+            op: "eq",
+          },
+        ],
+      },
+    ],
   };
 
   // Transform sort fields to use objRecord prefix for executedAt field

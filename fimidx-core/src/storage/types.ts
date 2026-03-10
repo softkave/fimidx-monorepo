@@ -149,8 +149,6 @@ export interface BulkUpdateResult {
 export interface BulkDeleteParams extends DeleteObjsParams {
   batchSize?: number;
   hardDelete?: boolean;
-  /** When set, delete objs matching any of these queries (OR). Tag and deletedBy/deletedByType from params apply. */
-  orQueries?: IObjQuery[];
 }
 
 export interface BulkDeleteResult {

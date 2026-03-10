@@ -46,15 +46,7 @@ function makeAddMonitorArgs(
     status: "enabled",
     reportsTo: ["user1", "user2"],
     interval: { days: 1 },
-    query: {
-      and: [
-        {
-          op: "eq",
-          field: "level",
-          value: "error",
-        },
-      ],
-    },
+    query: [{ op: "eq", field: "level", value: "error" }],
     ...overrides,
   };
 }
@@ -281,15 +273,7 @@ describe("updateMonitors integration", () => {
     const monitor = await addMonitor({
       args: makeAddMonitorArgs({
         name: "Test Monitor",
-        query: {
-          and: [
-            {
-              op: "eq",
-              field: "level",
-              value: "error",
-            },
-          ],
-        },
+        query: [{ op: "eq", field: "level", value: "error" }],
       }),
       by: defaultBy,
       byType: defaultByType,
@@ -297,20 +281,18 @@ describe("updateMonitors integration", () => {
       storage,
     });
 
-    const newLogsQuery = {
-      or: [
-        {
-          op: "eq" as const,
-          field: "level",
-          value: "error",
-        },
-        {
-          op: "eq" as const,
-          field: "level",
-          value: "warn",
-        },
-      ],
-    };
+    const newLogsQuery = [
+      {
+        op: "eq" as const,
+        field: "level",
+        value: "error",
+      },
+      {
+        op: "eq" as const,
+        field: "level",
+        value: "warn",
+      },
+    ];
 
     const args = makeUpdateMonitorsArgs({
       query: {

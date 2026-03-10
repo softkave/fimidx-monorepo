@@ -2,7 +2,7 @@ import assert from "assert";
 import { first } from "lodash-es";
 import { isString } from "lodash-es";
 import { kOwnServerErrorCodes, OwnServerError } from "../../common/error.js";
-import { jsRecordToObjPartQueryList } from "../../common/obj.js";
+import { jsRecordToObjRecordQueryList } from "../../common/obj.js";
 import type { UpdateClientTokenPermissionsEndpointArgs } from "../../definitions/clientToken.js";
 import type { GetPermissionsEndpointArgs } from "../../definitions/permission.js";
 import type { IObjStorage } from "../../storage/types.js";
@@ -74,17 +74,17 @@ export async function updateClientTokenPermissions(params: {
           projectId: clientToken.projectId,
           entity: isString(managed.entity)
             ? { eq: managed.entity }
-            : jsRecordToObjPartQueryList(
+            : jsRecordToObjRecordQueryList(
                 managed.entity as Record<string, string>
               ),
           action: isString(managed.action)
             ? { eq: managed.action }
-            : jsRecordToObjPartQueryList(
+            : jsRecordToObjRecordQueryList(
                 managed.action as Record<string, string>
               ),
           target: isString(managed.target)
             ? { eq: managed.target }
-            : jsRecordToObjPartQueryList(
+            : jsRecordToObjRecordQueryList(
                 managed.target as Record<string, string>
               ),
         };

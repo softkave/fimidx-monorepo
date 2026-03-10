@@ -36,7 +36,12 @@ describe("refreshClientTokenEndpoint", () => {
       id: clientToken.id,
       groupId: clientToken.groupId,
       projectId: clientToken.projectId,
-      args: { id: clientToken.id, refresh: true },
+      args: {
+        id: clientToken.id,
+        projectId: clientToken.projectId,
+        groupId: clientToken.groupId,
+        refresh: true,
+      },
     });
     if (!refreshToken) throw new Error("expected refreshToken");
     const res = await apiFetch(REFRESH_PATH, {

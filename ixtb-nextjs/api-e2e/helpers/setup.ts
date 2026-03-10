@@ -150,7 +150,12 @@ export async function createTestClientToken(params: {
     id: clientToken.id,
     groupId: clientToken.groupId,
     projectId: clientToken.projectId,
-    args: { id: clientToken.id, refresh: false },
+    args: {
+      id: clientToken.id,
+      projectId: clientToken.projectId,
+      groupId: clientToken.groupId,
+      refresh: false,
+    },
   });
 
   return { clientToken, bearerToken: token };

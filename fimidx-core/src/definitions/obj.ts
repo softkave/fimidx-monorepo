@@ -130,7 +130,7 @@ export const setManyObjsSchema = z.object({
   fieldsToIndex: z.array(z.string().min(1)).max(50).optional(),
 });
 
-export const objPartQueryItemOpSchema = z.enum([
+export const objRecordQueryItemOpSchema = z.enum([
   "eq",
   "neq",
   "gt",
@@ -144,13 +144,13 @@ export const objPartQueryItemOpSchema = z.enum([
   "exists",
 ]);
 
-export const objPartQueryItemNumberValueSchema = z.union([
+export const objRecordQueryItemNumberValueSchema = z.union([
   z.number(),
   z.string().datetime(),
   durationSchema,
 ]);
 
-export const objPartQueryItemSchema = z.discriminatedUnion("op", [
+export const objRecordQueryItemSchema = z.discriminatedUnion("op", [
   z.object({
     op: z.literal("eq"),
     /**
@@ -167,22 +167,22 @@ export const objPartQueryItemSchema = z.discriminatedUnion("op", [
   z.object({
     op: z.literal("gt"),
     field: z.string(),
-    value: objPartQueryItemNumberValueSchema,
+    value: objRecordQueryItemNumberValueSchema,
   }),
   z.object({
     op: z.literal("gte"),
     field: z.string(),
-    value: objPartQueryItemNumberValueSchema,
+    value: objRecordQueryItemNumberValueSchema,
   }),
   z.object({
     op: z.literal("lt"),
     field: z.string(),
-    value: objPartQueryItemNumberValueSchema,
+    value: objRecordQueryItemNumberValueSchema,
   }),
   z.object({
     op: z.literal("lte"),
     field: z.string(),
-    value: objPartQueryItemNumberValueSchema,
+    value: objRecordQueryItemNumberValueSchema,
   }),
   z.object({
     op: z.literal("like"),
@@ -212,8 +212,8 @@ export const objPartQueryItemSchema = z.discriminatedUnion("op", [
     op: z.literal("between"),
     field: z.string(),
     value: z.tuple([
-      objPartQueryItemNumberValueSchema,
-      objPartQueryItemNumberValueSchema,
+      objRecordQueryItemNumberValueSchema,
+      objRecordQueryItemNumberValueSchema,
     ]),
   }),
   z.object({
@@ -224,11 +224,32 @@ export const objPartQueryItemSchema = z.discriminatedUnion("op", [
 ]);
 
 /** Max 100 conditions per and/or group to avoid overly large queries. */
-export const objPartQueryListSchema = z.array(objPartQueryItemSchema).max(100);
-export const objPartLogicalQuerySchema = z.object({
-  and: objPartQueryListSchema.optional(),
-  or: objPartQueryListSchema.optional(),
-});
+export const objRecordQueryListSchema = z
+  .array(objRecordQueryItemSchema)
+  .max(100);
+
+/** Recursive type for logical query (and/or can contain items or nested logical
+ * queries). */
+export type IObjRecordLogicalQuery = {
+  and?: (z.infer<typeof objRecordQueryItemSchema> | IObjRecordLogicalQuery)[];
+  or?: (z.infer<typeof objRecordQueryItemSchema> | IObjRecordLogicalQuery)[];
+};
+
+/** Recursive logical query: and/or arrays can contain items or nested logical
+ * queries. */
+export const objRecordLogicalQuerySchema: z.ZodType<IObjRecordLogicalQuery> =
+  z.lazy(() =>
+    z.object({
+      and: z
+        .array(z.union([objRecordQueryItemSchema, objRecordLogicalQuerySchema]))
+        .max(100)
+        .optional(),
+      or: z
+        .array(z.union([objRecordQueryItemSchema, objRecordLogicalQuerySchema]))
+        .max(100)
+        .optional(),
+    })
+  );
 
 export const stringMetaQuerySchema = z.object({
   eq: z.string().optional(),
@@ -248,28 +269,57 @@ export const numberMetaQuerySchema = z.object({
     .array(z.union([z.number(), z.string().datetime()]))
     .max(100)
     .optional(),
-  gt: objPartQueryItemNumberValueSchema.optional(),
-  gte: objPartQueryItemNumberValueSchema.optional(),
-  lt: objPartQueryItemNumberValueSchema.optional(),
-  lte: objPartQueryItemNumberValueSchema.optional(),
+  gt: objRecordQueryItemNumberValueSchema.optional(),
+  gte: objRecordQueryItemNumberValueSchema.optional(),
+  lt: objRecordQueryItemNumberValueSchema.optional(),
+  lte: objRecordQueryItemNumberValueSchema.optional(),
   between: z
     .tuple([
-      objPartQueryItemNumberValueSchema,
-      objPartQueryItemNumberValueSchema,
+      objRecordQueryItemNumberValueSchema,
+      objRecordQueryItemNumberValueSchema,
     ])
     .optional(),
 });
 
+/** Meta keys: applied via transformMetaQuery (path mapping). */
+const META_QUERY_KEYS = new Set([
+  "projectId",
+  "id",
+  "createdAt",
+  "updatedAt",
+  "createdBy",
+  "updatedBy",
+  "createdByType",
+  "updatedByType",
+  "deletedAt",
+  "deletedBy",
+  "deletedByType",
+]);
+
+/** Top-level keys: applied via transformTopLevelFields (direct field names). */
+export const TOP_LEVEL_QUERY_KEYS = new Set([
+  "shouldIndex",
+  "fieldsToIndex",
+  "tag",
+  "groupId",
+]);
+
+/**
+ * Merged meta + top-level query schema. Storage layer splits by META_QUERY_KEYS
+ * vs TOP_LEVEL_QUERY_KEYS when building the filter.
+ */
 export const objMetaQuerySchema = z.object({
+  projectId: stringMetaQuerySchema.optional(),
   id: stringMetaQuerySchema.optional(),
   createdAt: numberMetaQuerySchema.optional(),
   updatedAt: numberMetaQuerySchema.optional(),
   createdBy: stringMetaQuerySchema.optional(),
   updatedBy: stringMetaQuerySchema.optional(),
-});
-
-// New schema for top-level field queries
-export const topLevelFieldQuerySchema = z.object({
+  createdByType: stringMetaQuerySchema.optional(),
+  updatedByType: stringMetaQuerySchema.optional(),
+  deletedAt: z.union([z.null(), numberMetaQuerySchema]).optional(),
+  deletedBy: stringMetaQuerySchema.optional(),
+  deletedByType: stringMetaQuerySchema.optional(),
   shouldIndex: z.boolean().optional(),
   /**
    * {@see IObjField.path}
@@ -277,17 +327,13 @@ export const topLevelFieldQuerySchema = z.object({
   fieldsToIndex: z.array(z.string()).max(50).optional(),
   tag: stringMetaQuerySchema.optional(),
   groupId: stringMetaQuerySchema.optional(),
-  deletedAt: z.union([z.null(), numberMetaQuerySchema]).optional(),
-  deletedBy: stringMetaQuerySchema.optional(),
-  deletedByType: stringMetaQuerySchema.optional(),
 });
 
-// TODO: projectId shouldn't be optional for external use
+export { META_QUERY_KEYS };
+
 export const objQuerySchema = z.object({
-  projectId: z.string().min(1).optional(),
-  partQuery: objPartLogicalQuerySchema.optional(),
+  recordQuery: objRecordLogicalQuerySchema.optional(),
   metaQuery: objMetaQuerySchema.optional(),
-  topLevelFields: topLevelFieldQuerySchema.optional(),
 });
 
 export const objSortSchema = z.object({
@@ -340,17 +386,41 @@ export const getObjFieldValuesSchema = z.object({
 
 export type IInputObjRecord = z.infer<typeof inputObjRecordSchema>;
 export type IInputObjRecordArray = z.infer<typeof inputObjRecordArraySchema>;
-export type IObjPartQueryItemNumberValue = z.infer<
-  typeof objPartQueryItemNumberValueSchema
+export type IObjRecordQueryItemNumberValue = z.infer<
+  typeof objRecordQueryItemNumberValueSchema
 >;
-export type IObjPartQueryItem = z.infer<typeof objPartQueryItemSchema>;
-export type IObjPartQueryList = z.infer<typeof objPartQueryListSchema>;
-export type IObjPartLogicalQuery = z.infer<typeof objPartLogicalQuerySchema>;
+export type IObjRecordQueryItem = z.infer<typeof objRecordQueryItemSchema>;
+export type IObjRecordQueryList = z.infer<typeof objRecordQueryListSchema>;
 export type IStringMetaQuery = z.infer<typeof stringMetaQuerySchema>;
 export type INumberMetaQuery = z.infer<typeof numberMetaQuerySchema>;
 export type IObjMetaQuery = z.infer<typeof objMetaQuerySchema>;
-export type ITopLevelFieldQuery = z.infer<typeof topLevelFieldQuerySchema>;
+/** @deprecated Use IObjMetaQuery; kept for compatibility. */
+export type ITopLevelFieldQuery = IObjMetaQuery;
 export type IObjQuery = z.infer<typeof objQuerySchema>;
+
+/**
+ * Resolves projectId from merged metaQuery for field resolution (e.g. getObjs,
+ * deleteObjs). Returns the string value when projectId is { eq: x } or a plain
+ * string.
+ */
+export function getProjectIdFromMetaQuery(
+  metaQuery: IObjMetaQuery | undefined
+): string | undefined {
+  if (!metaQuery?.projectId) return undefined;
+  const p = metaQuery.projectId;
+  if (typeof p === "string") return p;
+  if (typeof p === "object" && p !== null && "eq" in p && p.eq != null)
+    return p.eq;
+  if (
+    typeof p === "object" &&
+    p !== null &&
+    "in" in p &&
+    Array.isArray(p.in) &&
+    p.in[0] != null
+  )
+    return p.in[0];
+  return undefined;
+}
 export type IObjSort = z.infer<typeof objSortSchema>;
 export type IObjSortList = z.infer<typeof objSortListSchema>;
 export type OnConflict = z.infer<typeof onConflictSchema>;

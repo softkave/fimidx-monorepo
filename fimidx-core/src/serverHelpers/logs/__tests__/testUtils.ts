@@ -31,7 +31,7 @@ export async function cleanupTestData(params: {
     for (const projectId of projectIds) {
       // Clean up logs
       await storage.bulkDelete({
-        query: { projectId },
+        query: { metaQuery: { projectId: { eq: projectId } } },
         tag: kObjTags.log,
         deletedBy: by,
         deletedByType: byType,

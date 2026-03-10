@@ -1,21 +1,22 @@
 import type {
   INumberMetaQuery,
   IObjField,
-  IObjPartQueryList,
+  IObjRecordQueryList,
   IObjQuery,
   IObjSortList,
   IStringMetaQuery,
 } from "../../definitions/obj.js";
+import { getProjectIdFromMetaQuery } from "../../definitions/obj.js";
 import { createStorage, getDefaultStorageType } from "../../storage/config.js";
 import type { IObjStorage } from "../../storage/types.js";
 import { getObjFields } from "./getObjFields.js";
 
-export function metaQueryToPartQueryList(params: {
+export function metaQueryToRecordQueryList(params: {
   metaQuery: Record<string, IStringMetaQuery | INumberMetaQuery>;
   prefix?: string;
-}): IObjPartQueryList | undefined {
+}): IObjRecordQueryList | undefined {
   const { metaQuery, prefix } = params;
-  const partQuery: IObjPartQueryList = [];
+  const recordQuery: IObjRecordQueryList = [];
   Object.entries(metaQuery).forEach(([key, value]) => {
     Object.keys(value).forEach((op) => {
       const opValue = value[op as keyof typeof value];
@@ -27,63 +28,63 @@ export function metaQueryToPartQueryList(params: {
 
       switch (op) {
         case "eq":
-          partQuery.push({
+          recordQuery.push({
             op: "eq",
             field,
             value: opValue as string | number,
           });
           break;
         case "neq":
-          partQuery.push({
+          recordQuery.push({
             op: "neq",
             field,
             value: opValue as string | number,
           });
           break;
         case "in":
-          partQuery.push({
+          recordQuery.push({
             op: "in",
             field,
             value: opValue as string[] | number[],
           });
           break;
         case "not_in":
-          partQuery.push({
+          recordQuery.push({
             op: "not_in",
             field,
             value: opValue as string[] | number[],
           });
           break;
         case "gt":
-          partQuery.push({
+          recordQuery.push({
             op: "gt",
             field,
             value: opValue as string | number,
           });
           break;
         case "gte":
-          partQuery.push({
+          recordQuery.push({
             op: "gte",
             field,
             value: opValue as string | number,
           });
           break;
         case "lt":
-          partQuery.push({
+          recordQuery.push({
             op: "lt",
             field,
             value: opValue as string | number,
           });
           break;
         case "lte":
-          partQuery.push({
+          recordQuery.push({
             op: "lte",
             field,
             value: opValue as string | number,
           });
           break;
         case "between":
-          partQuery.push({
+          recordQuery.push({
             op: "between",
             field,
             value: opValue as [string | number, string | number],
@@ -95,7 +96,7 @@ export function metaQueryToPartQueryList(params: {
     });
   });
 
-  return partQuery.length ? partQuery : undefined;
+  return recordQuery.length ? recordQuery : undefined;
 }
 
 export async function getManyObjs(params: {
@@ -122,10 +123,11 @@ export async function getManyObjs(params: {
   // Fetch fields for query generation
   let fields: IObjField[] = [];
 
-  if (objQuery.projectId) {
+  const projectId = getProjectIdFromMetaQuery(objQuery.metaQuery);
+  if (projectId) {
     // Fetch fields
     const fieldsResult = await getObjFields({
-      projectId: objQuery.projectId,
+      projectId,
       tag,
       limit: 1000, // Fetch all fields for this project/tag combination
     });
@@ -139,8 +141,8 @@ export async function getManyObjs(params: {
   const fieldsMap = new Map(fields.map((f) => [f.path, f]));
 
   // Determine if we should include deleted objects
-  // If topLevelFields.deletedAt is explicitly set to null, include deleted objects
-  const includeDeleted = objQuery.topLevelFields?.deletedAt === null;
+  // If metaQuery.deletedAt is explicitly set to null, include deleted objects
+  const includeDeleted = objQuery.metaQuery?.deletedAt === null;
 
   // Use the new read method from the storage abstraction
   const result = await storage.read({

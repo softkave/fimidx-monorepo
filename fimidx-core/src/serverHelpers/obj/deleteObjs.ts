@@ -1,5 +1,6 @@
 import { fimidxLogger } from "../../common/logger/fimidx-logger.js";
 import type { IObjField, IObjQuery } from "../../definitions/obj.js";
+import { getProjectIdFromMetaQuery } from "../../definitions/obj.js";
 import { createStorage, getDefaultStorageType } from "../../storage/config.js";
 import type { IObjStorage } from "../../storage/types.js";
 import { getObjFields } from "./getObjFields.js";
@@ -13,6 +14,9 @@ export async function deleteManyObjs(params: {
   deleteMany?: boolean;
   storageType?: "mongo" | "postgres";
   storage?: IObjStorage;
+  /** When set, delete objs matching any of these queries (OR). objQuery is
+   * ignored for the filter. */
+  orQueries?: IObjQuery[];
 }) {
   const {
     objQuery,
@@ -23,28 +27,27 @@ export async function deleteManyObjs(params: {
     deleteMany = false,
     storageType = getDefaultStorageType(),
     storage = createStorage({ type: storageType }),
+    orQueries,
   } = params;
 
-  // Fetch fields for query generation
+  // Fetch fields for query generation (use first query's projectId when using orQueries)
   let fields: IObjField[] = [];
-
-  if (objQuery.projectId) {
-    // Fetch fields
+  const queryForFields = orQueries?.length ? orQueries[0] : objQuery;
+  const projectId = getProjectIdFromMetaQuery(queryForFields.metaQuery);
+  if (projectId) {
     const fieldsResult = await getObjFields({
-      projectId: objQuery.projectId,
+      projectId,
       tag,
-      limit: 1000, // Fetch all fields for this project/tag combination
+      limit: 1000,
     });
     fields = fieldsResult.fields.map((field) => ({
       ...field,
-      type: field.type as any, // Cast to fix type issue
+      type: field.type as any,
     }));
   }
 
-  // Convert to Maps for O(1) lookup
   const fieldsMap = new Map(fields.map((f) => [f.path, f]));
 
-  // Use the new bulkDelete method from the storage abstraction
   const result = await storage.bulkDelete({
     query: objQuery,
     tag,
@@ -53,8 +56,9 @@ export async function deleteManyObjs(params: {
     deletedByType,
     deleteMany,
     batchSize: 1000,
-    hardDelete: false, // Always soft delete for this function
+    hardDelete: false,
     fields: fieldsMap,
+    ...(orQueries?.length ? { orQueries } : {}),
   });
 
   return result;

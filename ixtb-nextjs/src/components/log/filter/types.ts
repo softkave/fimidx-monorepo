@@ -1,6 +1,6 @@
-import { IObjPartQueryItem } from "fimidx-core/definitions/obj";
+import { IObjRecordQueryItem } from "fimidx-core/definitions/obj";
 
 export interface IWorkingLogPartFilterItem {
-  item: IObjPartQueryItem;
+  item: IObjRecordQueryItem;
   error?: string;
 }

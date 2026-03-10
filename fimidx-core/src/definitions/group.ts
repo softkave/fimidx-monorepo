@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
   numberMetaQuerySchema,
-  objPartQueryListSchema,
+  objRecordQueryListSchema,
   objSortListSchema,
   stringMetaQuerySchema,
 } from "./obj.js";
@@ -41,7 +41,7 @@ export const groupQuerySchema = z.object({
   updatedAt: numberMetaQuerySchema.optional(),
   createdBy: stringMetaQuerySchema.optional(),
   updatedBy: stringMetaQuerySchema.optional(),
-  meta: objPartQueryListSchema.optional(),
+  meta: objRecordQueryListSchema.optional(),
   projectId: z.string().min(1),
 });
 

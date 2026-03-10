@@ -109,7 +109,7 @@ describe("getGroups integration", () => {
       ];
       for (const projectId of testProjectIds) {
         await storage.bulkDelete({
-          query: { projectId },
+          query: { metaQuery: { projectId: { eq: projectId } } },
           tag: kObjTags.group,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -146,7 +146,7 @@ describe("getGroups integration", () => {
 
       for (const projectId of testProjectIds) {
         await storage.bulkDelete({
-          query: { projectId },
+          query: { metaQuery: { projectId: { eq: projectId } } },
           tag: kObjTags.group,
           deletedBy: defaultBy,
           deletedByType: defaultByType,

@@ -40,7 +40,7 @@ describe("addProject integration", () => {
     // Clean up test data before each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { projectId: "0" },
+        query: { metaQuery: { projectId: { eq: "0" } } },
         tag: kObjTags.project,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -56,7 +56,7 @@ describe("addProject integration", () => {
     // Clean up after each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { projectId: "0" },
+        query: { metaQuery: { projectId: { eq: "0" } } },
         tag: kObjTags.project,
         deletedBy: defaultBy,
         deletedByType: defaultByType,

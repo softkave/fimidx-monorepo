@@ -22,8 +22,10 @@ export async function deletePermissions(
       ? [query]
       : [];
 
-  for (const q of toRun) {
-    const objQuery = getPermissionsObjQuery({ args: { query: q } });
+  if (toRun.length === 0) return;
+
+  if (toRun.length === 1) {
+    const objQuery = getPermissionsObjQuery({ args: { query: toRun[0] } });
     await deleteManyObjs({
       objQuery,
       tag: kObjTags.permission,
@@ -32,5 +34,19 @@ export async function deletePermissions(
       deleteMany,
       storage,
     });
+    return;
   }
+
+  const orQueries = toRun.map((q) =>
+    getPermissionsObjQuery({ args: { query: q } })
+  );
+  await deleteManyObjs({
+    objQuery: orQueries[0],
+    tag: kObjTags.permission,
+    deletedBy: by,
+    deletedByType: byType,
+    deleteMany,
+    storage,
+    orQueries,
+  });
 }

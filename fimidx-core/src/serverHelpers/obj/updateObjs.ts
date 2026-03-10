@@ -6,6 +6,7 @@ import type {
   IObjQuery,
   OnConflict,
 } from "../../definitions/obj.js";
+import { getProjectIdFromMetaQuery } from "../../definitions/obj.js";
 import { createStorage, getDefaultStorageType } from "../../storage/config.js";
 import type { IObjStorage } from "../../storage/types.js";
 import { getObjFields } from "./getObjFields.js";
@@ -78,10 +79,11 @@ export async function updateManyObjs(params: {
   // Fetch fields for query generation
   let fields: IObjField[] = [];
 
-  if (objQuery.projectId) {
+  const projectId = getProjectIdFromMetaQuery(objQuery.metaQuery);
+  if (projectId) {
     // Fetch fields
     const fieldsResult = await getObjFields({
-      projectId: objQuery.projectId,
+      projectId,
       tag,
       limit: 1000, // Fetch all fields for this project/tag combination
     });

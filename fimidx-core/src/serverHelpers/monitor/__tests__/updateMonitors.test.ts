@@ -71,7 +71,7 @@ describe("updateMonitors integration", () => {
     // Clean up test data before each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { projectId: defaultProjectId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.monitor,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -87,7 +87,7 @@ describe("updateMonitors integration", () => {
     // Clean up after each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { projectId: defaultProjectId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.monitor,
         deletedBy: defaultBy,
         deletedByType: defaultByType,

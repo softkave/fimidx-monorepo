@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
   numberMetaQuerySchema,
-  objPartQueryListSchema,
+  objRecordQueryListSchema,
   objSortListSchema,
   stringMetaQuerySchema,
 } from "./obj.js";
@@ -151,7 +151,7 @@ export const addPermissionsSchema = z.object({
 });
 
 export const entityQuerySchema = stringMetaQuerySchema.or(
-  objPartQueryListSchema
+  objRecordQueryListSchema
 );
 export const actionQuerySchema = entityQuerySchema;
 export const targetQuerySchema = entityQuerySchema;
@@ -167,7 +167,7 @@ export const permissionQuerySchema = z.object({
   updatedAt: numberMetaQuerySchema.optional(),
   createdBy: stringMetaQuerySchema.optional(),
   updatedBy: stringMetaQuerySchema.optional(),
-  meta: objPartQueryListSchema.optional(),
+  meta: objRecordQueryListSchema.optional(),
 });
 
 /** Minimal schema for matching a permission to remove (entity, action, target,

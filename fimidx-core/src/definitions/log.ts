@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { FieldType } from "../common/indexer.js";
 import {
   inputObjRecordArraySchema,
-  objPartLogicalQuerySchema,
+  objRecordLogicalQuerySchema,
   objSortListSchema,
   stringMetaQuerySchema,
 } from "./obj.js";
@@ -39,7 +39,7 @@ export const logQuerySchema = z.object({
   projectId: z.string().min(1),
   id: stringMetaQuerySchema.optional(),
   createdBy: stringMetaQuerySchema.optional(),
-  logsQuery: objPartLogicalQuerySchema.optional(),
+  logsQuery: objRecordLogicalQuerySchema.optional(),
 });
 
 export const getLogsSchema = z.object({

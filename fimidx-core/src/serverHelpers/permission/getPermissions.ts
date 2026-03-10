@@ -1,7 +1,7 @@
-import { isObjPartQueryList } from "../../common/obj.js";
+import { isObjRecordQueryList } from "../../common/obj.js";
 import {
   kObjTags,
-  type IObjPartQueryItem,
+  type IObjRecordQueryItem,
   type IObjQuery,
 } from "../../definitions/obj.js";
 import type { GetPermissionsEndpointArgs } from "../../definitions/permission.js";
@@ -29,14 +29,14 @@ export function getPermissionsObjQuery(params: {
     },
   } = args;
 
-  const entityPartQuery = isObjPartQueryList(entity)
+  const entityRecordQuery = isObjRecordQueryList(entity)
     ? entity?.map(
         (part) =>
           ({
             op: part.op,
             field: `entity.${part.field}`,
             value: part.value,
-          } as IObjPartQueryItem)
+          } as IObjRecordQueryItem)
       )
     : entity
     ? Object.entries(entity).map(([op, value]) => ({
@@ -45,14 +45,14 @@ export function getPermissionsObjQuery(params: {
         value,
       }))
     : undefined;
-  const actionPartQuery = isObjPartQueryList(action)
+  const actionRecordQuery = isObjRecordQueryList(action)
     ? action?.map(
         (part) =>
           ({
             op: part.op,
             field: `action.${part.field}`,
             value: part.value,
-          } as IObjPartQueryItem)
+          } as IObjRecordQueryItem)
       )
     : action
     ? Object.entries(action).map(([op, value]) => ({
@@ -61,14 +61,14 @@ export function getPermissionsObjQuery(params: {
         value,
       }))
     : undefined;
-  const targetPartQuery = isObjPartQueryList(target)
+  const targetRecordQuery = isObjRecordQueryList(target)
     ? target?.map(
         (part) =>
           ({
             op: part.op,
             field: `target.${part.field}`,
             value: part.value,
-          } as IObjPartQueryItem)
+          } as IObjRecordQueryItem)
       )
     : target
     ? Object.entries(target).map(([op, value]) => ({
@@ -84,21 +84,27 @@ export function getPermissionsObjQuery(params: {
         op: part.op,
         field: `meta.${part.field}`,
         value: part.value,
-      } as IObjPartQueryItem)
+      } as IObjRecordQueryItem)
   );
 
-  const filterArr: Array<IObjPartQueryItem> = [
-    ...(entityPartQuery ?? []),
-    ...(actionPartQuery ?? []),
-    ...(targetPartQuery ?? []),
+  const filterArr: Array<IObjRecordQueryItem> = [
+    ...(entityRecordQuery ?? []),
+    ...(actionRecordQuery ?? []),
+    ...(targetRecordQuery ?? []),
     ...(metaPartQuery ?? []),
   ];
 
   const objQuery: IObjQuery = {
-    projectId,
-    partQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
-    metaQuery: { id, createdAt, updatedAt, createdBy, updatedBy },
-    topLevelFields: groupId ? { groupId } : undefined,
+    recordQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
+    metaQuery: {
+      ...(projectId ? { projectId: { eq: projectId } } : {}),
+      id,
+      createdAt,
+      updatedAt,
+      createdBy,
+      updatedBy,
+      ...(groupId ? { groupId: typeof groupId === "object" ? groupId : { eq: groupId } } : {}),
+    },
   };
 
   return objQuery;

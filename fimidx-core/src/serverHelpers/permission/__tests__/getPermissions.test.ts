@@ -97,7 +97,7 @@ describe("getPermissions integration", () => {
   beforeEach(async () => {
     try {
       await storage.bulkDelete({
-        query: { projectId: defaultProjectId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.permission,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -123,7 +123,7 @@ describe("getPermissions integration", () => {
   afterEach(async () => {
     try {
       await storage.bulkDelete({
-        query: { projectId: defaultProjectId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.permission,
         deletedBy: defaultBy,
         deletedByType: defaultByType,

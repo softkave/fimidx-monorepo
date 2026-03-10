@@ -75,7 +75,7 @@ describe("MongoObjStorage (integration)", () => {
     assert.ok(obj.projectId);
     assert.ok(obj.tag);
     const result = await storage.read({
-      query: { projectId: obj.projectId },
+      query: { metaQuery: { projectId: { eq: obj.projectId } } },
       tag: obj.tag,
       limit: 10,
     });
@@ -90,7 +90,7 @@ describe("MongoObjStorage (integration)", () => {
     assert.ok(obj.tag);
     const newName = "Updated Name";
     const result = await storage.update({
-      query: { projectId: obj.projectId },
+      query: { metaQuery: { projectId: { eq: obj.projectId } } },
       tag: obj.tag,
       update: { name: newName },
       by: "updater",
@@ -110,7 +110,7 @@ describe("MongoObjStorage (integration)", () => {
     assert.ok(obj.projectId);
     assert.ok(obj.tag);
     const result = await storage.delete({
-      query: { projectId: obj.projectId },
+      query: { metaQuery: { projectId: { eq: obj.projectId } } },
       tag: obj.tag,
       deletedBy: "deleter",
       deletedByType: "user",
@@ -197,7 +197,7 @@ describe("MongoObjStorage (integration)", () => {
     assert.ok(obj.projectId);
     assert.ok(obj.tag);
     await storage.update({
-      query: { projectId: obj.projectId },
+      query: { metaQuery: { projectId: { eq: obj.projectId } } },
       tag: obj.tag,
       update: { b: 3, c: 4 },
       by: "merger",
@@ -218,7 +218,7 @@ describe("MongoObjStorage (integration)", () => {
     assert.ok(obj.projectId);
     assert.ok(obj.tag);
     await storage.update({
-      query: { projectId: obj.projectId },
+      query: { metaQuery: { projectId: { eq: obj.projectId } } },
       tag: obj.tag,
       update: { arr: [3, 4] },
       by: "merger",
@@ -238,7 +238,7 @@ describe("MongoObjStorage (integration)", () => {
     assert.ok(obj.projectId);
     assert.ok(obj.tag);
     await storage.update({
-      query: { projectId: obj.projectId },
+      query: { metaQuery: { projectId: { eq: obj.projectId } } },
       tag: obj.tag,
       update: { arr: [3, 4] },
       by: "merger",
@@ -257,7 +257,7 @@ describe("MongoObjStorage (integration)", () => {
     assert.ok(obj.projectId);
     assert.ok(obj.tag);
     await storage.update({
-      query: { projectId: obj.projectId },
+      query: { metaQuery: { projectId: { eq: obj.projectId } } },
       tag: obj.tag,
       update: { arr: [3, 4] },
       by: "merger",
@@ -303,7 +303,7 @@ describe("MongoObjStorage (integration)", () => {
     );
     await objModel.insertMany(objs);
     const result = await storage.bulkUpdate({
-      query: { projectId: "bulkupd-project" },
+      query: { metaQuery: { projectId: { eq: "bulkupd-project" } } },
       tag: "bulkupd-tag",
       update: { updated: true },
       by: "batch-updater",
@@ -326,7 +326,7 @@ describe("MongoObjStorage (integration)", () => {
     try {
       await storage.withTransaction(async (txStorage) => {
         await txStorage.update({
-          query: { projectId: String(obj.projectId) },
+          query: { metaQuery: { projectId: { eq: String(obj.projectId) } } },
           tag: String(obj.tag),
           update: { name: "TxFail" },
           by: "tx",
@@ -347,7 +347,7 @@ describe("MongoObjStorage (integration)", () => {
     await storage.create({ objs: [obj as IObj] });
     await storage.withTransaction(async (txStorage) => {
       await txStorage.update({
-        query: { projectId: String(obj.projectId) },
+        query: { metaQuery: { projectId: { eq: String(obj.projectId) } } },
         tag: String(obj.tag),
         update: { name: "TxSuccess" },
         by: "tx",
@@ -373,8 +373,8 @@ describe("MongoObjStorage (integration)", () => {
       await objModel.insertMany([obj1, obj2]);
       const result = await storage.read({
         query: {
-          projectId: "nested-project",
-          partQuery: {
+          metaQuery: { projectId: { eq: "nested-project" } },
+          recordQuery: {
             and: [{ op: "eq", field: "user.name", value: "john" }],
           },
         },
@@ -398,8 +398,8 @@ describe("MongoObjStorage (integration)", () => {
       await objModel.insertMany([obj1, obj2]);
       const result = await storage.read({
         query: {
-          projectId: "array-project",
-          partQuery: {
+          metaQuery: { projectId: { eq: "array-project" } },
+          recordQuery: {
             and: [
               {
                 op: "in",
@@ -429,8 +429,8 @@ describe("MongoObjStorage (integration)", () => {
       await objModel.insertMany([obj1, obj2]);
       const result = await storage.read({
         query: {
-          projectId: "exists-project",
-          partQuery: {
+          metaQuery: { projectId: { eq: "exists-project" } },
+          recordQuery: {
             and: [{ op: "exists", field: "settings.enabled", value: true }],
           },
         },
@@ -454,8 +454,8 @@ describe("MongoObjStorage (integration)", () => {
       await objModel.insertMany([obj1, obj2]);
       const result = await storage.read({
         query: {
-          projectId: "num-project",
-          partQuery: {
+          metaQuery: { projectId: { eq: "num-project" } },
+          recordQuery: {
             and: [{ op: "gte", field: "stats.views", value: 1000 }],
           },
         },
@@ -479,8 +479,8 @@ describe("MongoObjStorage (integration)", () => {
       await objModel.insertMany([obj1, obj2]);
       const result = await storage.read({
         query: {
-          projectId: "between-project",
-          partQuery: {
+          metaQuery: { projectId: { eq: "between-project" } },
+          recordQuery: {
             and: [{ op: "between", field: "created", value: [2020, 2025] }],
           },
         },
@@ -509,8 +509,8 @@ describe("MongoObjStorage (integration)", () => {
       await objModel.insertMany([obj1, obj2, obj3]);
       const result = await storage.read({
         query: {
-          projectId: "logic-project",
-          partQuery: {
+          metaQuery: { projectId: { eq: "logic-project" } },
+          recordQuery: {
             and: [
               { op: "eq", field: "status", value: "active" },
               { op: "gt", field: "score", value: 100 },
@@ -547,8 +547,8 @@ describe("MongoObjStorage (integration)", () => {
       await objModel.insertMany([obj1, obj2]);
       const result = await storage.read({
         query: {
-          projectId: "meta-project",
           metaQuery: {
+            projectId: { eq: "meta-project" },
             createdAt: {
               gte: new Date(now.getTime() - 1000 * 60 * 60 * 24).toISOString(),
             },
@@ -607,7 +607,7 @@ describe("MongoObjStorage (integration)", () => {
 
       const result = await storage.read({
         query: {
-          topLevelFields: {
+          metaQuery: {
             shouldIndex: true,
           },
         },
@@ -663,8 +663,6 @@ describe("MongoObjStorage (integration)", () => {
             updatedAt: {
               gte: cutoffDate.getTime(),
             },
-          },
-          topLevelFields: {
             shouldIndex: true,
           },
         },
@@ -700,7 +698,7 @@ describe("MongoObjStorage (integration)", () => {
       await objModel.insertMany([obj1, obj2, obj3]);
 
       const result = await storage.read({
-        query: { projectId: "sort-string-project" },
+        query: { metaQuery: { projectId: { eq: "sort-string-project" } } },
         tag: "sort-string-tag",
         sort: [{ field: "objRecord.name", direction: "asc" }],
         fields: new Map([
@@ -747,7 +745,7 @@ describe("MongoObjStorage (integration)", () => {
       await objModel.insertMany([obj1, obj2, obj3]);
 
       const result = await storage.read({
-        query: { projectId: "sort-number-project" },
+        query: { metaQuery: { projectId: { eq: "sort-number-project" } } },
         tag: "sort-number-tag",
         sort: [{ field: "objRecord.score", direction: "asc" }],
         fields: new Map([
@@ -794,7 +792,7 @@ describe("MongoObjStorage (integration)", () => {
       await objModel.insertMany([obj1, obj2, obj3]);
 
       const result = await storage.read({
-        query: { projectId: "sort-nested-project" },
+        query: { metaQuery: { projectId: { eq: "sort-nested-project" } } },
         tag: "sort-nested-tag",
         sort: [{ field: "objRecord.user.age", direction: "asc" }],
         fields: new Map([
@@ -841,7 +839,7 @@ describe("MongoObjStorage (integration)", () => {
       await objModel.insertMany([obj1, obj2, obj3]);
 
       const result = await storage.read({
-        query: { projectId: "sort-deep-project" },
+        query: { metaQuery: { projectId: { eq: "sort-deep-project" } } },
         tag: "sort-deep-tag",
         sort: [{ field: "objRecord.stats.views.daily", direction: "asc" }],
         fields: new Map([
@@ -893,7 +891,7 @@ describe("MongoObjStorage (integration)", () => {
       await objModel.insertMany([obj1, obj2, obj3, obj4]);
 
       const result = await storage.read({
-        query: { projectId: "sort-multi-project" },
+        query: { metaQuery: { projectId: { eq: "sort-multi-project" } } },
         tag: "sort-multi-tag",
         sort: [
           { field: "objRecord.category", direction: "asc" },
@@ -968,7 +966,7 @@ describe("MongoObjStorage (integration)", () => {
       await objModel.insertMany([obj1, obj2, obj3]);
 
       const result = await storage.read({
-        query: { projectId: "sort-top-level-project" },
+        query: { metaQuery: { projectId: { eq: "sort-top-level-project" } } },
         tag: "sort-top-level-tag",
         sort: [
           { field: "createdAt", direction: "asc" },
@@ -1002,7 +1000,7 @@ describe("MongoObjStorage (integration)", () => {
       await objModel.insertMany([obj1, obj2, obj3]);
 
       const result = await storage.read({
-        query: { projectId: "sort-skip-project" },
+        query: { metaQuery: { projectId: { eq: "sort-skip-project" } } },
         tag: "sort-skip-tag",
         sort: [
           { field: "objRecord.name", direction: "asc" }, // Should be skipped (not in fields)
@@ -1075,7 +1073,7 @@ describe("MongoObjStorage (integration)", () => {
       await objModel.insertMany([obj1, obj2, obj3]);
 
       const result = await storage.read({
-        query: { projectId: "sort-mixed-project" },
+        query: { metaQuery: { projectId: { eq: "sort-mixed-project" } } },
         tag: "sort-mixed-tag",
         sort: [
           { field: "objRecord.status", direction: "asc" },
@@ -1135,7 +1133,7 @@ describe("MongoObjStorage (integration)", () => {
       await objModel.insertMany([obj1, obj2]);
 
       const result = await storage.read({
-        query: { projectId: "sort-empty-project" },
+        query: { metaQuery: { projectId: { eq: "sort-empty-project" } } },
         tag: "sort-empty-tag",
         sort: [], // Empty sort array
       });
@@ -1153,7 +1151,7 @@ describe("MongoObjStorage (integration)", () => {
       await objModel.insertMany([obj1]);
 
       const result = await storage.read({
-        query: { projectId: "sort-invalid-project" },
+        query: { metaQuery: { projectId: { eq: "sort-invalid-project" } } },
         tag: "sort-invalid-tag",
         sort: [
           { field: "objRecord.nonexistent", direction: "asc" }, // Should be skipped (not in fields)
@@ -1218,8 +1216,8 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        projectId: obj.projectId,
-        partQuery: {
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: {
           and: [{ op: "eq", field: "reportsTo.userId", value: "user1" }],
         },
       },
@@ -1267,8 +1265,8 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        projectId: obj.projectId,
-        partQuery: {
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: {
           and: [{ op: "eq", field: "query.and.op", value: "eq" }],
         },
       },
@@ -1336,8 +1334,8 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        projectId: obj.projectId,
-        partQuery: {
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: {
           and: [{ op: "eq", field: "query.and.op.subOp", value: "eq" }],
         },
       },
@@ -1383,8 +1381,8 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        projectId: obj.projectId,
-        partQuery: {
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: {
           and: [
             { op: "in", field: "reportsTo.userId", value: ["user1", "user3"] },
           ],
@@ -1431,8 +1429,8 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        projectId: obj.projectId,
-        partQuery: {
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: {
           and: [
             {
               op: "not_in",
@@ -1484,8 +1482,8 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        projectId: obj.projectId,
-        partQuery: {
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: {
           and: [{ op: "gte", field: "scores.value", value: 90 }],
         },
       },
@@ -1530,8 +1528,8 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        projectId: obj.projectId,
-        partQuery: {
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: {
           and: [{ op: "exists", field: "reportsTo.permissions", value: true }],
         },
       },
@@ -1576,8 +1574,8 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        projectId: obj.projectId,
-        partQuery: {
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: {
           and: [
             { op: "like", field: "reportsTo.email", value: ".*@example\\.com" },
           ],
@@ -1625,8 +1623,8 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        projectId: obj.projectId,
-        partQuery: {
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: {
           and: [
             { op: "eq", field: "name", value: "Test Object" },
             { op: "eq", field: "reportsTo.userId", value: "user1" },
@@ -1671,8 +1669,8 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        projectId: obj.projectId,
-        partQuery: {
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: {
           and: [{ op: "eq", field: "reportsTo.userId", value: "user1" }],
         },
       },
@@ -1717,8 +1715,8 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        projectId: obj.projectId,
-        partQuery: {
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: {
           and: [{ op: "between", field: "scores.value", value: [80, 95] }],
         },
       },
@@ -1761,8 +1759,8 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        projectId: obj.projectId,
-        partQuery: {
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: {
           and: [{ op: "eq", field: "tags", value: "typescript" }],
         },
       },
@@ -1807,8 +1805,8 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        projectId: obj.projectId,
-        partQuery: {
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: {
           and: [{ op: "neq", field: "reportsTo.userId", value: "user3" }],
         },
       },
@@ -1882,8 +1880,8 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        projectId: obj.projectId,
-        partQuery: {
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: {
           and: [
             { op: "eq", field: "workflow.steps.actions.type", value: "email" },
           ],
@@ -1926,8 +1924,8 @@ describe("MongoObjStorage (integration)", () => {
     // Should find obj1 for array, obj2 for scalar
     const result1 = await storage.read({
       query: {
-        projectId: obj1.projectId,
-        partQuery: {
+        metaQuery: { projectId: { eq: obj1.projectId } },
+        recordQuery: {
           and: [{ op: "eq", field: "reportsTo.userId", value: "user1" }],
         },
       },
@@ -1936,8 +1934,8 @@ describe("MongoObjStorage (integration)", () => {
     });
     const result2 = await storage.read({
       query: {
-        projectId: obj2.projectId,
-        partQuery: {
+        metaQuery: { projectId: { eq: obj2.projectId } },
+        recordQuery: {
           and: [{ op: "eq", field: "reportsTo.userId", value: "user2" }],
         },
       },

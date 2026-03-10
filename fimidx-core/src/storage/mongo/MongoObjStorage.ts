@@ -439,17 +439,28 @@ export class MongoObjStorage implements IObjStorage {
       deleteMany = false,
       batchSize = 1000,
       hardDelete = false,
+      orQueries,
     } = params;
 
-    const filter = this.queryTransformer.transformFilter(query, date);
-
-    // Add tag filter
-    if (tag) {
-      filter.tag = tag;
+    let filter: Record<string, any>;
+    if (orQueries?.length) {
+      const orFilters = orQueries.map((q) =>
+        this.queryTransformer.transformFilter(q, date)
+      );
+      filter = {
+        $and: [
+          ...(tag ? [{ tag }] : []),
+          { deletedAt: null },
+          { $or: orFilters },
+        ],
+      };
+    } else {
+      filter = this.queryTransformer.transformFilter(query, date);
+      if (tag) {
+        filter.tag = tag;
+      }
+      filter.deletedAt = null;
     }
-
-    // Add deleted filter
-    filter.deletedAt = null;
 
     let totalProcessed = 0;
     let page = 0;

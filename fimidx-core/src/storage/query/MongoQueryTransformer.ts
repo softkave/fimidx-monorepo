@@ -1,17 +1,19 @@
 import { uniq } from "lodash-es";
 import type { FilterQuery, SortOrder } from "mongoose";
-import type {
-  INumberMetaQuery,
-  IObj,
-  IObjField,
-  IObjMetaQuery,
-  IObjPartLogicalQuery,
-  IObjPartQueryItem,
-  IObjPartQueryList,
-  IObjQuery,
-  IObjSortList,
-  IStringMetaQuery,
-  ITopLevelFieldQuery,
+import {
+  META_QUERY_KEYS,
+  TOP_LEVEL_QUERY_KEYS,
+  type INumberMetaQuery,
+  type IObj,
+  type IObjField,
+  type IObjMetaQuery,
+  type IObjRecordLogicalQuery,
+  type IObjRecordQueryItem,
+  type IObjRecordQueryList,
+  type IObjQuery,
+  type IObjSortList,
+  type IStringMetaQuery,
+  type ITopLevelFieldQuery,
 } from "../../definitions/obj.js";
 import { BaseQueryTransformer } from "./BaseQueryTransformer.js";
 
@@ -25,34 +27,40 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
   ): FilterQuery<IObj> {
     const filters: FilterQuery<IObj>[] = [];
 
-    // Add projectId filter
-    if (query.projectId) {
-      filters.push({ projectId: query.projectId });
-    }
-
-    // Add part query filter
-    if (query.partQuery) {
-      const partFilter = this.transformLogicalQuery(
-        query.partQuery,
+    // Record query filter
+    if (query.recordQuery) {
+      const recordFilter = this.transformLogicalQuery(
+        query.recordQuery,
         date,
         fields
       );
-      if (Object.keys(partFilter).length > 0) filters.push(partFilter);
+      if (Object.keys(recordFilter).length > 0) filters.push(recordFilter);
     }
 
-    // Add meta query filter
+    // Merged metaQuery: split into meta keys vs top-level keys
     if (query.metaQuery) {
-      const metaFilter = this.transformMetaQuery(query.metaQuery, date);
-      if (Object.keys(metaFilter).length > 0) filters.push(metaFilter);
-    }
-
-    // Add top-level fields filter
-    if (query.topLevelFields) {
-      const topLevelFilter = this.transformTopLevelFields(
-        query.topLevelFields,
-        date
-      );
-      if (Object.keys(topLevelFilter).length > 0) filters.push(topLevelFilter);
+      const metaOnly: IObjMetaQuery = {};
+      const topLevelOnly: ITopLevelFieldQuery = {};
+      Object.entries(query.metaQuery).forEach(([key, value]) => {
+        if (value === undefined) return;
+        if (META_QUERY_KEYS.has(key)) {
+          (metaOnly as Record<string, unknown>)[key] = value;
+        } else if (TOP_LEVEL_QUERY_KEYS.has(key)) {
+          (topLevelOnly as Record<string, unknown>)[key] = value;
+        }
+      });
+      if (Object.keys(metaOnly).length > 0) {
+        const metaFilter = this.transformMetaQuery(metaOnly, date);
+        if (Object.keys(metaFilter).length > 0) filters.push(metaFilter);
+      }
+      if (Object.keys(topLevelOnly).length > 0) {
+        const topLevelFilter = this.transformTopLevelFields(
+          topLevelOnly,
+          date
+        );
+        if (Object.keys(topLevelFilter).length > 0)
+          filters.push(topLevelFilter);
+      }
     }
 
     if (filters.length === 0) return {};
@@ -123,14 +131,14 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
     };
   }
 
-  protected transformPartQuery(
-    partQuery: IObjPartQueryList,
+  protected transformRecordQuery(
+    recordQuery: IObjRecordQueryList,
     date: Date,
     fields?: Map<string, IObjField>
   ): FilterQuery<IObj> {
     const fieldOps: Record<string, Record<string, any>> = {};
 
-    partQuery.forEach((part) => {
+    recordQuery.forEach((part) => {
       const fieldInfo = fields?.get(part.field);
       const query = this.generateFieldQuery(part, fieldInfo, date);
 
@@ -149,33 +157,47 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
     return mongoQuery;
   }
 
+  /** Type guard: branch is a single condition item (not a nested logical query). */
+  private isRecordItem(
+    branch: IObjRecordQueryItem | IObjRecordLogicalQuery
+  ): branch is IObjRecordQueryItem {
+    return "op" in branch && "field" in branch;
+  }
+
   protected transformLogicalQuery(
-    logicalQuery: IObjPartLogicalQuery,
+    logicalQuery: IObjRecordLogicalQuery,
     date: Date,
     fields?: Map<string, IObjField>
   ): FilterQuery<IObj> {
     let filter: FilterQuery<IObj> = {};
 
-    const hasAnd = !!logicalQuery.and;
-    const hasOr = !!logicalQuery.or;
+    const hasAnd = !!logicalQuery.and?.length;
+    const hasOr = !!logicalQuery.or?.length;
+
+    const branchToFilter = (
+      branch: IObjRecordQueryItem | IObjRecordLogicalQuery
+    ): FilterQuery<IObj> =>
+      this.isRecordItem(branch)
+        ? this.transformRecordQuery([branch], date, fields)
+        : this.transformLogicalQuery(branch as IObjRecordLogicalQuery, date, fields);
 
     if (hasAnd && hasOr) {
-      // When both AND and OR are present, we want: (AND conditions) OR (OR conditions)
-      const andQuery = this.transformPartQuery(logicalQuery.and!, date, fields);
-      const orArray = logicalQuery.or!.map((part) =>
-        this.transformPartQuery([part], date, fields)
-      );
-
-      // Create an OR query that combines the AND result with the OR results
-      const orConditions = [andQuery, ...orArray];
-      filter = { $or: orConditions };
+      // When both AND and OR are present: (AND conditions) OR (OR conditions)
+      const andFilters = logicalQuery.and!.map(branchToFilter);
+      const orFilters = logicalQuery.or!.map(branchToFilter);
+      filter = { $or: [{ $and: andFilters }, ...orFilters] };
     } else if (hasAnd) {
-      filter = this.transformPartQuery(logicalQuery.and!, date, fields);
+      const andFilters = logicalQuery.and!.map(branchToFilter);
+      filter =
+        andFilters.length === 1
+          ? andFilters[0]
+          : ({ $and: andFilters } as FilterQuery<IObj>);
     } else if (hasOr) {
-      const orArray = logicalQuery.or!.map((part) =>
-        this.transformPartQuery([part], date, fields)
-      );
-      filter = { $or: orArray };
+      const orFilters = logicalQuery.or!.map(branchToFilter);
+      filter =
+        orFilters.length === 1
+          ? orFilters[0]
+          : ({ $or: orFilters } as FilterQuery<IObj>);
     }
 
     return filter;
@@ -198,6 +220,7 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
       }
       // Map meta fields to top-level fields
       const fieldMap: Record<string, string> = {
+        projectId: "projectId",
         createdAt: "createdAt",
         updatedAt: "updatedAt",
         updatedBy: "updatedBy",
@@ -271,7 +294,7 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
   }
 
   private generateFieldQuery(
-    part: IObjPartQueryItem,
+    part: IObjRecordQueryItem,
     fieldInfo: IObjField | undefined,
     date: Date
   ): Record<string, Record<string, any>> {
@@ -292,7 +315,7 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
   }
 
   private generateDynamicQuery(
-    part: IObjPartQueryItem,
+    part: IObjRecordQueryItem,
     date: Date
   ): Record<string, Record<string, any>> {
     const fieldPath = part.field;
@@ -311,7 +334,7 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
   }
 
   private generateDynamicArrayQuery(
-    part: IObjPartQueryItem,
+    part: IObjRecordQueryItem,
     date: Date
   ): Record<string, Record<string, any>> {
     const fieldPath = part.field;
@@ -327,7 +350,7 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
   }
 
   private generateArrayCompressedQuery(
-    part: IObjPartQueryItem,
+    part: IObjRecordQueryItem,
     fieldInfo: IObjField,
     date: Date
   ): Record<string, Record<string, any>> {
@@ -344,7 +367,7 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
   }
 
   private generateRegularFieldQuery(
-    part: IObjPartQueryItem,
+    part: IObjRecordQueryItem,
     fieldInfo: IObjField,
     date: Date
   ): Record<string, Record<string, any>> {
@@ -359,7 +382,7 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
 
   private addArrayFieldOperation(
     fieldOps: Record<string, any>,
-    part: IObjPartQueryItem,
+    part: IObjRecordQueryItem,
     date: Date
   ): void {
     const { op, value } = part;
@@ -489,7 +512,7 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
 
   private addFieldOperation(
     fieldOps: Record<string, any>,
-    part: IObjPartQueryItem,
+    part: IObjRecordQueryItem,
     date: Date
   ): void {
     const { op, value } = part;

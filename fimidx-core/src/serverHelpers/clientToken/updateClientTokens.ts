@@ -1,4 +1,6 @@
+import { chunk } from "lodash-es";
 import type { UpdateClientTokensEndpointArgs } from "../../definitions/clientToken.js";
+import type { GetPermissionsEndpointArgs } from "../../definitions/permission.js";
 import { kObjTags } from "../../definitions/obj.js";
 import type { IObjStorage } from "../../storage/types.js";
 import { updateManyObjs } from "../obj/updateObjs.js";
@@ -8,6 +10,8 @@ import {
 } from "./addClientTokenPermissions.js";
 import { getClientTokens, getClientTokensObjQuery } from "./getClientTokens.js";
 import { deletePermissions } from "../permission/deletePermissions.js";
+
+const CHUNK_SIZE = 50;
 
 export async function updateClientTokens(params: {
   args: UpdateClientTokensEndpointArgs;
@@ -58,23 +62,16 @@ export async function updateClientTokens(params: {
   });
 
   if (hasPermissionUpdates) {
+    const deleteQueries: GetPermissionsEndpointArgs["query"][] = [];
     for (const clientToken of tokensToUpdate) {
       const clientTokenId = clientToken.id;
 
       if (removeAllPerms) {
-        await deletePermissions({
-          query: {
-            projectId: clientToken.projectId,
-            entity: { eq: clientTokenId },
-          },
-          deleteMany: true,
-          by,
-          byType,
-          storage,
+        deleteQueries.push({
+          projectId: clientToken.projectId,
+          entity: { eq: clientTokenId },
         });
-      }
-
-      if (removePerms?.length) {
+      } else if (removePerms?.length) {
         for (const item of removePerms) {
           const managed = getFimidxManagedClientTokenPermission({
             permission: {
@@ -85,32 +82,45 @@ export async function updateClientTokens(params: {
             clientTokenId,
             groupId: clientToken.groupId,
           });
-          await deletePermissions({
-            query: {
-              projectId: clientToken.projectId,
-              entity: { eq: managed.entity as string },
-              action: { eq: managed.action as string },
-              target: { eq: managed.target as string },
-            },
-            deleteMany: true,
-            by,
-            byType,
-            storage,
+          deleteQueries.push({
+            projectId: clientToken.projectId,
+            entity: { eq: managed.entity as string },
+            action: { eq: managed.action as string },
+            target: { eq: managed.target as string },
           });
         }
       }
+    }
 
-      if (addPerms?.length) {
-        await addClientTokenPermissions({
-          by,
-          byType,
-          groupId: clientToken.groupId,
-          projectId: clientToken.projectId,
-          permissions: addPerms,
-          clientTokenId,
-          storage,
-        });
-      }
+    if (deleteQueries.length > 0) {
+      await deletePermissions({
+        queries: deleteQueries,
+        deleteMany: true,
+        by,
+        byType,
+        storage,
+      });
+    }
+
+    if (addPerms?.length) {
+      const chunks = chunk(tokensToUpdate, CHUNK_SIZE);
+      await Promise.all(
+        chunks.map((tokenChunk) =>
+          Promise.all(
+            tokenChunk.map((clientToken) =>
+              addClientTokenPermissions({
+                by,
+                byType,
+                groupId: clientToken.groupId,
+                projectId: clientToken.projectId,
+                permissions: addPerms,
+                clientTokenId: clientToken.id,
+                storage,
+              })
+            )
+          )
+        )
+      );
     }
   }
 }

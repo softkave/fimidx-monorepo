@@ -43,7 +43,7 @@ describe("getCallbackExecutions integration", () => {
     try {
       // Clean up callbacks
       await storage.bulkDelete({
-        query: { projectId: defaultProjectId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.callback,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -53,7 +53,7 @@ describe("getCallbackExecutions integration", () => {
 
       // Clean up callback executions
       await storage.bulkDelete({
-        query: { projectId: defaultProjectId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.callbackExecution,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -70,7 +70,7 @@ describe("getCallbackExecutions integration", () => {
     try {
       // Clean up callbacks
       await storage.bulkDelete({
-        query: { projectId: defaultProjectId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.callback,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -80,7 +80,7 @@ describe("getCallbackExecutions integration", () => {
 
       // Clean up callback executions
       await storage.bulkDelete({
-        query: { projectId: defaultProjectId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.callbackExecution,
         deletedBy: defaultBy,
         deletedByType: defaultByType,

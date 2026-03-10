@@ -1,5 +1,5 @@
 import { isString } from "lodash-es";
-import { jsRecordToObjPartQueryList } from "../../common/obj.js";
+import { jsRecordToObjRecordQueryList } from "../../common/obj.js";
 import type {
   GetPermissionsEndpointArgs,
   UpdatePermissionsEndpointArgs,
@@ -35,13 +35,13 @@ export async function updatePermissions(params: {
         ...query,
         entity: isString(item.entity)
           ? { eq: item.entity }
-          : jsRecordToObjPartQueryList(item.entity as Record<string, string>),
+          : jsRecordToObjRecordQueryList(item.entity as Record<string, string>),
         action: isString(item.action)
           ? { eq: item.action }
-          : jsRecordToObjPartQueryList(item.action as Record<string, string>),
+          : jsRecordToObjRecordQueryList(item.action as Record<string, string>),
         target: isString(item.target)
           ? { eq: item.target }
-          : jsRecordToObjPartQueryList(item.target as Record<string, string>),
+          : jsRecordToObjRecordQueryList(item.target as Record<string, string>),
       }));
     await deletePermissions({
       queries,

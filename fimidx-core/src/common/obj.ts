@@ -1,17 +1,17 @@
 import { isString } from "lodash-es";
 import type {
-  IObjPartLogicalQuery,
-  IObjPartQueryItemNumberValue,
+  IObjRecordLogicalQuery,
+  IObjRecordQueryItemNumberValue,
 } from "../definitions/obj.js";
 
 import assert from "assert";
 import type {
-  IObjPartQueryItem,
-  IObjPartQueryList,
+  IObjRecordQueryItem,
+  IObjRecordQueryList,
 } from "../definitions/obj.js";
 import { getMsFromDuration } from "./date.js";
 
-export function isObjPartQueryItem(query: unknown): query is IObjPartQueryItem {
+export function isObjRecordQueryItem(query: unknown): query is IObjRecordQueryItem {
   return (
     typeof query === "object" &&
     query !== null &&
@@ -21,15 +21,15 @@ export function isObjPartQueryItem(query: unknown): query is IObjPartQueryItem {
   );
 }
 
-export function isObjPartQueryList(query: unknown): query is IObjPartQueryList {
+export function isObjRecordQueryList(query: unknown): query is IObjRecordQueryList {
   return (
-    Array.isArray(query) && query.every((item) => isObjPartQueryItem(item))
+    Array.isArray(query) && query.every((item) => isObjRecordQueryItem(item))
   );
 }
 
-export function isObjPartLogicalQuery(
+export function isObjRecordLogicalQuery(
   query: unknown
-): query is IObjPartLogicalQuery {
+): query is IObjRecordLogicalQuery {
   return (
     typeof query === "object" &&
     query !== null &&
@@ -38,7 +38,7 @@ export function isObjPartLogicalQuery(
 }
 
 export function getNumberOrDurationMsFromValue(
-  value: IObjPartQueryItemNumberValue
+  value: IObjRecordQueryItemNumberValue
 ) {
   if (typeof value === "number") {
     return {
@@ -59,9 +59,9 @@ export function getNumberOrDurationMsFromValue(
   };
 }
 
-export function jsRecordToObjPartQueryList(
+export function jsRecordToObjRecordQueryList(
   record: Record<string, string>
-): IObjPartQueryList {
+): IObjRecordQueryList {
   return Object.entries(record).map(([key, value]) => {
     assert.ok(isString(value), `Value must be a string: ${value}`);
     return {
@@ -75,8 +75,8 @@ export function jsRecordToObjPartQueryList(
 export function flattenObjToDotNotationPartQuery(
   record: Record<string, any>,
   prefix = ""
-): IObjPartQueryList {
-  const result: IObjPartQueryList = [];
+): IObjRecordQueryList {
+  const result: IObjRecordQueryList = [];
   for (const [key, value] of Object.entries(record)) {
     const fullKey = prefix ? `${prefix}.${key}` : key;
     if (typeof value === "object" && value !== null) {

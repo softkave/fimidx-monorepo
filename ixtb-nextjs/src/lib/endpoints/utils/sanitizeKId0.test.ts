@@ -184,7 +184,12 @@ describe("sanitizeKId0", () => {
       );
     });
     it("sanitizeEncodeClientTokenJWTInput throws when id is kId0", () => {
-      expectKId0Error(() => sanitizeEncodeClientTokenJWTInput({ id: kId0 }));
+      expectKId0Error(() =>
+        sanitizeEncodeClientTokenJWTInput({
+          id: kId0,
+          projectId: "proj1",
+        })
+      );
     });
   });
 
@@ -204,12 +209,12 @@ describe("sanitizeKId0", () => {
         })
       );
     });
-    it("sanitizeGetManyObjsInput does not throw when only partQuery contains kId0 (exempt)", () => {
+    it("sanitizeGetManyObjsInput does not throw when only recordQuery contains kId0 (exempt)", () => {
       expect(() =>
         sanitizeGetManyObjsInput({
           query: {
             projectId: "p1",
-            partQuery: {
+            recordQuery: {
               and: [{ op: "eq" as const, field: "foo", value: kId0 }],
             },
           },

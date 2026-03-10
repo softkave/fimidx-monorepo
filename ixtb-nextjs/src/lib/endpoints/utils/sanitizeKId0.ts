@@ -286,9 +286,13 @@ export function sanitizeUpdateClientTokensInput(
 
 export function sanitizeEncodeClientTokenJWTInput(input: {
   id: string;
+  projectId: string;
+  groupId?: string;
   [key: string]: unknown;
 }): void {
   rejectIfKId0(input.id, "id");
+  rejectIfKId0(input.projectId, "projectId");
+  if (input.groupId != null) rejectIfKId0(input.groupId, "groupId");
 }
 
 // refreshClientTokenJWTSchema has no id-like fields to sanitize
@@ -352,7 +356,7 @@ function sanitizeObjQuery(query: IObjQuery): void {
       "query.topLevelFields.tag"
     );
   }
-  // Explicitly do not touch query.partQuery
+  // Explicitly do not touch query.recordQuery
 }
 
 export function sanitizeGetManyObjsInput(

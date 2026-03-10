@@ -83,7 +83,7 @@ describe("checkMemberPermissions integration", () => {
       ];
       for (const projectId of testProjectIds) {
         await storage.bulkDelete({
-          query: { projectId },
+          query: { metaQuery: { projectId: { eq: projectId } } },
           tag: kObjTags.member,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -91,7 +91,7 @@ describe("checkMemberPermissions integration", () => {
           hardDelete: true,
         });
         await storage.bulkDelete({
-          query: { projectId },
+          query: { metaQuery: { projectId: { eq: projectId } } },
           tag: kObjTags.permission,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -113,7 +113,7 @@ describe("checkMemberPermissions integration", () => {
       ];
       for (const projectId of testProjectIds) {
         await storage.bulkDelete({
-          query: { projectId },
+          query: { metaQuery: { projectId: { eq: projectId } } },
           tag: kObjTags.member,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -121,7 +121,7 @@ describe("checkMemberPermissions integration", () => {
           hardDelete: true,
         });
         await storage.bulkDelete({
-          query: { projectId },
+          query: { metaQuery: { projectId: { eq: projectId } } },
           tag: kObjTags.permission,
           deletedBy: defaultBy,
           deletedByType: defaultByType,

@@ -33,9 +33,11 @@ export async function addMember(params: {
   if (userId && groupId) {
     const existing = await getManyObjs({
       objQuery: {
-        projectId,
-        topLevelFields: { groupId: { eq: groupId } },
-        partQuery: {
+        metaQuery: {
+          projectId: { eq: projectId },
+          groupId: { eq: groupId },
+        },
+        recordQuery: {
           and: [{ op: "eq", field: kMetaUserId, value: userId }],
         },
       },

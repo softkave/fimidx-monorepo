@@ -6,7 +6,7 @@ import type {
 } from "../../definitions/clientToken.js";
 import {
   kObjTags,
-  type IObjPartQueryItem,
+  type IObjRecordQueryItem,
   type IObjQuery,
 } from "../../definitions/obj.js";
 import type { IPermissionAtom } from "../../definitions/permission.js";
@@ -34,11 +34,11 @@ export function getClientTokensObjQuery(params: {
     updatedBy,
   } = query;
 
-  const filterArr: Array<IObjPartQueryItem> = [];
+  const filterArr: Array<IObjRecordQueryItem> = [];
 
   // Handle name filtering - name is stored in objRecord.name
   if (name) {
-    // Convert name query to partQuery for the name field
+    // Convert name query to recordQuery for the name field
     Object.entries(name).forEach(([op, value]) => {
       if (value !== undefined) {
         filterArr.push({
@@ -57,7 +57,7 @@ export function getClientTokensObjQuery(params: {
         op: part.op,
         field: `meta.${part.field}`,
         value: part.value,
-      } as IObjPartQueryItem)
+      } as IObjRecordQueryItem)
   );
 
   if (metaPartQuery) {
@@ -65,10 +65,16 @@ export function getClientTokensObjQuery(params: {
   }
 
   const objQuery: IObjQuery = {
-    projectId,
-    partQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
-    metaQuery: { id, createdAt, updatedAt, createdBy, updatedBy },
-    topLevelFields: { groupId: { eq: groupId } },
+    recordQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
+    metaQuery: {
+      ...(projectId ? { projectId: { eq: projectId } } : {}),
+      id,
+      createdAt,
+      updatedAt,
+      createdBy,
+      updatedBy,
+      ...(groupId ? { groupId: { eq: groupId } } : {}),
+    },
   };
 
   return objQuery;
@@ -173,15 +179,19 @@ export async function getClientTokens(params: {
   };
 }
 
-/** Fetch a single client token by id (no projectId/groupId required). */
+/** Fetch a single client token by id; projectId (and optionally groupId) required for scoped lookup. */
 export async function getClientTokenById(params: {
   id: string;
+  projectId: string;
+  groupId?: string;
   storage?: IObjStorage;
 }): Promise<IClientToken> {
-  const { id, storage } = params;
+  const { id, projectId, groupId, storage } = params;
   const objQuery: IObjQuery = {
     metaQuery: {
       id: { eq: id },
+      projectId: { eq: projectId },
+      ...(groupId ? { groupId: { eq: groupId } } : {}),
     },
   };
   const { objs } = await getManyObjs({

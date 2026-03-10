@@ -3,10 +3,10 @@ import type { ValueOf } from "type-fest";
 import { z } from "zod";
 import {
   numberMetaQuerySchema,
-  objPartLogicalQuerySchema,
+  objRecordLogicalQuerySchema,
   objSortListSchema,
   stringMetaQuerySchema,
-  type IObjPartLogicalQuery,
+  type IObjRecordLogicalQuery,
 } from "./obj.js";
 import { durationSchema } from "./other.js";
 
@@ -32,7 +32,7 @@ export interface IMonitor {
   createdByType: string;
   updatedByType: string;
   projectId: string;
-  query: IObjPartLogicalQuery;
+  query: IObjRecordLogicalQuery;
   groupId: string;
   status: MonitorStatus;
   reportsTo: IMonitorReportsTo[];
@@ -42,7 +42,7 @@ export interface IMonitor {
 export interface IMonitorObjRecord {
   name: string;
   description?: string | null;
-  query: IObjPartLogicalQuery;
+  query: IObjRecordLogicalQuery;
   status: MonitorStatus;
   reportsTo: IMonitorReportsTo[];
   interval: Duration;
@@ -52,7 +52,7 @@ export const addMonitorSchema = z.object({
   projectId: z.string().min(1),
   name: z.string().min(1),
   description: z.string().optional(),
-  query: objPartLogicalQuerySchema,
+  query: objRecordLogicalQuerySchema,
   status: z.nativeEnum(kMonitorStatus),
   reportsTo: z.array(z.string().min(1)).max(100),
   interval: durationSchema,
@@ -75,7 +75,7 @@ export const updateMonitorsSchema = z.object({
   update: z.object({
     name: z.string().min(1).optional(),
     description: z.string().min(1).optional(),
-    query: objPartLogicalQuerySchema.optional(),
+    query: objRecordLogicalQuerySchema.optional(),
     status: z.nativeEnum(kMonitorStatus).optional(),
     reportsTo: z.array(z.string().min(1)).max(100).optional(),
     interval: durationSchema.optional(),

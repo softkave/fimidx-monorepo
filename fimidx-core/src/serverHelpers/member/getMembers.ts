@@ -1,7 +1,7 @@
 import type { GetMembersEndpointArgs } from "../../definitions/member.js";
 import {
   kObjTags,
-  type IObjPartQueryItem,
+  type IObjRecordQueryItem,
   type IObjQuery,
 } from "../../definitions/obj.js";
 import type { IPermissionAtom } from "../../definitions/permission.js";
@@ -25,7 +25,7 @@ export function getMembersObjQuery(params: { args: GetMembersEndpointArgs }) {
     groupId,
   } = query;
 
-  const filterArr: Array<IObjPartQueryItem> = [];
+  const filterArr: Array<IObjRecordQueryItem> = [];
 
   const metaPartQuery = meta?.map(
     (part) =>
@@ -33,7 +33,7 @@ export function getMembersObjQuery(params: { args: GetMembersEndpointArgs }) {
         op: part.op,
         field: `meta.${part.field}`,
         value: part.value,
-      } as IObjPartQueryItem)
+      } as IObjRecordQueryItem)
   );
 
   if (metaPartQuery) {
@@ -41,10 +41,16 @@ export function getMembersObjQuery(params: { args: GetMembersEndpointArgs }) {
   }
 
   const objQuery: IObjQuery = {
-    projectId,
-    partQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
-    metaQuery: { id, createdAt, updatedAt, createdBy, updatedBy },
-    topLevelFields: groupId ? { groupId: { eq: groupId } } : undefined,
+    recordQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
+    metaQuery: {
+      ...(projectId ? { projectId: { eq: projectId } } : {}),
+      id,
+      createdAt,
+      updatedAt,
+      createdBy,
+      updatedBy,
+      ...(groupId ? { groupId: { eq: groupId } } : {}),
+    },
   };
 
   return objQuery;

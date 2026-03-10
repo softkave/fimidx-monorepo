@@ -95,7 +95,7 @@ describe.each(backends)(
       });
       await storage.create({ objs: [obj] });
       const result = await deleteManyObjs({
-        objQuery: { projectId: obj.projectId },
+        objQuery: { metaQuery: { projectId: { eq: obj.projectId } } },
         tag: obj.tag,
         deletedBy: "deleter",
         deletedByType: "user",
@@ -104,7 +104,7 @@ describe.each(backends)(
       expect(result.deletedCount).toBeGreaterThanOrEqual(1);
       // Check that the object is now soft deleted
       const readResult = await storage.read({
-        query: { projectId: obj.projectId },
+        query: { metaQuery: { projectId: { eq: obj.projectId } } },
         tag: obj.tag,
         includeDeleted: true,
       });
@@ -117,7 +117,7 @@ describe.each(backends)(
 
     it("does not delete objects if no match", async () => {
       const result = await deleteManyObjs({
-        objQuery: { projectId: "nonexistent-project" },
+        objQuery: { metaQuery: { projectId: { eq: "nonexistent-project" } } },
         tag: "nonexistent-tag",
         deletedBy: "deleter",
         deletedByType: "user",
@@ -134,7 +134,7 @@ describe.each(backends)(
       await storage.create({ objs: [obj] });
       // Soft delete
       await deleteManyObjs({
-        objQuery: { projectId: obj.projectId },
+        objQuery: { metaQuery: { projectId: { eq: obj.projectId } } },
         tag: obj.tag,
         deletedBy: "deleter",
         deletedByType: "user",
@@ -147,7 +147,7 @@ describe.each(backends)(
       expect(cleanupResult.cleanedCount).toBeGreaterThanOrEqual(1);
       // Check that the object is now gone
       const readResult = await storage.read({
-        query: { projectId: obj.projectId },
+        query: { metaQuery: { projectId: { eq: obj.projectId } } },
         tag: obj.tag,
         includeDeleted: true,
       });

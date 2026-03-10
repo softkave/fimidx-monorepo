@@ -13,9 +13,12 @@ export function getLogsObjQuery(params: { args: GetLogsEndpointArgs }) {
   const { projectId, id, createdBy, logsQuery } = query;
 
   const objQuery: IObjQuery = {
-    projectId,
-    partQuery: logsQuery,
-    metaQuery: { id, createdBy },
+    recordQuery: logsQuery,
+    metaQuery: {
+      ...(projectId ? { projectId: { eq: projectId } } : {}),
+      id,
+      createdBy,
+    },
   };
 
   return objQuery;

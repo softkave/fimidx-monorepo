@@ -64,7 +64,7 @@ describe("deletePermissions integration", () => {
   beforeEach(async () => {
     try {
       await storage.bulkDelete({
-        query: { projectId: defaultProjectId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.permission,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -90,7 +90,7 @@ describe("deletePermissions integration", () => {
   afterEach(async () => {
     try {
       await storage.bulkDelete({
-        query: { projectId: defaultProjectId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.permission,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -566,6 +566,47 @@ describe("deletePermissions integration", () => {
         storage,
       })
     ).resolves.not.toThrow();
+  });
+
+  it("deletes multiple permissions in one call when queries array is provided (OR delete)", async () => {
+    const addArgs = makeAddPermissionsArgs({
+      permissions: [
+        { entity: "user1", action: "read", target: "doc", description: "P1" },
+        { entity: "user2", action: "write", target: "doc", description: "P2" },
+        { entity: "user3", action: "delete", target: "doc", description: "P3" },
+      ],
+    });
+    await addPermissions({
+      args: addArgs,
+      groupId: defaultGroupId,
+      by: defaultBy,
+      byType: defaultByType,
+      storage,
+    });
+
+    const resultBefore = await getPermissions({
+      args: { query: { projectId: defaultProjectId } },
+      storage,
+    });
+    expect(resultBefore.permissions).toHaveLength(3);
+
+    await deletePermissions({
+      queries: [
+        { projectId: defaultProjectId, entity: { eq: "user1" } },
+        { projectId: defaultProjectId, entity: { eq: "user2" } },
+      ],
+      deleteMany: true,
+      by: defaultBy,
+      byType: defaultByType,
+      storage,
+    });
+
+    const resultAfter = await getPermissions({
+      args: { query: { projectId: defaultProjectId } },
+      storage,
+    });
+    expect(resultAfter.permissions).toHaveLength(1);
+    expect(resultAfter.permissions[0].entity).toBe("user3");
   });
 
   it("deletes all permissions for an project", async () => {

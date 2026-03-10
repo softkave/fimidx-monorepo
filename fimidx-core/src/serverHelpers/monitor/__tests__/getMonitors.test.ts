@@ -142,7 +142,7 @@ describe("getMonitors integration", () => {
       ];
       for (const groupId of testGroupIds) {
         await storage.bulkDelete({
-          query: { projectId: defaultProjectId },
+          query: { metaQuery: { projectId: { eq: defaultProjectId } } },
           tag: kObjTags.monitor,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -179,7 +179,7 @@ describe("getMonitors integration", () => {
       ];
       for (const groupId of testGroupIds) {
         await storage.bulkDelete({
-          query: { projectId: defaultProjectId },
+          query: { metaQuery: { projectId: { eq: defaultProjectId } } },
           tag: kObjTags.monitor,
           deletedBy: defaultBy,
           deletedByType: defaultByType,

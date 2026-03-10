@@ -30,9 +30,11 @@ export async function updateMemberSendEmailStatus(params: {
 
   await updateManyObjs({
     objQuery: {
-      projectId,
-      metaQuery: { id: { eq: id } },
-      topLevelFields: { groupId: { eq: groupId } },
+      metaQuery: {
+        projectId: { eq: projectId },
+        id: { eq: id },
+        groupId: { eq: groupId },
+      },
     },
     tag: kObjTags.member,
     update,

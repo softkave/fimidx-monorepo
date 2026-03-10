@@ -223,8 +223,6 @@ export async function indexObjs(params: {
           updatedAt: {
             gte: cutoffDate.getTime(),
           },
-        },
-        topLevelFields: {
           shouldIndex: true,
         },
       },

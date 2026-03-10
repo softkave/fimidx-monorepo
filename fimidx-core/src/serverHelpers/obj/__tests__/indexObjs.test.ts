@@ -399,8 +399,10 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
 
       await storage.update({
         query: {
-          projectId: obj.projectId,
-          metaQuery: { id: { eq: obj.id } },
+          metaQuery: {
+            projectId: { eq: obj.projectId },
+            id: { eq: obj.id },
+          },
         },
         update: updatedObj.objRecord,
         by: "tester",

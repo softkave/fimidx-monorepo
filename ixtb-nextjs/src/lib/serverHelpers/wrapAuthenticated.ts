@@ -83,7 +83,11 @@ async function tryGetClientTokenAuthenticatedRequest(
       getJWTSecret()
     ) as IEncodeClientTokenJWTContent;
 
-    const clientToken = await getClientTokenById({ id: decodedToken.id });
+    const clientToken = await getClientTokenById({
+      id: decodedToken.id,
+      projectId: decodedToken.projectId,
+      groupId: decodedToken.groupId,
+    });
 
     assert.ok(
       clientToken.projectId === decodedToken.projectId,

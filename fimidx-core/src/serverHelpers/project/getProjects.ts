@@ -3,7 +3,7 @@ import { first } from "lodash-es";
 import { kOwnServerErrorCodes, OwnServerError } from "../../common/error.js";
 import {
   kObjTags,
-  type IObjPartQueryItem,
+  type IObjRecordQueryItem,
   type IObjQuery,
 } from "../../definitions/obj.js";
 import type {
@@ -28,11 +28,11 @@ export function getProjectsObjQuery(params: { args: GetProjectsEndpointArgs }) {
     updatedBy,
   } = query;
 
-  const filterArr: Array<IObjPartQueryItem> = [];
+  const filterArr: Array<IObjRecordQueryItem> = [];
 
   // Handle name filtering - name is stored in objRecord.name
   if (name) {
-    // Convert name query to partQuery for the name field
+    // Convert name query to recordQuery for the name field
     Object.entries(name).forEach(([op, value]) => {
       if (value !== undefined) {
         filterArr.push({
@@ -52,9 +52,15 @@ export function getProjectsObjQuery(params: { args: GetProjectsEndpointArgs }) {
   });
 
   const objQuery: IObjQuery = {
-    projectId: kId0,
-    partQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
-    metaQuery: { id, createdAt, updatedAt, createdBy, updatedBy },
+    recordQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
+    metaQuery: {
+      projectId: { eq: kId0 },
+      id,
+      createdAt,
+      updatedAt,
+      createdBy,
+      updatedBy,
+    },
   };
 
   return objQuery;
@@ -109,11 +115,9 @@ export async function getProjectById(params: {
   }
 
   const objQuery: IObjQuery = {
-    projectId: kId0,
     metaQuery: {
-      id: {
-        eq: id,
-      },
+      projectId: { eq: kId0 },
+      id: { eq: id },
     },
   };
 
@@ -145,8 +149,8 @@ export async function getProjectsByIds(params: {
     return [];
   }
   const objQuery: IObjQuery = {
-    projectId: kId0,
     metaQuery: {
+      projectId: { eq: kId0 },
       id: { in: validIds },
     },
   };

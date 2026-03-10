@@ -12,16 +12,16 @@ describe("MongoQueryTransformer", () => {
 
   describe("transformFilter", () => {
     it("should add projectId to filter", () => {
-      const query: IObjQuery = { projectId: "project1" };
+      const query: IObjQuery = { metaQuery: { projectId: { eq: "project1" } } };
       expect(transformer.transformFilter(query, now)).toEqual({
         projectId: "project1",
       });
     });
 
-    it("should add partQuery to filter (eq)", () => {
+    it("should add recordQuery to filter (eq)", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: { and: [{ op: "eq", field: "foo", value: "bar" }] },
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: { and: [{ op: "eq", field: "foo", value: "bar" }] },
       };
       expect(transformer.transformFilter(query, now)).toEqual({
         $and: [{ projectId: "project1" }, { "objRecord.foo": { $eq: "bar" } }],
@@ -30,25 +30,67 @@ describe("MongoQueryTransformer", () => {
 
     it("should add metaQuery to filter (string eq)", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        metaQuery: { id: { eq: "id1" } },
+        metaQuery: { projectId: { eq: "project1" }, id: { eq: "id1" } },
       };
       expect(transformer.transformFilter(query, now)).toEqual({
         $and: [{ projectId: "project1" }, { id: "id1" }],
       });
     });
 
-    it("should combine partQuery and metaQuery", () => {
+    it("should combine recordQuery and metaQuery", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: { and: [{ op: "eq", field: "foo", value: "bar" }] },
-        metaQuery: { id: { eq: "id1" } },
+        metaQuery: { projectId: { eq: "project1" }, id: { eq: "id1" } },
+        recordQuery: { and: [{ op: "eq", field: "foo", value: "bar" }] },
       };
       expect(transformer.transformFilter(query, now)).toEqual({
         $and: [
           { projectId: "project1" },
           { "objRecord.foo": { $eq: "bar" } },
           { id: "id1" },
+        ],
+      });
+    });
+
+    it("should handle nested AND/OR in recordQuery", () => {
+      const query: IObjQuery = {
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: {
+          or: [
+            {
+              and: [
+                { op: "eq", field: "a", value: 1 },
+                { op: "eq", field: "b", value: 2 },
+              ],
+            },
+            {
+              and: [
+                { op: "eq", field: "a", value: 3 },
+                { op: "eq", field: "b", value: 4 },
+              ],
+            },
+          ],
+        },
+      };
+      const filter = transformer.transformFilter(query, now);
+      expect(filter).toEqual({
+        $and: [
+          { projectId: "project1" },
+          {
+            $or: [
+              {
+                $and: [
+                  { "objRecord.a": { $eq: 1 } },
+                  { "objRecord.b": { $eq: 2 } },
+                ],
+              },
+              {
+                $and: [
+                  { "objRecord.a": { $eq: 3 } },
+                  { "objRecord.b": { $eq: 4 } },
+                ],
+              },
+            ],
+          },
         ],
       });
     });
@@ -151,11 +193,11 @@ describe("MongoQueryTransformer", () => {
     });
   });
 
-  describe("partQuery operators", () => {
+  describe("recordQuery operators", () => {
     it("should handle neq", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: { and: [{ op: "neq", field: "foo", value: "bar" }] },
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: { and: [{ op: "neq", field: "foo", value: "bar" }] },
       };
       expect(transformer.transformFilter(query, now)).toEqual({
         $and: [{ projectId: "project1" }, { "objRecord.foo": { $ne: "bar" } }],
@@ -164,8 +206,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle gt/gte/lt/lte with numbers", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: {
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: {
           and: [
             { op: "gt", field: "num", value: 5 },
             { op: "gte", field: "num", value: 6 },
@@ -184,8 +226,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle like (case-insensitive)", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: { and: [{ op: "like", field: "foo", value: "bar" }] },
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: { and: [{ op: "like", field: "foo", value: "bar" }] },
       };
       const filter = transformer.transformFilter(query, now);
       const fooFilter = Array.isArray(filter.$and)
@@ -198,8 +240,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle like (case-sensitive)", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: {
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: {
           and: [
             { op: "like", field: "foo", value: "bar", caseSensitive: true },
           ],
@@ -215,8 +257,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle in/not_in", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: {
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: {
           and: [
             { op: "in", field: "foo", value: ["a", "b"] },
             { op: "not_in", field: "bar", value: [1, 2] },
@@ -236,8 +278,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle between", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: {
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: {
           and: [{ op: "between", field: "num", value: [1, 10] }],
         },
       };
@@ -251,8 +293,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle exists", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: {
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: {
           and: [{ op: "exists", field: "foo", value: true }],
         },
       };
@@ -268,8 +310,8 @@ describe("MongoQueryTransformer", () => {
   describe("metaQuery number ops", () => {
     it("should handle metaQuery number eq/neq/in/not_in", () => {
       const query: IObjQuery = {
-        projectId: "project1",
         metaQuery: {
+          projectId: { eq: "project1" },
           createdAt: {
             eq: 123,
             neq: 456,
@@ -295,8 +337,8 @@ describe("MongoQueryTransformer", () => {
   describe("logicalQuery or", () => {
     it("should handle or queries", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: {
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: {
           or: [
             { op: "eq", field: "foo", value: "bar" },
             { op: "eq", field: "baz", value: "qux" },
@@ -318,8 +360,8 @@ describe("MongoQueryTransformer", () => {
   describe("topLevelFields", () => {
     it("should handle shouldIndex boolean field", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        topLevelFields: {
+        metaQuery: {
+          projectId: { eq: "project1" },
           shouldIndex: true,
         },
       };
@@ -330,8 +372,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle fieldsToIndex array field", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        topLevelFields: {
+        metaQuery: {
+          projectId: { eq: "project1" },
           fieldsToIndex: ["field1", "field2"],
         },
       };
@@ -345,8 +387,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle tag string meta query", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        topLevelFields: {
+        metaQuery: {
+          projectId: { eq: "project1" },
           tag: { eq: "test-tag" },
         },
       };
@@ -357,8 +399,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle groupId string meta query", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        topLevelFields: {
+        metaQuery: {
+          projectId: { eq: "project1" },
           groupId: { in: ["group1", "group2"] },
         },
       };
@@ -372,8 +414,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle deletedAt null", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        topLevelFields: {
+        metaQuery: {
+          projectId: { eq: "project1" },
           deletedAt: null,
         },
       };
@@ -384,8 +426,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle deletedAt number meta query", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        topLevelFields: {
+        metaQuery: {
+          projectId: { eq: "project1" },
           deletedAt: { gte: 123 },
         },
       };
@@ -399,8 +441,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should combine multiple top-level fields", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        topLevelFields: {
+        metaQuery: {
+          projectId: { eq: "project1" },
           shouldIndex: true,
           tag: { eq: "test-tag" },
           groupId: { eq: "group1" },
@@ -416,13 +458,13 @@ describe("MongoQueryTransformer", () => {
 
     it("should combine topLevelFields with other query types", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: { and: [{ op: "eq", field: "foo", value: "bar" }] },
-        metaQuery: { id: { eq: "id1" } },
-        topLevelFields: {
+        metaQuery: {
+          projectId: { eq: "project1" },
+          id: { eq: "id1" },
           shouldIndex: true,
           tag: { eq: "test-tag" },
         },
+        recordQuery: { and: [{ op: "eq", field: "foo", value: "bar" }] },
       };
       expect(transformer.transformFilter(query, now)).toEqual({
         $and: [
@@ -436,8 +478,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle queries without tag in topLevelFields", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        topLevelFields: {
+        metaQuery: {
+          projectId: { eq: "project1" },
           shouldIndex: true,
           groupId: { eq: "group1" },
         },
@@ -487,8 +529,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle array field eq operation", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: {
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: {
           and: [
             {
               op: "eq",
@@ -508,8 +550,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle array field neq operation", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: {
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: {
           and: [
             {
               op: "neq",
@@ -529,8 +571,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle array field in operation", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: {
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: {
           and: [
             {
               op: "in",
@@ -550,8 +592,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle array field not_in operation", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: {
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: {
           and: [
             {
               op: "not_in",
@@ -571,8 +613,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle array field like operation", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: {
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: {
           and: [
             {
               op: "like",
@@ -597,8 +639,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle array field exists operation", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: {
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: {
           and: [
             {
               op: "exists",
@@ -618,8 +660,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle array field numeric operations", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: {
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: {
           and: [
             {
               op: "gt",
@@ -646,8 +688,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle nested array field paths", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: {
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: {
           and: [
             {
               op: "eq",
@@ -669,8 +711,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should fall back to regular query for non-array fields", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: {
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: {
           and: [
             {
               op: "eq",
@@ -690,8 +732,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle array field between operation", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: {
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: {
           and: [
             {
               op: "between",
@@ -711,8 +753,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle complex array field queries with logical operators", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: {
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: {
           and: [
             {
               op: "eq",
@@ -759,8 +801,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle mixed array and regular field queries", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: {
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: {
           and: [
             {
               op: "eq",
@@ -788,8 +830,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle array field with duration values", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: {
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: {
           and: [
             {
               op: "gt",
@@ -891,8 +933,8 @@ describe("MongoQueryTransformer", () => {
   describe("enhanced query generation", () => {
     it("should handle complex nested field queries", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: {
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: {
           and: [
             {
               op: "eq",
@@ -944,8 +986,8 @@ describe("MongoQueryTransformer", () => {
       ]);
 
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: {
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: {
           and: [
             {
               op: "eq",
@@ -983,8 +1025,8 @@ describe("MongoQueryTransformer", () => {
       ]);
 
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: {
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: {
           and: [
             {
               op: "eq",
@@ -1031,8 +1073,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle date field conversions in meta queries", () => {
       const query: IObjQuery = {
-        projectId: "project1",
         metaQuery: {
+          projectId: { eq: "project1" },
           createdAt: {
             gt: "2024-01-01T00:00:00Z",
             lt: "2024-12-31T23:59:59Z",
@@ -1049,8 +1091,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle duration values in queries", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        partQuery: {
+        metaQuery: { projectId: { eq: "project1" } },
+        recordQuery: {
           and: [
             {
               op: "gt",
@@ -1071,8 +1113,8 @@ describe("MongoQueryTransformer", () => {
 
     it("should handle complex top-level field combinations", () => {
       const query: IObjQuery = {
-        projectId: "project1",
-        topLevelFields: {
+        metaQuery: {
+          projectId: { eq: "project1" },
           shouldIndex: true,
           tag: { eq: "test-tag" },
           groupId: { in: ["group1", "group2"] },

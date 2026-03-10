@@ -2,7 +2,7 @@ import type { ValueOf } from "type-fest";
 import { z } from "zod";
 import {
   numberMetaQuerySchema,
-  objPartQueryListSchema,
+  objRecordQueryListSchema,
   objSortListSchema,
   stringMetaQuerySchema,
 } from "./obj.js";
@@ -92,7 +92,7 @@ export const memberQuerySchema = z.object({
   updatedAt: numberMetaQuerySchema.optional(),
   createdBy: stringMetaQuerySchema.optional(),
   updatedBy: stringMetaQuerySchema.optional(),
-  meta: objPartQueryListSchema.optional(),
+  meta: objRecordQueryListSchema.optional(),
   groupId: z.string().min(1),
   projectId: z.string().min(1),
 });

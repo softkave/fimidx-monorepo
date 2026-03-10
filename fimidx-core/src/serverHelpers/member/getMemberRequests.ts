@@ -5,7 +5,7 @@ import { kOwnServerErrorCodes, OwnServerError } from "../../common/error.js";
 import type { GetMemberRequestsEndpointArgs } from "../../definitions/member.js";
 import {
   kObjTags,
-  type IObjPartQueryItem,
+  type IObjRecordQueryItem,
   type IObjQuery,
 } from "../../definitions/obj.js";
 import type { IPermission } from "../../definitions/permission.js";
@@ -22,7 +22,7 @@ export function getMemberRequestsObjQuery(params: {
   const { query } = args;
   const { projectId, groupId, id, status } = query;
 
-  const filterArr: Array<IObjPartQueryItem> = [];
+  const filterArr: Array<IObjRecordQueryItem> = [];
 
   if (!groupId && !id) {
     throw new OwnServerError(
@@ -40,10 +40,12 @@ export function getMemberRequestsObjQuery(params: {
   }
 
   const objQuery: IObjQuery = {
-    projectId,
-    partQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
-    metaQuery: id ? { id: { eq: id } } : undefined,
-    topLevelFields: groupId ? { groupId: { eq: groupId } } : undefined,
+    recordQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
+    metaQuery: {
+      ...(projectId ? { projectId: { eq: projectId } } : {}),
+      ...(id ? { id: { eq: id } } : {}),
+      ...(groupId ? { groupId: { eq: groupId } } : {}),
+    },
   };
 
   return objQuery;

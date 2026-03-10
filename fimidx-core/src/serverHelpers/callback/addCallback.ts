@@ -78,8 +78,8 @@ export async function addCallback(params: {
     // The object already exists, we need to fetch it
     const existingCallback = await storage?.read({
       query: {
-        projectId,
-        partQuery: {
+        metaQuery: { projectId: { eq: projectId } },
+        recordQuery: {
           and: [{ field: "idempotencyKey", op: "eq", value: idempotencyKey }],
         },
       },

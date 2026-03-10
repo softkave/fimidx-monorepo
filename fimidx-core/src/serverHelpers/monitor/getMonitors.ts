@@ -1,7 +1,7 @@
 import type { GetMonitorsEndpointArgs } from "../../definitions/monitor.js";
 import {
   kObjTags,
-  type IObjPartQueryItem,
+  type IObjRecordQueryItem,
   type IObjQuery,
   type IObjSort,
 } from "../../definitions/obj.js";
@@ -24,11 +24,11 @@ export function getMonitorsObjQuery(params: { args: GetMonitorsEndpointArgs }) {
     id,
   } = query;
 
-  const filterArr: Array<IObjPartQueryItem> = [];
+  const filterArr: Array<IObjRecordQueryItem> = [];
 
   // Handle name filtering - name is stored in objRecord.name
   if (name) {
-    // Convert name query to partQuery for the name field
+    // Convert name query to recordQuery for the name field
     Object.entries(name).forEach(([op, value]) => {
       if (value !== undefined) {
         filterArr.push({
@@ -67,9 +67,15 @@ export function getMonitorsObjQuery(params: { args: GetMonitorsEndpointArgs }) {
   }
 
   const objQuery: IObjQuery = {
-    projectId,
-    partQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
-    metaQuery: { id, createdAt, updatedAt, createdBy, updatedBy },
+    recordQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
+    metaQuery: {
+      ...(projectId ? { projectId: { eq: projectId } } : {}),
+      id,
+      createdAt,
+      updatedAt,
+      createdBy,
+      updatedBy,
+    },
   };
 
   return objQuery;

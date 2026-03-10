@@ -22,9 +22,11 @@ export async function respondToMemberRequest(params: {
 
   const { objs } = await getManyObjs({
     objQuery: {
-      projectId,
-      metaQuery: { id: { eq: id } },
-      topLevelFields: { groupId: { eq: groupId } },
+      metaQuery: {
+        projectId: { eq: projectId },
+        id: { eq: id },
+        groupId: { eq: groupId },
+      },
     },
     tag: kObjTags.member,
     limit: 1,
@@ -46,9 +48,11 @@ export async function respondToMemberRequest(params: {
 
   await updateManyObjs({
     objQuery: {
-      projectId,
-      metaQuery: { id: { eq: id } },
-      topLevelFields: { groupId: { eq: groupId } },
+      metaQuery: {
+        projectId: { eq: projectId },
+        id: { eq: id },
+        groupId: { eq: groupId },
+      },
     },
     tag: kObjTags.member,
     update,

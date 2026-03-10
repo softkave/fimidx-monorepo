@@ -113,7 +113,7 @@ describe("getCallbacks integration", () => {
       ];
       for (const projectId of testProjectIds) {
         await storage.bulkDelete({
-          query: { projectId },
+          query: { metaQuery: { projectId: { eq: projectId } } },
           tag: kObjTags.callback,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -150,7 +150,7 @@ describe("getCallbacks integration", () => {
       ];
       for (const projectId of testProjectIds) {
         await storage.bulkDelete({
-          query: { projectId },
+          query: { metaQuery: { projectId: { eq: projectId } } },
           tag: kObjTags.callback,
           deletedBy: defaultBy,
           deletedByType: defaultByType,

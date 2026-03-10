@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
   numberMetaQuerySchema,
-  objPartQueryListSchema,
+  objRecordQueryListSchema,
   objSortListSchema,
   stringMetaQuerySchema,
 } from "./obj.js";
@@ -64,7 +64,7 @@ export const clientTokenQuerySchema = z.object({
   groupId: z.string().min(1),
   id: stringMetaQuerySchema.optional(),
   name: stringMetaQuerySchema.optional(),
-  meta: objPartQueryListSchema.optional(),
+  meta: objRecordQueryListSchema.optional(),
   createdAt: numberMetaQuerySchema.optional(),
   updatedAt: numberMetaQuerySchema.optional(),
   createdBy: stringMetaQuerySchema.optional(),
@@ -121,6 +121,8 @@ export const getClientTokensSchema = z.object({
 
 export const encodeClientTokenJWTSchema = z.object({
   id: z.string().min(1),
+  projectId: z.string().min(1),
+  groupId: z.string().min(1).optional(),
   refresh: z.boolean().optional(),
   expiresAt: z.date().optional(),
 });

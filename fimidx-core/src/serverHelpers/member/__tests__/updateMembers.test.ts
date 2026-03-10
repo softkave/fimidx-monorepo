@@ -51,7 +51,7 @@ describe("updateMembers integration", () => {
       ];
       for (const projectId of testProjectIds) {
         await storage.bulkDelete({
-          query: { projectId },
+          query: { metaQuery: { projectId: { eq: projectId } } },
           tag: kObjTags.member,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -75,7 +75,7 @@ describe("updateMembers integration", () => {
       ];
       for (const projectId of testProjectIds) {
         await storage.bulkDelete({
-          query: { projectId },
+          query: { metaQuery: { projectId: { eq: projectId } } },
           tag: kObjTags.member,
           deletedBy: defaultBy,
           deletedByType: defaultByType,

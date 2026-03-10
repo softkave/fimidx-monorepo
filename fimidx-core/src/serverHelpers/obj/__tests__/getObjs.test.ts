@@ -10,7 +10,7 @@ import type {
   IObjSortList,
 } from "../../../definitions/obj.js";
 import { createStorage } from "../../../storage/config.js";
-import { getManyObjs, metaQueryToPartQueryList } from "../getObjs.js";
+import { getManyObjs, metaQueryToRecordQueryList } from "../getObjs.js";
 
 const backends: { type: "mongo" | "postgres"; name: string }[] = [
   { type: "mongo", name: "MongoDB" },
@@ -87,12 +87,12 @@ async function setupObjFields(fields: IObjField[]) {
   }
 }
 
-describe("metaQueryToPartQueryList", () => {
+describe("metaQueryToRecordQueryList", () => {
   it("converts string meta queries", () => {
     const metaQuery = {
       foo: { eq: "bar", neq: "baz", in: ["a", "b"], not_in: ["c"] },
     };
-    const result = metaQueryToPartQueryList({ metaQuery });
+    const result = metaQueryToRecordQueryList({ metaQuery });
     expect(result).toEqual([
       { op: "eq", field: "foo", value: "bar" },
       { op: "neq", field: "foo", value: "baz" },
@@ -112,7 +112,7 @@ describe("metaQueryToPartQueryList", () => {
         between: [1, 5] as [number, number],
       },
     };
-    const result = metaQueryToPartQueryList({ metaQuery });
+    const result = metaQueryToRecordQueryList({ metaQuery });
     expect(result).toEqual([
       { op: "eq", field: "num", value: 1 },
       { op: "gt", field: "num", value: 0 },
@@ -125,12 +125,12 @@ describe("metaQueryToPartQueryList", () => {
 
   it("projectlies prefix if provided", () => {
     const metaQuery = { foo: { eq: "bar" } };
-    const result = metaQueryToPartQueryList({ metaQuery, prefix: "p" });
+    const result = metaQueryToRecordQueryList({ metaQuery, prefix: "p" });
     expect(result).toEqual([{ op: "eq", field: "p.foo", value: "bar" }]);
   });
 
   it("returns undefined for empty metaQuery", () => {
-    expect(metaQueryToPartQueryList({ metaQuery: {} })).toBeUndefined();
+    expect(metaQueryToRecordQueryList({ metaQuery: {} })).toBeUndefined();
   });
 });
 
@@ -188,7 +188,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     const obj = makeObjs({ projectId: defaultProjectId, tag: defaultTag });
     await storage.create({ objs: [obj] });
     const result = await getManyObjs({
-      objQuery: { projectId: obj.projectId },
+      objQuery: { metaQuery: { projectId: { eq: obj.projectId } } },
       tag: obj.tag,
       storageType: backend.type,
     });
@@ -196,7 +196,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     expect(result.objs.some((o: IObj) => o.id === obj.id)).toBe(true);
   });
 
-  it("supports partQuery (eq)", async () => {
+  it("supports recordQuery (eq)", async () => {
     const obj = makeObjs({
       projectId: defaultProjectId,
       tag: defaultTag,
@@ -216,8 +216,8 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     await storage.create({ objs: [obj] });
     const result = await getManyObjs({
       objQuery: {
-        projectId: obj.projectId,
-        partQuery: { and: [{ op: "eq", field: "foo", value: "bar" }] },
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: { and: [{ op: "eq", field: "foo", value: "bar" }] },
       },
       tag: obj.tag,
       storageType: backend.type,
@@ -226,7 +226,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     expect(result.objs.some((o: IObj) => o.id === obj.id)).toBe(true);
   });
 
-  it("supports partQuery (neq)", async () => {
+  it("supports recordQuery (neq)", async () => {
     const obj1 = makeObjs({
       projectId: defaultProjectId,
       tag: defaultTag,
@@ -251,8 +251,8 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     await storage.create({ objs: [obj1, obj2] });
     const result = await getManyObjs({
       objQuery: {
-        projectId: defaultProjectId,
-        partQuery: { and: [{ op: "neq", field: "foo", value: "bar" }] },
+        metaQuery: { projectId: { eq: defaultProjectId } },
+        recordQuery: { and: [{ op: "neq", field: "foo", value: "bar" }] },
       },
       tag: defaultTag,
       storageType: backend.type,
@@ -262,7 +262,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     expect(result.objs.some((o: IObj) => o.id === obj1.id)).toBe(false);
   });
 
-  it("supports partQuery (in)", async () => {
+  it("supports recordQuery (in)", async () => {
     const obj1 = makeObjs({
       projectId: defaultProjectId,
       tag: defaultTag,
@@ -292,8 +292,8 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     await storage.create({ objs: [obj1, obj2, obj3] });
     const result = await getManyObjs({
       objQuery: {
-        projectId: defaultProjectId,
-        partQuery: { and: [{ op: "in", field: "foo", value: ["bar", "baz"] }] },
+        metaQuery: { projectId: { eq: defaultProjectId } },
+        recordQuery: { and: [{ op: "in", field: "foo", value: ["bar", "baz"] }] },
       },
       tag: defaultTag,
       storageType: backend.type,
@@ -304,7 +304,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     expect(result.objs.some((o: IObj) => o.id === obj3.id)).toBe(false);
   });
 
-  it("supports partQuery (not_in)", async () => {
+  it("supports recordQuery (not_in)", async () => {
     const obj1 = makeObjs({
       projectId: defaultProjectId,
       tag: defaultTag,
@@ -334,8 +334,8 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     await storage.create({ objs: [obj1, obj2, obj3] });
     const result = await getManyObjs({
       objQuery: {
-        projectId: defaultProjectId,
-        partQuery: {
+        metaQuery: { projectId: { eq: defaultProjectId } },
+        recordQuery: {
           and: [{ op: "not_in", field: "foo", value: ["bar", "baz"] }],
         },
       },
@@ -348,7 +348,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     expect(result.objs.some((o: IObj) => o.id === obj3.id)).toBe(true);
   });
 
-  it("supports partQuery (gt, gte, lt, lte)", async () => {
+  it("supports recordQuery (gt, gte, lt, lte)", async () => {
     const obj1 = makeObjs({
       projectId: defaultProjectId,
       tag: defaultTag,
@@ -380,8 +380,8 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     // Test gt
     let result = await getManyObjs({
       objQuery: {
-        projectId: defaultProjectId,
-        partQuery: { and: [{ op: "gt", field: "num", value: 5 }] },
+        metaQuery: { projectId: { eq: defaultProjectId } },
+        recordQuery: { and: [{ op: "gt", field: "num", value: 5 }] },
       },
       tag: defaultTag,
       storageType: backend.type,
@@ -394,8 +394,8 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     // Test gte
     result = await getManyObjs({
       objQuery: {
-        projectId: defaultProjectId,
-        partQuery: { and: [{ op: "gte", field: "num", value: 10 }] },
+        metaQuery: { projectId: { eq: defaultProjectId } },
+        recordQuery: { and: [{ op: "gte", field: "num", value: 10 }] },
       },
       tag: defaultTag,
       storageType: backend.type,
@@ -408,8 +408,8 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     // Test lt
     result = await getManyObjs({
       objQuery: {
-        projectId: defaultProjectId,
-        partQuery: { and: [{ op: "lt", field: "num", value: 15 }] },
+        metaQuery: { projectId: { eq: defaultProjectId } },
+        recordQuery: { and: [{ op: "lt", field: "num", value: 15 }] },
       },
       tag: defaultTag,
       storageType: backend.type,
@@ -422,8 +422,8 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     // Test lte
     result = await getManyObjs({
       objQuery: {
-        projectId: defaultProjectId,
-        partQuery: { and: [{ op: "lte", field: "num", value: 10 }] },
+        metaQuery: { projectId: { eq: defaultProjectId } },
+        recordQuery: { and: [{ op: "lte", field: "num", value: 10 }] },
       },
       tag: defaultTag,
       storageType: backend.type,
@@ -434,7 +434,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     expect(result.objs.some((o: IObj) => o.id === obj3.id)).toBe(false);
   });
 
-  it("supports partQuery (between)", async () => {
+  it("supports recordQuery (between)", async () => {
     const obj1 = makeObjs({
       projectId: defaultProjectId,
       tag: defaultTag,
@@ -464,8 +464,8 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     await storage.create({ objs: [obj1, obj2, obj3] });
     const result = await getManyObjs({
       objQuery: {
-        projectId: defaultProjectId,
-        partQuery: { and: [{ op: "between", field: "num", value: [8, 12] }] },
+        metaQuery: { projectId: { eq: defaultProjectId } },
+        recordQuery: { and: [{ op: "between", field: "num", value: [8, 12] }] },
       },
       tag: defaultTag,
       storageType: backend.type,
@@ -476,7 +476,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     expect(result.objs.some((o: IObj) => o.id === obj3.id)).toBe(false);
   });
 
-  it("supports multiple partQuery conditions", async () => {
+  it("supports multiple recordQuery conditions", async () => {
     const obj1 = makeObjs({
       projectId: defaultProjectId,
       tag: defaultTag,
@@ -515,8 +515,8 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     await storage.create({ objs: [obj1, obj2, obj3] });
     const result = await getManyObjs({
       objQuery: {
-        projectId: defaultProjectId,
-        partQuery: {
+        metaQuery: { projectId: { eq: defaultProjectId } },
+        recordQuery: {
           and: [
             { op: "eq", field: "foo", value: "bar" },
             { op: "lt", field: "num", value: 10 },
@@ -566,8 +566,8 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     await storage.create({ objs: [obj1, obj2] });
     const result = await getManyObjs({
       objQuery: {
-        projectId: defaultProjectId,
         metaQuery: {
+          projectId: { eq: defaultProjectId },
           createdBy: { eq: "tester" },
         },
       },
@@ -619,7 +619,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
 
     // Test ascending sort
     let result = await getManyObjs({
-      objQuery: { projectId: defaultProjectId },
+      objQuery: { metaQuery: { projectId: { eq: defaultProjectId } } },
       tag: defaultTag,
       sort: [{ field: "name", direction: "asc" }] as IObjSortList,
       storageType: backend.type,
@@ -631,7 +631,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
 
     // Test descending sort
     result = await getManyObjs({
-      objQuery: { projectId: defaultProjectId },
+      objQuery: { metaQuery: { projectId: { eq: defaultProjectId } } },
       tag: defaultTag,
       sort: [{ field: "age", direction: "desc" }] as IObjSortList,
       storageType: backend.type,
@@ -675,7 +675,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
 
     // Test first page
     let result = await getManyObjs({
-      objQuery: { projectId: defaultProjectId },
+      objQuery: { metaQuery: { projectId: { eq: defaultProjectId } } },
       tag: defaultTag,
       page: 0,
       limit: 2,
@@ -688,7 +688,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
 
     // Test second page
     result = await getManyObjs({
-      objQuery: { projectId: defaultProjectId },
+      objQuery: { metaQuery: { projectId: { eq: defaultProjectId } } },
       tag: defaultTag,
       page: 1,
       limit: 2,
@@ -701,7 +701,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
 
     // Test last page
     result = await getManyObjs({
-      objQuery: { projectId: defaultProjectId },
+      objQuery: { metaQuery: { projectId: { eq: defaultProjectId } } },
       tag: defaultTag,
       page: 2,
       limit: 2,
@@ -728,7 +728,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
 
     await storage.create({ objs: [obj1, obj2] });
     const result = await getManyObjs({
-      objQuery: { projectId: defaultProjectId },
+      objQuery: { metaQuery: { projectId: { eq: defaultProjectId } } },
       tag: defaultTag,
       storageType: backend.type,
     });
@@ -752,8 +752,8 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     await storage.create({ objs: [obj1, obj2] });
     const result = await getManyObjs({
       objQuery: {
-        projectId: defaultProjectId,
-        topLevelFields: {
+        metaQuery: {
+          projectId: { eq: defaultProjectId },
           deletedAt: null,
         },
       },

@@ -1,5 +1,5 @@
 import { first, isString } from "lodash-es";
-import { jsRecordToObjPartQueryList } from "../../common/obj.js";
+import { jsRecordToObjRecordQueryList } from "../../common/obj.js";
 import type {
   CheckPermissionsEndpointArgs,
   CheckPermissionsEndpointResponse,
@@ -24,13 +24,13 @@ export async function checkPermissions(params: {
             projectId,
             entity: isString(item.entity)
               ? { eq: item.entity }
-              : jsRecordToObjPartQueryList(item.entity),
+              : jsRecordToObjRecordQueryList(item.entity),
             action: isString(item.action)
               ? { eq: item.action }
-              : jsRecordToObjPartQueryList(item.action),
+              : jsRecordToObjRecordQueryList(item.action),
             target: isString(item.target)
               ? { eq: item.target }
-              : jsRecordToObjPartQueryList(item.target),
+              : jsRecordToObjRecordQueryList(item.target),
           },
           limit: 1,
         },

@@ -2,7 +2,7 @@ import type { AnyObject } from "softkave-js-utils";
 import { z } from "zod";
 import {
   numberMetaQuerySchema,
-  objPartQueryListSchema,
+  objRecordQueryListSchema,
   objSortListSchema,
   stringMetaQuerySchema,
 } from "./obj.js";
@@ -118,8 +118,8 @@ export const callbacksQuerySchema = z.object({
   idempotencyKey: stringMetaQuerySchema.optional(),
   url: stringMetaQuerySchema.optional(),
   method: stringMetaQuerySchema.optional(),
-  requestHeaders: objPartQueryListSchema.optional(),
-  requestBody: objPartQueryListSchema.optional(),
+  requestHeaders: objRecordQueryListSchema.optional(),
+  requestBody: objRecordQueryListSchema.optional(),
   timeout: numberMetaQuerySchema.optional(),
   intervalFrom: numberMetaQuerySchema.optional(),
   intervalMs: numberMetaQuerySchema.optional(),

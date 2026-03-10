@@ -21,7 +21,11 @@ export const encodeClientTokenEndpoint: NextMaybeAuthenticatedEndpointFn<
 
   const input = encodeClientTokenJWTSchema.parse(await req.json());
   sanitizeEncodeClientTokenJWTInput(input);
-  const clientToken = await getClientTokenById({ id: input.id });
+  const clientToken = await getClientTokenById({
+    id: input.id,
+    projectId: input.projectId,
+    groupId: input.groupId,
+  });
 
   if (sessionClientToken) {
     await checkPermissionGroupThenProjectThenOrg({

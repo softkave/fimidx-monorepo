@@ -1,5 +1,5 @@
 import { first, isString } from "lodash-es";
-import { jsRecordToObjPartQueryList } from "../../common/obj.js";
+import { jsRecordToObjRecordQueryList } from "../../common/obj.js";
 import type {
   CheckClientTokenPermissionsEndpointArgs,
   CheckClientTokenPermissionsEndpointResponse,
@@ -33,13 +33,13 @@ export async function checkClientTokenPermissions(params: {
             groupId: groupId ? { eq: groupId } : undefined,
             entity: isString(managedPermission.entity)
               ? { eq: managedPermission.entity }
-              : jsRecordToObjPartQueryList(managedPermission.entity),
+              : jsRecordToObjRecordQueryList(managedPermission.entity),
             action: isString(managedPermission.action)
               ? { eq: managedPermission.action }
-              : jsRecordToObjPartQueryList(managedPermission.action),
+              : jsRecordToObjRecordQueryList(managedPermission.action),
             target: isString(managedPermission.target)
               ? { eq: managedPermission.target }
-              : jsRecordToObjPartQueryList(managedPermission.target),
+              : jsRecordToObjRecordQueryList(managedPermission.target),
           },
           limit: 1,
         },

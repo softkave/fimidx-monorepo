@@ -1,3 +1,4 @@
+import { chunk } from "lodash-es";
 import type { UpdateMembersEndpointArgs } from "../../definitions/member.js";
 import { kObjTags } from "../../definitions/obj.js";
 import type { IObjStorage } from "../../storage/types.js";
@@ -5,6 +6,8 @@ import { updateManyObjs } from "../obj/updateObjs.js";
 import { getMembers } from "./getMembers.js";
 import { getMembersObjQuery } from "./getMembers.js";
 import { updateMemberPermissions } from "./updateMemberPermissions.js";
+
+const CHUNK_SIZE = 50;
 
 export async function updateMembers(params: {
   args: UpdateMembersEndpointArgs;
@@ -43,24 +46,31 @@ export async function updateMembers(params: {
       args: { query: args.query, includePermissions: false },
       storage,
     });
-    for (const member of members) {
-      await updateMemberPermissions({
-        args: {
-          query: {
-            id: member.id,
-            groupId: member.groupId,
-            projectId: member.projectId,
-          },
-          update: {
-            addPermissions,
-            removePermissions,
-            removeAllPermissions,
-          },
-        },
-        by,
-        byType,
-        storage,
-      });
-    }
+    const chunks = chunk(members, CHUNK_SIZE);
+    await Promise.all(
+      chunks.map((memberChunk) =>
+        Promise.all(
+          memberChunk.map((member) =>
+            updateMemberPermissions({
+              args: {
+                query: {
+                  id: member.id,
+                  groupId: member.groupId,
+                  projectId: member.projectId,
+                },
+                update: {
+                  addPermissions,
+                  removePermissions,
+                  removeAllPermissions,
+                },
+              },
+              by,
+              byType,
+              storage,
+            })
+          )
+        )
+      )
+    );
   }
 }

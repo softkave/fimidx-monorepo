@@ -17,10 +17,24 @@ export function ClientToken(props: IClientTokenProps) {
   });
 
   const handleEncodeClientTokenJWT = useCallback(async () => {
+    const projectId =
+      props.clientToken.meta?.projectId ?? props.clientToken.projectId;
+    const groupId =
+      props.clientToken.meta?.orgId ?? props.clientToken.groupId;
+    if (!projectId || !groupId) return;
     await encodeClientTokenJWT.trigger({
       id: props.clientToken.id,
+      projectId,
+      groupId,
     });
-  }, [encodeClientTokenJWT, props.clientToken.id]);
+  }, [
+    encodeClientTokenJWT,
+    props.clientToken.id,
+    props.clientToken.projectId,
+    props.clientToken.groupId,
+    props.clientToken.meta?.projectId,
+    props.clientToken.meta?.orgId,
+  ]);
 
   const { data } = encodeClientTokenJWT;
 

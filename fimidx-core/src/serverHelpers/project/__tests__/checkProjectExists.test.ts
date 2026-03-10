@@ -45,7 +45,7 @@ describe("checkProjectExists integration", () => {
     // Clean up test data before each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { projectId: kId0 },
+        query: { metaQuery: { projectId: { eq: kId0 } } },
         tag: kObjTags.project,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -61,7 +61,7 @@ describe("checkProjectExists integration", () => {
     // Clean up after each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { projectId: kId0 },
+        query: { metaQuery: { projectId: { eq: kId0 } } },
         tag: kObjTags.project,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -380,7 +380,7 @@ describe("checkProjectAvailable integration", () => {
     // Clean up test data before each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { projectId: kId0 },
+        query: { metaQuery: { projectId: { eq: kId0 } } },
         tag: kObjTags.project,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -396,7 +396,7 @@ describe("checkProjectAvailable integration", () => {
     // Clean up after each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { projectId: kId0 },
+        query: { metaQuery: { projectId: { eq: kId0 } } },
         tag: kObjTags.project,
         deletedBy: defaultBy,
         deletedByType: defaultByType,

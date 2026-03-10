@@ -331,9 +331,27 @@ export const objMetaQuerySchema = z.object({
 
 export { META_QUERY_KEYS };
 
+/**
+ * Internal storage query schema. projectId is optional here because many
+ * internal helpers legitimately query without a project scope (e.g. by id
+ * only, or by tag).
+ */
 export const objQuerySchema = z.object({
   recordQuery: objRecordLogicalQuerySchema.optional(),
   metaQuery: objMetaQuerySchema.optional(),
+});
+
+/**
+ * External query schema: require projectId so that public helpers like
+ * getManyObjs / updateManyObjs / deleteManyObjs are always project-scoped.
+ */
+export const objExternalMetaQuerySchema = objMetaQuerySchema.extend({
+  projectId: stringMetaQuerySchema,
+});
+
+export const objExternalQuerySchema = z.object({
+  recordQuery: objRecordLogicalQuerySchema.optional(),
+  metaQuery: objExternalMetaQuerySchema,
 });
 
 export const objSortSchema = z.object({
@@ -347,7 +365,7 @@ export const objSortSchema = z.object({
 /** Max 20 sort fields per request. */
 export const objSortListSchema = z.array(objSortSchema).max(20);
 export const updateManyObjsSchema = z.object({
-  query: objQuerySchema,
+  query: objExternalQuerySchema,
   update: inputObjRecordSchema,
   updateMany: z.boolean().optional(),
   updateWay: onConflictSchema.optional(),
@@ -360,12 +378,12 @@ export const updateManyObjsSchema = z.object({
 });
 
 export const deleteManyObjsSchema = z.object({
-  query: objQuerySchema,
+  query: objExternalQuerySchema,
   deleteMany: z.boolean().optional(),
 });
 
 export const getManyObjsSchema = z.object({
-  query: objQuerySchema,
+  query: objExternalQuerySchema,
   page: z.number().optional(),
   limit: z.number().optional(),
   sort: objSortListSchema.optional(),

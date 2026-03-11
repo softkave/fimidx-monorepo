@@ -149,8 +149,9 @@ export const respondToMemberRequestSchema = z.object({
 export const getMemberRequestsSchema = z.object({
   query: z.object({
     id: z.string().min(1).optional(),
-    groupId: z.string().min(1),
+    groupId: z.string().min(1).optional(),
     projectId: z.string().min(1),
+    userId: z.string().min(1).optional(),
     status: z
       .enum([
         kMemberStatus.pending,

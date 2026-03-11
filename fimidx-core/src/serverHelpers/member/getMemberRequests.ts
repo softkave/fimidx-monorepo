@@ -13,15 +13,22 @@ export function getMemberRequestsObjQuery(params: {
 }) {
   const { args } = params;
   const { query } = args;
-  const { projectId, groupId, id, status } = query;
+  const { projectId, groupId, id, status, userId } = query;
 
   const filterArr: Array<IObjRecordQueryItem> = [];
 
   if (status) {
     filterArr.push({
       op: "eq",
-      field: "status",
+      field: "meta.status",
       value: status,
+    });
+  }
+  if (userId) {
+    filterArr.push({
+      op: "eq",
+      field: "meta.userId",
+      value: userId,
     });
   }
 

@@ -119,9 +119,6 @@ describe("getMemberRequests integration", () => {
       groupId: group.id,
     });
 
-    console.log("member1Args", member1Args);
-    console.log("member2Args", member2Args);
-
     await addMember({
       args: member1Args,
       by,

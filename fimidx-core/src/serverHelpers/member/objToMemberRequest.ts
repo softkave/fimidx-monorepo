@@ -32,7 +32,6 @@ export async function objToMemberRequest(params: { objs: IObj[] }) {
       const status = record?.status;
       const updatedAt = record?.statusUpdatedAt;
       const groupName = groupMap.get(obj.groupId) ?? "";
-      console.log("groupName", { groupName, status, updatedAt });
       if (!groupName || status == null || updatedAt == null) {
         return null;
       }

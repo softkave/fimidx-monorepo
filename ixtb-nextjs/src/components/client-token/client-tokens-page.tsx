@@ -23,6 +23,7 @@ export function ClientTokensPage(props: {
       <ClientTokenListContainer
         projectId={props.projectId}
         showNoClientTokensMessage={false}
+        groupId={props.orgId}
       />
     </div>
   );

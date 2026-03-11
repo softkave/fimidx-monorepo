@@ -5,7 +5,6 @@ import {
   getClientTokensSchema,
   IClientToken,
 } from "fimidx-core/definitions/clientToken";
-import { kId0 } from "fimidx-core/definitions/system";
 import { useCallback, useMemo } from "react";
 import { z } from "zod";
 import { WrapLoader } from "../internal/wrap-loader";
@@ -18,26 +17,29 @@ export interface IClientTokenContainerRenderProps {
 export interface IClientTokenContainerProps {
   projectId: string;
   clientTokenId: string;
+  groupId: string;
   render?: (response: IClientTokenContainerRenderProps) => React.ReactNode;
   renderLoading?: () => React.ReactNode;
   renderError?: (error: unknown) => React.ReactNode;
 }
 
 export function ClientTokenContainer(props: IClientTokenContainerProps) {
-  const { projectId, clientTokenId, renderLoading, renderError } = props;
+  const { projectId, clientTokenId, groupId, renderLoading, renderError } =
+    props;
 
   const args = useMemo(
     (): z.infer<typeof getClientTokensSchema> => ({
       page: 1,
       limit: 1,
       query: {
-        projectId: kId0,
+        projectId,
+        groupId,
         id: {
           eq: clientTokenId,
         },
       },
     }),
-    [clientTokenId]
+    [clientTokenId, groupId, projectId]
   );
 
   const clientTokenHook = useGetClientTokens(args);

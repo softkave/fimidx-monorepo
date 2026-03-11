@@ -28,14 +28,8 @@ export function LogContainer(props: ILogContainerProps) {
       limit: 1,
       query: {
         projectId,
-        logsQuery: {
-          and: [
-            {
-              field: "id",
-              op: "eq",
-              value: logId,
-            },
-          ],
+        id: {
+          eq: logId,
         },
       },
     }),

@@ -35,6 +35,10 @@ export default async function Page(
   }
 
   return (
-    <ProjectPage projectId={projectId} defaultTab={kProjectTabs.clientTokens} />
+    <ProjectPage
+      projectId={projectId}
+      orgId={orgId}
+      defaultTab={kProjectTabs.clientTokens}
+    />
   );
 }

@@ -58,6 +58,7 @@ export function UpdateProjectForm(props: IUpdateProjectFormProps) {
     async (values: z.infer<typeof addProjectFormSchema>) => {
       await updateProjectHook.trigger({
         query: {
+          orgId: project.orgId,
           id: {
             eq: project.id,
           },

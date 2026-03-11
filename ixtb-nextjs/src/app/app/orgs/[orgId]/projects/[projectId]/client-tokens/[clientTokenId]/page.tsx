@@ -39,6 +39,10 @@ export default async function Page(
   }
 
   return (
-    <ClientTokenPage projectId={projectId} clientTokenId={clientTokenId} />
+    <ClientTokenPage
+      projectId={projectId}
+      clientTokenId={clientTokenId}
+      orgId={orgId}
+    />
   );
 }

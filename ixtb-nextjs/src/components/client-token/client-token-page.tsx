@@ -9,6 +9,7 @@ import { ClientTokenContainer } from "./client-token-container";
 export interface IClientTokenPageProps {
   clientTokenId: string;
   projectId: string;
+  orgId: string;
   className?: string;
 }
 
@@ -17,6 +18,7 @@ export function ClientTokenPage(props: IClientTokenPageProps) {
     <ProjectPage>
       <ProjectContainer
         projectId={props.projectId}
+        orgId={props.orgId}
         render={({ project }) => (
           <div
             className={cn("flex flex-col max-w-lg mx-auto", props.className)}
@@ -25,6 +27,7 @@ export function ClientTokenPage(props: IClientTokenPageProps) {
             <ClientTokenContainer
               projectId={props.projectId}
               clientTokenId={props.clientTokenId}
+              groupId={project.orgId}
             />
           </div>
         )}

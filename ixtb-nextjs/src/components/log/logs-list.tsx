@@ -1,5 +1,5 @@
 import { ILog } from "fimidx-core/definitions/log";
-import { IObjPartQueryList } from "fimidx-core/definitions/obj";
+import { IObjRecordQueryList } from "fimidx-core/definitions/obj";
 import { useMemo } from "react";
 import { ComponentListMessage } from "../internal/component-list/component-list-message.tsx";
 import {
@@ -13,8 +13,8 @@ import { LogsTable } from "./logs-table.tsx";
 
 export interface ILogsProps {
   logs: ILog[];
-  filters?: IObjPartQueryList;
-  onFiltersChange?: (filters: IObjPartQueryList) => void;
+  filters?: IObjRecordQueryList;
+  onFiltersChange?: (filters: IObjRecordQueryList) => void;
   showFiltersAndSort?: boolean;
   orgId: string;
   projectId: string;

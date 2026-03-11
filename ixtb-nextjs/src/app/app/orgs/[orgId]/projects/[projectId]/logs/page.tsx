@@ -37,6 +37,7 @@ export default async function Page(
   return (
     <ProjectPage
       projectId={projectId}
+      orgId={orgId}
       defaultTab={kProjectTabs.logs}
       className="max-w-full md:max-w-full"
     />

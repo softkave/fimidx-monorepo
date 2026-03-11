@@ -10,6 +10,7 @@ export function ProjectSidebarGroupContainer(props: {
   return (
     <ProjectContainer
       projectId={props.projectId}
+      orgId={props.orgId}
       render={({ project }) => (
         <ProjectSidebarGroup
           orgId={props.orgId}

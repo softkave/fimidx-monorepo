@@ -13,6 +13,7 @@ export interface IProjectContainerRenderProps {
 
 export interface IProjectContainerProps {
   projectId: string;
+  orgId: string;
   defaultTab?: ProjectTab;
   render?: (response: IProjectContainerRenderProps) => React.ReactNode;
   renderLoading?: () => React.ReactNode;
@@ -23,6 +24,7 @@ export interface IProjectContainerProps {
 export function ProjectContainer(props: IProjectContainerProps) {
   const {
     projectId,
+    orgId,
     defaultTab = kProjectTabs.logs,
     renderLoading,
     renderError,
@@ -30,6 +32,7 @@ export function ProjectContainer(props: IProjectContainerProps) {
   } = props;
   const getProjectsHook = useGetProjects({
     query: {
+      orgId,
       id: {
         eq: projectId,
       },

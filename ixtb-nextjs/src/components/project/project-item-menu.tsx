@@ -49,6 +49,7 @@ export function ProjectItemMenu(props: IProjectItemMenuProps) {
     onDeleting?.();
     deleteProjectHook.trigger({
       query: {
+        orgId: project.orgId,
         id: {
           eq: project.id,
         },

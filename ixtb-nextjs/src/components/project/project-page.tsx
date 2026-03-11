@@ -4,6 +4,7 @@ import { ProjectContainer } from "./project-container";
 
 export interface IProjectPageProps {
   projectId: string;
+  orgId: string;
   defaultTab: ProjectTab;
   className?: string;
 }
@@ -13,6 +14,7 @@ export function ProjectPage(props: IProjectPageProps) {
     <InternalProjectPage>
       <ProjectContainer
         projectId={props.projectId}
+        orgId={props.orgId}
         defaultTab={props.defaultTab}
         className={props.className}
       />

@@ -6,7 +6,6 @@ import {
   GetClientTokensEndpointArgs,
   IClientToken,
 } from "fimidx-core/definitions/clientToken";
-import { kId0 } from "fimidx-core/definitions/system";
 import { useState } from "react";
 import { OmitFrom } from "softkave-js-utils";
 import { ComponentListMessage } from "../internal/component-list/component-list-message.tsx";
@@ -26,6 +25,7 @@ export interface IClientTokenListContainerProps {
   className?: string;
   clientTokensContainerClassName?: string;
   projectId: string;
+  groupId: string;
 }
 
 export function ClientTokenListContainer({
@@ -35,6 +35,7 @@ export function ClientTokenListContainer({
   className,
   clientTokensContainerClassName,
   projectId,
+  groupId,
 }: IClientTokenListContainerProps) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -43,14 +44,8 @@ export function ClientTokenListContainer({
     page,
     limit: pageSize,
     query: {
-      projectId: kId0,
-      meta: [
-        {
-          field: "projectId",
-          value: projectId,
-          op: "eq",
-        },
-      ],
+      projectId,
+      groupId,
       ...filter,
     },
   });

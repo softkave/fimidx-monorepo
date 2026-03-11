@@ -1,6 +1,6 @@
 import { FieldType } from "fimidx-core/common/indexer";
 import { ILogField } from "fimidx-core/definitions/log";
-import { objPartQueryItemOpSchema } from "fimidx-core/definitions/obj";
+import { objRecordQueryItemOpSchema } from "fimidx-core/definitions/obj";
 import { XIcon } from "lucide-react";
 import { useMemo } from "react";
 import { Button } from "../../ui/button";
@@ -17,7 +17,7 @@ import { InInput } from "./in-input";
 import { NumberOrDateInput } from "./number-or-date-input";
 import { IWorkingLogPartFilterItem } from "./types";
 
-const kOps = objPartQueryItemOpSchema.Values;
+const kOps = objRecordQueryItemOpSchema.Values;
 const kOpLabels: Record<keyof typeof kOps, string> = {
   [kOps.eq]: "Equal to",
   [kOps.neq]: "Not equal to",

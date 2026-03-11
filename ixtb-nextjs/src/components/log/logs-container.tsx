@@ -7,7 +7,7 @@ import {
   getLogsSchema,
   ILog,
 } from "fimidx-core/definitions/log";
-import { IObjPartQueryList } from "fimidx-core/definitions/obj";
+import { IObjRecordQueryList } from "fimidx-core/definitions/obj";
 import { ReactNode, useMemo, useState } from "react";
 import { OmitFrom } from "softkave-js-utils";
 import { z } from "zod";
@@ -43,7 +43,7 @@ export function LogListContainer({
 }: ILogListContainerProps) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(100);
-  const [filters, setFilters] = useState<IObjPartQueryList>([]);
+  const [filters, setFilters] = useState<IObjRecordQueryList>([]);
 
   const args = useMemo(
     (): z.infer<typeof getLogsSchema> => ({
@@ -51,7 +51,7 @@ export function LogListContainer({
       limit: pageSize,
       query: {
         projectId,
-        logsQuery: filters.length > 0 ? { and: filters } : undefined,
+        logsQuery: filters.length > 0 ? filters : undefined,
       },
     }),
     [page, pageSize, filters, projectId]

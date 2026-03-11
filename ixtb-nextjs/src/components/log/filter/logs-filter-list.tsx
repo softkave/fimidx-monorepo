@@ -1,8 +1,8 @@
 import assert from "assert";
 import { ILogField } from "fimidx-core/definitions/log";
 import {
-  IObjPartQueryItem,
-  IObjPartQueryList,
+  IObjRecordQueryItem,
+  IObjRecordQueryList,
 } from "fimidx-core/definitions/obj";
 import { Loader2, PlusIcon, XIcon } from "lucide-react";
 import { ComponentProps, useMemo, useState } from "react";
@@ -13,8 +13,8 @@ import { IWorkingLogPartFilterItem } from "./types";
 export interface ILogsFilterListProps {
   orgId: string;
   projectId: string;
-  onChange: (filters: IObjPartQueryList) => void;
-  filters?: IObjPartQueryList;
+  onChange: (filters: IObjRecordQueryList) => void;
+  filters?: IObjRecordQueryList;
   fields: ILogField[];
   applyButtonText?: string;
   applyButtonClassName?: string;
@@ -119,7 +119,7 @@ function validateFilter(
 
 function workingFilterToFilter(
   filter: IWorkingLogPartFilterItem
-): IObjPartQueryItem {
+): IObjRecordQueryItem {
   assert.ok(filter.item.field, "Field is required");
   assert.ok(filter.item.op, "Op is required");
   assert.ok(filter.item.value, "Value is required");

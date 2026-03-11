@@ -18,8 +18,8 @@ export const getOrgsEndpoint: NextUserAuthenticatedEndpointFn<
     args: {
       query: {
         projectId: kId0,
-        memberId: userId,
         status: kMemberStatus.accepted,
+        userId,
       },
       page: input.page,
       limit: input.limit,

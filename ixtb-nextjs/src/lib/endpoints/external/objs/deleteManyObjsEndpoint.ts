@@ -1,10 +1,14 @@
-import { deleteManyObjsSchema, kObjTags } from "fimidx-core/definitions/obj";
+import {
+  deleteManyObjsExternalApiSchema,
+  externalApiQueryToInternalQuery,
+  kObjTags,
+} from "fimidx-core/definitions/obj";
 import { kByTypes } from "fimidx-core/definitions/other";
+import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { deleteManyObjs } from "fimidx-core/serverHelpers/index";
 import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
-import { sanitizeDeleteManyObjsInput } from "../../utils/sanitizeKId0";
-import { kFimidxPermissions } from "fimidx-core/definitions/permission";
+import { sanitizeDeleteManyObjsExternalApiInput } from "../../utils/sanitizeKId0";
 
 export const deleteManyObjsEndpoint: NextClientTokenAuthenticatedEndpointFn<
   void
@@ -14,21 +18,24 @@ export const deleteManyObjsEndpoint: NextClientTokenAuthenticatedEndpointFn<
     session: { clientToken },
   } = params;
 
-  const input = deleteManyObjsSchema.parse(await req.json());
-  sanitizeDeleteManyObjsInput(input);
-  const projectId = input.query?.projectId;
-  if (projectId) {
-    await checkPermissionProjectThenOrg({
-      clientToken,
-      projectId,
-      action: kFimidxPermissions.obj.delete,
-    });
-  }
+  const input = deleteManyObjsExternalApiSchema.parse(await req.json());
+  sanitizeDeleteManyObjsExternalApiInput(input);
+
+  await checkPermissionProjectThenOrg({
+    clientToken,
+    projectId: input.projectId,
+    action: kFimidxPermissions.obj.delete,
+  });
+
+  const objQuery = externalApiQueryToInternalQuery(input.query, {
+    projectId: input.projectId,
+    tag: kObjTags.obj,
+  });
 
   await deleteManyObjs({
     deletedBy: clientToken.id,
     deletedByType: kByTypes.clientToken,
-    objQuery: input.query,
+    objQuery,
     tag: kObjTags.obj,
     deleteMany: input.deleteMany ?? false,
   });

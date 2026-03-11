@@ -1,14 +1,15 @@
 import {
+  externalApiQueryToInternalQuery,
   IUpdateManyObjsEndpointResponse,
   kObjTags,
-  updateManyObjsSchema,
+  updateManyObjsExternalApiSchema,
 } from "fimidx-core/definitions/obj";
 import { kByTypes } from "fimidx-core/definitions/other";
+import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { updateManyObjs } from "fimidx-core/serverHelpers/index";
 import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
-import { sanitizeUpdateManyObjsInput } from "../../utils/sanitizeKId0";
-import { kFimidxPermissions } from "fimidx-core/definitions/permission";
+import { sanitizeUpdateManyObjsExternalApiInput } from "../../utils/sanitizeKId0";
 
 export const updateManyObjsEndpoint: NextClientTokenAuthenticatedEndpointFn<
   IUpdateManyObjsEndpointResponse
@@ -18,22 +19,25 @@ export const updateManyObjsEndpoint: NextClientTokenAuthenticatedEndpointFn<
     session: { clientToken },
   } = params;
 
-  const input = updateManyObjsSchema.parse(await req.json());
-  sanitizeUpdateManyObjsInput(input);
-  const projectId = input.query?.projectId;
-  if (projectId) {
-    await checkPermissionProjectThenOrg({
-      clientToken,
-      projectId,
-      action: kFimidxPermissions.obj.mutate,
-    });
-  }
+  const input = updateManyObjsExternalApiSchema.parse(await req.json());
+  sanitizeUpdateManyObjsExternalApiInput(input);
+
+  await checkPermissionProjectThenOrg({
+    clientToken,
+    projectId: input.projectId,
+    action: kFimidxPermissions.obj.mutate,
+  });
+
+  const objQuery = externalApiQueryToInternalQuery(input.query, {
+    projectId: input.projectId,
+    tag: kObjTags.obj,
+  });
 
   await updateManyObjs({
     by: clientToken.id,
     byType: kByTypes.clientToken,
     tag: kObjTags.obj,
-    objQuery: input.query,
+    objQuery,
     update: input.update,
     updateWay: input.updateWay,
     fieldsToIndex: input.fieldsToIndex,

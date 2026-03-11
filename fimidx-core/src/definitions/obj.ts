@@ -368,24 +368,134 @@ export const objQuerySchema = z.union([
 ]);
 
 /**
- * External query schema: require projectId so that public helpers like
- * getManyObjs / updateManyObjs / deleteManyObjs are always project-scoped.
+ * External API metaQuery schema: excludes projectId, groupId, and tag since
+ * these are container/scope fields provided at the top level of external API
+ * requests rather than as query conditions.
  */
-export const objExternalMetaQuerySchema = objMetaQuerySchema.extend({
-  projectId: stringMetaQuerySchema,
+export const objExternalApiMetaQuerySchema = z.object({
+  id: stringMetaQuerySchema.optional(),
+  createdAt: numberMetaQuerySchema.optional(),
+  updatedAt: numberMetaQuerySchema.optional(),
+  createdBy: stringMetaQuerySchema.optional(),
+  updatedBy: stringMetaQuerySchema.optional(),
+  createdByType: stringMetaQuerySchema.optional(),
+  updatedByType: stringMetaQuerySchema.optional(),
+  deletedAt: z.union([z.null(), numberMetaQuerySchema]).optional(),
+  deletedBy: stringMetaQuerySchema.optional(),
+  deletedByType: stringMetaQuerySchema.optional(),
+  shouldIndex: z.boolean().optional(),
+  fieldsToIndex: z.array(z.string()).max(50).optional(),
 });
 
-export const objExternalQueryLeafSchema = objQueryLeafSchema.extend({
-  metaQuery: objExternalMetaQuerySchema,
+export const objExternalApiQueryLeafSchema = z.object({
+  recordQuery: objRecordQueryListSchema.optional(),
+  metaQuery: objExternalApiMetaQuerySchema.optional(),
 });
 
-export const objExternalQueryLogicalSchema: z.ZodType<IObjQueryLogical> =
-  objQueryLogicalSchema;
+export type IObjExternalApiQueryLeaf = z.infer<
+  typeof objExternalApiQueryLeafSchema
+>;
 
-export const objExternalQuerySchema = z.union([
-  objExternalQueryLeafSchema,
-  objExternalQueryLogicalSchema,
+export interface IObjExternalApiQueryLogical {
+  and?: IObjExternalApiQueryBranch[];
+  or?: IObjExternalApiQueryBranch[];
+}
+
+export type IObjExternalApiQueryBranch =
+  | IObjExternalApiQueryLeaf
+  | IObjExternalApiQueryLogical;
+
+export const objExternalApiQueryLogicalSchema: z.ZodType<IObjExternalApiQueryLogical> =
+  z.lazy(() =>
+    z.object({
+      and: z
+        .array(
+          z.union([
+            objExternalApiQueryLeafSchema,
+            objExternalApiQueryLogicalSchema,
+          ])
+        )
+        .max(100)
+        .optional(),
+      or: z
+        .array(
+          z.union([
+            objExternalApiQueryLeafSchema,
+            objExternalApiQueryLogicalSchema,
+          ])
+        )
+        .max(100)
+        .optional(),
+    })
+  );
+
+/**
+ * External API query schema: does not include projectId, groupId, or tag in
+ * metaQuery. These scope fields are provided separately at the endpoint level.
+ */
+export const objExternalApiQuerySchema = z.union([
+  objExternalApiQueryLeafSchema,
+  objExternalApiQueryLogicalSchema,
 ]);
+
+export type IObjExternalApiQuery = z.infer<typeof objExternalApiQuerySchema>;
+
+/** Type guard for external API query leaf. */
+export function isObjExternalApiQueryLeaf(
+  query: IObjExternalApiQueryBranch
+): query is IObjExternalApiQueryLeaf {
+  return (
+    typeof query === "object" &&
+    query !== null &&
+    !(
+      "and" in query &&
+      Array.isArray((query as IObjExternalApiQueryLogical).and)
+    ) &&
+    !("or" in query && Array.isArray((query as IObjExternalApiQueryLogical).or))
+  );
+}
+
+/**
+ * Converts an external API query to an internal query by injecting projectId,
+ * groupId, and tag into each leaf's metaQuery.
+ */
+export function externalApiQueryToInternalQuery(
+  externalQuery: IObjExternalApiQueryBranch | undefined,
+  scope: { projectId: string; groupId?: string; tag: string }
+): IObjQueryBranch {
+  const scopeMetaQuery: IObjMetaQuery = {
+    projectId: { eq: scope.projectId },
+    tag: { eq: scope.tag },
+    ...(scope.groupId && { groupId: { eq: scope.groupId } }),
+  };
+
+  if (!externalQuery) {
+    return { metaQuery: scopeMetaQuery };
+  }
+
+  if (isObjExternalApiQueryLeaf(externalQuery)) {
+    return {
+      recordQuery: externalQuery.recordQuery,
+      metaQuery: { ...scopeMetaQuery, ...externalQuery.metaQuery },
+    };
+  }
+
+  const logical = externalQuery as IObjExternalApiQueryLogical;
+  const result: IObjQueryLogical = {};
+
+  if (logical.and) {
+    result.and = logical.and.map((branch) =>
+      externalApiQueryToInternalQuery(branch, scope)
+    );
+  }
+  if (logical.or) {
+    result.or = logical.or.map((branch) =>
+      externalApiQueryToInternalQuery(branch, scope)
+    );
+  }
+
+  return result;
+}
 
 export const objSortSchema = z.object({
   /**
@@ -400,7 +510,7 @@ export const objSortListSchema = z.array(objSortSchema).max(20);
 
 export const updateManyObjsSchema = z
   .object({
-    query: objExternalQuerySchema,
+    query: objQuerySchema,
     update: inputObjRecordSchema.optional(),
     updates: granularUpdatesSchema.optional(),
     updateMany: z.boolean().optional(),
@@ -417,12 +527,12 @@ export const updateManyObjsSchema = z
   });
 
 export const deleteManyObjsSchema = z.object({
-  query: objExternalQuerySchema,
+  query: objQuerySchema,
   deleteMany: z.boolean().optional(),
 });
 
 export const getManyObjsSchema = z.object({
-  query: objExternalQuerySchema,
+  query: objQuerySchema,
   page: z.number().optional(),
   limit: z.number().optional(),
   sort: objSortListSchema.optional(),
@@ -440,6 +550,50 @@ export const getObjFieldValuesSchema = z.object({
   page: z.number().optional(),
   limit: z.number().optional(),
 });
+
+/**
+ * External API schemas: projectId is top-level, query uses
+ * objExternalApiQuerySchema which excludes projectId, groupId, and tag from
+ * metaQuery.
+ */
+export const getManyObjsExternalApiSchema = z.object({
+  projectId: z.string().min(1),
+  query: objExternalApiQuerySchema.optional(),
+  page: z.number().optional(),
+  limit: z.number().optional(),
+  sort: objSortListSchema.optional(),
+});
+
+export const updateManyObjsExternalApiSchema = z
+  .object({
+    projectId: z.string().min(1),
+    query: objExternalApiQuerySchema.optional(),
+    update: inputObjRecordSchema.optional(),
+    updates: granularUpdatesSchema.optional(),
+    updateWay: onConflictSchema.optional(),
+    fieldsToIndex: z.array(z.string().min(1)).max(50).optional(),
+    shouldIndex: z.boolean().optional(),
+    count: z.number().optional(),
+  })
+  .refine((data) => data.update || data.updates, {
+    message: "Either update or updates must be provided",
+  });
+
+export const deleteManyObjsExternalApiSchema = z.object({
+  projectId: z.string().min(1),
+  query: objExternalApiQuerySchema.optional(),
+  deleteMany: z.boolean().optional(),
+});
+
+export type IGetManyObjsExternalApiArgs = z.infer<
+  typeof getManyObjsExternalApiSchema
+>;
+export type IUpdateManyObjsExternalApiArgs = z.infer<
+  typeof updateManyObjsExternalApiSchema
+>;
+export type IDeleteManyObjsExternalApiArgs = z.infer<
+  typeof deleteManyObjsExternalApiSchema
+>;
 
 export type IInputObjRecord = z.infer<typeof inputObjRecordSchema>;
 export type IInputObjRecordArray = z.infer<typeof inputObjRecordArraySchema>;

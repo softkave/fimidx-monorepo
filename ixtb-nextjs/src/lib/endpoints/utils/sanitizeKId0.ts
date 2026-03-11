@@ -36,14 +36,21 @@ import type {
   UpdateMonitorsEndpointArgs,
 } from "fimidx-core/definitions/monitor";
 import {
+  isObjExternalApiQueryLeaf,
   isObjQueryLeaf,
   type IDeleteManyObjsEndpointArgs,
+  type IDeleteManyObjsExternalApiArgs,
   type IGetManyObjsEndpointArgs,
+  type IGetManyObjsExternalApiArgs,
+  type IObjExternalApiQuery,
+  type IObjExternalApiQueryLeaf,
+  type IObjExternalApiQueryLogical,
   type IObjQuery,
   type IObjQueryLeaf,
   type IObjQueryLogical,
   type ISetManyObjsEndpointArgs,
   type IUpdateManyObjsEndpointArgs,
+  type IUpdateManyObjsExternalApiArgs,
 } from "fimidx-core/definitions/obj";
 import type {
   GetLogFieldsEndpointArgs,
@@ -348,22 +355,81 @@ function sanitizeObjQuery(query: IObjQuery): void {
   }
 }
 
+/**
+ * Sanitize external API query leaf (no projectId, groupId, tag in metaQuery).
+ */
+function sanitizeObjExternalApiQueryLeaf(leaf: IObjExternalApiQueryLeaf): void {
+  if (leaf.metaQuery) {
+    sanitizeStringMetaQuery(leaf.metaQuery.id, "metaQuery.id");
+    sanitizeStringMetaQuery(leaf.metaQuery.createdBy, "metaQuery.createdBy");
+    sanitizeStringMetaQuery(leaf.metaQuery.updatedBy, "metaQuery.updatedBy");
+  }
+  // Explicitly do not touch leaf.recordQuery
+}
+
+/**
+ * Sanitize external API query (recursive for and/or).
+ */
+function sanitizeObjExternalApiQuery(query: IObjExternalApiQuery): void {
+  if (isObjExternalApiQueryLeaf(query)) {
+    sanitizeObjExternalApiQueryLeaf(query);
+  } else {
+    const logical = query as IObjExternalApiQueryLogical;
+    logical.and?.forEach((branch) =>
+      sanitizeObjExternalApiQuery(branch as IObjExternalApiQuery)
+    );
+    logical.or?.forEach((branch) =>
+      sanitizeObjExternalApiQuery(branch as IObjExternalApiQuery)
+    );
+  }
+}
+
+/** @deprecated Use sanitizeGetManyObjsExternalApiInput for external API endpoints. */
 export function sanitizeGetManyObjsInput(
   input: IGetManyObjsEndpointArgs
 ): void {
   sanitizeObjQuery(input.query);
 }
 
+/** @deprecated Use sanitizeUpdateManyObjsExternalApiInput for external API endpoints. */
 export function sanitizeUpdateManyObjsInput(
   input: IUpdateManyObjsEndpointArgs
 ): void {
   sanitizeObjQuery(input.query);
 }
 
+/** @deprecated Use sanitizeDeleteManyObjsExternalApiInput for external API endpoints. */
 export function sanitizeDeleteManyObjsInput(
   input: IDeleteManyObjsEndpointArgs
 ): void {
   sanitizeObjQuery(input.query);
+}
+
+export function sanitizeGetManyObjsExternalApiInput(
+  input: IGetManyObjsExternalApiArgs
+): void {
+  rejectIfKId0(input.projectId, "projectId");
+  if (input.query) {
+    sanitizeObjExternalApiQuery(input.query);
+  }
+}
+
+export function sanitizeUpdateManyObjsExternalApiInput(
+  input: IUpdateManyObjsExternalApiArgs
+): void {
+  rejectIfKId0(input.projectId, "projectId");
+  if (input.query) {
+    sanitizeObjExternalApiQuery(input.query);
+  }
+}
+
+export function sanitizeDeleteManyObjsExternalApiInput(
+  input: IDeleteManyObjsExternalApiArgs
+): void {
+  rejectIfKId0(input.projectId, "projectId");
+  if (input.query) {
+    sanitizeObjExternalApiQuery(input.query);
+  }
 }
 
 export function sanitizeGetObjFieldsInput(input: {

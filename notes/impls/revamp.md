@@ -1,9 +1,10 @@
 query member/client token by permissions
-monitor should use objQuery
 handle [*] in query fields (remove them for \* and transform them for numbers)
 cache project id field resolutions
 collect project ids from query
 provide soft-delete through api
 conflict-detection for members and other resources
-sort by meta fields
+sort by meta fields, update sort test in member
+export sort meta/record fields in api
 expose merge-way to member, client token, etc.
+when we expose obj externally, we need guards against reading unpermissioned data

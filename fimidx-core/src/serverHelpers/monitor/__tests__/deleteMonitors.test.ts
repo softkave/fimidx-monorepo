@@ -44,7 +44,7 @@ function makeAddMonitorArgs(
     status: "enabled",
     reportsTo: ["user1", "user2"],
     interval: { days: 1 },
-    query: [{ op: "eq", field: "level", value: "error" }],
+    query: { recordQuery: [{ op: "eq", field: "level", value: "error" }] },
     ...overrides,
   };
 }

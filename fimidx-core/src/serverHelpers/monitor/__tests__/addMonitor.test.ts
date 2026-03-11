@@ -27,7 +27,7 @@ function makeAddMonitorArgs(
     status: "enabled",
     reportsTo: ["user1", "user2"],
     interval: { days: 1 },
-    query: [{ op: "eq", field: "level", value: "error" }],
+    query: { recordQuery: [{ op: "eq", field: "level", value: "error" }] },
     ...overrides,
   };
 }
@@ -111,18 +111,20 @@ describe("addMonitor integration", () => {
       status: "enabled",
       reportsTo: ["user1", "user2", "user3"],
       interval: { hours: 6 },
-      query: [
-        {
-          op: "eq",
-          field: "level",
-          value: "error",
-        },
-        {
-          op: "gt",
-          field: "count",
-          value: 10,
-        },
-      ],
+      query: {
+        recordQuery: [
+          {
+            op: "eq",
+            field: "level",
+            value: "error",
+          },
+          {
+            op: "gt",
+            field: "count",
+            value: 10,
+          },
+        ],
+      },
     });
 
     const result = await addMonitor({
@@ -143,18 +145,20 @@ describe("addMonitor integration", () => {
       { userId: "user3" },
     ]);
     expect(result.monitor.interval).toEqual({ hours: 6 });
-    expect(result.monitor.query).toEqual([
-      {
-        op: "eq",
-        field: "level",
-        value: "error",
-      },
-      {
-        op: "gt",
-        field: "count",
-        value: 10,
-      },
-    ]);
+    expect(result.monitor.query).toEqual({
+      recordQuery: [
+        {
+          op: "eq",
+          field: "level",
+          value: "error",
+        },
+        {
+          op: "gt",
+          field: "count",
+          value: 10,
+        },
+      ],
+    });
     expect(result.monitor.projectId).toBe(defaultProjectId);
     expect(result.monitor.groupId).toBe(defaultGroupId);
     expect(result.monitor.createdBy).toBe(defaultBy);
@@ -313,7 +317,32 @@ describe("addMonitor integration", () => {
   it("creates a monitor with complex query", async () => {
     const args = makeAddMonitorArgs({
       name: "Complex Query Monitor",
-      query: [
+      query: {
+        recordQuery: [
+          {
+            op: "eq",
+            field: "level",
+            value: "error",
+          },
+          {
+            op: "like",
+            field: "message",
+            value: "critical",
+          },
+        ],
+      },
+    });
+
+    const result = await addMonitor({
+      args,
+      by: defaultBy,
+      byType: defaultByType,
+      groupId: defaultGroupId,
+      storage,
+    });
+
+    expect(result.monitor.query).toEqual({
+      recordQuery: [
         {
           op: "eq",
           field: "level",
@@ -326,26 +355,5 @@ describe("addMonitor integration", () => {
         },
       ],
     });
-
-    const result = await addMonitor({
-      args,
-      by: defaultBy,
-      byType: defaultByType,
-      groupId: defaultGroupId,
-      storage,
-    });
-
-    expect(result.monitor.query).toEqual([
-      {
-        op: "eq",
-        field: "level",
-        value: "error",
-      },
-      {
-        op: "like",
-        field: "message",
-        value: "critical",
-      },
-    ]);
   });
 });

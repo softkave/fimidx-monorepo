@@ -380,6 +380,7 @@ export const objSortSchema = z.object({
 
 /** Max 20 sort fields per request. */
 export const objSortListSchema = z.array(objSortSchema).max(20);
+
 export const updateManyObjsSchema = z.object({
   query: objExternalQuerySchema,
   update: inputObjRecordSchema,

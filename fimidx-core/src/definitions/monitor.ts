@@ -3,11 +3,59 @@ import type { ValueOf } from "type-fest";
 import { z } from "zod";
 import {
   numberMetaQuerySchema,
+  objMetaQuerySchema,
   objRecordQueryListSchema,
   objSortListSchema,
   stringMetaQuerySchema,
 } from "./obj.js";
 import { durationSchema } from "./other.js";
+
+export const monitorObjMetaQuerySchema = objMetaQuerySchema.omit({
+  projectId: true,
+  groupId: true,
+  tag: true,
+  shouldIndex: true,
+  fieldsToIndex: true,
+});
+
+export const monitorObjQueryLeafSchema = z.object({
+  recordQuery: objRecordQueryListSchema.optional(),
+  metaQuery: monitorObjMetaQuerySchema.optional(),
+});
+
+export interface IMonitorObjQueryLogical {
+  and?: IMonitorObjQueryBranch[];
+  or?: IMonitorObjQueryBranch[];
+}
+
+export type IMonitorObjQueryBranch =
+  | z.infer<typeof monitorObjQueryLeafSchema>
+  | IMonitorObjQueryLogical;
+
+export const monitorObjQueryLogicalSchema: z.ZodType<IMonitorObjQueryLogical> =
+  z.lazy(() =>
+    z.object({
+      and: z
+        .array(
+          z.union([monitorObjQueryLeafSchema, monitorObjQueryLogicalSchema])
+        )
+        .max(100)
+        .optional(),
+      or: z
+        .array(
+          z.union([monitorObjQueryLeafSchema, monitorObjQueryLogicalSchema])
+        )
+        .max(100)
+        .optional(),
+    })
+  );
+
+export const monitorObjQuerySchema = z.union([
+  monitorObjQueryLeafSchema,
+  monitorObjQueryLogicalSchema,
+]);
+
+export type IMonitorObjQuery = z.infer<typeof monitorObjQuerySchema>;
 
 export const kMonitorStatus = {
   enabled: "enabled",
@@ -31,7 +79,7 @@ export interface IMonitor {
   createdByType: string;
   updatedByType: string;
   projectId: string;
-  query: z.infer<typeof objRecordQueryListSchema>;
+  query: IMonitorObjQuery;
   groupId: string;
   status: MonitorStatus;
   reportsTo: IMonitorReportsTo[];
@@ -41,7 +89,7 @@ export interface IMonitor {
 export interface IMonitorObjRecord {
   name: string;
   description?: string | null;
-  query: z.infer<typeof objRecordQueryListSchema>;
+  query: IMonitorObjQuery;
   status: MonitorStatus;
   reportsTo: IMonitorReportsTo[];
   interval: Duration;
@@ -51,7 +99,7 @@ export const addMonitorSchema = z.object({
   projectId: z.string().min(1),
   name: z.string().min(1),
   description: z.string().optional(),
-  query: objRecordQueryListSchema,
+  query: monitorObjQuerySchema,
   status: z.nativeEnum(kMonitorStatus),
   reportsTo: z.array(z.string().min(1)).max(100),
   interval: durationSchema,
@@ -74,7 +122,7 @@ export const updateMonitorsSchema = z.object({
   update: z.object({
     name: z.string().min(1).optional(),
     description: z.string().min(1).optional(),
-    query: objRecordQueryListSchema.optional(),
+    query: monitorObjQuerySchema.optional(),
     status: z.nativeEnum(kMonitorStatus).optional(),
     reportsTo: z.array(z.string().min(1)).max(100).optional(),
     interval: durationSchema.optional(),

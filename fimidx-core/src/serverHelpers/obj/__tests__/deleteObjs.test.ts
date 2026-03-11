@@ -100,6 +100,7 @@ describe.each(backends)(
         deletedBy: "deleter",
         deletedByType: "user",
         storageType: backend.type,
+        hardDelete: false,
       });
       expect(result.deletedCount).toBeGreaterThanOrEqual(1);
       // Check that the object is now soft deleted
@@ -139,6 +140,7 @@ describe.each(backends)(
         deletedBy: "deleter",
         deletedByType: "user",
         storageType: backend.type,
+        hardDelete: false,
       });
       // Cleanup
       const cleanupResult = await cleanupDeletedObjs({

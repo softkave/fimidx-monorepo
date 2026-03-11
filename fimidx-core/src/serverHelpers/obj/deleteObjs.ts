@@ -25,7 +25,7 @@ export async function deleteManyObjs(params: {
     deleteMany = false,
     storageType = getDefaultStorageType(),
     storage = createStorage({ type: storageType }),
-    hardDelete = false,
+    hardDelete = true,
   } = params;
 
   // Fetch fields for query generation

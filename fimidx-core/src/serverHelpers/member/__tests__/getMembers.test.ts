@@ -489,7 +489,7 @@ describe("getMembers integration", () => {
 
     // Test ascending sort
     const argsAsc = makeGetMembersArgs({
-      sort: [{ field: "name", direction: "asc" }],
+      sort: [{ field: "meta.name", direction: "asc" }],
     });
     const resultAsc = await getMembers({
       args: argsAsc,
@@ -504,7 +504,7 @@ describe("getMembers integration", () => {
 
     // Test descending sort
     const argsDesc = makeGetMembersArgs({
-      sort: [{ field: "name", direction: "desc" }],
+      sort: [{ field: "meta.name", direction: "desc" }],
     });
     const resultDesc = await getMembers({
       args: argsDesc,

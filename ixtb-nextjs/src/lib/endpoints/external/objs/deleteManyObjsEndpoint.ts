@@ -3,7 +3,7 @@ import { kByTypes } from "fimidx-core/definitions/other";
 import { deleteManyObjs } from "fimidx-core/serverHelpers/index";
 import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
-import { sanitizeDeleteManyObjsInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeDeleteManyObjsInput } from "../../utils/sanitizeKId0";
 import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 
 export const deleteManyObjsEndpoint: NextClientTokenAuthenticatedEndpointFn<

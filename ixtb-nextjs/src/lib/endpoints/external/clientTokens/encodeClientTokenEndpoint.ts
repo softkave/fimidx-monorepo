@@ -9,7 +9,7 @@ import {
 } from "fimidx-core/serverHelpers/index";
 import { checkPermissionGroupThenProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
-import { sanitizeEncodeClientTokenJWTInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeEncodeClientTokenJWTInput } from "../../utils/sanitizeKId0";
 
 export const encodeClientTokenEndpoint: NextMaybeAuthenticatedEndpointFn<
   EncodeClientTokenJWTEndpointResponse

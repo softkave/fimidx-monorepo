@@ -7,7 +7,7 @@ import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { getObjFields } from "fimidx-core/serverHelpers/index";
 import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
-import { sanitizeGetObjFieldsInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeGetObjFieldsInput } from "../../utils/sanitizeKId0";
 
 // TODO: delineate between internal and external objs
 

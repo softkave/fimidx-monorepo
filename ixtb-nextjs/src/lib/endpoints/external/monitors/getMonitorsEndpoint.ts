@@ -6,7 +6,7 @@ import {
 import { getMonitors } from "fimidx-core/serverHelpers/index";
 import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
-import { sanitizeGetMonitorsInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeGetMonitorsInput } from "../../utils/sanitizeKId0";
 
 export const getMonitorsEndpoint: NextMaybeAuthenticatedEndpointFn<
   IGetMonitorsEndpointResponse

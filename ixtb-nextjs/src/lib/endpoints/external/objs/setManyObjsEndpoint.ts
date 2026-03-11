@@ -8,7 +8,7 @@ import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { getProjectById, setManyObjs } from "fimidx-core/serverHelpers/index";
 import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
-import { sanitizeSetManyObjsInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeSetManyObjsInput } from "../../utils/sanitizeKId0";
 import assert from "assert";
 import { OwnServerError, kOwnServerErrorCodes } from "fimidx-core/common/error";
 

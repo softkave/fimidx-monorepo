@@ -3,7 +3,7 @@ import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { deleteMonitors } from "fimidx-core/serverHelpers/index";
 import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
-import { sanitizeDeleteMonitorsInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeDeleteMonitorsInput } from "../../utils/sanitizeKId0";
 
 export const deleteMonitorsEndpoint: NextMaybeAuthenticatedEndpointFn<
   void

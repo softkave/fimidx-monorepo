@@ -6,7 +6,7 @@ import {
 import { getProjects } from "fimidx-core/serverHelpers/index";
 import { requirePermissionForUser } from "../../../serverHelpers/permissions";
 import { NextUserAuthenticatedEndpointFn } from "../../types";
-import { sanitizeGetProjectsInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeGetProjectsInput } from "../../utils/sanitizeKId0";
 
 export const getProjectsEndpoint: NextUserAuthenticatedEndpointFn<
   GetProjectsEndpointResponse

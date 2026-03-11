@@ -7,7 +7,7 @@ import { addProjectSchema } from "fimidx-core/definitions/project";
 import { addProject } from "fimidx-core/serverHelpers/index";
 import { requirePermissionForUser } from "../../../serverHelpers/permissions";
 import { NextUserAuthenticatedEndpointFn } from "../../types";
-import { sanitizeAddProjectInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeAddProjectInput } from "../../utils/sanitizeKId0";
 
 export const addProjectEndpoint: NextUserAuthenticatedEndpointFn<
   AddProjectEndpointResponse

@@ -13,7 +13,7 @@ import {
 } from "../../../serverHelpers/nodeServer";
 import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
-import { sanitizeAddCallbackInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeAddCallbackInput } from "../../utils/sanitizeKId0";
 
 async function callNodeServerAddCallback(params: {
   item: AddCallbackEndpointArgs;

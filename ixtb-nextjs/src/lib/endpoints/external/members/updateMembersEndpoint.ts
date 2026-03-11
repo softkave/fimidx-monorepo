@@ -6,7 +6,7 @@ import { kByTypes } from "fimidx-core/definitions/other";
 import { updateMembers } from "fimidx-core/serverHelpers/index";
 import { checkPermissionGroupThenProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
-import { sanitizeUpdateMembersInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeUpdateMembersInput } from "../../utils/sanitizeKId0";
 import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 
 export const updateMembersEndpoint: NextClientTokenAuthenticatedEndpointFn<

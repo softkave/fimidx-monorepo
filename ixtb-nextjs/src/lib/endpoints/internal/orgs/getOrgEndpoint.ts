@@ -6,7 +6,7 @@ import { getGroups } from "fimidx-core/serverHelpers/index";
 import { first } from "lodash-es";
 import { requirePermissionForUser } from "../../../serverHelpers/permissions";
 import { NextUserAuthenticatedEndpointFn } from "../../types";
-import { sanitizeGetOrgInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeGetOrgInput } from "../../utils/sanitizeKId0";
 import { groupToOrg } from "./groupToOrg";
 
 export const getOrgEndpoint: NextUserAuthenticatedEndpointFn<

@@ -21,7 +21,7 @@ import {
   sanitizeIngestLogsInput,
   sanitizeSetManyObjsInput,
   sanitizeUpdateOrgInput,
-} from "./sanitizeKId0.js";
+} from "./sanitizeKId0";
 
 const kMessage = "Reserved system id is not allowed in input.";
 

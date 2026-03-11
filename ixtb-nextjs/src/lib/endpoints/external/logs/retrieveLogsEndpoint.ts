@@ -8,7 +8,7 @@ import { NextMaybeAuthenticatedEndpointFn } from "../../types";
 import {
   checkPermissionProjectThenOrg,
 } from "../../../serverHelpers/permissions";
-import { sanitizeGetLogsInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeGetLogsInput } from "../../utils/sanitizeKId0";
 
 export const retrieveLogsEndpoint: NextMaybeAuthenticatedEndpointFn<
   GetLogsEndpointResponse

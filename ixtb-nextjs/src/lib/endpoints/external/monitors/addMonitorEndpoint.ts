@@ -8,7 +8,7 @@ import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { addMonitor, getProjectById } from "fimidx-core/serverHelpers/index";
 import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
-import { sanitizeAddMonitorInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeAddMonitorInput } from "../../utils/sanitizeKId0";
 
 export const addMonitorEndpoint: NextMaybeAuthenticatedEndpointFn<
   IAddMonitorEndpointResponse

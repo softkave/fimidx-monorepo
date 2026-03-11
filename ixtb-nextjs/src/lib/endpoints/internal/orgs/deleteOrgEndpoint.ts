@@ -4,7 +4,7 @@ import { kId0 } from "fimidx-core/definitions/system";
 import { deleteGroups } from "fimidx-core/serverHelpers/index";
 import { requirePermissionForUser } from "../../../serverHelpers/permissions";
 import { NextUserAuthenticatedEndpointFn } from "../../types";
-import { sanitizeDeleteOrgInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeDeleteOrgInput } from "../../utils/sanitizeKId0";
 
 export const deleteOrgEndpoint: NextUserAuthenticatedEndpointFn<void> = async (
   params

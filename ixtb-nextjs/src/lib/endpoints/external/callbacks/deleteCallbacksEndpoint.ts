@@ -10,7 +10,7 @@ import {
 } from "../../../serverHelpers/nodeServer";
 import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
-import { sanitizeDeleteCallbacksInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeDeleteCallbacksInput } from "../../utils/sanitizeKId0";
 
 async function callNodeServerDeleteCallback(
   input: DeleteCallbacksEndpointArgs & { clientTokenId: string }

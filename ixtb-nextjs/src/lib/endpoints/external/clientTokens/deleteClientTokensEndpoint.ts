@@ -6,7 +6,7 @@ import {
 } from "fimidx-core/serverHelpers/index";
 import { checkPermissionGroupThenProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
-import { sanitizeDeleteClientTokensInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeDeleteClientTokensInput } from "../../utils/sanitizeKId0";
 
 export const deleteClientTokensEndpoint: NextMaybeAuthenticatedEndpointFn<
   void

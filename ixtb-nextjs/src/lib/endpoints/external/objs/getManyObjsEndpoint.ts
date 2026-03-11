@@ -7,7 +7,7 @@ import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { getManyObjs } from "fimidx-core/serverHelpers/index";
 import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
-import { sanitizeGetManyObjsInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeGetManyObjsInput } from "../../utils/sanitizeKId0";
 
 export const getManyObjsEndpoint: NextMaybeAuthenticatedEndpointFn<
   IGetManyObjsEndpointResponse

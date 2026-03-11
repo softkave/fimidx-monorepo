@@ -35,12 +35,15 @@ import type {
   GetMonitorsEndpointArgs,
   UpdateMonitorsEndpointArgs,
 } from "fimidx-core/definitions/monitor";
-import type {
-  IDeleteManyObjsEndpointArgs,
-  IGetManyObjsEndpointArgs,
-  IObjQuery,
-  ISetManyObjsEndpointArgs,
-  IUpdateManyObjsEndpointArgs,
+import {
+  isObjQueryLeaf,
+  type IDeleteManyObjsEndpointArgs,
+  type IGetManyObjsEndpointArgs,
+  type IObjQuery,
+  type IObjQueryLeaf,
+  type IObjQueryLogical,
+  type ISetManyObjsEndpointArgs,
+  type IUpdateManyObjsEndpointArgs,
 } from "fimidx-core/definitions/obj";
 import type {
   GetLogFieldsEndpointArgs,
@@ -192,14 +195,12 @@ export function sanitizeUpdateMonitorsInput(
 export function sanitizeAddMemberInput(input: AddMemberEndpointArgs): void {
   rejectIfKId0(input.groupId, "groupId");
   rejectIfKId0(input.projectId, "projectId");
-  rejectIfKId0(input.memberId, "memberId");
 }
 
 function sanitizeMemberQuery(query: GetMembersEndpointArgs["query"]): void {
   rejectIfKId0(query.groupId, "query.groupId");
   rejectIfKId0(query.projectId, "query.projectId");
   sanitizeStringMetaQuery(query.id, "query.id");
-  sanitizeStringMetaQuery(query.memberId, "query.memberId");
   sanitizeStringMetaQuery(query.createdBy, "query.createdBy");
   sanitizeStringMetaQuery(query.updatedBy, "query.updatedBy");
   // Do not sanitize query.meta (part-query)
@@ -219,9 +220,6 @@ export function sanitizeUpdateMembersInput(
   input: UpdateMembersEndpointArgs
 ): void {
   sanitizeMemberQuery(input.query);
-  if (input.update.memberId !== undefined) {
-    rejectIfKId0(input.update.memberId, "update.memberId");
-  }
 }
 
 // --- Member requests (schemas from fimidx-core when available) ---
@@ -311,13 +309,8 @@ export function sanitizeIngestLogsInput(input: IngestLogsEndpointArgs): void {
 
 function sanitizeLogQuery(query: GetLogsEndpointArgs["query"]): void {
   rejectIfKId0(query.projectId, "query.projectId");
-  if (query.metaQuery) {
-    sanitizeStringMetaQuery(query.metaQuery.id, "query.metaQuery.id");
-    sanitizeStringMetaQuery(
-      query.metaQuery.createdBy,
-      "query.metaQuery.createdBy"
-    );
-  }
+  sanitizeStringMetaQuery(query.id, "query.id");
+  sanitizeStringMetaQuery(query.createdBy, "query.createdBy");
   // Do not sanitize query.logsQuery (part-query under objRecord)
 }
 
@@ -333,30 +326,26 @@ export function sanitizeSetManyObjsInput(
   rejectIfKId0(input.projectId, "projectId");
 }
 
+function sanitizeObjQueryLeaf(leaf: IObjQueryLeaf): void {
+  if (leaf.metaQuery) {
+    sanitizeStringMetaQuery(leaf.metaQuery.projectId, "metaQuery.projectId");
+    sanitizeStringMetaQuery(leaf.metaQuery.id, "metaQuery.id");
+    sanitizeStringMetaQuery(leaf.metaQuery.createdBy, "metaQuery.createdBy");
+    sanitizeStringMetaQuery(leaf.metaQuery.updatedBy, "metaQuery.updatedBy");
+    sanitizeStringMetaQuery(leaf.metaQuery.groupId, "metaQuery.groupId");
+    sanitizeStringMetaQuery(leaf.metaQuery.tag, "metaQuery.tag");
+  }
+  // Explicitly do not touch leaf.recordQuery
+}
+
 function sanitizeObjQuery(query: IObjQuery): void {
-  rejectIfKId0(query.projectId, "query.projectId");
-  if (query.metaQuery) {
-    sanitizeStringMetaQuery(query.metaQuery.id, "query.metaQuery.id");
-    sanitizeStringMetaQuery(
-      query.metaQuery.createdBy,
-      "query.metaQuery.createdBy"
-    );
-    sanitizeStringMetaQuery(
-      query.metaQuery.updatedBy,
-      "query.metaQuery.updatedBy"
-    );
+  if (isObjQueryLeaf(query)) {
+    sanitizeObjQueryLeaf(query);
+  } else {
+    const logical = query as IObjQueryLogical;
+    logical.and?.forEach((branch) => sanitizeObjQuery(branch as IObjQuery));
+    logical.or?.forEach((branch) => sanitizeObjQuery(branch as IObjQuery));
   }
-  if (query.topLevelFields) {
-    sanitizeStringMetaQuery(
-      query.topLevelFields.groupId,
-      "query.topLevelFields.groupId"
-    );
-    sanitizeStringMetaQuery(
-      query.topLevelFields.tag,
-      "query.topLevelFields.tag"
-    );
-  }
-  // Explicitly do not touch query.recordQuery
 }
 
 export function sanitizeGetManyObjsInput(

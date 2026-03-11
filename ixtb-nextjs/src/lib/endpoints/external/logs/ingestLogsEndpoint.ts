@@ -7,7 +7,7 @@ import { getProjects, ingestLogs } from "fimidx-core/serverHelpers/index";
 import { first } from "lodash-es";
 import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
-import { sanitizeIngestLogsInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeIngestLogsInput } from "../../utils/sanitizeKId0";
 
 export const ingestLogsEndpoint: NextClientTokenAuthenticatedEndpointFn<
   void

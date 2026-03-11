@@ -6,7 +6,7 @@ import {
 import { updateMonitors } from "fimidx-core/serverHelpers/index";
 import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
-import { sanitizeUpdateMonitorsInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeUpdateMonitorsInput } from "../../utils/sanitizeKId0";
 
 export const updateMonitorsEndpoint: NextMaybeAuthenticatedEndpointFn<
   IUpdateMonitorsEndpointResponse

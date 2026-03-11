@@ -7,7 +7,7 @@ import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { updateGroups } from "fimidx-core/serverHelpers/index";
 import { requirePermissionForUser } from "../../../serverHelpers/permissions";
 import { NextUserAuthenticatedEndpointFn } from "../../types";
-import { sanitizeUpdateOrgInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeUpdateOrgInput } from "../../utils/sanitizeKId0";
 
 export const updateOrgEndpoint: NextUserAuthenticatedEndpointFn<
   UpdateOrgEndpointResponse

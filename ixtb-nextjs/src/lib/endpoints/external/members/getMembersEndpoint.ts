@@ -5,7 +5,7 @@ import {
 import { getMembers } from "fimidx-core/serverHelpers/index";
 import { checkPermissionGroupThenProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
-import { sanitizeGetMembersInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeGetMembersInput } from "../../utils/sanitizeKId0";
 import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 
 export const getMembersEndpoint: NextClientTokenAuthenticatedEndpointFn<

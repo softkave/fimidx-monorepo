@@ -7,7 +7,7 @@ import { kByTypes } from "fimidx-core/definitions/other";
 import { updateManyObjs } from "fimidx-core/serverHelpers/index";
 import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
-import { sanitizeUpdateManyObjsInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeUpdateManyObjsInput } from "../../utils/sanitizeKId0";
 import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 
 export const updateManyObjsEndpoint: NextClientTokenAuthenticatedEndpointFn<

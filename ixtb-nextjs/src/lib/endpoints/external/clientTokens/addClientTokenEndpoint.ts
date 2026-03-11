@@ -6,7 +6,7 @@ import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { addClientToken } from "fimidx-core/serverHelpers/index";
 import { checkPermissionGroupThenProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
-import { sanitizeAddClientTokenInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeAddClientTokenInput } from "../../utils/sanitizeKId0";
 
 export const addClientTokenEndpoint: NextMaybeAuthenticatedEndpointFn<
   AddClientTokenEndpointResponse

@@ -4,7 +4,7 @@ import { deleteProjectsSchema } from "fimidx-core/definitions/project";
 import { deleteProjects, getProjects } from "fimidx-core/serverHelpers/index";
 import { requirePermissionForUser } from "../../../serverHelpers/permissions";
 import { NextUserAuthenticatedEndpointFn } from "../../types.js";
-import { sanitizeDeleteProjectsInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeDeleteProjectsInput } from "../../utils/sanitizeKId0";
 
 export const deleteProjectsEndpoint: NextUserAuthenticatedEndpointFn<
   void

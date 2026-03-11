@@ -9,7 +9,7 @@ import {
   getOrgIdFromProjectId,
 } from "../../../serverHelpers/permissions";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
-import { sanitizeGetClientTokensInput } from "../../utils/sanitizeKId0.js";
+import { sanitizeGetClientTokensInput } from "../../utils/sanitizeKId0";
 
 export const getClientTokensEndpoint: NextMaybeAuthenticatedEndpointFn<
   GetClientTokensEndpointResponse

@@ -1,19 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { apiFetch } from "../../helpers/http.js";
-import { createTestUserSession } from "../../helpers/auth.js";
+import { createTestUserSession, bearerHeaders } from "../../helpers/auth.js";
 import {
   createTestOrg,
   createTestProject,
   createTestClientToken,
 } from "../../helpers/setup.js";
-import { bearerHeaders } from "../../helpers/auth.js";
 import { kByTypes } from "fimidx-core/definitions/other";
+import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 
 describe("encodeClientTokenEndpoint", () => {
   it("returns 401 when no auth", async () => {
     const res = await apiFetch("/api/client-tokens/some-token-id/encode", {
       method: "POST",
-      body: { id: "some-token-id" },
+      body: { id: "some-token-id", projectId: "some-project-id" },
     });
     expect(res.status).toBe(401);
   });
@@ -39,7 +39,7 @@ describe("encodeClientTokenEndpoint", () => {
       `/api/client-tokens/${clientToken.id}/encode`,
       {
         method: "POST",
-        body: { id: clientToken.id },
+        body: { id: clientToken.id, projectId },
         cookie,
       }
     );
@@ -64,7 +64,7 @@ describe("encodeClientTokenEndpoint", () => {
       `/api/client-tokens/${clientToken.id}/encode`,
       {
         method: "POST",
-        body: { id: clientToken.id },
+        body: { id: clientToken.id, projectId },
         cookie,
       }
     );
@@ -85,12 +85,18 @@ describe("encodeClientTokenEndpoint", () => {
       groupId: orgId,
       by: userId,
       byType: kByTypes.user,
+      permissions: [
+        {
+          action: kFimidxPermissions.clientToken.read,
+          target: projectId,
+        },
+      ],
     });
     const res = await apiFetch(
       `/api/client-tokens/${clientToken.id}/encode`,
       {
         method: "POST",
-        body: { id: clientToken.id },
+        body: { id: clientToken.id, projectId },
         headers: bearerHeaders(bearerToken),
       }
     );

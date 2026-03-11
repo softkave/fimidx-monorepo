@@ -915,7 +915,7 @@ describe("getProjects integration", () => {
     expect(user2Project?.createdBy).toBe("user2");
   });
 
-  it.only("handles projects with different byType values", async () => {
+  it("handles projects with different byType values", async () => {
     const userProjectArgs = makeAddProjectArgs({ name: "User Project" });
     const systemProjectArgs = makeAddProjectArgs({ name: "System Project" });
 

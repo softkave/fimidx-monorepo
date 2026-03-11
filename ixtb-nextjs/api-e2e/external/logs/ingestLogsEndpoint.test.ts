@@ -1,13 +1,13 @@
-import { describe, expect, it } from "vitest";
-import { apiFetch } from "../../helpers/http.js";
-import {
-  createTestOrg,
-  createTestProject,
-  createTestClientToken,
-} from "../../helpers/setup.js";
-import { bearerHeaders } from "../../helpers/auth.js";
 import { kByTypes } from "fimidx-core/definitions/other";
 import { kFimidxPermissions } from "fimidx-core/definitions/permission";
+import { describe, expect, it } from "vitest";
+import { bearerHeaders } from "../../helpers/auth.js";
+import { apiFetch } from "../../helpers/http.js";
+import {
+  createTestClientToken,
+  createTestOrg,
+  createTestProject,
+} from "../../helpers/setup.js";
 
 const INGEST_LOGS_PATH = "/api/logs";
 
@@ -35,7 +35,10 @@ describe("ingestLogsEndpoint", () => {
       by: userId,
       byType: kByTypes.user,
       permissions: [
-        { entity: "client-token", action: kFimidxPermissions.log.read, target: projectId },
+        {
+          action: kFimidxPermissions.log.read,
+          target: projectId,
+        },
       ],
     });
     const res = await apiFetch(INGEST_LOGS_PATH, {
@@ -58,7 +61,7 @@ describe("ingestLogsEndpoint", () => {
       by: userId,
       byType: kByTypes.user,
       permissions: [
-        { entity: "client-token", action: kFimidxPermissions.log.ingest, target: projectId },
+        { action: kFimidxPermissions.log.ingest, target: projectId },
       ],
     });
     const res = await apiFetch(INGEST_LOGS_PATH, {

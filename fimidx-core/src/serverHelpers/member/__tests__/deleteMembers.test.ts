@@ -365,7 +365,7 @@ describe("deleteMembers integration", () => {
     expect(result.members).toHaveLength(1);
   });
 
-  it.only("deletes members by meta field", async () => {
+  it("deletes members by meta field", async () => {
     // Create test members with different meta data
     const member1Args = makeAddMemberArgs({
       meta: { name: "Alice", department: "engineering" },

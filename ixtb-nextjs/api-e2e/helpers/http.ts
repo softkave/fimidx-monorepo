@@ -38,8 +38,8 @@ export async function apiFetch(
       body === undefined
         ? undefined
         : typeof body === "string"
-          ? body
-          : JSON.stringify(body),
+        ? body
+        : JSON.stringify(body),
     credentials: "include",
   });
 }

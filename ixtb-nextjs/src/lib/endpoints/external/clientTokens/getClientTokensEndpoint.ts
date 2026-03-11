@@ -2,6 +2,7 @@ import {
   GetClientTokensEndpointResponse,
   getClientTokensSchema,
 } from "fimidx-core/definitions/clientToken";
+import { kOwnServerErrorCodes, OwnServerError } from "fimidx-core/common/error";
 import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { getClientTokens } from "fimidx-core/serverHelpers/index";
 import {
@@ -59,6 +60,8 @@ export const getClientTokensEndpoint: NextMaybeAuthenticatedEndpointFn<
         action: kFimidxPermissions.clientToken.readPermissions,
       });
     }
+  } else {
+    throw new OwnServerError("Unauthorized", kOwnServerErrorCodes.Unauthorized);
   }
 
   const { clientTokens, page, limit, hasMore } = await getClientTokens({

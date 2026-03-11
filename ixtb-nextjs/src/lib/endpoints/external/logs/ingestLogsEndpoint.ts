@@ -41,7 +41,7 @@ export const ingestLogsEndpoint: NextClientTokenAuthenticatedEndpointFn<
     new OwnServerError("Project not found", kOwnServerErrorCodes.NotFound)
   );
   assert.ok(
-    project?.id === clientToken.meta?.projectId,
+    project?.id === clientToken.projectId,
     new OwnServerError("Permission denied", kOwnServerErrorCodes.Unauthorized)
   );
 

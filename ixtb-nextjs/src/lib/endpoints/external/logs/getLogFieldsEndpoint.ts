@@ -4,16 +4,18 @@ import {
 } from "fimidx-core/definitions/log";
 import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { getLogFields } from "fimidx-core/serverHelpers/index";
+import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
-import {
-  checkPermissionProjectThenOrg,
-} from "../../../serverHelpers/permissions";
 import { sanitizeGetLogFieldsInput } from "../../utils/sanitizeKId0";
+import { OwnServerError, kOwnServerErrorCodes } from "fimidx-core/common/error";
 
 export const getLogFieldsEndpoint: NextMaybeAuthenticatedEndpointFn<
   GetLogFieldsEndpointResponse
 > = async (params) => {
-  const { req, session: { clientToken, userId } } = params;
+  const {
+    req,
+    session: { clientToken, userId },
+  } = params;
 
   const input = getLogFieldsSchema.parse(await req.json());
   sanitizeGetLogFieldsInput(input);
@@ -31,6 +33,8 @@ export const getLogFieldsEndpoint: NextMaybeAuthenticatedEndpointFn<
       projectId,
       action: kFimidxPermissions.log.read,
     });
+  } else {
+    throw new OwnServerError("Unauthorized", kOwnServerErrorCodes.Unauthorized);
   }
 
   const { fields, page, limit, hasMore } = await getLogFields({

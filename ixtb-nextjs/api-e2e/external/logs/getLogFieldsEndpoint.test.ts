@@ -12,7 +12,7 @@ describe("getLogFieldsEndpoint", () => {
   it("returns 401 when no auth", async () => {
     const res = await apiFetch(GET_LOG_FIELDS_PATH, {
       method: "POST",
-      body: { projectId: "some-project" },
+      body: { query: { projectId: "some-project" } },
     });
     expect(res.status).toBe(401);
   });
@@ -30,7 +30,7 @@ describe("getLogFieldsEndpoint", () => {
     });
     const res = await apiFetch(GET_LOG_FIELDS_PATH, {
       method: "POST",
-      body: { projectId },
+      body: { query: { projectId } },
       cookie,
     });
     expect(res.status).toBe(403);
@@ -46,7 +46,7 @@ describe("getLogFieldsEndpoint", () => {
     const { projectId } = await createTestProject({ orgId, by: userId });
     const res = await apiFetch(GET_LOG_FIELDS_PATH, {
       method: "POST",
-      body: { projectId, page: 1, limit: 10 },
+      body: { query: { projectId }, page: 1, limit: 10 },
       cookie,
     });
     expect(res.status).toBe(200);

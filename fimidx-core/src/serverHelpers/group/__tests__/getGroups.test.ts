@@ -166,8 +166,7 @@ describe("getGroups integration", () => {
             )
           );
       }
-    } catch (error) {
-      console.error(error);
+    } catch {
       // Ignore errors in cleanup
     }
   });

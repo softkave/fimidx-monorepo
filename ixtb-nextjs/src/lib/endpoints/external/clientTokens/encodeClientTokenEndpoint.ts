@@ -2,6 +2,7 @@ import {
   EncodeClientTokenJWTEndpointResponse,
   encodeClientTokenJWTSchema,
 } from "fimidx-core/definitions/clientToken";
+import { kOwnServerErrorCodes, OwnServerError } from "fimidx-core/common/error";
 import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import {
   encodeClientTokenJWT,
@@ -21,6 +22,11 @@ export const encodeClientTokenEndpoint: NextMaybeAuthenticatedEndpointFn<
 
   const input = encodeClientTokenJWTSchema.parse(await req.json());
   sanitizeEncodeClientTokenJWTInput(input);
+
+  if (!sessionClientToken && !userId) {
+    throw new OwnServerError("Unauthorized", kOwnServerErrorCodes.Unauthorized);
+  }
+
   const clientToken = await getClientTokenById({
     id: input.id,
     projectId: input.projectId,

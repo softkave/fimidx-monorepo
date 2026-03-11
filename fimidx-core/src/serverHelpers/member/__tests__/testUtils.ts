@@ -66,9 +66,8 @@ export async function cleanupTestData(params: {
         });
       }
     }
-  } catch (error) {
-    // Log but don't throw - cleanup errors shouldn't fail tests
-    console.warn("Cleanup warning:", error);
+  } catch {
+    // Ignore cleanup errors - they shouldn't fail tests
   }
 }
 

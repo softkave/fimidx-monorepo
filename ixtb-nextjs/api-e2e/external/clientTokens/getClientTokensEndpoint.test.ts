@@ -1,14 +1,13 @@
+import { kByTypes } from "fimidx-core/definitions/other";
+import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { describe, expect, it } from "vitest";
-import { apiFetch } from "../../helpers/http.js";
 import { bearerHeaders, createTestUserSession } from "../../helpers/auth.js";
+import { apiFetch } from "../../helpers/http.js";
 import {
+  createTestClientToken,
   createTestOrg,
   createTestProject,
-  createTestClientToken,
 } from "../../helpers/setup.js";
-import { kFimidxPermissions } from "fimidx-core/definitions/permission";
-import { kByTypes } from "fimidx-core/definitions/other";
-import type { IPermissionAtom } from "fimidx-core/definitions/permission";
 
 const GET_CLIENT_TOKENS_PATH = "/api/client-tokens/fetch";
 
@@ -117,13 +116,12 @@ describe("getClientTokensEndpoint", () => {
       groupId: orgId,
       by: userId,
       byType: kByTypes.user,
-      // addClientToken accepts action+target; entity is filled by the helper
       permissions: [
         {
           action: kFimidxPermissions.clientToken.read,
           target: projectId,
         },
-      ] as IPermissionAtom[],
+      ],
     });
     const res = await apiFetch(GET_CLIENT_TOKENS_PATH, {
       method: "POST",

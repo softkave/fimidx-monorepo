@@ -3,7 +3,7 @@ import type { UpdateClientTokensEndpointArgs } from "../../definitions/clientTok
 import type { GetPermissionsEndpointArgs } from "../../definitions/permission.js";
 import { kObjTags } from "../../definitions/obj.js";
 import type { IObjStorage } from "../../storage/types.js";
-import { updateManyObjs } from "../obj/updateObjs.js";
+import { splitMetaUpdate, updateManyObjs } from "../obj/updateObjs.js";
 import {
   addClientTokenPermissions,
   getFimidxManagedClientTokenPermission,
@@ -20,7 +20,7 @@ export async function updateClientTokens(params: {
   storage?: IObjStorage;
 }) {
   const { args, by, byType, storage } = params;
-  const { update, updateMany } = args;
+  const { update, updateMany, metaUpdateWay } = args;
 
   const hasPermissionUpdates =
     update.removeAllPermissions ||
@@ -50,16 +50,21 @@ export async function updateClientTokens(params: {
 
   const objQuery = getClientTokensObjQuery({ args });
 
-  await updateManyObjs({
-    objQuery,
-    tag: kObjTags.clientToken,
-    by,
-    byType,
-    update: otherUpdates,
-    count: updateMany ? undefined : 1,
-    updateWay: "merge",
-    storage,
-  });
+  // Split meta update for granular handling
+  const hasUpdates = Object.keys(otherUpdates).length > 0;
+  if (hasUpdates) {
+    const updates = splitMetaUpdate(otherUpdates, metaUpdateWay);
+    await updateManyObjs({
+      objQuery,
+      tag: kObjTags.clientToken,
+      by,
+      byType,
+      updates,
+      count: updateMany ? undefined : 1,
+      updateWay: "shallowMerge",
+      storage,
+    });
+  }
 
   if (hasPermissionUpdates) {
     const deleteQueries: GetPermissionsEndpointArgs["query"][] = [];

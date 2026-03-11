@@ -1,12 +1,15 @@
 import { isString } from "lodash-es";
 import { jsRecordToObjRecordQueryList } from "../../common/obj.js";
+import { kObjTags } from "../../definitions/obj.js";
 import type {
   GetPermissionsEndpointArgs,
   UpdatePermissionsEndpointArgs,
 } from "../../definitions/permission.js";
 import type { IObjStorage } from "../../storage/types.js";
+import { splitMetaUpdate, updateManyObjs } from "../obj/updateObjs.js";
 import { addPermissions } from "./addPermissions.js";
 import { deletePermissions } from "./deletePermissions.js";
+import { getPermissionsObjQuery } from "./getPermissions.js";
 
 export async function updatePermissions(params: {
   args: UpdatePermissionsEndpointArgs;
@@ -17,7 +20,23 @@ export async function updatePermissions(params: {
   storage?: IObjStorage;
 }) {
   const { args, by, byType, groupId, storage } = params;
-  const { query, update } = args;
+  const { query, update, updateMany, metaUpdateWay } = args;
+
+  // Handle meta updates
+  if (update.meta !== undefined) {
+    const objQuery = getPermissionsObjQuery({ args: { query } });
+    const updates = splitMetaUpdate({ meta: update.meta }, metaUpdateWay);
+    await updateManyObjs({
+      objQuery,
+      tag: kObjTags.permission,
+      by,
+      byType,
+      updates,
+      count: updateMany ? undefined : 1,
+      updateWay: "shallowMerge",
+      storage,
+    });
+  }
 
   if (update.removeAllPermissions) {
     await deletePermissions({

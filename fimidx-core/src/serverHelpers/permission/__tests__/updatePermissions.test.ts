@@ -283,4 +283,179 @@ describe("updatePermissions integration", () => {
     expect(result.permissions[0].action).toBe("admin");
     expect(result.permissions[0].target).toBe("all");
   });
+
+  describe("meta field updates", () => {
+    it("should update meta field with shallowMerge by default", async () => {
+      await addPermissions({
+        args: makeAddPermissionsArgs({
+          permissions: [
+            {
+              entity: "user",
+              action: "read",
+              target: "document",
+              meta: { existing: "value", toKeep: "preserved" },
+            },
+          ],
+        }),
+        groupId: defaultGroupId,
+        by: defaultBy,
+        byType: defaultByType,
+        storage,
+      });
+
+      await updatePermissions({
+        args: makeUpdatePermissionsArgs({
+          query: { projectId: defaultProjectId, entity: { eq: "user" } },
+          update: {
+            meta: { newField: "newValue", existing: "updated" },
+          },
+        }),
+        by: defaultBy,
+        byType: defaultByType,
+        storage,
+      });
+
+      const result = await getPermissions({
+        args: { query: { projectId: defaultProjectId } },
+        storage,
+      });
+      expect(result.permissions).toHaveLength(1);
+      expect(result.permissions[0].meta).toEqual({
+        existing: "updated",
+        toKeep: "preserved",
+        newField: "newValue",
+      });
+    });
+
+    it("should use replace metaUpdateWay when specified", async () => {
+      await addPermissions({
+        args: makeAddPermissionsArgs({
+          permissions: [
+            {
+              entity: "user",
+              action: "read",
+              target: "document",
+              meta: { existing: "value", toRemove: "willBeGone" },
+            },
+          ],
+        }),
+        groupId: defaultGroupId,
+        by: defaultBy,
+        byType: defaultByType,
+        storage,
+      });
+
+      await updatePermissions({
+        args: {
+          query: { projectId: defaultProjectId, entity: { eq: "user" } },
+          update: {
+            meta: { newField: "newValue" },
+          },
+          metaUpdateWay: "replace",
+        },
+        by: defaultBy,
+        byType: defaultByType,
+        storage,
+      });
+
+      const result = await getPermissions({
+        args: { query: { projectId: defaultProjectId } },
+        storage,
+      });
+      expect(result.permissions).toHaveLength(1);
+      expect(result.permissions[0].meta).toEqual({
+        newField: "newValue",
+      });
+    });
+
+    it("should use deepMerge metaUpdateWay when specified", async () => {
+      await addPermissions({
+        args: makeAddPermissionsArgs({
+          permissions: [
+            {
+              entity: "user",
+              action: "read",
+              target: "document",
+              meta: { nested: { a: 1, b: 2 }, topLevel: "keep" },
+            },
+          ],
+        }),
+        groupId: defaultGroupId,
+        by: defaultBy,
+        byType: defaultByType,
+        storage,
+      });
+
+      await updatePermissions({
+        args: {
+          query: { projectId: defaultProjectId, entity: { eq: "user" } },
+          update: {
+            meta: { nested: { c: 3 } },
+          },
+          metaUpdateWay: "deepMerge",
+        },
+        by: defaultBy,
+        byType: defaultByType,
+        storage,
+      });
+
+      const result = await getPermissions({
+        args: { query: { projectId: defaultProjectId } },
+        storage,
+      });
+      expect(result.permissions).toHaveLength(1);
+      expect(result.permissions[0].meta).toEqual({
+        nested: { a: 1, b: 2, c: 3 },
+        topLevel: "keep",
+      });
+    });
+
+    it("should update multiple permissions when updateMany is true", async () => {
+      await addPermissions({
+        args: makeAddPermissionsArgs({
+          permissions: [
+            {
+              entity: "user",
+              action: "read",
+              target: "document",
+              meta: { original: "first" },
+            },
+            {
+              entity: "user",
+              action: "write",
+              target: "document",
+              meta: { original: "second" },
+            },
+          ],
+        }),
+        groupId: defaultGroupId,
+        by: defaultBy,
+        byType: defaultByType,
+        storage,
+      });
+
+      await updatePermissions({
+        args: {
+          query: { projectId: defaultProjectId, entity: { eq: "user" } },
+          update: {
+            meta: { added: "toAll" },
+          },
+          updateMany: true,
+        },
+        by: defaultBy,
+        byType: defaultByType,
+        storage,
+      });
+
+      const result = await getPermissions({
+        args: { query: { projectId: defaultProjectId } },
+        storage,
+      });
+      expect(result.permissions).toHaveLength(2);
+      for (const perm of result.permissions) {
+        expect(perm.meta).toHaveProperty("added", "toAll");
+        expect(perm.meta).toHaveProperty("original");
+      }
+    });
+  });
 });

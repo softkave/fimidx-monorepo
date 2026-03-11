@@ -56,7 +56,6 @@ export async function updateMonitors(params: {
     byType,
     update: updateObj,
     count: 1,
-    updateWay: "merge",
     storage,
   });
 }

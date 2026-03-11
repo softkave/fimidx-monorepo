@@ -129,6 +129,7 @@ describe("updateGroups integration", () => {
     expect(result.groups[0].meta).toEqual({
       updatedKey: "updatedValue",
       newKey: "newValue",
+      originalKey: "originalValue",
     });
     expect(result.groups[0].updatedBy).toBe("updater");
     expect(result.groups[0].updatedByType).toBe("user");
@@ -180,7 +181,9 @@ describe("updateGroups integration", () => {
     expect(result.groups).toHaveLength(1);
     expect(result.groups[0].name).toBe("Only Name Updated");
     expect(result.groups[0].description).toBe("Original description");
-    expect(result.groups[0].meta).toEqual({ originalKey: "originalValue" });
+    expect(result.groups[0].meta).toEqual({
+      originalKey: "originalValue",
+    });
   });
 
   it("updates multiple groups when updateMany is true", async () => {
@@ -246,9 +249,17 @@ describe("updateGroups integration", () => {
       a.name.localeCompare(b.name)
     );
     expect(updatedGroups[0].description).toBe("Updated for all groups");
-    expect(updatedGroups[0].meta).toEqual({ bulkUpdate: "true" });
+    expect(updatedGroups[0].meta).toEqual({
+      bulkUpdate: "true",
+      key1: "value1",
+      key2: "value2",
+    });
     expect(updatedGroups[1].description).toBe("Updated for all groups");
-    expect(updatedGroups[1].meta).toEqual({ bulkUpdate: "true" });
+    expect(updatedGroups[1].meta).toEqual({
+      bulkUpdate: "true",
+      key1: "value1",
+      key2: "value2",
+    });
 
     // Verify the group in different project was not updated
     const differentProjectResult = await getGroups({
@@ -363,7 +374,11 @@ describe("updateGroups integration", () => {
     const userAGroup = result.groups.find((g) => g.name === "Group by User A");
     const userBGroup = result.groups.find((g) => g.name === "Group by User B");
 
-    expect(userAGroup?.meta).toEqual({ updatedByCreator: "user-a" });
+    expect(userAGroup?.meta).toEqual({
+      updatedByCreator: "user-a",
+      key1: "value1",
+      key2: "value2",
+    });
     expect(userBGroup?.meta).toEqual({ key1: "value1", key2: "value2" });
   });
 
@@ -511,6 +526,8 @@ describe("updateGroups integration", () => {
     );
     expect(result.groups[0].meta).toEqual({
       specialKey: "value with spaces and symbols: !@#",
+      key1: "value1",
+      key2: "value2",
     });
   });
 
@@ -560,7 +577,11 @@ describe("updateGroups integration", () => {
     expect(result.groups).toHaveLength(1);
     expect(result.groups[0].name).toBe(longName);
     expect(result.groups[0].description).toBe(longDescription);
-    expect(result.groups[0].meta).toEqual({ longKey: longMetaValue });
+    expect(result.groups[0].meta).toEqual({
+      longKey: longMetaValue,
+      key1: "value1",
+      key2: "value2",
+    });
   });
 
   it("fails gracefully when no groups match the query", async () => {
@@ -672,6 +693,308 @@ describe("updateGroups integration", () => {
     expect(designHighGroup?.meta).toEqual({
       category: "design",
       priority: "high",
+    });
+  });
+
+  describe("meta field splitting", () => {
+    it("should shallow merge meta fields preserving existing keys", async () => {
+      // Create a group with existing meta
+      const createdGroup = await addGroup({
+        args: makeAddGroupArgs({
+          name: "Meta Shallow Merge Test",
+          meta: {
+            existingKey1: "value1",
+            existingKey2: "value2",
+            existingKey3: "value3",
+          },
+        }),
+        by: defaultBy,
+        byType: defaultByType,
+        groupId: defaultGroupId,
+        storage,
+      });
+
+      // Update only some meta fields
+      await updateGroups({
+        args: {
+          update: {
+            meta: {
+              existingKey1: "updated",
+              newKey: "newValue",
+            },
+          },
+          query: {
+            projectId: defaultProjectId,
+            id: { eq: createdGroup.group.id },
+          },
+        },
+        by: "meta-updater",
+        byType: "user",
+        storage,
+      });
+
+      // Verify meta was shallow merged
+      const result = await getGroups({
+        args: {
+          query: {
+            projectId: defaultProjectId,
+            id: { eq: createdGroup.group.id },
+          },
+        },
+        storage,
+      });
+
+      expect(result.groups).toHaveLength(1);
+      expect(result.groups[0].meta).toEqual({
+        existingKey1: "updated",
+        existingKey2: "value2",
+        existingKey3: "value3",
+        newKey: "newValue",
+      });
+    });
+
+    it("should update name and meta separately with correct merge strategies", async () => {
+      // Create a group
+      const createdGroup = await addGroup({
+        args: makeAddGroupArgs({
+          name: "Original Name",
+          description: "Original description",
+          meta: { a: "1", b: "2" },
+        }),
+        by: defaultBy,
+        byType: defaultByType,
+        groupId: defaultGroupId,
+        storage,
+      });
+
+      // Update name and meta together
+      await updateGroups({
+        args: {
+          update: {
+            name: "Updated Name",
+            meta: { a: "updated", c: "3" },
+          },
+          query: {
+            projectId: defaultProjectId,
+            id: { eq: createdGroup.group.id },
+          },
+        },
+        by: "combined-updater",
+        byType: "user",
+        storage,
+      });
+
+      // Verify both were updated correctly
+      const result = await getGroups({
+        args: {
+          query: {
+            projectId: defaultProjectId,
+            id: { eq: createdGroup.group.id },
+          },
+        },
+        storage,
+      });
+
+      expect(result.groups).toHaveLength(1);
+      expect(result.groups[0].name).toBe("Updated Name");
+      expect(result.groups[0].description).toBe("Original description");
+      expect(result.groups[0].meta).toEqual({
+        a: "updated",
+        b: "2",
+        c: "3",
+      });
+    });
+
+    it("should handle meta-only update", async () => {
+      // Create a group
+      const createdGroup = await addGroup({
+        args: makeAddGroupArgs({
+          name: "Meta Only Test",
+          meta: { existing: "value" },
+        }),
+        by: defaultBy,
+        byType: defaultByType,
+        groupId: defaultGroupId,
+        storage,
+      });
+
+      // Update only meta
+      await updateGroups({
+        args: {
+          update: {
+            meta: { newField: "newValue" },
+          },
+          query: {
+            projectId: defaultProjectId,
+            id: { eq: createdGroup.group.id },
+          },
+        },
+        by: "meta-only-updater",
+        byType: "user",
+        storage,
+      });
+
+      // Verify meta was merged
+      const result = await getGroups({
+        args: {
+          query: {
+            projectId: defaultProjectId,
+            id: { eq: createdGroup.group.id },
+          },
+        },
+        storage,
+      });
+
+      expect(result.groups).toHaveLength(1);
+      expect(result.groups[0].name).toBe("Meta Only Test");
+      expect(result.groups[0].meta).toEqual({
+        existing: "value",
+        newField: "newValue",
+      });
+    });
+
+    it("should use replace metaUpdateWay when specified", async () => {
+      // Create a group with existing meta
+      const createdGroup = await addGroup({
+        args: makeAddGroupArgs({
+          name: "Replace Meta Test",
+          meta: { existingKey: "existingValue", anotherKey: "anotherValue" },
+        }),
+        by: defaultBy,
+        byType: defaultByType,
+        groupId: defaultGroupId,
+        storage,
+      });
+
+      // Update meta with replace strategy
+      await updateGroups({
+        args: {
+          update: {
+            meta: { newKey: "newValue" },
+          },
+          query: {
+            projectId: defaultProjectId,
+            id: { eq: createdGroup.group.id },
+          },
+          metaUpdateWay: "replace",
+        },
+        by: "replace-updater",
+        byType: "user",
+        storage,
+      });
+
+      // Verify meta was completely replaced
+      const result = await getGroups({
+        args: {
+          query: {
+            projectId: defaultProjectId,
+            id: { eq: createdGroup.group.id },
+          },
+        },
+        storage,
+      });
+
+      expect(result.groups).toHaveLength(1);
+      expect(result.groups[0].meta).toEqual({
+        newKey: "newValue",
+      });
+    });
+
+    it("should use deepMerge metaUpdateWay when specified", async () => {
+      // Create a group with nested meta
+      const createdGroup = await addGroup({
+        args: makeAddGroupArgs({
+          name: "Deep Merge Meta Test",
+          meta: { key1: "value1", key2: "value2" },
+        }),
+        by: defaultBy,
+        byType: defaultByType,
+        groupId: defaultGroupId,
+        storage,
+      });
+
+      // Update meta with deepMerge strategy
+      await updateGroups({
+        args: {
+          update: {
+            meta: { key1: "updated1", key3: "value3" },
+          },
+          query: {
+            projectId: defaultProjectId,
+            id: { eq: createdGroup.group.id },
+          },
+          metaUpdateWay: "deepMerge",
+        },
+        by: "deep-merge-updater",
+        byType: "user",
+        storage,
+      });
+
+      // Verify meta was deep merged
+      const result = await getGroups({
+        args: {
+          query: {
+            projectId: defaultProjectId,
+            id: { eq: createdGroup.group.id },
+          },
+        },
+        storage,
+      });
+
+      expect(result.groups).toHaveLength(1);
+      expect(result.groups[0].meta).toEqual({
+        key1: "updated1",
+        key2: "value2",
+        key3: "value3",
+      });
+    });
+
+    it("should default to shallowMerge when metaUpdateWay is not specified", async () => {
+      // Create a group with meta
+      const createdGroup = await addGroup({
+        args: makeAddGroupArgs({
+          name: "Default Merge Test",
+          meta: { a: "1", b: "2" },
+        }),
+        by: defaultBy,
+        byType: defaultByType,
+        groupId: defaultGroupId,
+        storage,
+      });
+
+      // Update without specifying metaUpdateWay
+      await updateGroups({
+        args: {
+          update: {
+            meta: { a: "updated", c: "3" },
+          },
+          query: {
+            projectId: defaultProjectId,
+            id: { eq: createdGroup.group.id },
+          },
+        },
+        by: "default-updater",
+        byType: "user",
+        storage,
+      });
+
+      // Verify meta was shallow merged (default behavior)
+      const result = await getGroups({
+        args: {
+          query: {
+            projectId: defaultProjectId,
+            id: { eq: createdGroup.group.id },
+          },
+        },
+        storage,
+      });
+
+      expect(result.groups).toHaveLength(1);
+      expect(result.groups[0].meta).toEqual({
+        a: "updated",
+        b: "2",
+        c: "3",
+      });
     });
   });
 });

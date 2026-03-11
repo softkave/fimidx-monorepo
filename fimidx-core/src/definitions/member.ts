@@ -5,6 +5,7 @@ import {
   numberMetaQuerySchema,
   objRecordQueryListSchema,
   objSortListSchema,
+  onConflictSchema,
   stringMetaQuerySchema,
 } from "./obj.js";
 import {
@@ -107,6 +108,7 @@ export const updateMembersSchema = z.object({
     removeAllPermissions: z.boolean().optional(),
   }),
   updateMany: z.boolean().optional(),
+  metaUpdateWay: onConflictSchema.optional(),
 });
 
 export const updateMemberPermissionsSchema = z.object({

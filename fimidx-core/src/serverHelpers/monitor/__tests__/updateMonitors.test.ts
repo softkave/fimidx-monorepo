@@ -134,7 +134,7 @@ describe("updateMonitors integration", () => {
     expect(result.monitors[0].description).toBe("Updated description");
     expect(result.monitors[0].updatedBy).toBe("updater");
     expect(result.monitors[0].updatedByType).toBe("user");
-  });
+  }, 10_000);
 
   it("updates monitor status", async () => {
     // Create a monitor

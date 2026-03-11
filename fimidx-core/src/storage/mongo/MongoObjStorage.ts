@@ -1,9 +1,10 @@
-import { get, uniq } from "lodash-es";
+import { get, set, uniq } from "lodash-es";
 import type { Model, SortOrder } from "mongoose";
 import { mergeObjects, type AnyObject } from "softkave-js-utils";
 import { v7 as uuidv7 } from "uuid";
 import {
   prefixObjId,
+  type IGranularUpdate,
   type IInputObjRecord,
   type IObj,
 } from "../../definitions/obj.js";
@@ -134,17 +135,29 @@ export class MongoObjStorage implements IObjStorage {
       return { updatedCount: 0, updatedObjs: [] };
     }
 
-    const updateWay = params.updateWay || "replace";
+    const updateWay = params.updateWay || "shallowMerge";
     const updatedObjs: IObj[] = [];
     const date = new Date();
 
     for (const obj of objs) {
-      // Merge objRecord using the specified strategy
-      const mergedObjRecord = this.applyMergeStrategy(
-        obj.objRecord,
-        params.update,
-        updateWay
-      );
+      let mergedObjRecord: AnyObject;
+
+      if (params.updates) {
+        mergedObjRecord = this.applyGranularUpdates(
+          obj.objRecord,
+          params.updates,
+          updateWay
+        );
+      } else if (params.update) {
+        mergedObjRecord = this.applyMergeStrategy(
+          obj.objRecord,
+          params.update,
+          updateWay
+        );
+      } else {
+        continue;
+      }
+
       const updatedObj: IObj = {
         ...obj,
         objRecord: mergedObjRecord,
@@ -319,9 +332,10 @@ export class MongoObjStorage implements IObjStorage {
       query,
       tag,
       update,
+      updates,
       by,
       byType,
-      updateWay = "mergeButReplaceArrays",
+      updateWay = "shallowMerge",
       count,
       shouldIndex,
       fieldsToIndex,
@@ -374,11 +388,23 @@ export class MongoObjStorage implements IObjStorage {
 
       // Apply updates to each object
       const objsToUpdate = objs.map((obj) => {
-        const updatedObjRecord = this.applyMergeStrategy(
-          obj.objRecord,
-          update,
-          updateWay
-        );
+        let updatedObjRecord: AnyObject;
+
+        if (updates) {
+          updatedObjRecord = this.applyGranularUpdates(
+            obj.objRecord,
+            updates,
+            updateWay
+          );
+        } else if (update) {
+          updatedObjRecord = this.applyMergeStrategy(
+            obj.objRecord,
+            update,
+            updateWay
+          );
+        } else {
+          updatedObjRecord = obj.objRecord;
+        }
 
         return {
           id: obj.id,
@@ -780,6 +806,30 @@ export class MongoObjStorage implements IObjStorage {
     return objsToUpdate.map((item) => item.obj);
   }
 
+  private shallowMerge(
+    existing: AnyObject,
+    update: AnyObject,
+    arrayStrategy: "replace" | "concat" | "retain"
+  ): AnyObject {
+    const result = { ...existing };
+    for (const key of Object.keys(update)) {
+      if (
+        arrayStrategy !== "replace" &&
+        Array.isArray(existing[key]) &&
+        Array.isArray(update[key])
+      ) {
+        if (arrayStrategy === "concat") {
+          result[key] = [...existing[key], ...update[key]];
+        } else if (arrayStrategy === "retain") {
+          result[key] = existing[key];
+        }
+      } else {
+        result[key] = update[key];
+      }
+    }
+    return result;
+  }
+
   private applyMergeStrategy(
     existingRecord: AnyObject,
     updateRecord: AnyObject,
@@ -788,6 +838,27 @@ export class MongoObjStorage implements IObjStorage {
     switch (strategy) {
       case "replace":
         return updateRecord;
+      case "shallowMerge":
+      case "shallowMergeButReplaceArrays":
+        return this.shallowMerge(existingRecord, updateRecord, "replace");
+      case "shallowMergeButConcatArrays":
+        return this.shallowMerge(existingRecord, updateRecord, "concat");
+      case "shallowMergeButKeepArrays":
+        return this.shallowMerge(existingRecord, updateRecord, "retain");
+      case "deepMerge":
+      case "deepMergeButReplaceArrays":
+        return mergeObjects(existingRecord, updateRecord, {
+          arrayUpdateStrategy: "replace",
+        });
+      case "deepMergeButConcatArrays":
+        return mergeObjects(existingRecord, updateRecord, {
+          arrayUpdateStrategy: "concat",
+        });
+      case "deepMergeButKeepArrays":
+        return mergeObjects(existingRecord, updateRecord, {
+          arrayUpdateStrategy: "retain",
+        });
+      // Backwards compatibility - deprecated, use deepMerge variants instead
       case "merge":
       case "mergeButReplaceArrays":
         return mergeObjects(existingRecord, updateRecord, {
@@ -804,5 +875,31 @@ export class MongoObjStorage implements IObjStorage {
       default:
         return existingRecord;
     }
+  }
+
+  private applyGranularUpdates(
+    existingRecord: AnyObject,
+    updates: IGranularUpdate[],
+    defaultUpdateWay: string
+  ): AnyObject {
+    let result = { ...existingRecord };
+
+    for (const update of updates) {
+      const updateWay = update.updateWay || defaultUpdateWay;
+
+      if (!update.key) {
+        result = this.applyMergeStrategy(result, update.value, updateWay);
+      } else {
+        const existingValue = get(result, update.key) || {};
+        const mergedValue = this.applyMergeStrategy(
+          existingValue,
+          update.value,
+          updateWay
+        );
+        result = set({ ...result }, update.key, mergedValue);
+      }
+    }
+
+    return result;
   }
 }

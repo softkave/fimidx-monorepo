@@ -2360,4 +2360,454 @@ describe("MongoObjStorage (integration)", () => {
       expect(result.cleanedCount).toBe(0);
     });
   });
+
+  describe("shallow merge strategies", () => {
+    it("shallowMerge should merge only top-level keys", async () => {
+      const obj = makeObjFields({
+        objRecord: { a: 1, b: { x: 1, y: 2 }, c: 3 },
+        tag: "shallow-tag",
+        projectId: "shallow-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "shallow-project" } } },
+        tag: "shallow-tag",
+        update: { b: { x: 100 }, d: 4 },
+        by: "merger",
+        byType: "user",
+        updateWay: "shallowMerge",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.a).toBe(1);
+      expect(updated.objRecord.b).toEqual({ x: 100 });
+      expect(updated.objRecord.c).toBe(3);
+      expect(updated.objRecord.d).toBe(4);
+    });
+
+    it("shallowMergeButConcatArrays should concat top-level arrays", async () => {
+      const obj = makeObjFields({
+        objRecord: { arr: [1, 2], nested: { arr: [5, 6] }, x: 1 },
+        tag: "shallow-concat-tag",
+        projectId: "shallow-concat-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "shallow-concat-project" } } },
+        tag: "shallow-concat-tag",
+        update: { arr: [3, 4], nested: { arr: [7, 8] } },
+        by: "merger",
+        byType: "user",
+        updateWay: "shallowMergeButConcatArrays",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.arr).toEqual([1, 2, 3, 4]);
+      expect(updated.objRecord.nested).toEqual({ arr: [7, 8] });
+    });
+
+    it("shallowMergeButKeepArrays should keep original top-level arrays", async () => {
+      const obj = makeObjFields({
+        objRecord: { arr: [1, 2], x: 1 },
+        tag: "shallow-keep-tag",
+        projectId: "shallow-keep-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "shallow-keep-project" } } },
+        tag: "shallow-keep-tag",
+        update: { arr: [3, 4], y: 2 },
+        by: "merger",
+        byType: "user",
+        updateWay: "shallowMergeButKeepArrays",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.arr).toEqual([1, 2]);
+      expect(updated.objRecord.y).toBe(2);
+    });
+
+    it("shallowMergeButReplaceArrays should replace top-level arrays", async () => {
+      const obj = makeObjFields({
+        objRecord: { arr: [1, 2], x: 1 },
+        tag: "shallow-replace-tag",
+        projectId: "shallow-replace-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "shallow-replace-project" } } },
+        tag: "shallow-replace-tag",
+        update: { arr: [3, 4] },
+        by: "merger",
+        byType: "user",
+        updateWay: "shallowMergeButReplaceArrays",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.arr).toEqual([3, 4]);
+      expect(updated.objRecord.x).toBe(1);
+    });
+
+    it("shallowMerge should NOT merge nested objects (replaces them)", async () => {
+      const obj = makeObjFields({
+        objRecord: { nested: { a: 1, b: 2, c: 3 } },
+        tag: "shallow-nested-tag",
+        projectId: "shallow-nested-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "shallow-nested-project" } } },
+        tag: "shallow-nested-tag",
+        update: { nested: { a: 100 } },
+        by: "merger",
+        byType: "user",
+        updateWay: "shallowMerge",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.nested).toEqual({ a: 100 });
+    });
+  });
+
+  describe("deep merge strategies", () => {
+    it("deepMerge should merge nested objects recursively", async () => {
+      const obj = makeObjFields({
+        objRecord: { a: 1, nested: { x: 1, y: 2 } },
+        tag: "deep-tag",
+        projectId: "deep-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "deep-project" } } },
+        tag: "deep-tag",
+        update: { nested: { x: 100, z: 3 } },
+        by: "merger",
+        byType: "user",
+        updateWay: "deepMerge",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.a).toBe(1);
+      expect(updated.objRecord.nested).toEqual({ x: 100, y: 2, z: 3 });
+    });
+
+    it("deepMergeButConcatArrays should concat nested arrays", async () => {
+      const obj = makeObjFields({
+        objRecord: { nested: { arr: [1, 2] } },
+        tag: "deep-concat-tag",
+        projectId: "deep-concat-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "deep-concat-project" } } },
+        tag: "deep-concat-tag",
+        update: { nested: { arr: [3, 4] } },
+        by: "merger",
+        byType: "user",
+        updateWay: "deepMergeButConcatArrays",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.nested.arr).toEqual([1, 2, 3, 4]);
+    });
+
+    it("deepMergeButKeepArrays should keep original nested arrays", async () => {
+      const obj = makeObjFields({
+        objRecord: { nested: { arr: [1, 2], other: "x" } },
+        tag: "deep-keep-tag",
+        projectId: "deep-keep-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "deep-keep-project" } } },
+        tag: "deep-keep-tag",
+        update: { nested: { arr: [3, 4], other: "y" } },
+        by: "merger",
+        byType: "user",
+        updateWay: "deepMergeButKeepArrays",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.nested.arr).toEqual([1, 2]);
+      expect(updated.objRecord.nested.other).toBe("y");
+    });
+
+    it("deepMergeButReplaceArrays should replace nested arrays", async () => {
+      const obj = makeObjFields({
+        objRecord: { nested: { arr: [1, 2], other: "x" } },
+        tag: "deep-replace-tag",
+        projectId: "deep-replace-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "deep-replace-project" } } },
+        tag: "deep-replace-tag",
+        update: { nested: { arr: [3, 4] } },
+        by: "merger",
+        byType: "user",
+        updateWay: "deepMergeButReplaceArrays",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.nested.arr).toEqual([3, 4]);
+      expect(updated.objRecord.nested.other).toBe("x");
+    });
+  });
+
+  describe("granular updates", () => {
+    it("should apply root update when key is not provided", async () => {
+      const obj = makeObjFields({
+        objRecord: { a: 1, b: 2 },
+        tag: "granular-root-tag",
+        projectId: "granular-root-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "granular-root-project" } } },
+        tag: "granular-root-tag",
+        updates: [{ value: { b: 3, c: 4 } }],
+        by: "merger",
+        byType: "user",
+        updateWay: "shallowMerge",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.a).toBe(1);
+      expect(updated.objRecord.b).toBe(3);
+      expect(updated.objRecord.c).toBe(4);
+    });
+
+    it("should apply nested update using dot notation key", async () => {
+      const obj = makeObjFields({
+        objRecord: { meta: { x: 1, y: 2 }, other: "unchanged" },
+        tag: "granular-nested-tag",
+        projectId: "granular-nested-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "granular-nested-project" } } },
+        tag: "granular-nested-tag",
+        updates: [{ key: "meta", value: { x: 100, z: 3 } }],
+        by: "merger",
+        byType: "user",
+        updateWay: "shallowMerge",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.meta).toEqual({ x: 100, y: 2, z: 3 });
+      expect(updated.objRecord.other).toBe("unchanged");
+    });
+
+    it("should apply multiple updates with different updateWays", async () => {
+      const obj = makeObjFields({
+        objRecord: {
+          name: "original",
+          meta: { a: 1, b: 2 },
+          settings: { enabled: true },
+        },
+        tag: "granular-multi-tag",
+        projectId: "granular-multi-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "granular-multi-project" } } },
+        tag: "granular-multi-tag",
+        updates: [
+          { value: { name: "updated" } },
+          { key: "meta", value: { a: 100, c: 3 }, updateWay: "shallowMerge" },
+        ],
+        by: "merger",
+        byType: "user",
+        updateWay: "shallowMerge",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.name).toBe("updated");
+      expect(updated.objRecord.meta).toEqual({ a: 100, b: 2, c: 3 });
+      expect(updated.objRecord.settings).toEqual({ enabled: true });
+    });
+
+    it("should handle deeply nested key with dot notation", async () => {
+      const obj = makeObjFields({
+        objRecord: { level1: { level2: { value: "original" } } },
+        tag: "granular-deep-tag",
+        projectId: "granular-deep-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "granular-deep-project" } } },
+        tag: "granular-deep-tag",
+        updates: [{ key: "level1.level2", value: { value: "updated", extra: 1 } }],
+        by: "merger",
+        byType: "user",
+        updateWay: "shallowMerge",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.level1.level2).toEqual({
+        value: "updated",
+        extra: 1,
+      });
+    });
+
+    it("should create nested path if it does not exist", async () => {
+      const obj = makeObjFields({
+        objRecord: { existing: "value" },
+        tag: "granular-create-tag",
+        projectId: "granular-create-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "granular-create-project" } } },
+        tag: "granular-create-tag",
+        updates: [{ key: "newPath", value: { key: "value" } }],
+        by: "merger",
+        byType: "user",
+        updateWay: "shallowMerge",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.existing).toBe("value");
+      expect(updated.objRecord.newPath).toEqual({ key: "value" });
+    });
+  });
+
+  describe("backwards compatibility", () => {
+    it("should handle legacy 'merge' strategy as deepMerge", async () => {
+      const obj = makeObjFields({
+        objRecord: { a: 1, nested: { x: 1, y: 2 } },
+        tag: "compat-merge-tag",
+        projectId: "compat-merge-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "compat-merge-project" } } },
+        tag: "compat-merge-tag",
+        update: { nested: { x: 100, z: 3 } },
+        by: "merger",
+        byType: "user",
+        updateWay: "merge",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.nested).toEqual({ x: 100, y: 2, z: 3 });
+    });
+
+    it("should handle legacy mergeButConcatArrays strategy", async () => {
+      const obj = makeObjFields({
+        objRecord: { arr: [1, 2] },
+        tag: "compat-concat-tag",
+        projectId: "compat-concat-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "compat-concat-project" } } },
+        tag: "compat-concat-tag",
+        update: { arr: [3, 4] },
+        by: "merger",
+        byType: "user",
+        updateWay: "mergeButConcatArrays",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.arr).toEqual([1, 2, 3, 4]);
+    });
+
+    it("should handle legacy mergeButKeepArrays strategy", async () => {
+      const obj = makeObjFields({
+        objRecord: { arr: [1, 2] },
+        tag: "compat-keep-tag",
+        projectId: "compat-keep-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "compat-keep-project" } } },
+        tag: "compat-keep-tag",
+        update: { arr: [3, 4] },
+        by: "merger",
+        byType: "user",
+        updateWay: "mergeButKeepArrays",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.arr).toEqual([1, 2]);
+    });
+  });
+
+  describe("default updateWay", () => {
+    it("should use shallowMerge as default updateWay", async () => {
+      const obj = makeObjFields({
+        objRecord: { a: 1, b: { x: 1, y: 2 } },
+        tag: "default-tag",
+        projectId: "default-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "default-project" } } },
+        tag: "default-tag",
+        update: { b: { x: 100 }, c: 3 },
+        by: "merger",
+        byType: "user",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.a).toBe(1);
+      expect(updated.objRecord.b).toEqual({ x: 100 });
+      expect(updated.objRecord.c).toBe(3);
+    });
+  });
 });

@@ -1,6 +1,7 @@
 import type { Model } from "mongoose";
 import type { AnyObject } from "softkave-js-utils";
 import type {
+  IGranularUpdate,
   IInputObjRecord,
   IObj,
   IObjField,
@@ -47,7 +48,8 @@ export interface ReadObjsParams {
 export interface UpdateObjsParams {
   query: IObjQuery;
   tag?: string; // Optional: if provided, filters by tag; if not provided, no tag filtering is applied
-  update: AnyObject;
+  update?: AnyObject;
+  updates?: IGranularUpdate[];
   by: string;
   byType: string;
   updateWay?: OnConflict;

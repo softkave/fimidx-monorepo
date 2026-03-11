@@ -3,6 +3,7 @@ import {
   numberMetaQuerySchema,
   objRecordQueryListSchema,
   objSortListSchema,
+  onConflictSchema,
   stringMetaQuerySchema,
 } from "./obj.js";
 
@@ -53,6 +54,7 @@ export const updateGroupsSchema = z.object({
   }),
   updateMany: z.boolean().optional(),
   query: groupQuerySchema,
+  metaUpdateWay: onConflictSchema.optional(),
 });
 
 export const deleteGroupsSchema = z.object({

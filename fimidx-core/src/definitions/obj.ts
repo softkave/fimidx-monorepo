@@ -105,14 +105,31 @@ export const inputObjRecordArraySchema = z
 export const onConflictSchema = z
   .enum([
     "replace",
+    "shallowMerge",
+    "deepMerge",
+    "shallowMergeButConcatArrays",
+    "deepMergeButConcatArrays",
+    "shallowMergeButKeepArrays",
+    "deepMergeButKeepArrays",
+    "shallowMergeButReplaceArrays",
+    "deepMergeButReplaceArrays",
+    "ignore",
+    "fail",
+    // Backwards compatibility - deprecated, use deepMerge variants instead
     "merge",
     "mergeButConcatArrays",
     "mergeButKeepArrays",
     "mergeButReplaceArrays",
-    "ignore",
-    "fail",
   ])
-  .default("replace");
+  .default("shallowMerge");
+
+export const granularUpdateSchema = z.object({
+  key: z.string().optional(),
+  value: z.any(),
+  updateWay: onConflictSchema.optional(),
+});
+
+export const granularUpdatesSchema = z.array(granularUpdateSchema);
 
 export const setManyObjsSchema = z.object({
   projectId: z.string().min(1),
@@ -381,18 +398,23 @@ export const objSortSchema = z.object({
 /** Max 20 sort fields per request. */
 export const objSortListSchema = z.array(objSortSchema).max(20);
 
-export const updateManyObjsSchema = z.object({
-  query: objExternalQuerySchema,
-  update: inputObjRecordSchema,
-  updateMany: z.boolean().optional(),
-  updateWay: onConflictSchema.optional(),
-  /**
-   * {@see IObjField.path}
-   */
-  fieldsToIndex: z.array(z.string().min(1)).max(50).optional(),
-  shouldIndex: z.boolean().optional(),
-  count: z.number().optional(),
-});
+export const updateManyObjsSchema = z
+  .object({
+    query: objExternalQuerySchema,
+    update: inputObjRecordSchema.optional(),
+    updates: granularUpdatesSchema.optional(),
+    updateMany: z.boolean().optional(),
+    updateWay: onConflictSchema.optional(),
+    /**
+     * {@see IObjField.path}
+     */
+    fieldsToIndex: z.array(z.string().min(1)).max(50).optional(),
+    shouldIndex: z.boolean().optional(),
+    count: z.number().optional(),
+  })
+  .refine((data) => data.update || data.updates, {
+    message: "Either update or updates must be provided",
+  });
 
 export const deleteManyObjsSchema = z.object({
   query: objExternalQuerySchema,
@@ -484,6 +506,8 @@ export function getProjectIdFromObjQuery(
 export type IObjSort = z.infer<typeof objSortSchema>;
 export type IObjSortList = z.infer<typeof objSortListSchema>;
 export type OnConflict = z.infer<typeof onConflictSchema>;
+export type IGranularUpdate = z.infer<typeof granularUpdateSchema>;
+export type IGranularUpdates = z.infer<typeof granularUpdatesSchema>;
 
 export type ISetManyObjsEndpointArgs = z.infer<typeof setManyObjsSchema>;
 export type IUpdateManyObjsEndpointArgs = z.infer<typeof updateManyObjsSchema>;

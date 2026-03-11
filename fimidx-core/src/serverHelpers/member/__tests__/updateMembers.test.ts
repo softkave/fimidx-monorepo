@@ -649,4 +649,227 @@ describe("updateMembers integration", () => {
     expect(result.members[0].meta?.email).toBe("original@example.com");
     expect(result.members[0].meta?.department).toBe("engineering");
   });
+
+  describe("meta field splitting", () => {
+    it("should shallow merge meta fields preserving existing keys", async () => {
+      const memberArgs = makeAddMemberArgs({
+        meta: {
+          name: "Test Member",
+          userId: "shallow-merge-test",
+          email: "test@example.com",
+          existingField1: "value1",
+          existingField2: "value2",
+        },
+      }) as Parameters<typeof addMember>[0]["args"];
+      const addResult = await addMember({
+        args: memberArgs,
+        by: defaultBy,
+        byType: defaultByType,
+        storage,
+      });
+
+      // Update only some meta fields
+      await updateMembers({
+        args: {
+          query: {
+            projectId: defaultProjectId,
+            groupId: defaultGroupId,
+            id: { eq: addResult.member.id },
+          },
+          update: {
+            meta: {
+              existingField1: "updated",
+              newField: "newValue",
+            },
+          },
+        },
+        by: defaultBy,
+        byType: defaultByType,
+        storage,
+      });
+
+      // Verify meta was shallow merged
+      const result = await getMembers({
+        args: {
+          query: {
+            projectId: defaultProjectId,
+            groupId: defaultGroupId,
+            id: { eq: addResult.member.id },
+          },
+        },
+        storage,
+      });
+
+      expect(result.members).toHaveLength(1);
+      expect(result.members[0].meta?.name).toBe("Test Member");
+      expect(result.members[0].meta?.existingField1).toBe("updated");
+      expect(result.members[0].meta?.existingField2).toBe("value2");
+      expect(result.members[0].meta?.newField).toBe("newValue");
+    });
+
+    it("should handle meta-only update with granular merge", async () => {
+      const memberArgs = makeAddMemberArgs({
+        meta: {
+          name: "Meta Only Member",
+          userId: "meta-only-test",
+          email: "meta@example.com",
+          key1: "original1",
+          key2: "original2",
+        },
+      }) as Parameters<typeof addMember>[0]["args"];
+      const addResult = await addMember({
+        args: memberArgs,
+        by: defaultBy,
+        byType: defaultByType,
+        storage,
+      });
+
+      // Update with meta containing partial fields
+      await updateMembers({
+        args: {
+          query: {
+            projectId: defaultProjectId,
+            groupId: defaultGroupId,
+            id: { eq: addResult.member.id },
+          },
+          update: {
+            meta: {
+              key1: "updated1",
+              key3: "new3",
+            },
+          },
+        },
+        by: defaultBy,
+        byType: defaultByType,
+        storage,
+      });
+
+      // Verify meta was properly merged
+      const result = await getMembers({
+        args: {
+          query: {
+            projectId: defaultProjectId,
+            groupId: defaultGroupId,
+            id: { eq: addResult.member.id },
+          },
+        },
+        storage,
+      });
+
+      expect(result.members).toHaveLength(1);
+      expect(result.members[0].meta?.key1).toBe("updated1");
+      expect(result.members[0].meta?.key2).toBe("original2");
+      expect(result.members[0].meta?.key3).toBe("new3");
+    });
+
+    it("should use replace metaUpdateWay when specified", async () => {
+      const memberArgs = makeAddMemberArgs({
+        meta: {
+          name: "Replace Meta Test",
+          userId: "replace-meta-test",
+          email: "replace@example.com",
+          existingKey: "existingValue",
+        },
+      }) as Parameters<typeof addMember>[0]["args"];
+      const addResult = await addMember({
+        args: memberArgs,
+        by: defaultBy,
+        byType: defaultByType,
+        storage,
+      });
+
+      // Update meta with replace strategy
+      await updateMembers({
+        args: {
+          query: {
+            projectId: defaultProjectId,
+            groupId: defaultGroupId,
+            id: { eq: addResult.member.id },
+          },
+          update: {
+            meta: {
+              newKey: "newValue",
+            },
+          },
+          metaUpdateWay: "replace",
+        },
+        by: defaultBy,
+        byType: defaultByType,
+        storage,
+      });
+
+      // Verify meta was completely replaced
+      const result = await getMembers({
+        args: {
+          query: {
+            projectId: defaultProjectId,
+            groupId: defaultGroupId,
+            id: { eq: addResult.member.id },
+          },
+        },
+        storage,
+      });
+
+      expect(result.members).toHaveLength(1);
+      expect(result.members[0].meta).toEqual({
+        newKey: "newValue",
+      });
+    });
+
+    it("should use deepMerge metaUpdateWay when specified", async () => {
+      const memberArgs = makeAddMemberArgs({
+        meta: {
+          name: "Deep Merge Meta Test",
+          userId: "deep-merge-test",
+          email: "deep@example.com",
+          key1: "value1",
+          key2: "value2",
+        },
+      }) as Parameters<typeof addMember>[0]["args"];
+      const addResult = await addMember({
+        args: memberArgs,
+        by: defaultBy,
+        byType: defaultByType,
+        storage,
+      });
+
+      // Update meta with deepMerge strategy
+      await updateMembers({
+        args: {
+          query: {
+            projectId: defaultProjectId,
+            groupId: defaultGroupId,
+            id: { eq: addResult.member.id },
+          },
+          update: {
+            meta: {
+              key1: "updated1",
+              key3: "value3",
+            },
+          },
+          metaUpdateWay: "deepMerge",
+        },
+        by: defaultBy,
+        byType: defaultByType,
+        storage,
+      });
+
+      // Verify meta was deep merged
+      const result = await getMembers({
+        args: {
+          query: {
+            projectId: defaultProjectId,
+            groupId: defaultGroupId,
+            id: { eq: addResult.member.id },
+          },
+        },
+        storage,
+      });
+
+      expect(result.members).toHaveLength(1);
+      expect(result.members[0].meta?.key1).toBe("updated1");
+      expect(result.members[0].meta?.key2).toBe("value2");
+      expect(result.members[0].meta?.key3).toBe("value3");
+    });
+  });
 });

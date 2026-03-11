@@ -4,6 +4,7 @@ import {
   numberMetaQuerySchema,
   objRecordQueryListSchema,
   objSortListSchema,
+  onConflictSchema,
   stringMetaQuerySchema,
 } from "./obj.js";
 import {
@@ -83,6 +84,7 @@ export const updateClientTokensSchema = z.object({
   }),
   query: clientTokenQuerySchema,
   updateMany: z.boolean().optional(),
+  metaUpdateWay: onConflictSchema.optional(),
 });
 
 export const updateClientTokenPermissionsSchema = z.object({

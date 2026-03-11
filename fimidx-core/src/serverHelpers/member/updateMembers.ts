@@ -2,7 +2,7 @@ import { chunk } from "lodash-es";
 import type { UpdateMembersEndpointArgs } from "../../definitions/member.js";
 import { kObjTags } from "../../definitions/obj.js";
 import type { IObjStorage } from "../../storage/types.js";
-import { updateManyObjs } from "../obj/updateObjs.js";
+import { splitMetaUpdate, updateManyObjs } from "../obj/updateObjs.js";
 import { getMembers, getMembersObjQuery } from "./getMembers.js";
 import { updateMemberPermissions } from "./updateMemberPermissions.js";
 
@@ -15,7 +15,7 @@ export async function updateMembers(params: {
   storage?: IObjStorage;
 }) {
   const { args, by, byType, storage } = params;
-  const { update, updateMany } = args;
+  const { update, updateMany, metaUpdateWay } = args;
 
   const {
     addPermissions,
@@ -25,16 +25,22 @@ export async function updateMembers(params: {
   } = update;
 
   const objQuery = getMembersObjQuery({ args });
-  await updateManyObjs({
-    objQuery,
-    tag: kObjTags.member,
-    by,
-    byType,
-    update: restUpdate,
-    count: updateMany ? undefined : 1,
-    updateWay: "merge",
-    storage,
-  });
+
+  // Split meta update for granular handling
+  const hasUpdates = Object.keys(restUpdate).length > 0;
+  if (hasUpdates) {
+    const updates = splitMetaUpdate(restUpdate, metaUpdateWay);
+    await updateManyObjs({
+      objQuery,
+      tag: kObjTags.member,
+      by,
+      byType,
+      updates,
+      count: updateMany ? undefined : 1,
+      updateWay: "shallowMerge",
+      storage,
+    });
+  }
 
   const hasPermissionUpdates =
     addPermissions?.length || removePermissions?.length || removeAllPermissions;

@@ -4,6 +4,7 @@ import {
   numberMetaQuerySchema,
   objRecordQueryListSchema,
   objSortListSchema,
+  onConflictSchema,
   stringMetaQuerySchema,
 } from "./obj.js";
 
@@ -177,11 +178,13 @@ export const removePermissionMatchSchema = z.object({
 export const updatePermissionsSchema = z.object({
   query: permissionQuerySchema,
   update: z.object({
+    meta: inputObjRecordSchema.optional(),
     addPermissions: z.array(addPermissionItemSchema).max(100).optional(),
     removePermissions: z.array(removePermissionMatchSchema).max(100).optional(),
     removeAllPermissions: z.boolean().optional(),
   }),
   updateMany: z.boolean().optional(),
+  metaUpdateWay: onConflictSchema.optional(),
 });
 
 export const deletePermissionsSchema = z.object({

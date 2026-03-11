@@ -28,15 +28,18 @@ function makeUpdateProjectsArgs(
   const uniqueId = `${testCounter}_${Date.now()}_${Math.random()
     .toString(36)
     .substr(2, 9)}`;
-  const { query: overridesQuery, update: overridesUpdate, ...restOverrides } =
-    overrides;
+  const {
+    query: overridesQuery,
+    update: overridesUpdate,
+    ...restOverrides
+  } = overrides;
   return {
     query: {
       orgId: defaultGroupId,
       ...overridesQuery,
     },
     update: {
-      name: `Updated Project Name ${uniqueId}`,
+      // name: `Updated Project Name ${uniqueId}`,
       ...overridesUpdate,
     },
     ...restOverrides,

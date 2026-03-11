@@ -1,8 +1,8 @@
 import type { GetMembersEndpointArgs } from "../../definitions/member.js";
 import {
   kObjTags,
-  type IObjRecordQueryItem,
   type IObjQuery,
+  type IObjRecordQueryItem,
 } from "../../definitions/obj.js";
 import type { IPermissionAtom } from "../../definitions/permission.js";
 import type { IObjStorage } from "../../storage/types.js";

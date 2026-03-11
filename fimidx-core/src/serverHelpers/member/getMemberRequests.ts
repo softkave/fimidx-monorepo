@@ -1,18 +1,11 @@
-import assert from "assert";
-import { isArray, uniq } from "lodash-es";
-import { indexArray } from "softkave-js-utils";
-import { kOwnServerErrorCodes, OwnServerError } from "../../common/error.js";
 import type { GetMemberRequestsEndpointArgs } from "../../definitions/member.js";
 import {
   kObjTags,
-  type IObjRecordQueryItem,
   type IObjQuery,
+  type IObjRecordQueryItem,
 } from "../../definitions/obj.js";
-import type { IPermission } from "../../definitions/permission.js";
 import type { IObjStorage } from "../../storage/types.js";
 import { getManyObjs } from "../obj/getObjs.js";
-import { getMembersPermissions } from "./getMembers.js";
-import { objToMember } from "./objToMember.js";
 import { objToMemberRequest } from "./objToMemberRequest.js";
 
 export function getMemberRequestsObjQuery(params: {
@@ -23,13 +16,6 @@ export function getMemberRequestsObjQuery(params: {
   const { projectId, groupId, id, status } = query;
 
   const filterArr: Array<IObjRecordQueryItem> = [];
-
-  if (!groupId && !id) {
-    throw new OwnServerError(
-      "Either groupId or id is required",
-      kOwnServerErrorCodes.InvalidRequest
-    );
-  }
 
   if (status) {
     filterArr.push({
@@ -73,65 +59,6 @@ export async function getMemberRequests(params: {
     storage,
   });
 
-  const memberIds = uniq(objs.map((obj) => obj.id));
-
-  if (!memberIds.length) {
-    return {
-      requests: [],
-      hasMore: false,
-      page: pageNumber,
-      limit: limitNumber,
-    };
-  }
-
-  if (args.includePermissions) {
-    assert.ok(
-      args.query.projectId,
-      new OwnServerError(
-        "Project ID is required",
-        kOwnServerErrorCodes.InvalidRequest
-      )
-    );
-    assert.ok(
-      args.query.groupId,
-      new OwnServerError(
-        "Group ID is required",
-        kOwnServerErrorCodes.InvalidRequest
-      )
-    );
-  }
-
-  const { permissions: memberPermissions } = args.includePermissions
-    ? await getMembersPermissions({
-        projectId: args.query.projectId,
-        memberIds,
-        groupId: args.query.groupId!,
-        storage,
-      })
-    : {
-        permissions: [],
-      };
-
-  const memberPermissionsMap = indexArray<IPermission, IPermission[]>(
-    memberPermissions,
-    {
-      indexer: (permission) => {
-        assert.ok(permission.meta, "Permission meta is required");
-        const meta = permission.meta as Record<string, string>;
-        return meta.__fimidx_managed_memberId;
-      },
-      reducer: (permission, _index, _arr, acc) => {
-        const arr: IPermission[] = isArray(acc) ? acc : [];
-        arr.push(permission);
-        return arr;
-      },
-    }
-  );
-
-  const members = objs.map((obj) => {
-    const perms = memberPermissionsMap[obj.id] ?? null;
-    return objToMember(obj, perms);
-  });
   const requests = await objToMemberRequest({ objs });
 
   return {

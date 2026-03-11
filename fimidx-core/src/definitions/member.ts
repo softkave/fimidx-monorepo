@@ -1,6 +1,7 @@
 import type { ValueOf } from "type-fest";
 import { z } from "zod";
 import {
+  inputObjRecordSchema,
   numberMetaQuerySchema,
   objRecordQueryListSchema,
   objSortListSchema,
@@ -83,7 +84,7 @@ export const addMemberSchema = z.object({
   permissions: z.array(memberPermissionSchema).max(100).optional(),
   /** Passed through as obj record as-is (no transformation). For internal use,
    * include reserved keys (e.g. status, statusUpdatedAt, userId) in meta. */
-  meta: z.record(z.string().min(1), z.string()).optional(),
+  meta: inputObjRecordSchema.optional(),
 });
 
 export const memberQuerySchema = z.object({
@@ -100,7 +101,7 @@ export const memberQuerySchema = z.object({
 export const updateMembersSchema = z.object({
   query: memberQuerySchema,
   update: z.object({
-    meta: z.record(z.string().min(1), z.string()).optional(),
+    meta: inputObjRecordSchema.optional(),
     addPermissions: z.array(memberPermissionSchema).max(100).optional(),
     removePermissions: z.array(memberPermissionSchema).max(100).optional(),
     removeAllPermissions: z.boolean().optional(),
@@ -146,7 +147,7 @@ export const respondToMemberRequestSchema = z.object({
 export const getMemberRequestsSchema = z.object({
   query: z.object({
     id: z.string().min(1).optional(),
-    groupId: z.string().min(1).optional(),
+    groupId: z.string().min(1),
     projectId: z.string().min(1),
     status: z
       .enum([
@@ -158,7 +159,6 @@ export const getMemberRequestsSchema = z.object({
   }),
   page: z.number().min(1).optional(),
   limit: z.number().min(1).optional(),
-  includePermissions: z.boolean().optional(),
 });
 
 export const checkMemberPermissionsSchema = z.object({

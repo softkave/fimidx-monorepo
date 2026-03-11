@@ -17,6 +17,6 @@ export function objToMember(
     projectId: obj.projectId,
     groupId: obj.groupId,
     permissions,
-    meta: obj.objRecord && Object.keys(obj.objRecord).length > 0 ? (obj.objRecord as Record<string, string>) : undefined,
+    meta: obj.objRecord?.meta,
   };
 }

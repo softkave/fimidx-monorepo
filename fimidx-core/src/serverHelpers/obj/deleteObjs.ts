@@ -14,6 +14,7 @@ export async function deleteManyObjs(params: {
   deleteMany?: boolean;
   storageType?: "mongo" | "postgres";
   storage?: IObjStorage;
+  hardDelete?: boolean;
 }) {
   const {
     objQuery,
@@ -24,6 +25,7 @@ export async function deleteManyObjs(params: {
     deleteMany = false,
     storageType = getDefaultStorageType(),
     storage = createStorage({ type: storageType }),
+    hardDelete = false,
   } = params;
 
   // Fetch fields for query generation
@@ -51,7 +53,7 @@ export async function deleteManyObjs(params: {
     deletedByType,
     deleteMany,
     batchSize: 1000,
-    hardDelete: false,
+    hardDelete,
     fields: fieldsMap,
   });
 

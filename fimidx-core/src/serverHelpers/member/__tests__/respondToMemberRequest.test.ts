@@ -31,13 +31,16 @@ describe("respondToMemberRequest integration", () => {
     return {
       projectId,
       groupId,
+      permissions: [],
+      ...overrides,
       meta: {
         name: testData.name,
         userId: testData.memberId,
         email: testData.email,
+        status: kMemberStatus.pending,
+        statusUpdatedAt: new Date(),
+        ...overrides.meta,
       },
-      permissions: [],
-      ...overrides,
     };
   }
 
@@ -72,7 +75,12 @@ describe("respondToMemberRequest integration", () => {
   it("accepts a pending member request successfully", async () => {
     // Create a pending member (status in meta)
     const memberArgs = makeAddMemberArgs({
-      meta: { name: "Test", userId: "test-member", email: "t@test.com", status: kMemberStatus.pending },
+      meta: {
+        name: "Test",
+        userId: "test-member",
+        email: "t@test.com",
+        status: kMemberStatus.pending,
+      },
     });
 
     const member = await addMember({
@@ -113,7 +121,12 @@ describe("respondToMemberRequest integration", () => {
   it("rejects a pending member request successfully", async () => {
     // Create a pending member (status in meta)
     const memberArgs = makeAddMemberArgs({
-      meta: { name: "Test", userId: "test-member", email: "t@test.com", status: kMemberStatus.pending },
+      meta: {
+        name: "Test",
+        userId: "test-member",
+        email: "t@test.com",
+        status: kMemberStatus.pending,
+      },
     });
 
     const member = await addMember({
@@ -167,7 +180,12 @@ describe("respondToMemberRequest integration", () => {
   it("throws error when member status is not pending", async () => {
     // Create an accepted member (status in meta)
     const memberArgs = makeAddMemberArgs({
-      meta: { name: "Test", userId: "test-member", email: "t@test.com", status: kMemberStatus.accepted },
+      meta: {
+        name: "Test",
+        userId: "test-member",
+        email: "t@test.com",
+        status: kMemberStatus.accepted,
+      },
     });
 
     const member = await addMember({
@@ -193,7 +211,12 @@ describe("respondToMemberRequest integration", () => {
   it("handles different project IDs", async () => {
     // Create a pending member in a different project (status in meta)
     const memberArgs = makeAddMemberArgs({
-      meta: { name: "Test", userId: "test-member-respondToMemberRequest", email: "t@test.com", status: kMemberStatus.pending },
+      meta: {
+        name: "Test",
+        userId: "test-member-respondToMemberRequest",
+        email: "t@test.com",
+        status: kMemberStatus.pending,
+      },
       projectId: "different-project",
     });
 
@@ -233,7 +256,12 @@ describe("respondToMemberRequest integration", () => {
   it("handles different group IDs", async () => {
     // Create a pending member in a different group (status in meta)
     const memberArgs = makeAddMemberArgs({
-      meta: { name: "Test", userId: "test-member", email: "t@test.com", status: kMemberStatus.pending },
+      meta: {
+        name: "Test",
+        userId: "test-member",
+        email: "t@test.com",
+        status: kMemberStatus.pending,
+      },
       groupId: "different-group",
     });
 
@@ -273,7 +301,12 @@ describe("respondToMemberRequest integration", () => {
   it("updates statusUpdatedAt timestamp", async () => {
     // Create a pending member (status in meta)
     const memberArgs = makeAddMemberArgs({
-      meta: { name: "Test", userId: "test-member", email: "t@test.com", status: kMemberStatus.pending },
+      meta: {
+        name: "Test",
+        userId: "test-member",
+        email: "t@test.com",
+        status: kMemberStatus.pending,
+      },
     });
 
     const member = await addMember({
@@ -312,7 +345,10 @@ describe("respondToMemberRequest integration", () => {
     expect(members).toHaveLength(1);
     expect(members[0].meta?.statusUpdatedAt).toBeDefined();
     const statusUpdatedAtVal = members[0].meta?.statusUpdatedAt;
-    const ts = typeof statusUpdatedAtVal === "string" ? new Date(statusUpdatedAtVal).getTime() : Number(statusUpdatedAtVal);
+    const ts =
+      typeof statusUpdatedAtVal === "string"
+        ? new Date(statusUpdatedAtVal).getTime()
+        : Number(statusUpdatedAtVal);
     expect(ts).toBeGreaterThanOrEqual(beforeTime.getTime());
     expect(ts).toBeLessThanOrEqual(afterTime.getTime() + 1000);
   });
@@ -320,7 +356,12 @@ describe("respondToMemberRequest integration", () => {
   it("handles multiple status updates to the same member", async () => {
     // Create a pending member (status in meta)
     const memberArgs = makeAddMemberArgs({
-      meta: { name: "Test", userId: "test-member", email: "t@test.com", status: kMemberStatus.pending },
+      meta: {
+        name: "Test",
+        userId: "test-member",
+        email: "t@test.com",
+        status: kMemberStatus.pending,
+      },
     });
 
     const member = await addMember({

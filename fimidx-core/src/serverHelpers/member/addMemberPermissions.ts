@@ -22,12 +22,7 @@ export function getFimidxManagedMemberPermissionAction(params: {
   memberId: string;
 }) {
   const { action, memberId } = params;
-  return isString(action)
-    ? action
-    : {
-        ...action,
-        __fimidx_managed_permission_action_memberId: memberId,
-      };
+  return action;
 }
 
 export function getFimidxManagedMemberPermissionTarget(params: {
@@ -35,12 +30,7 @@ export function getFimidxManagedMemberPermissionTarget(params: {
   memberId: string;
 }) {
   const { target, memberId } = params;
-  return isString(target)
-    ? target
-    : {
-        ...target,
-        __fimidx_managed_permission_target_memberId: memberId,
-      };
+  return target;
 }
 
 export function getFimidxManagedMemberPermission(params: {
@@ -79,9 +69,7 @@ export function getOriginalMemberPermissionAction(params: {
   if (isString(action)) {
     return action;
   }
-  const { __fimidx_managed_permission_action_memberId, ...originalAction } =
-    action;
-  return originalAction as IPermissionAction;
+  return action;
 }
 
 export function getOriginalMemberPermissionTarget(params: {
@@ -92,9 +80,7 @@ export function getOriginalMemberPermissionTarget(params: {
   if (isString(target)) {
     return target;
   }
-  const { __fimidx_managed_permission_target_memberId, ...originalTarget } =
-    target;
-  return originalTarget as IPermissionTarget;
+  return target;
 }
 
 export function getOriginalMemberPermission(params: {

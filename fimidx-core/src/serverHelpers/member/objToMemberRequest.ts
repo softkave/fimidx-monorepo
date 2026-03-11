@@ -1,10 +1,11 @@
-import type { IFimidxMemberInternal, IMemberRequest } from "../../definitions/member.js";
+import type {
+  IFimidxMemberInternal,
+  IMemberRequest,
+} from "../../definitions/member.js";
 import type { IObj } from "../../definitions/obj.js";
 import { getGroups } from "../group/getGroups.js";
 
-export async function objToMemberRequest(params: {
-  objs: IObj[];
-}) {
+export async function objToMemberRequest(params: { objs: IObj[] }) {
   const { objs } = params;
 
   if (objs.length === 0) {
@@ -27,13 +28,15 @@ export async function objToMemberRequest(params: {
 
   return objs
     .map((obj): IMemberRequest | null => {
-      const record = obj.objRecord as IFimidxMemberInternal | undefined;
+      const record = obj.objRecord.meta as IFimidxMemberInternal | undefined;
       const status = record?.status;
       const updatedAt = record?.statusUpdatedAt;
       const groupName = groupMap.get(obj.groupId) ?? "";
+      console.log("groupName", { groupName, status, updatedAt });
       if (!groupName || status == null || updatedAt == null) {
         return null;
       }
+
       return {
         id: obj.id,
         groupId: obj.groupId,

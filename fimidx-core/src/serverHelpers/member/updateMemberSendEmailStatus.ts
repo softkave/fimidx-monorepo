@@ -23,9 +23,7 @@ export async function updateMemberSendEmailStatus(params: {
     storage,
   } = params;
   const update: Record<string, unknown> = {
-    sentEmailCount,
-    emailLastSentAt,
-    emailLastSentStatus,
+    meta: { sentEmailCount, emailLastSentAt, emailLastSentStatus },
   };
 
   await updateManyObjs({

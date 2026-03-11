@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  inputObjRecordSchema,
   numberMetaQuerySchema,
   objRecordQueryListSchema,
   objSortListSchema,
@@ -122,9 +123,7 @@ export interface IPermissionObjRecord {
   meta?: IPermissionMeta;
 }
 
-export const entitySchema = z
-  .record(z.string().min(1), z.string())
-  .or(z.string().min(1));
+export const entitySchema = inputObjRecordSchema.or(z.string().min(1));
 export const actionSchema = entitySchema;
 export const targetSchema = entitySchema;
 
@@ -138,11 +137,7 @@ export const permissionAtomSchema = z.object({
 
 export const addPermissionItemSchema = permissionAtomSchema.extend({
   description: z.string().optional(),
-  meta: z
-    .record(z.string().min(1), z.string())
-    .optional()
-    .nullable()
-    .or(z.null()),
+  meta: inputObjRecordSchema.optional().nullable().or(z.null()),
 });
 
 export const addPermissionsSchema = z.object({

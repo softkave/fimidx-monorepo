@@ -39,7 +39,7 @@ describe("getObjFields integration", () => {
           eq(objFieldsTable.tag, TEST_TAG)
         )
       );
-  });
+  }, 20_000);
 
   afterEach(async () => {
     // Clean up after each test

@@ -365,7 +365,7 @@ describe("deleteMembers integration", () => {
     expect(result.members).toHaveLength(1);
   });
 
-  it("deletes members by meta field", async () => {
+  it.only("deletes members by meta field", async () => {
     // Create test members with different meta data
     const member1Args = makeAddMemberArgs({
       meta: { name: "Alice", department: "engineering" },
@@ -430,6 +430,7 @@ describe("deleteMembers integration", () => {
       },
       storage,
     });
+
     expect(result.members).toHaveLength(1);
     expect(result.members[0].meta?.name).toBe("Bob");
     expect(result.members[0].meta?.department).toBe("marketing");

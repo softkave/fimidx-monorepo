@@ -20,5 +20,6 @@ export async function deleteMembers(
     deletedByType: byType,
     deleteMany,
     storage,
+    hardDelete: true,
   });
 }

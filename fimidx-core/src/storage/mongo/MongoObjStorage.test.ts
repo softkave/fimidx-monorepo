@@ -167,6 +167,7 @@ describe("MongoObjStorage (integration)", () => {
       deletedBy: "bulk-deleter",
       deletedByType: "user",
       deleteMany: true,
+      hardDelete: true,
     });
 
     expect(result.deletedCount).toBe(3);
@@ -2098,7 +2099,10 @@ describe("MongoObjStorage (integration)", () => {
     });
 
     it("should use provided date for deletedAt", async () => {
-      const obj = makeObjFields({ tag: "deldate-tag", projectId: "deldate-project" });
+      const obj = makeObjFields({
+        tag: "deldate-tag",
+        projectId: "deldate-project",
+      });
       await objModel.create(obj);
       const deleteDate = new Date("2022-05-15T12:00:00Z");
       await storage.delete({
@@ -2196,7 +2200,9 @@ describe("MongoObjStorage (integration)", () => {
       });
       expect(result.updatedCount).toBe(2);
       expect(result.totalProcessed).toBe(2);
-      const touched = await objModel.countDocuments({ "objRecord.touched": true });
+      const touched = await objModel.countDocuments({
+        "objRecord.touched": true,
+      });
       expect(touched).toBe(2);
     });
 
@@ -2216,7 +2222,8 @@ describe("MongoObjStorage (integration)", () => {
         update: { x: 1 },
         by: "u",
         byType: "user",
-        onProgress: (processed, total) => progressCalls.push([processed, total]),
+        onProgress: (processed, total) =>
+          progressCalls.push([processed, total]),
       });
       expect(progressCalls.length).toBeGreaterThanOrEqual(1);
       expect(progressCalls.some(([p]) => p === 3)).toBe(true);

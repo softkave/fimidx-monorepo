@@ -91,7 +91,11 @@ describe("updateMembers integration", () => {
   it("updates member name", async () => {
     // Create a test member
     const memberArgs = makeAddMemberArgs({
-      meta: { name: "Original Name", userId: "member-name-test", email: "name@test.com" },
+      meta: {
+        name: "Original Name",
+        userId: "member-name-test",
+        email: "name@test.com",
+      },
     }) as Parameters<typeof addMember>[0]["args"];
     const addResult = await addMember({
       args: memberArgs,
@@ -136,7 +140,12 @@ describe("updateMembers integration", () => {
   it("updates member description (in meta)", async () => {
     // Create a test member
     const memberArgs = makeAddMemberArgs({
-      meta: { name: "Test", userId: "member-desc-test", email: "d@test.com", description: "Original description" },
+      meta: {
+        name: "Test",
+        userId: "member-desc-test",
+        email: "d@test.com",
+        description: "Original description",
+      },
     }) as Parameters<typeof addMember>[0]["args"];
     const addResult = await addMember({
       args: memberArgs,
@@ -181,7 +190,11 @@ describe("updateMembers integration", () => {
   it("updates member email (in meta)", async () => {
     // Create a test member
     const memberArgs = makeAddMemberArgs({
-      meta: { name: "Test", userId: "member-email-test", email: "original@example.com" },
+      meta: {
+        name: "Test",
+        userId: "member-email-test",
+        email: "original@example.com",
+      },
     }) as Parameters<typeof addMember>[0]["args"];
     const addResult = await addMember({
       args: memberArgs,
@@ -226,7 +239,13 @@ describe("updateMembers integration", () => {
   it("updates member meta data", async () => {
     // Create a test member
     const memberArgs = makeAddMemberArgs({
-      meta: { name: "Test", userId: "member-meta-test", email: "m@test.com", department: "engineering", level: "junior" },
+      meta: {
+        name: "Test",
+        userId: "member-meta-test",
+        email: "m@test.com",
+        department: "engineering",
+        level: "junior",
+      },
     }) as Parameters<typeof addMember>[0]["args"];
     const addResult = await addMember({
       args: memberArgs,
@@ -277,7 +296,12 @@ describe("updateMembers integration", () => {
   it("updates multiple fields at once", async () => {
     // Create a test member
     const memberArgs = makeAddMemberArgs({
-      meta: { name: "Original Name", userId: "multi-fields", email: "original@example.com", description: "Original description" },
+      meta: {
+        name: "Original Name",
+        userId: "multi-fields",
+        email: "original@example.com",
+        description: "Original description",
+      },
     }) as Parameters<typeof addMember>[0]["args"];
     const addResult = await addMember({
       args: memberArgs,
@@ -538,7 +562,9 @@ describe("updateMembers integration", () => {
         query: {
           projectId: defaultProjectId,
           groupId: defaultGroupId,
-          meta: [{ op: "eq" as const, field: "email", value: "alice@example.com" }],
+          meta: [
+            { op: "eq" as const, field: "email", value: "alice@example.com" },
+          ],
         },
         update: {
           meta: { description: "Updated Alice only" },
@@ -561,7 +587,9 @@ describe("updateMembers integration", () => {
     });
 
     expect(result.members).toHaveLength(2);
-    const alice = result.members.find((m) => m.meta?.email === "alice@example.com");
+    const alice = result.members.find(
+      (m) => m.meta?.email === "alice@example.com"
+    );
     const bob = result.members.find((m) => m.meta?.email === "bob@example.com");
 
     expect(alice?.meta?.description).toBe("Updated Alice only");

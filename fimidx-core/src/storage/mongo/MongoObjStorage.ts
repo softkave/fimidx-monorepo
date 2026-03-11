@@ -789,7 +789,6 @@ export class MongoObjStorage implements IObjStorage {
       case "replace":
         return updateRecord;
       case "merge":
-        return { ...existingRecord, ...updateRecord };
       case "mergeButReplaceArrays":
         return mergeObjects(existingRecord, updateRecord, {
           arrayUpdateStrategy: "replace",

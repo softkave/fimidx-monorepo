@@ -3,8 +3,7 @@ import type { UpdateMembersEndpointArgs } from "../../definitions/member.js";
 import { kObjTags } from "../../definitions/obj.js";
 import type { IObjStorage } from "../../storage/types.js";
 import { updateManyObjs } from "../obj/updateObjs.js";
-import { getMembers } from "./getMembers.js";
-import { getMembersObjQuery } from "./getMembers.js";
+import { getMembers, getMembersObjQuery } from "./getMembers.js";
 import { updateMemberPermissions } from "./updateMemberPermissions.js";
 
 const CHUNK_SIZE = 50;
@@ -38,9 +37,7 @@ export async function updateMembers(params: {
   });
 
   const hasPermissionUpdates =
-    addPermissions?.length ||
-    removePermissions?.length ||
-    removeAllPermissions;
+    addPermissions?.length || removePermissions?.length || removeAllPermissions;
   if (hasPermissionUpdates) {
     const { members } = await getMembers({
       args: { query: args.query, includePermissions: false },

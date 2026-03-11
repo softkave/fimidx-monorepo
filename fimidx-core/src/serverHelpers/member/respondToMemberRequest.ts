@@ -1,11 +1,11 @@
 import assert from "assert";
 import { first } from "lodash-es";
 import { OwnServerError } from "../../common/error.js";
+import type { IFimidxMemberInternal } from "../../definitions/member.js";
 import {
   kMemberStatus,
   type RespondToMemberRequestEndpointArgs,
 } from "../../definitions/member.js";
-import type { IFimidxMemberInternal } from "../../definitions/member.js";
 import { kObjTags } from "../../definitions/obj.js";
 import { kId0 } from "../../definitions/system.js";
 import type { IObjStorage } from "../../storage/types.js";
@@ -35,15 +35,14 @@ export async function respondToMemberRequest(params: {
 
   const obj = first(objs);
   assert.ok(obj, new OwnServerError("Member request not found", 404));
-  const record = obj.objRecord as IFimidxMemberInternal | undefined;
+  const record = obj.objRecord.meta as IFimidxMemberInternal | undefined;
   assert.ok(
     record?.status === kMemberStatus.pending,
     new OwnServerError("Invalid status", 400)
   );
 
   const update: Record<string, unknown> = {
-    status,
-    statusUpdatedAt: new Date(),
+    meta: { status, statusUpdatedAt: new Date() },
   };
 
   await updateManyObjs({

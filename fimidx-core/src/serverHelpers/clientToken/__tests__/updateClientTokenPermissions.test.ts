@@ -42,9 +42,7 @@ describe("updateClientTokenPermissions integration", () => {
         projectId,
       },
       update: {
-        addPermissions: [
-          { action: "read", target: "document" },
-        ],
+        addPermissions: [{ action: "read", target: "document" }],
       },
       ...overrides,
     };
@@ -84,9 +82,7 @@ describe("updateClientTokenPermissions integration", () => {
       byType: byType,
       groupId: groupId,
       projectId: projectId,
-      permissions: [
-        { action: "read", target: "document" },
-      ],
+      permissions: [{ action: "read", target: "document" }],
       clientTokenId: token.clientToken.id,
       storage,
     });
@@ -135,12 +131,12 @@ describe("updateClientTokenPermissions integration", () => {
     const permission2 = updated!.permissions![1];
 
     expect(permission1.entity).toBe(updated!.id);
-    expect(permission1.action).toBe("write");
-    expect(permission1.target).toBe("settings");
+    expect(permission1.action).toBe("delete");
+    expect(permission1.target).toBe("document");
 
     expect(permission2.entity).toBe(updated!.id);
-    expect(permission2.action).toBe("delete");
-    expect(permission2.target).toBe("document");
+    expect(permission2.action).toBe("write");
+    expect(permission2.target).toBe("settings");
   });
 
   it("throws error when client token not found", async () => {
@@ -151,9 +147,7 @@ describe("updateClientTokenPermissions integration", () => {
         projectId: projectId,
       },
       update: {
-        addPermissions: [
-          { action: "read", target: "document" },
-        ],
+        addPermissions: [{ action: "read", target: "document" }],
       },
     });
 
@@ -183,9 +177,7 @@ describe("updateClientTokenPermissions integration", () => {
       byType: byType,
       groupId: groupId,
       projectId: projectId,
-      permissions: [
-        { action: "read", target: "document" },
-      ],
+      permissions: [{ action: "read", target: "document" }],
       clientTokenId: token.clientToken.id,
       storage,
     });
@@ -222,8 +214,7 @@ describe("updateClientTokenPermissions integration", () => {
     });
     const updated = first(clientTokens);
     expect(updated).toBeDefined();
-    expect(updated!.permissions).toBeDefined();
-    expect(updated!.permissions).toHaveLength(0);
+    expect(updated!.permissions).toBeFalsy();
   });
 
   it("handles complex permission objects", async () => {

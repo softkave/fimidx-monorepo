@@ -225,7 +225,11 @@ describe("getMembers integration", () => {
   it("filters by name", async () => {
     // Create test members (filter by meta.name)
     const member1Args = makeAddMemberArgs({
-      meta: { name: "Alice Member", userId: "alice-m", email: "alice@test.com" },
+      meta: {
+        name: "Alice Member",
+        userId: "alice-m",
+        email: "alice@test.com",
+      },
     });
     const member2Args = makeAddMemberArgs({
       meta: { name: "Bob Member", userId: "bob-m", email: "bob@test.com" },
@@ -289,7 +293,9 @@ describe("getMembers integration", () => {
       query: {
         projectId: defaultProjectId,
         groupId: defaultGroupId,
-        meta: [{ op: "eq" as const, field: "email", value: "alice@example.com" }],
+        meta: [
+          { op: "eq" as const, field: "email", value: "alice@example.com" },
+        ],
       },
     });
 
@@ -388,7 +394,11 @@ describe("getMembers integration", () => {
     const members = [];
     for (let i = 0; i < 5; i++) {
       const memberArgs = makeAddMemberArgs({
-        meta: { name: `Member ${i}`, userId: `member-${i}`, email: `m${i}@test.com` },
+        meta: {
+          name: `Member ${i}`,
+          userId: `member-${i}`,
+          email: `m${i}@test.com`,
+        },
       });
       members.push(memberArgs);
 

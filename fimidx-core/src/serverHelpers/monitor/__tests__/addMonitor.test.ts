@@ -143,20 +143,18 @@ describe("addMonitor integration", () => {
       { userId: "user3" },
     ]);
     expect(result.monitor.interval).toEqual({ hours: 6 });
-    expect(result.monitor.query).toEqual({
-      and: [
-        {
-          op: "eq",
-          field: "level",
-          value: "error",
-        },
-        {
-          op: "gt",
-          field: "count",
-          value: 10,
-        },
-      ],
-    });
+    expect(result.monitor.query).toEqual([
+      {
+        op: "eq",
+        field: "level",
+        value: "error",
+      },
+      {
+        op: "gt",
+        field: "count",
+        value: 10,
+      },
+    ]);
     expect(result.monitor.projectId).toBe(defaultProjectId);
     expect(result.monitor.groupId).toBe(defaultGroupId);
     expect(result.monitor.createdBy).toBe(defaultBy);
@@ -337,19 +335,17 @@ describe("addMonitor integration", () => {
       storage,
     });
 
-    expect(result.monitor.query).toEqual({
-      or: [
-        {
-          op: "eq",
-          field: "level",
-          value: "error",
-        },
-        {
-          op: "like",
-          field: "message",
-          value: "critical",
-        },
-      ],
-    });
+    expect(result.monitor.query).toEqual([
+      {
+        op: "eq",
+        field: "level",
+        value: "error",
+      },
+      {
+        op: "like",
+        field: "message",
+        value: "critical",
+      },
+    ]);
   });
 });

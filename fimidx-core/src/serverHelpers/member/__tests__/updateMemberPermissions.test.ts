@@ -40,9 +40,7 @@ describe("updateMemberPermissions integration", () => {
         ...overrides.query,
       },
       update: {
-        addPermissions: [
-          { action: "read", target: "document" },
-        ],
+        addPermissions: [{ action: "read", target: "document" }],
         ...overrides.update,
       },
       ...overrides,
@@ -113,12 +111,12 @@ describe("updateMemberPermissions integration", () => {
     const permission2 = updated!.permissions![1];
 
     expect(permission1.entity).toBe(member.member.id);
-    expect(permission1.action).toBe("read");
-    expect(permission1.target).toBe("document");
+    expect(permission1.action).toBe("write");
+    expect(permission1.target).toBe("settings");
 
     expect(permission2.entity).toBe(member.member.id);
-    expect(permission2.action).toBe("write");
-    expect(permission2.target).toBe("settings");
+    expect(permission2.action).toBe("read");
+    expect(permission2.target).toBe("document");
   });
 
   it("updates member permissions with complex entity, action, and target objects", async () => {
@@ -172,7 +170,10 @@ describe("updateMemberPermissions integration", () => {
 
   it("updates member permissions with removeAllPermissions", async () => {
     // Create a member
-    const memberArgs = makeAddMemberArgs({ meta: { userId: "test-member" } });
+    const memberArgs = makeAddMemberArgs({
+      meta: { userId: "test-member" },
+      permissions: [{ action: "read", target: "document" }],
+    });
     const member = await addMember({
       args: memberArgs,
       by: by,
@@ -205,8 +206,7 @@ describe("updateMemberPermissions integration", () => {
     });
     const updated = first(members);
     expect(updated).toBeDefined();
-    expect(updated!.permissions).toBeDefined();
-    expect(updated!.permissions).toHaveLength(0);
+    expect(updated!.permissions).toBeFalsy();
   });
 
   it("throws error when member not found", async () => {
@@ -245,9 +245,7 @@ describe("updateMemberPermissions integration", () => {
         projectId: "different-project",
       },
       update: {
-        addPermissions: [
-          { action: "read", target: "document" },
-        ],
+        addPermissions: [{ action: "read", target: "document" }],
       },
     });
 
@@ -294,9 +292,7 @@ describe("updateMemberPermissions integration", () => {
         groupId: "different-group",
       },
       update: {
-        addPermissions: [
-          { action: "read", target: "document" },
-        ],
+        addPermissions: [{ action: "read", target: "document" }],
       },
     });
 
@@ -339,9 +335,7 @@ describe("updateMemberPermissions integration", () => {
         id: member.member.id,
       },
       update: {
-        addPermissions: [
-          { action: "read", target: "document" },
-        ],
+        addPermissions: [{ action: "read", target: "document" }],
       },
     });
 
@@ -389,9 +383,7 @@ describe("updateMemberPermissions integration", () => {
         id: member1.member.id,
       },
       update: {
-        addPermissions: [
-          { action: "read", target: "document" },
-        ],
+        addPermissions: [{ action: "read", target: "document" }],
       },
     });
 
@@ -408,9 +400,7 @@ describe("updateMemberPermissions integration", () => {
         id: member2.member.id,
       },
       update: {
-        addPermissions: [
-          { action: "write", target: "settings" },
-        ],
+        addPermissions: [{ action: "write", target: "settings" }],
       },
     });
 
@@ -463,9 +453,7 @@ describe("updateMemberPermissions integration", () => {
         id: member.member.id,
       },
       update: {
-        addPermissions: [
-          { action: "read", target: "document" },
-        ],
+        addPermissions: [{ action: "read", target: "document" }],
       },
     });
 

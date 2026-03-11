@@ -9,9 +9,10 @@ import {
   it,
 } from "vitest";
 import type { AddGroupEndpointArgs } from "../../../definitions/group.js";
-import type {
-  AddMemberEndpointArgs,
-  GetMemberRequestsEndpointArgs,
+import {
+  kMemberStatus,
+  type AddMemberEndpointArgs,
+  type GetMemberRequestsEndpointArgs,
 } from "../../../definitions/member.js";
 import { addGroup } from "../../group/addGroup.js";
 import { addMember } from "../addMember.js";
@@ -44,13 +45,16 @@ describe("getMemberRequests integration", () => {
     return {
       projectId,
       groupId,
+      permissions: [],
+      ...overrides,
       meta: {
         name: testData.name,
         userId: testData.memberId,
         email: testData.email,
+        status: kMemberStatus.pending,
+        statusUpdatedAt: new Date(),
+        ...overrides.meta,
       },
-      permissions: [],
-      ...overrides,
     };
   }
 
@@ -99,13 +103,24 @@ describe("getMemberRequests integration", () => {
 
     // Create test members
     const member1Args = makeAddMemberArgs({
-      meta: { name: "Member 1", userId: "member-1", email: "m1@test.com" },
+      meta: {
+        name: "Member 1",
+        userId: "member-1",
+        email: "m1@test.com",
+      },
       groupId: group.id,
     });
     const member2Args = makeAddMemberArgs({
-      meta: { name: "Member 2", userId: "member-2", email: "m2@test.com" },
+      meta: {
+        name: "Member 2",
+        userId: "member-2",
+        email: "m2@test.com",
+      },
       groupId: group.id,
     });
+
+    console.log("member1Args", member1Args);
+    console.log("member2Args", member2Args);
 
     await addMember({
       args: member1Args,
@@ -216,7 +231,11 @@ describe("getMemberRequests integration", () => {
     await Promise.all(
       range(5).map(async (i) => {
         const memberArgs = makeAddMemberArgs({
-          meta: { name: `Member ${i}`, userId: `member-${i}`, email: `m${i}@test.com` },
+          meta: {
+            name: `Member ${i}`,
+            userId: `member-${i}`,
+            email: `m${i}@test.com`,
+          },
           groupId: group.id,
         });
         await addMember({
@@ -405,7 +424,11 @@ describe("getMemberRequests integration", () => {
     await Promise.all(
       range(memberCount).map(async (i) => {
         const memberArgs = makeAddMemberArgs({
-          meta: { name: `Member ${i}`, userId: `member-${i}`, email: `m${i}@test.com` },
+          meta: {
+            name: `Member ${i}`,
+            userId: `member-${i}`,
+            email: `m${i}@test.com`,
+          },
           groupId: group.id,
         });
         await addMember({
@@ -452,7 +475,11 @@ describe("getMemberRequests integration", () => {
     await Promise.all(
       range(10).map(async (i) => {
         const memberArgs = makeAddMemberArgs({
-          meta: { name: `Member ${i}`, userId: `member-${i}`, email: `m${i}@test.com` },
+          meta: {
+            name: `Member ${i}`,
+            userId: `member-${i}`,
+            email: `m${i}@test.com`,
+          },
           groupId: group.id,
         });
         await addMember({

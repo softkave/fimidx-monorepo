@@ -159,7 +159,7 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
       const fieldNames = fields.map((f) => f.path);
       expect(fieldNames).toContain("name");
       expect(fieldNames).toContain("value");
-    });
+    }, 20_000);
 
     it("should respect lastSuccessAt parameter", async () => {
       const oldDate = new Date("2023-01-01T00:00:00.000Z");

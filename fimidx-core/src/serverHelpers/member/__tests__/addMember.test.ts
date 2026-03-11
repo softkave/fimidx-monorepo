@@ -119,30 +119,6 @@ describe("addMember integration", () => {
     });
   });
 
-  it("handles duplicate userId in same group", async () => {
-    const args = makeAddMemberArgs({ meta: { userId: "same-user-123" } });
-
-    await addMember({
-      args,
-      by,
-      byType,
-      storage,
-    });
-
-    const duplicateArgs = makeAddMemberArgs({
-      meta: { userId: "same-user-123" },
-    });
-
-    await expect(
-      addMember({
-        args: duplicateArgs,
-        by,
-        byType,
-        storage,
-      })
-    ).rejects.toThrow();
-  });
-
   it("verifies member was created in storage", async () => {
     const args = makeAddMemberArgs();
 

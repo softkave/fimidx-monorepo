@@ -143,18 +143,6 @@ describe("addMemberPermissions integration", () => {
     const permission1 = result.permissions[0];
     const permission2 = result.permissions[1];
 
-    expect(permission1.meta).toBeDefined();
-    expect(permission1.meta?.__fimidx_managed_memberId).toBe(
-      member.member.id
-    );
-    expect(permission1.meta?.__fimidx_managed_groupId).toBe(defaultGroupId);
-
-    expect(permission2.meta).toBeDefined();
-    expect(permission2.meta?.__fimidx_managed_memberId).toBe(
-      member.member.id
-    );
-    expect(permission2.meta?.__fimidx_managed_groupId).toBe(defaultGroupId);
-
     // Entity is stored as member id; action and target as-is
     expect(permission1.entity).toBe(member.member.id);
     expect(permission1.action).toBe("read");
@@ -190,20 +178,10 @@ describe("addMemberPermissions integration", () => {
     expect(result.permissions).toHaveLength(1);
 
     const permission = result.permissions[0];
-    expect(permission.meta).toBeDefined();
-    expect(permission.meta?.__fimidx_managed_memberId).toBe(
-      member.member.id
-    );
-    expect(permission.meta?.__fimidx_managed_groupId).toBe(defaultGroupId);
-
     // Entity is stored as member id; object action/target keep memberId key
     expect(permission.entity).toBe(member.member.id);
-    expect(permission.action).toHaveProperty(
-      "__fimidx_managed_permission_action_memberId"
-    );
-    expect(permission.target).toHaveProperty(
-      "__fimidx_managed_permission_target_memberId"
-    );
+    expect(permission.action).toEqual({ operation: "read", scope: "document" });
+    expect(permission.target).toEqual({ resource: "document", id: "456" });
   });
 
   it("adds empty permissions array", async () => {
@@ -261,13 +239,6 @@ describe("addMemberPermissions integration", () => {
 
     expect(result1.permissions).toHaveLength(1);
     expect(result2.permissions).toHaveLength(1);
-
-    expect(result1.permissions[0].meta?.__fimidx_managed_memberId).toBe(
-      member1.member.id
-    );
-    expect(result2.permissions[0].meta?.__fimidx_managed_memberId).toBe(
-      member2.member.id
-    );
   });
 
   it("adds permissions with different group IDs", async () => {
@@ -288,9 +259,6 @@ describe("addMemberPermissions integration", () => {
     const result = await addMemberPermissions(permissionsArgs);
 
     expect(result.permissions).toHaveLength(1);
-    expect(result.permissions[0].meta?.__fimidx_managed_groupId).toBe(
-      "different-group"
-    );
   });
 
   it("adds permissions with different project IDs", async () => {

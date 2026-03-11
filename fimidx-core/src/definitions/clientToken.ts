@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  inputObjRecordSchema,
   numberMetaQuerySchema,
   objRecordQueryListSchema,
   objSortListSchema,
@@ -55,7 +56,7 @@ export const addClientTokenSchema = z.object({
   projectId: z.string().min(1),
   name: z.string().min(1).optional(),
   description: z.string().optional(),
-  meta: z.record(z.string().min(1), z.string()).optional(),
+  meta: inputObjRecordSchema.optional(),
   permissions: z.array(clientTokenPermissionSchema).max(100).optional(),
 });
 
@@ -75,7 +76,7 @@ export const updateClientTokensSchema = z.object({
   update: z.object({
     name: z.string().min(1).optional(),
     description: z.string().optional(),
-    meta: z.record(z.string().min(1), z.string()).optional(),
+    meta: inputObjRecordSchema.optional(),
     addPermissions: z.array(clientTokenPermissionSchema).max(100).optional(),
     removePermissions: z.array(clientTokenPermissionSchema).max(100).optional(),
     removeAllPermissions: z.boolean().optional(),

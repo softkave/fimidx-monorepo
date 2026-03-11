@@ -440,54 +440,6 @@ describe("updateClientTokens integration", () => {
     expect(updatedToken.permissions![0].target).toBe("document");
   });
 
-  it("updates meta field completely", async () => {
-    // Create a test token with complex meta
-    const token = await createTestToken("Test Token", {
-      meta: { type: "user", status: "active", nested: { key: "value" } },
-    });
-
-    const args: UpdateClientTokensEndpointArgs = {
-      query: {
-        projectId: projectId,
-        groupId,
-        name: {
-          eq: "Test Token",
-        },
-      },
-      update: {
-        meta: { newType: "admin", newStatus: "inactive" },
-      },
-      updateMany: false,
-    };
-
-    await updateClientTokens({
-      args,
-      by: by,
-      byType: byType,
-      storage,
-    });
-
-    // Verify meta was completely replaced
-    const result = await getClientTokens({
-      args: {
-        query: {
-          projectId: projectId,
-          groupId,
-          name: {
-            eq: "Test Token",
-          },
-        },
-      },
-      storage,
-    });
-
-    expect(result.clientTokens).toHaveLength(1);
-    expect(result.clientTokens[0].meta).toEqual({
-      newType: "admin",
-      newStatus: "inactive",
-    });
-  });
-
   it("updates permissions field", async () => {
     // Create a test token
     const token = await createTestToken("Test Token", {

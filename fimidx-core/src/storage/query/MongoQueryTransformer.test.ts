@@ -24,7 +24,7 @@ describe("MongoQueryTransformer", () => {
         recordQuery: [{ op: "eq", field: "foo", value: "bar" }],
       };
       expect(transformer.transformFilter(query, now)).toEqual({
-        $and: [{ projectId: "project1" }, { "objRecord.foo": { $eq: "bar" } }],
+        $and: [{ "objRecord.foo": { $eq: "bar" } }, { projectId: "project1" }],
       });
     });
 
@@ -33,7 +33,8 @@ describe("MongoQueryTransformer", () => {
         metaQuery: { projectId: { eq: "project1" }, id: { eq: "id1" } },
       };
       expect(transformer.transformFilter(query, now)).toEqual({
-        $and: [{ projectId: "project1" }, { id: "id1" }],
+        projectId: "project1",
+        id: "id1",
       });
     });
 
@@ -44,9 +45,8 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now)).toEqual({
         $and: [
-          { projectId: "project1" },
           { "objRecord.foo": { $eq: "bar" } },
-          { id: "id1" },
+          { id: "id1", projectId: "project1" },
         ],
       });
     });
@@ -165,7 +165,7 @@ describe("MongoQueryTransformer", () => {
         recordQuery: [{ op: "neq", field: "foo", value: "bar" }],
       };
       expect(transformer.transformFilter(query, now)).toEqual({
-        $and: [{ projectId: "project1" }, { "objRecord.foo": { $ne: "bar" } }],
+        $and: [{ "objRecord.foo": { $ne: "bar" } }, { projectId: "project1" }],
       });
     });
 
@@ -181,8 +181,8 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now)).toEqual({
         $and: [
-          { projectId: "project1" },
           { "objRecord.num": { $gt: 5, $gte: 6, $lt: 10, $lte: 11 } },
+          { projectId: "project1" },
         ],
       });
     });
@@ -226,11 +226,11 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now)).toEqual({
         $and: [
-          { projectId: "project1" },
           {
             "objRecord.foo": { $in: ["a", "b"] },
             "objRecord.bar": { $nin: [1, 2] },
           },
+          { projectId: "project1" },
         ],
       });
     });
@@ -242,8 +242,8 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now)).toEqual({
         $and: [
-          { projectId: "project1" },
           { "objRecord.num": { $gte: 1, $lte: 10 } },
+          { projectId: "project1" },
         ],
       });
     });
@@ -255,8 +255,8 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now)).toEqual({
         $and: [
-          { projectId: "project1" },
           { "objRecord.foo": { $exists: true } },
+          { projectId: "project1" },
         ],
       });
     });
@@ -276,15 +276,11 @@ describe("MongoQueryTransformer", () => {
         },
       };
       expect(transformer.transformFilter(query, now)).toEqual({
-        $and: [
-          { projectId: "project1" },
-          {
-            createdAt: {
-              $in: [1, 2],
-              $nin: [3, 4],
-            },
-          },
-        ],
+        projectId: "project1",
+        createdAt: {
+          $in: [1, 2],
+          $nin: [3, 4],
+        },
       });
     });
   });
@@ -308,14 +304,14 @@ describe("MongoQueryTransformer", () => {
         $or: [
           {
             $and: [
-              { projectId: "project1" },
               { "objRecord.foo": { $eq: "bar" } },
+              { projectId: "project1" },
             ],
           },
           {
             $and: [
-              { projectId: "project1" },
               { "objRecord.baz": { $eq: "qux" } },
+              { projectId: "project1" },
             ],
           },
         ],
@@ -329,9 +325,7 @@ describe("MongoQueryTransformer", () => {
             and: [
               {
                 metaQuery: { projectId: { eq: "project1" } },
-                recordQuery: [
-                  { op: "eq", field: "status", value: "active" },
-                ],
+                recordQuery: [{ op: "eq", field: "status", value: "active" }],
               },
               {
                 metaQuery: { projectId: { eq: "project1" } },
@@ -343,9 +337,7 @@ describe("MongoQueryTransformer", () => {
             and: [
               {
                 metaQuery: { projectId: { eq: "project1" } },
-                recordQuery: [
-                  { op: "eq", field: "status", value: "pending" },
-                ],
+                recordQuery: [{ op: "eq", field: "status", value: "pending" }],
               },
               {
                 metaQuery: { projectId: { eq: "project1" } },
@@ -449,10 +441,8 @@ describe("MongoQueryTransformer", () => {
         },
       };
       expect(transformer.transformFilter(query, now)).toEqual({
-        $and: [
-          { projectId: "project1" },
-          { deletedAt: { $gte: new Date(123) } },
-        ],
+        projectId: "project1",
+        deletedAt: { $gte: new Date(123) },
       });
     });
 
@@ -485,9 +475,8 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now)).toEqual({
         $and: [
-          { projectId: "project1" },
           { "objRecord.foo": { $eq: "bar" } },
-          { id: "id1" },
+          { id: "id1", projectId: "project1" },
           { shouldIndex: true, tag: "test-tag" },
         ],
       });
@@ -557,8 +546,8 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now, arrayFields)).toEqual({
         $and: [
-          { projectId: "project1" },
           { "objRecord.query.and.message": { $eq: "error occurred" } },
+          { projectId: "project1" },
         ],
       });
     });
@@ -576,8 +565,8 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now, arrayFields)).toEqual({
         $and: [
-          { projectId: "project1" },
           { "objRecord.query.and.level": { $ne: "debug" } },
+          { projectId: "project1" },
         ],
       });
     });
@@ -595,8 +584,8 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now, arrayFields)).toEqual({
         $and: [
-          { projectId: "project1" },
           { "objRecord.query.and.level": { $in: ["error", "warn"] } },
+          { projectId: "project1" },
         ],
       });
     });
@@ -614,8 +603,8 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now, arrayFields)).toEqual({
         $and: [
-          { projectId: "project1" },
           { "objRecord.query.and.level": { $nin: ["debug", "info"] } },
+          { projectId: "project1" },
         ],
       });
     });
@@ -657,8 +646,8 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now, arrayFields)).toEqual({
         $and: [
-          { projectId: "project1" },
           { "objRecord.query.and.timestamp": { $exists: true } },
+          { projectId: "project1" },
         ],
       });
     });
@@ -681,10 +670,10 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now, arrayFields)).toEqual({
         $and: [
-          { projectId: "project1" },
           {
             "objRecord.query.and.count": { $gt: 5, $lte: 100 },
           },
+          { projectId: "project1" },
         ],
       });
     });
@@ -702,10 +691,10 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now, arrayFields)).toEqual({
         $and: [
-          { projectId: "project1" },
           {
             "objRecord.query.and.details.user.id": { $eq: "user123" },
           },
+          { projectId: "project1" },
         ],
       });
     });
@@ -723,8 +712,8 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now, arrayFields)).toEqual({
         $and: [
-          { projectId: "project1" },
           { "objRecord.regularField": { $eq: "value" } },
+          { projectId: "project1" },
         ],
       });
     });
@@ -742,8 +731,8 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now, arrayFields)).toEqual({
         $and: [
-          { projectId: "project1" },
           { "objRecord.query.and.count": { $gte: 1, $lte: 10 } },
+          { projectId: "project1" },
         ],
       });
     });
@@ -762,9 +751,7 @@ describe("MongoQueryTransformer", () => {
             or: [
               {
                 metaQuery: { projectId: { eq: "project1" } },
-                recordQuery: [
-                  { op: "gt", field: "query.and.count", value: 5 },
-                ],
+                recordQuery: [{ op: "gt", field: "query.and.count", value: 5 }],
               },
               {
                 metaQuery: { projectId: { eq: "project1" } },
@@ -783,18 +770,23 @@ describe("MongoQueryTransformer", () => {
       const filter = transformer.transformFilter(query, now, arrayFields);
       expect(filter.$and).toBeDefined();
       expect(filter.$and?.length).toBe(2);
-      expect(filter.$and?.[0].projectId).toBe("project1");
-      expect(filter.$and?.[0]["objRecord.query.and.level"]).toEqual({
-        $eq: "error",
-      });
-      expect(filter.$and?.[1].$or).toBeDefined();
-      expect(filter.$and?.[1].$or?.length).toBe(2);
-      expect(filter.$and?.[1].$or?.[0]["objRecord.query.and.count"]).toEqual({
+      const andArr = filter.$and as any[];
+      const findInBranch = (branch: any, key: string) =>
+        branch?.[key] ?? branch?.$and?.find((g: any) => g[key])?.[key];
+      const recordLevelBranch = andArr.find(
+        (f) => f["objRecord.query.and.level"] || f.$and?.some((g: any) => g["objRecord.query.and.level"])
+      );
+      const levelValue = findInBranch(recordLevelBranch, "objRecord.query.and.level");
+      const orBranch = andArr.find((f) => f.$or);
+      expect(levelValue).toEqual({ $eq: "error" });
+      expect(orBranch?.$or).toBeDefined();
+      expect(orBranch?.$or?.length).toBe(2);
+      const orFirst = orBranch?.$or?.[0];
+      const orSecond = orBranch?.$or?.[1];
+      expect(findInBranch(orFirst, "objRecord.query.and.count")).toEqual({
         $gt: 5,
       });
-      expect(
-        filter.$and?.[1].$or?.[1]["objRecord.query.and.message"]
-      ).toBeDefined();
+      expect(findInBranch(orSecond, "objRecord.query.and.message")).toBeDefined();
     });
 
     it("should handle mixed array and regular field queries", () => {
@@ -815,11 +807,11 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now, arrayFields)).toEqual({
         $and: [
-          { projectId: "project1" },
           {
             "objRecord.title": { $eq: "Test Post" },
             "objRecord.comments.rating": { $gt: 4 },
           },
+          { projectId: "project1" },
         ],
       });
     });
@@ -948,12 +940,12 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now)).toEqual({
         $and: [
-          { projectId: "project1" },
           {
             "objRecord.user.profile.email": { $eq: "test@example.com" },
             "objRecord.user.profile.age": { $gt: 18 },
             "objRecord.user.preferences.tags": { $in: ["tech", "programming"] },
           },
+          { projectId: "project1" },
         ],
       });
     });
@@ -989,8 +981,8 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now, arrayFields)).toEqual({
         $and: [
-          { projectId: "project1" },
           { "objRecord.logs.entry.message": { $eq: "test message" } },
+          { projectId: "project1" },
         ],
       });
     });
@@ -1042,16 +1034,21 @@ describe("MongoQueryTransformer", () => {
       const filter = transformer.transformFilter(query, now, arrayFields);
       expect(filter.$and).toBeDefined();
       expect(filter.$and?.length).toBe(2);
-      expect(filter.$and?.[0].projectId).toBe("project1");
-      expect(filter.$and?.[0]["objRecord.status"]).toEqual({
-        $eq: "active",
-      });
-      expect(filter.$and?.[1].$or).toBeDefined();
-      expect(filter.$and?.[1].$or?.length).toBe(2);
-      expect(filter.$and?.[1].$or?.[0]["objRecord.query.and.level"]).toEqual({
+      const andArr = filter.$and as any[];
+      const statusBranch =
+        andArr.find((f) => f["objRecord.status"]) ??
+        andArr.find((f) => f.$and?.some((g: any) => g["objRecord.status"]));
+      const findInBranch = (branch: any, key: string) =>
+        branch?.[key] ?? branch?.$and?.find((g: any) => g[key])?.[key];
+      const statusValue = findInBranch(statusBranch, "objRecord.status");
+      const orBranch = andArr.find((f) => f.$or);
+      expect(statusValue).toEqual({ $eq: "active" });
+      expect(orBranch?.$or).toBeDefined();
+      expect(orBranch?.$or?.length).toBe(2);
+      expect(findInBranch(orBranch?.$or?.[0], "objRecord.query.and.level")).toEqual({
         $eq: "error",
       });
-      expect(filter.$and?.[1].$or?.[1]["objRecord.query.and.count"]).toEqual({
+      expect(findInBranch(orBranch?.$or?.[1], "objRecord.query.and.count")).toEqual({
         $gt: 10,
       });
     });
@@ -1068,10 +1065,11 @@ describe("MongoQueryTransformer", () => {
       };
       const filter = transformer.transformFilter(query, now);
       const createdAtFilter = Array.isArray(filter.$and)
-        ? filter.$and.find((f) => f.createdAt)
-        : filter.createdAt;
-      expect(createdAtFilter.createdAt.$gt).toBeInstanceOf(Date);
-      expect(createdAtFilter.createdAt.$lt).toBeInstanceOf(Date);
+        ? filter.$and.find((f: any) => f.createdAt)
+        : filter;
+      expect(createdAtFilter).toBeDefined();
+      expect(createdAtFilter?.createdAt.$gt).toBeInstanceOf(Date);
+      expect(createdAtFilter?.createdAt.$lt).toBeInstanceOf(Date);
     });
 
     it("should handle duration values in queries", () => {
@@ -1108,13 +1106,15 @@ describe("MongoQueryTransformer", () => {
       };
       expect(transformer.transformFilter(query, now)).toEqual({
         $and: [
-          { projectId: "project1" },
+          {
+            projectId: "project1",
+            deletedBy: "user123",
+            deletedByType: "admin",
+          },
           {
             shouldIndex: true,
             tag: "test-tag",
             groupId: { $in: ["group1", "group2"] },
-            deletedBy: "user123",
-            deletedByType: "admin",
           },
         ],
       });
@@ -1156,12 +1156,14 @@ describe("MongoQueryTransformer", () => {
       );
       const withScores = (filter.$and as any[]).find(
         (f) =>
-          f["objRecord.scores.value"]?.$elemMatch ?? f["objRecord.scores[*].value"]?.$elemMatch
+          f["objRecord.scores.value"]?.$elemMatch ??
+          f["objRecord.scores[*].value"]?.$elemMatch
       );
       expect(withProject).toBeDefined();
       expect(withScores).toBeDefined();
       const elemMatch =
-        withScores!["objRecord.scores.value"] ?? withScores!["objRecord.scores[*].value"];
+        withScores!["objRecord.scores.value"] ??
+        withScores!["objRecord.scores[*].value"];
       expect(elemMatch.$elemMatch).toEqual({ $gte: 80 });
     });
 
@@ -1174,11 +1176,13 @@ describe("MongoQueryTransformer", () => {
       expect(filter.$and).toBeDefined();
       const withElemMatch = (filter.$and as any[]).find(
         (f) =>
-          f["objRecord.items.name"]?.$elemMatch ?? f["objRecord.items[*].name"]?.$elemMatch
+          f["objRecord.items.name"]?.$elemMatch ??
+          f["objRecord.items[*].name"]?.$elemMatch
       );
       expect(withElemMatch).toBeDefined();
       const elemMatch =
-        withElemMatch!["objRecord.items.name"] ?? withElemMatch!["objRecord.items[*].name"];
+        withElemMatch!["objRecord.items.name"] ??
+        withElemMatch!["objRecord.items[*].name"];
       expect(elemMatch.$elemMatch).toEqual({ $eq: "widget" });
     });
 
@@ -1191,11 +1195,13 @@ describe("MongoQueryTransformer", () => {
       expect(filter.$and).toBeDefined();
       const withElemMatch = (filter.$and as any[]).find(
         (f) =>
-          f["objRecord.items.tag"]?.$elemMatch ?? f["objRecord.items[*].tag"]?.$elemMatch
+          f["objRecord.items.tag"]?.$elemMatch ??
+          f["objRecord.items[*].tag"]?.$elemMatch
       );
       expect(withElemMatch).toBeDefined();
       const elemMatch =
-        withElemMatch!["objRecord.items.tag"] ?? withElemMatch!["objRecord.items[*].tag"];
+        withElemMatch!["objRecord.items.tag"] ??
+        withElemMatch!["objRecord.items[*].tag"];
       expect(elemMatch.$elemMatch).toEqual({ $in: ["a", "b"] });
     });
 
@@ -1239,19 +1245,19 @@ describe("MongoQueryTransformer", () => {
       ]);
       const query: IObjQuery = {
         metaQuery: { projectId: { eq: "project1" } },
-        recordQuery: [
-          { op: "gt", field: "events[*].createdAt", value: "1h" },
-        ],
+        recordQuery: [{ op: "gt", field: "events[*].createdAt", value: "1h" }],
       };
       const filter = transformer.transformFilter(query, now, arrayFields);
       const andArr = filter.$and as any[] | undefined;
       const eventsEntry = andArr?.find(
         (f) =>
-          f["objRecord.events.createdAt"]?.$elemMatch ?? f["objRecord.events[*].createdAt"]?.$elemMatch
+          f["objRecord.events.createdAt"]?.$elemMatch ??
+          f["objRecord.events[*].createdAt"]?.$elemMatch
       );
       expect(eventsEntry).toBeDefined();
       const elemMatch =
-        eventsEntry!["objRecord.events.createdAt"] ?? eventsEntry!["objRecord.events[*].createdAt"];
+        eventsEntry!["objRecord.events.createdAt"] ??
+        eventsEntry!["objRecord.events[*].createdAt"];
       expect(elemMatch.$elemMatch.$gt).toBeInstanceOf(Date);
     });
   });

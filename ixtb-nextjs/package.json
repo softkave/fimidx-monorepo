@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "dev:prod": "env-cmd -f \".env.prod\" next dev --turbopack",
+    "dev:test": "env-cmd -f \".env.test\" next dev --turbopack",
     "build": "next build",
     "start": "next start -p $PORT",
     "lint": "next lint",
@@ -14,8 +15,8 @@
     "email:build": "email build",
     "email:dev": "email dev",
     "email:export": "email export",
-    "test": "vitest run --config ./vitest.config.ts",
-    "test:e2e": "vitest run --config ./vitest.e2e.config.ts"
+    "test": "env-cmd -f \".env.test\" vitest run --config ./vitest.config.ts",
+    "test:e2e": "env-cmd -f \".env.test\" vitest run --config ./vitest.e2e.config.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.8.0",

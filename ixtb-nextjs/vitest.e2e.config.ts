@@ -5,5 +5,7 @@ export default defineConfig({
     include: ["api-e2e/**/*.test.ts"],
     testTimeout: 30000,
     hookTimeout: 10000,
+    globalSetup: ["./vitest.e2e.setup.ts"],
+    fileParallelism: false,
   },
 });

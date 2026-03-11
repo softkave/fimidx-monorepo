@@ -1,6 +1,7 @@
 import { uniq } from "lodash-es";
 import type { FilterQuery, SortOrder } from "mongoose";
 import {
+  isObjQueryLeaf,
   META_QUERY_KEYS,
   TOP_LEVEL_QUERY_KEYS,
   type INumberMetaQuery,
@@ -16,8 +17,40 @@ import {
   type IStringMetaQuery,
   type ITopLevelFieldQuery,
 } from "../../definitions/obj.js";
-import { isObjQueryLeaf } from "../../definitions/obj.js";
 import { BaseQueryTransformer } from "./BaseQueryTransformer.js";
+
+// List of top-level fields that should not be prefixed
+const topLevelFields = new Set([
+  "id",
+  "createdAt",
+  "updatedAt",
+  "createdBy",
+  "createdByType",
+  "updatedBy",
+  "updatedByType",
+  "projectId",
+  "groupId",
+  "tag",
+  "deletedAt",
+  "deletedBy",
+  "deletedByType",
+  "shouldIndex",
+  "fieldsToIndex",
+]);
+
+// Map meta fields to top-level fields
+const fieldMap: Record<string, string> = {
+  projectId: "projectId",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  updatedBy: "updatedBy",
+  updatedByType: "updatedByType",
+  createdBy: "createdBy",
+  createdByType: "createdByType",
+  deletedAt: "deletedAt",
+  deletedBy: "deletedBy",
+  deletedByType: "deletedByType",
+};
 
 export class MongoQueryTransformer extends BaseQueryTransformer<
   FilterQuery<IObj>
@@ -42,7 +75,11 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
     const filters: FilterQuery<IObj>[] = [];
 
     if (leaf.recordQuery?.length) {
-      const recordFilter = this.transformRecordQuery(leaf.recordQuery, date, fields);
+      const recordFilter = this.transformRecordQuery(
+        leaf.recordQuery,
+        date,
+        fields
+      );
       if (Object.keys(recordFilter).length > 0) filters.push(recordFilter);
     }
 
@@ -65,7 +102,8 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
 
       if (Object.keys(topLevelOnly).length > 0) {
         const topLevelFilter = this.transformTopLevelFields(topLevelOnly, date);
-        if (Object.keys(topLevelFilter).length > 0) filters.push(topLevelFilter);
+        if (Object.keys(topLevelFilter).length > 0)
+          filters.push(topLevelFilter);
       }
     }
 
@@ -87,20 +125,32 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
     const branchToFilter = (branch: IObjQuery): FilterQuery<IObj> =>
       isObjQueryLeaf(branch)
         ? this.transformLeafQuery(branch, date, fields)
-        : this.transformObjLogicalQuery(branch as IObjQueryLogical, date, fields);
+        : this.transformObjLogicalQuery(
+            branch as IObjQueryLogical,
+            date,
+            fields
+          );
 
     if (hasAnd && hasOr) {
-      const andFilters = logicalQuery.and!.map((b) => branchToFilter(b as IObjQuery));
-      const orFilters = logicalQuery.or!.map((b) => branchToFilter(b as IObjQuery));
+      const andFilters = logicalQuery.and!.map((b) =>
+        branchToFilter(b as IObjQuery)
+      );
+      const orFilters = logicalQuery.or!.map((b) =>
+        branchToFilter(b as IObjQuery)
+      );
       filter = { $or: [{ $and: andFilters }, ...orFilters] };
     } else if (hasAnd) {
-      const andFilters = logicalQuery.and!.map((b) => branchToFilter(b as IObjQuery));
+      const andFilters = logicalQuery.and!.map((b) =>
+        branchToFilter(b as IObjQuery)
+      );
       filter =
         andFilters.length === 1
           ? andFilters[0]
           : ({ $and: andFilters } as FilterQuery<IObj>);
     } else if (hasOr) {
-      const orFilters = logicalQuery.or!.map((b) => branchToFilter(b as IObjQuery));
+      const orFilters = logicalQuery.or!.map((b) =>
+        branchToFilter(b as IObjQuery)
+      );
       filter =
         orFilters.length === 1
           ? orFilters[0]
@@ -120,25 +170,6 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
     }
 
     const sortObj: Record<string, SortOrder> = {};
-
-    // List of top-level fields that should not be prefixed
-    const topLevelFields = new Set([
-      "id",
-      "createdAt",
-      "updatedAt",
-      "createdBy",
-      "createdByType",
-      "updatedBy",
-      "updatedByType",
-      "projectId",
-      "groupId",
-      "tag",
-      "deletedAt",
-      "deletedBy",
-      "deletedByType",
-      "shouldIndex",
-      "fieldsToIndex",
-    ]);
 
     sort.forEach((sortItem) => {
       const direction = sortItem.direction === "asc" ? 1 : -1;
@@ -214,19 +245,6 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
       ) {
         return;
       }
-      // Map meta fields to top-level fields
-      const fieldMap: Record<string, string> = {
-        projectId: "projectId",
-        createdAt: "createdAt",
-        updatedAt: "updatedAt",
-        updatedBy: "updatedBy",
-        updatedByType: "updatedByType",
-        createdBy: "createdBy",
-        createdByType: "createdByType",
-        deletedAt: "deletedAt",
-        deletedBy: "deletedBy",
-        deletedByType: "deletedByType",
-      };
 
       const mongoField = fieldMap[key] || key;
 

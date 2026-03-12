@@ -23,10 +23,7 @@ const e2eCredentialsProvider = Credentials({
     const email = process.env.E2E_TEST_USER_EMAIL;
     const password = process.env.E2E_TEST_USER_PASSWORD;
     if (!email || !password) return null;
-    if (
-      credentials?.email === email &&
-      credentials?.password === password
-    ) {
+    if (credentials?.email === email && credentials?.password === password) {
       const id = process.env.E2E_TEST_USER_ID ?? email;
       return { id, email, name: "E2E Test User" };
     }
@@ -36,6 +33,7 @@ const e2eCredentialsProvider = Credentials({
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   logger: ixtbNextAuthLogger,
+  // debug: true,
   providers: [
     Google,
     e2eCredentialsProvider,
@@ -50,7 +48,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   adapter: DrizzleAdapter(authDb),
-  // debug: true,
   callbacks: {
     session: async ({ session, user }) => {
       const isAdmin = checkIsAdminEmail(user.email);

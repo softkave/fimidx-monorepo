@@ -59,8 +59,6 @@ export function ProjectListContainer({
         isLoading={projectHooks.isLoading}
         error={projectHooks.error}
         data={projectHooks.data}
-        errorClassName="px-4"
-        loadingClassName="px-4"
         render={(data) =>
           data.projects.length === 0 && showNoProjectsMessage ? (
             <ComponentListMessage

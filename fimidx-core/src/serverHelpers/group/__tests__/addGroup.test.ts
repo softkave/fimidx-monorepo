@@ -5,7 +5,7 @@ import { createDefaultStorage } from "../../../storage/config.js";
 import type { IObjStorage } from "../../../storage/types.js";
 import { addGroup } from "../addGroup.js";
 
-const defaultAppId = "test-app-addGroup";
+const defaultProjectId = "test-project-addGroup";
 const defaultGroupId = "test-group";
 const defaultBy = "tester";
 const defaultByType = "user";
@@ -16,7 +16,7 @@ function makeAddGroupArgs(
   return {
     name: `Test Group ${Math.random()}`,
     description: "Test description",
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     ...overrides,
   };
 }
@@ -33,7 +33,7 @@ describe("addGroup integration", () => {
     // Clean up test data before each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.group,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -49,7 +49,7 @@ describe("addGroup integration", () => {
     // Clean up after each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.group,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -79,7 +79,7 @@ describe("addGroup integration", () => {
     expect(result.group.name).toBe("My Test Group");
     expect(result.group.description).toBe("A test group description");
     expect(result.group.meta).toEqual({ key1: "value1", key2: "value2" });
-    expect(result.group.appId).toBe(defaultAppId);
+    expect(result.group.projectId).toBe(defaultProjectId);
     expect(result.group.groupId).toBe(defaultGroupId);
     expect(result.group.createdBy).toBe(defaultBy);
     expect(result.group.createdByType).toBe(defaultByType);
@@ -135,7 +135,7 @@ describe("addGroup integration", () => {
     ).rejects.toThrow("Failed to add group");
   });
 
-  it("allows creating groups with different names in same app", async () => {
+  it("allows creating groups with different names in same project", async () => {
     const args1 = makeAddGroupArgs({
       name: "First Group",
     });
@@ -163,15 +163,15 @@ describe("addGroup integration", () => {
     expect(result1.group.id).not.toBe(result2.group.id);
   });
 
-  it("allows creating groups with same name in different apps", async () => {
+  it("allows creating groups with same name in different projects", async () => {
     const args1 = makeAddGroupArgs({
       name: "Same Name Group",
-      appId: "test-app-addGroup-1",
+      projectId: "test-project-addGroup-1",
     });
 
     const args2 = makeAddGroupArgs({
       name: "Same Name Group",
-      appId: "test-app-addGroup-2",
+      projectId: "test-project-addGroup-2",
     });
 
     const result1 = await addGroup({
@@ -190,8 +190,8 @@ describe("addGroup integration", () => {
 
     expect(result1.group.name).toBe("Same Name Group");
     expect(result2.group.name).toBe("Same Name Group");
-    expect(result1.group.appId).toBe("test-app-addGroup-1");
-    expect(result2.group.appId).toBe("test-app-addGroup-2");
+    expect(result1.group.projectId).toBe("test-project-addGroup-1");
+    expect(result2.group.projectId).toBe("test-project-addGroup-2");
     expect(result1.group.id).not.toBe(result2.group.id);
   });
 

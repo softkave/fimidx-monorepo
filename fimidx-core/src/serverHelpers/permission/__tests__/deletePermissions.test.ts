@@ -1,16 +1,18 @@
 import { and, eq } from "drizzle-orm";
-import { v7 as uuidv7 } from "uuid";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
 import { kObjTags } from "../../../definitions/obj.js";
-import type { DeletePermissionsEndpointArgs } from "../../../definitions/permission.js";
+import type {
+  AddPermissionsEndpointArgs,
+  DeletePermissionsEndpointArgs,
+} from "../../../definitions/permission.js";
 import { createDefaultStorage } from "../../../storage/config.js";
 import type { IObjStorage } from "../../../storage/types.js";
 import { addPermissions } from "../addPermissions.js";
 import { deletePermissions } from "../deletePermissions.js";
 import { getPermissions } from "../getPermissions.js";
 
-const defaultAppId = "test-app-deletePermissions";
+const defaultProjectId = "test-project-deletePermissions";
 const defaultGroupId = "test-group";
 const defaultBy = "tester";
 const defaultByType = "user";
@@ -18,13 +20,15 @@ const defaultByType = "user";
 // Test counter to ensure unique permissions
 let testCounter = 0;
 
-function makeAddPermissionsArgs(overrides: any = {}): any {
+function makeAddPermissionsArgs(
+  overrides: Partial<AddPermissionsEndpointArgs> = {}
+): AddPermissionsEndpointArgs {
   testCounter++;
   const uniqueId = `${testCounter}_${Date.now()}_${Math.random()
     .toString(36)
     .substr(2, 9)}`;
   return {
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     permissions: [
       {
         entity: "user",
@@ -43,42 +47,11 @@ function makeDeletePermissionsArgs(
 ): DeletePermissionsEndpointArgs {
   return {
     query: {
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       ...overrides.query,
     },
     deleteMany: overrides.deleteMany,
   };
-}
-
-// Helper function to insert objFields for the "action" field for sorting
-async function insertActionFieldForSorting(params: {
-  groupId: string;
-  tag: string;
-}) {
-  const { groupId, tag } = params;
-  const now = new Date();
-
-  const actionField = {
-    id: uuidv7(),
-    createdAt: now,
-    updatedAt: now,
-    appId: defaultAppId,
-    groupId,
-    tag,
-    field: "action",
-    path: "action",
-    type: "string",
-    arrayTypes: [],
-    isArrayCompressed: false,
-    fieldKeys: ["action"],
-    fieldKeyTypes: ["string"],
-    valueTypes: ["string"],
-  };
-
-  // Insert the field definition
-  await db.insert(objFieldsTable).values(actionField);
-
-  return actionField;
 }
 
 describe("deletePermissions integration", () => {
@@ -91,7 +64,7 @@ describe("deletePermissions integration", () => {
   beforeEach(async () => {
     try {
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.permission,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -104,7 +77,7 @@ describe("deletePermissions integration", () => {
         .delete(objFieldsTable)
         .where(
           and(
-            eq(objFieldsTable.appId, defaultAppId),
+            eq(objFieldsTable.projectId, defaultProjectId),
             eq(objFieldsTable.groupId, defaultGroupId),
             eq(objFieldsTable.tag, kObjTags.permission)
           )
@@ -117,7 +90,7 @@ describe("deletePermissions integration", () => {
   afterEach(async () => {
     try {
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.permission,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -130,7 +103,7 @@ describe("deletePermissions integration", () => {
         .delete(objFieldsTable)
         .where(
           and(
-            eq(objFieldsTable.appId, defaultAppId),
+            eq(objFieldsTable.projectId, defaultProjectId),
             eq(objFieldsTable.groupId, defaultGroupId),
             eq(objFieldsTable.tag, kObjTags.permission)
           )
@@ -164,7 +137,7 @@ describe("deletePermissions integration", () => {
     // Verify permission exists
     const getArgsBefore = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         entity: { eq: "user" },
       },
     };
@@ -179,7 +152,7 @@ describe("deletePermissions integration", () => {
     // Delete the permission
     const deleteArgs = makeDeletePermissionsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         entity: { eq: "user" },
       },
       deleteMany: false,
@@ -195,7 +168,7 @@ describe("deletePermissions integration", () => {
     // Verify permission is deleted
     const getArgsAfter = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         entity: { eq: "user" },
       },
     };
@@ -232,7 +205,7 @@ describe("deletePermissions integration", () => {
     // Delete the permission
     const deleteArgs = makeDeletePermissionsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         action: { eq: "read" },
       },
       deleteMany: false,
@@ -248,7 +221,7 @@ describe("deletePermissions integration", () => {
     // Verify permission is deleted
     const getArgsAfter = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         action: { eq: "read" },
       },
     };
@@ -285,7 +258,7 @@ describe("deletePermissions integration", () => {
     // Delete the permission
     const deleteArgs = makeDeletePermissionsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         target: { eq: "document" },
       },
       deleteMany: false,
@@ -301,7 +274,7 @@ describe("deletePermissions integration", () => {
     // Verify permission is deleted
     const getArgsAfter = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         target: { eq: "document" },
       },
     };
@@ -350,7 +323,7 @@ describe("deletePermissions integration", () => {
     // Verify all permissions exist
     const getArgsBefore = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
     };
 
@@ -364,7 +337,7 @@ describe("deletePermissions integration", () => {
     // Delete all user permissions
     const deleteArgs = makeDeletePermissionsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         entity: { eq: "user" },
       },
       deleteMany: true,
@@ -380,7 +353,7 @@ describe("deletePermissions integration", () => {
     // Verify only admin permission remains
     const getArgsAfter = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
     };
 
@@ -424,7 +397,7 @@ describe("deletePermissions integration", () => {
     // Verify both permissions exist
     const getArgsBefore = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         entity: { eq: "user" },
       },
     };
@@ -439,7 +412,7 @@ describe("deletePermissions integration", () => {
     // Delete only one permission
     const deleteArgs = makeDeletePermissionsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         entity: { eq: "user" },
       },
       deleteMany: false,
@@ -455,7 +428,7 @@ describe("deletePermissions integration", () => {
     // Verify only one permission remains
     const getArgsAfter = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         entity: { eq: "user" },
       },
     };
@@ -492,7 +465,7 @@ describe("deletePermissions integration", () => {
     // Delete by createdBy
     const deleteArgs = makeDeletePermissionsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         createdBy: { eq: defaultBy },
       },
       deleteMany: true,
@@ -508,7 +481,7 @@ describe("deletePermissions integration", () => {
     // Verify permission is deleted
     const getArgsAfter = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         createdBy: { eq: defaultBy },
       },
     };
@@ -545,7 +518,7 @@ describe("deletePermissions integration", () => {
     // Delete by complex entity query
     const deleteArgs = makeDeletePermissionsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         entity: [{ op: "eq" as const, field: "type", value: "user" }],
       },
       deleteMany: true,
@@ -561,7 +534,7 @@ describe("deletePermissions integration", () => {
     // Verify permission is deleted
     const getArgsAfter = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         entity: [{ op: "eq" as const, field: "type", value: "user" }],
       },
     };
@@ -578,7 +551,7 @@ describe("deletePermissions integration", () => {
     // Try to delete non-existent permission
     const deleteArgs = makeDeletePermissionsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         entity: { eq: "non-existent" },
       },
       deleteMany: false,
@@ -595,7 +568,48 @@ describe("deletePermissions integration", () => {
     ).resolves.not.toThrow();
   });
 
-  it("deletes all permissions for an app", async () => {
+  it("deletes multiple permissions in one call when queries array is provided (OR delete)", async () => {
+    const addArgs = makeAddPermissionsArgs({
+      permissions: [
+        { entity: "user1", action: "read", target: "doc", description: "P1" },
+        { entity: "user2", action: "write", target: "doc", description: "P2" },
+        { entity: "user3", action: "delete", target: "doc", description: "P3" },
+      ],
+    });
+    await addPermissions({
+      args: addArgs,
+      groupId: defaultGroupId,
+      by: defaultBy,
+      byType: defaultByType,
+      storage,
+    });
+
+    const resultBefore = await getPermissions({
+      args: { query: { projectId: defaultProjectId } },
+      storage,
+    });
+    expect(resultBefore.permissions).toHaveLength(3);
+
+    await deletePermissions({
+      queries: [
+        { projectId: defaultProjectId, entity: { eq: "user1" } },
+        { projectId: defaultProjectId, entity: { eq: "user2" } },
+      ],
+      deleteMany: true,
+      by: defaultBy,
+      byType: defaultByType,
+      storage,
+    });
+
+    const resultAfter = await getPermissions({
+      args: { query: { projectId: defaultProjectId } },
+      storage,
+    });
+    expect(resultAfter.permissions).toHaveLength(1);
+    expect(resultAfter.permissions[0].entity).toBe("user3");
+  });
+
+  it("deletes all permissions for an project", async () => {
     // Create multiple test permissions
     const addArgs = makeAddPermissionsArgs({
       permissions: [
@@ -628,7 +642,7 @@ describe("deletePermissions integration", () => {
     // Verify all permissions exist
     const getArgsBefore = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
     };
 
@@ -639,10 +653,10 @@ describe("deletePermissions integration", () => {
 
     expect(resultBefore.permissions).toHaveLength(3);
 
-    // Delete all permissions for the app
+    // Delete all permissions for the project
     const deleteArgs = makeDeletePermissionsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
       deleteMany: true,
     });
@@ -657,7 +671,7 @@ describe("deletePermissions integration", () => {
     // Verify all permissions are deleted
     const getArgsAfter = {
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
     };
 

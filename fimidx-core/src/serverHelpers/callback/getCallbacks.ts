@@ -1,7 +1,7 @@
 import type { GetCallbacksEndpointArgs } from "../../definitions/callback.js";
 import {
   kObjTags,
-  type IObjPartQueryItem,
+  type IObjRecordQueryItem,
   type IObjQuery,
 } from "../../definitions/obj.js";
 import type { IObjStorage } from "../../storage/types.js";
@@ -14,7 +14,7 @@ export function getCallbacksObjQuery(params: {
   const { args } = params;
   const { query } = args;
   const {
-    appId,
+    projectId,
     createdBy,
     updatedBy,
     idempotencyKey,
@@ -34,11 +34,11 @@ export function getCallbacksObjQuery(params: {
     name,
   } = query;
 
-  const filterArr: Array<IObjPartQueryItem> = [];
+  const filterArr: Array<IObjRecordQueryItem> = [];
 
   // Handle name filtering - name is stored in objRecord.name
   if (name) {
-    // Convert name query to partQuery for the name field
+    // Convert name query to recordQuery for the name field
     Object.entries(name).forEach(([op, value]) => {
       if (value !== undefined) {
         filterArr.push({
@@ -174,7 +174,7 @@ export function getCallbacksObjQuery(params: {
         op: part.op,
         field: `requestBody.${part.field}`,
         value: part.value,
-      } as IObjPartQueryItem)
+      } as IObjRecordQueryItem)
   );
   if (requestBodyPartQuery) {
     filterArr.push(...requestBodyPartQuery);
@@ -187,16 +187,26 @@ export function getCallbacksObjQuery(params: {
         op: part.op,
         field: `requestHeaders.${part.field}`,
         value: part.value,
-      } as IObjPartQueryItem)
+      } as IObjRecordQueryItem)
   );
   if (requestHeadersPartQuery) {
     filterArr.push(...requestHeadersPartQuery);
   }
 
   const objQuery: IObjQuery = {
-    appId,
-    partQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
-    metaQuery: { id, createdAt, updatedAt, createdBy, updatedBy },
+    and: [
+      {
+        recordQuery: filterArr.length > 0 ? filterArr : undefined,
+        metaQuery: {
+          ...(projectId ? { projectId: { eq: projectId } } : {}),
+          id,
+          createdAt,
+          updatedAt,
+          createdBy,
+          updatedBy,
+        },
+      },
+    ],
   };
 
   return objQuery;

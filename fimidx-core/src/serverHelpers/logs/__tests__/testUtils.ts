@@ -14,37 +14,37 @@ export function getUniqueTestId(): string {
     .substr(2, 9)}`;
 }
 
-export function makeUniqueAppId(prefix: string): string {
+export function makeUniqueProjectId(prefix: string): string {
   return `${prefix}_${getUniqueTestId()}`;
 }
 
 // Comprehensive cleanup function that cleans all related log data
 export async function cleanupTestData(params: {
   storage: IObjStorage;
-  appIds: string[];
+  projectIds: string[];
   by: string;
   byType: string;
 }): Promise<void> {
-  const { storage, appIds, by, byType } = params;
+  const { storage, projectIds, by, byType } = params;
 
   try {
-    for (const appId of appIds) {
+    for (const projectId of projectIds) {
       // Clean up logs
       await storage.bulkDelete({
-        query: { appId },
+        query: { metaQuery: { projectId: { eq: projectId } } },
         tag: kObjTags.log,
         deletedBy: by,
         deletedByType: byType,
         deleteMany: true,
         hardDelete: true, // Use hard delete for complete test isolation
       });
-      // Clean up objFields for this appId/tag
+      // Clean up objFields for this projectId/tag
       try {
         await db
           .delete(objFieldsTable)
           .where(
             and(
-              eq(objFieldsTable.appId, appId),
+              eq(objFieldsTable.projectId, projectId),
               eq(objFieldsTable.tag, kObjTags.log)
             )
           )
@@ -53,9 +53,8 @@ export async function cleanupTestData(params: {
         // Ignore errors in cleanup
       }
     }
-  } catch (error) {
-    // Log but don't throw - cleanup errors shouldn't fail tests
-    console.warn("Cleanup warning:", error);
+  } catch {
+    // Ignore cleanup errors - they shouldn't fail tests
   }
 }
 
@@ -69,7 +68,7 @@ export function createTestSetup(params: {
 
   // Create unique identifiers for this test suite
   const uniqueId = getUniqueTestId();
-  const appId = makeUniqueAppId(testName);
+  const projectId = makeUniqueProjectId(testName);
 
   // Create storage instance
   const storage = createDefaultStorage();
@@ -78,7 +77,7 @@ export function createTestSetup(params: {
   const cleanup = async () => {
     await cleanupTestData({
       storage,
-      appIds: [appId],
+      projectIds: [projectId],
       by: defaultBy,
       byType: defaultByType,
     });
@@ -88,7 +87,7 @@ export function createTestSetup(params: {
     storage,
     cleanup,
     testData: {
-      appId,
+      projectId,
       by: defaultBy,
       byType: defaultByType,
       uniqueId,
@@ -105,7 +104,7 @@ export function makeTestData(params: {
   const uniqueId = getUniqueTestId();
 
   return {
-    appId: makeUniqueAppId(testName),
+    projectId: makeUniqueProjectId(testName),
     ...overrides,
   };
 }

@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { FieldType } from "../common/indexer.js";
 import {
   inputObjRecordArraySchema,
-  objPartLogicalQuerySchema,
+  objRecordQueryListSchema,
   objSortListSchema,
   stringMetaQuerySchema,
 } from "./obj.js";
@@ -16,7 +16,7 @@ export interface ILogField {
   isArrayCompressed: boolean;
   createdAt: Date;
   updatedAt: Date;
-  appId: string;
+  projectId: string;
   groupId: string;
 }
 
@@ -25,25 +25,21 @@ export interface ILog {
   createdAt: Date;
   createdBy: string;
   createdByType: string;
-  appId: string;
+  projectId: string;
   groupId: string;
   data: AnyObject;
 }
 
 export const ingestLogsSchema = z.object({
-  appId: z.string(),
+  projectId: z.string().min(1),
   logs: inputObjRecordArraySchema,
 });
 
-export const logsMetaQuerySchema = z.object({
+export const logQuerySchema = z.object({
+  projectId: z.string().min(1),
   id: stringMetaQuerySchema.optional(),
   createdBy: stringMetaQuerySchema.optional(),
-});
-
-export const logQuerySchema = z.object({
-  appId: z.string(),
-  logsQuery: objPartLogicalQuerySchema.optional(),
-  metaQuery: logsMetaQuerySchema.optional(),
+  logsQuery: objRecordQueryListSchema.optional(),
 });
 
 export const getLogsSchema = z.object({
@@ -54,7 +50,9 @@ export const getLogsSchema = z.object({
 });
 
 export const getLogFieldsSchema = z.object({
-  appId: z.string(),
+  query: z.object({
+    projectId: z.string().min(1),
+  }),
   page: z.number().optional(),
   limit: z.number().optional(),
 });

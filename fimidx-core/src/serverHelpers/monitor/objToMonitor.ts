@@ -6,7 +6,7 @@ export function objToMonitor(obj: IObj): IMonitor {
     id: obj.id,
     createdAt: obj.createdAt,
     updatedAt: obj.updatedAt,
-    appId: obj.appId,
+    projectId: obj.projectId,
     name: obj.objRecord.name,
     description: obj.objRecord.description,
     status: obj.objRecord.status,
@@ -17,6 +17,6 @@ export function objToMonitor(obj: IObj): IMonitor {
     updatedBy: obj.updatedBy,
     updatedByType: obj.updatedByType,
     groupId: obj.groupId,
-    logsQuery: obj.objRecord.logsQuery,
+    query: obj.objRecord.query,
   };
 }

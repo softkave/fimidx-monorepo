@@ -1,7 +1,7 @@
 import type { GetGroupsEndpointArgs } from "../../definitions/group.js";
 import {
   kObjTags,
-  type IObjPartQueryItem,
+  type IObjRecordQueryItem,
   type IObjQuery,
 } from "../../definitions/obj.js";
 import type { IObjStorage } from "../../storage/types.js";
@@ -11,14 +11,22 @@ import { objToGroup } from "./objToGroup.js";
 export function getGroupsObjQuery(params: { args: GetGroupsEndpointArgs }) {
   const { args } = params;
   const { query } = args;
-  const { name, createdAt, updatedAt, createdBy, updatedBy, meta, appId, id } =
-    query;
+  const {
+    name,
+    createdAt,
+    updatedAt,
+    createdBy,
+    updatedBy,
+    meta,
+    projectId,
+    id,
+  } = query;
 
-  const filterArr: Array<IObjPartQueryItem> = [];
+  const filterArr: Array<IObjRecordQueryItem> = [];
 
   // Handle name filtering - name is stored in objRecord.name
   if (name) {
-    // Convert name query to partQuery for the name field
+    // Convert name query to recordQuery for the name field
     Object.entries(name).forEach(([op, value]) => {
       if (value !== undefined) {
         filterArr.push({
@@ -64,7 +72,7 @@ export function getGroupsObjQuery(params: { args: GetGroupsEndpointArgs }) {
       op: part.op,
       field: `meta.${part.field}`,
       value,
-    } as IObjPartQueryItem;
+    } as IObjRecordQueryItem;
   });
 
   if (metaPartQuery) {
@@ -72,9 +80,15 @@ export function getGroupsObjQuery(params: { args: GetGroupsEndpointArgs }) {
   }
 
   const objQuery: IObjQuery = {
-    appId,
-    partQuery: filterArr.length > 0 ? { and: filterArr } : undefined,
-    metaQuery: { id, createdAt, updatedAt, createdBy, updatedBy },
+    recordQuery: filterArr.length > 0 ? filterArr : undefined,
+    metaQuery: {
+      ...(projectId ? { projectId: { eq: projectId } } : {}),
+      id,
+      createdAt,
+      updatedAt,
+      createdBy,
+      updatedBy,
+    },
   };
 
   return objQuery;

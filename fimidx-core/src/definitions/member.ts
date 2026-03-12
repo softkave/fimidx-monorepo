@@ -1,18 +1,36 @@
 import type { ValueOf } from "type-fest";
 import { z } from "zod";
-import type { EmailRecordStatus } from "./email.js";
 import {
+  inputObjRecordSchema,
   numberMetaQuerySchema,
-  objPartQueryListSchema,
+  objRecordQueryListSchema,
   objSortListSchema,
+  onConflictSchema,
   stringMetaQuerySchema,
 } from "./obj.js";
 import {
-  checkPermissionItemSchema,
-  permissionAtomSchema,
+  actionSchema,
+  targetSchema,
   type IPermissionAtom,
-  type IPermissionMeta,
 } from "./permission.js";
+
+/** Permission input for members: action + target only; entity is the member id. */
+export const memberPermissionSchema = z.object({
+  action: actionSchema,
+  target: targetSchema,
+  /** When true, this atom grants the permission; when false, it denies.
+   * Optional, default true when omitted. */
+  granted: z.boolean().optional(),
+});
+
+/** Input type (granted optional); output after parse has granted: boolean. */
+export type IMemberPermissionInput = z.input<typeof memberPermissionSchema>;
+
+/** Item for check member permissions: action + target only; entity is the member id from request. */
+export const checkMemberPermissionItemSchema = memberPermissionSchema;
+export type ICheckMemberPermissionItem = z.infer<
+  typeof checkMemberPermissionItemSchema
+>;
 
 export const kMemberStatus = {
   pending: "pending",
@@ -23,6 +41,7 @@ export const kMemberStatus = {
 
 export type MemberStatus = ValueOf<typeof kMemberStatus>;
 
+/** Public member (customer-facing). User data lives in meta only. */
 export interface IMember {
   id: string;
   createdAt: number | Date;
@@ -31,117 +50,83 @@ export interface IMember {
   updatedAt: number | Date;
   updatedBy: string;
   updatedByType: string;
-  email?: string | null;
-  memberId: string;
+  projectId: string;
+  groupId: string;
   /** Permissions are null if reading other members and user does not have
    * member:readPermissions permission. */
   permissions: IPermissionAtom[] | null;
-  groupId: string;
-  status: MemberStatus;
-  statusUpdatedAt: number | Date;
-  /** Number of emails sent to the member */
-  sentEmailCount: number;
-  /** Last email sent to the member */
-  emailLastSentAt: number | Date | null;
-  /** Status of the last email sent to the member */
-  emailLastSentStatus: EmailRecordStatus | (string & {}) | null;
   meta?: Record<string, string> | null;
-  name?: string | null;
-  appId: string;
-  description?: string | null;
 }
 
-export interface IMemberObjRecord {
-  email?: string | null;
-  memberId: string;
+/**
+ * Internal slice of member obj record used by Fimidx (e.g. org creation).
+ * Use for documentation, casting record when reading/writing, and type assertion.
+ * Identifiers (id, groupId, projectId) come from the obj, not this type.
+ */
+export interface IFimidxMemberInternal {
   status: MemberStatus;
   statusUpdatedAt: number | Date;
-  sentEmailCount: number;
-  emailLastSentAt: number | Date | null;
-  emailLastSentStatus: EmailRecordStatus | (string & {}) | null;
-  meta?: Record<string, string> | null;
+  userId: string;
   name?: string | null;
-  description?: string | null;
 }
 
+/** Member request (internal). id is the member id (obj id). */
 export interface IMemberRequest {
-  requestId: string;
+  id: string;
+  groupId: string;
   groupName: string;
   status: MemberStatus;
   updatedAt: number | Date;
-  groupId: string;
-}
-
-export interface IMemberObjRecordMeta extends NonNullable<IPermissionMeta> {
-  __fimidx_managed_memberId: string;
-  __fimidx_managed_groupId: string;
 }
 
 export const addMemberSchema = z.object({
-  groupId: z.string(),
-  appId: z.string(),
-  email: z.string().email().optional(),
-  memberId: z.string(),
-  permissions: z.array(permissionAtomSchema),
-  meta: z.record(z.string(), z.string()).optional(),
-  name: z.string().optional(),
-  description: z.string().optional(),
-});
-
-export const getMemberByMemberIdSchema = z.object({
-  memberId: z.string().min(1),
-  groupId: z.string(),
-  appId: z.string(),
+  groupId: z.string().min(1),
+  projectId: z.string().min(1),
+  permissions: z.array(memberPermissionSchema).max(100).optional(),
+  /** Passed through as obj record as-is (no transformation). For internal use,
+   * include reserved keys (e.g. status, statusUpdatedAt, userId) in meta. */
+  meta: inputObjRecordSchema.optional(),
 });
 
 export const memberQuerySchema = z.object({
   id: stringMetaQuerySchema.optional(),
-  email: stringMetaQuerySchema.optional(),
-  memberId: stringMetaQuerySchema.optional(),
-  status: stringMetaQuerySchema.optional(),
   createdAt: numberMetaQuerySchema.optional(),
   updatedAt: numberMetaQuerySchema.optional(),
   createdBy: stringMetaQuerySchema.optional(),
   updatedBy: stringMetaQuerySchema.optional(),
-  meta: objPartQueryListSchema.optional(),
-  name: stringMetaQuerySchema.optional(),
-  groupId: z.string(),
-  appId: z.string(),
+  meta: objRecordQueryListSchema.optional(),
+  groupId: z.string().min(1),
+  projectId: z.string().min(1),
 });
 
 export const updateMembersSchema = z.object({
   query: memberQuerySchema,
   update: z.object({
-    email: z.string().email().optional(),
-    memberId: z.string().optional(),
-    meta: z.record(z.string(), z.string()).optional(),
-    name: z.string().optional(),
-    description: z.string().optional(),
+    meta: inputObjRecordSchema.optional(),
+    addPermissions: z.array(memberPermissionSchema).max(100).optional(),
+    removePermissions: z.array(memberPermissionSchema).max(100).optional(),
+    removeAllPermissions: z.boolean().optional(),
   }),
   updateMany: z.boolean().optional(),
+  metaUpdateWay: onConflictSchema.optional(),
 });
 
 export const updateMemberPermissionsSchema = z.object({
   query: z.object({
-    memberId: z.string().min(1),
-    groupId: z.string(),
-    appId: z.string(),
+    id: z.string().min(1),
+    groupId: z.string().min(1),
+    projectId: z.string().min(1),
   }),
   update: z.object({
-    permissions: z.array(permissionAtomSchema),
+    addPermissions: z.array(memberPermissionSchema).max(100).optional(),
+    removePermissions: z.array(memberPermissionSchema).max(100).optional(),
+    removeAllPermissions: z.boolean().optional(),
   }),
 });
 
 export const deleteMembersSchema = z.object({
   query: memberQuerySchema,
   deleteMany: z.boolean().optional(),
-});
-
-export const respondToMemberRequestSchema = z.object({
-  appId: z.string(),
-  groupId: z.string(),
-  requestId: z.string().min(1),
-  status: z.enum([kMemberStatus.accepted, kMemberStatus.rejected]),
 });
 
 export const getMembersSchema = z.object({
@@ -152,11 +137,21 @@ export const getMembersSchema = z.object({
   includePermissions: z.boolean().optional(),
 });
 
+export const respondToMemberRequestSchema = z.object({
+  query: z.object({
+    projectId: z.string().min(1),
+    groupId: z.string().min(1),
+    id: z.string().min(1),
+  }),
+  status: z.enum([kMemberStatus.accepted, kMemberStatus.rejected]),
+});
+
 export const getMemberRequestsSchema = z.object({
   query: z.object({
-    memberId: z.string().min(1),
-    groupId: z.string().optional(),
-    appId: z.string(),
+    id: z.string().min(1).optional(),
+    groupId: z.string().min(1).optional(),
+    projectId: z.string().min(1),
+    userId: z.string().min(1).optional(),
     status: z
       .enum([
         kMemberStatus.pending,
@@ -167,34 +162,32 @@ export const getMemberRequestsSchema = z.object({
   }),
   page: z.number().min(1).optional(),
   limit: z.number().min(1).optional(),
-  includePermissions: z.boolean().optional(),
 });
 
 export const checkMemberPermissionsSchema = z.object({
-  appId: z.string(),
-  memberId: z.string(),
-  groupId: z.string(),
-  items: z.array(checkPermissionItemSchema),
+  query: z.object({
+    projectId: z.string().min(1),
+    groupId: z.string().min(1),
+    id: z.string().min(1),
+  }),
+  items: z.array(checkMemberPermissionItemSchema).max(100),
 });
 
 export type AddMemberEndpointArgs = z.infer<typeof addMemberSchema>;
 export type GetMembersEndpointArgs = z.infer<typeof getMembersSchema>;
-export type GetMemberByMemberIdEndpointArgs = z.infer<
-  typeof getMemberByMemberIdSchema
->;
 export type UpdateMembersEndpointArgs = z.infer<typeof updateMembersSchema>;
 export type DeleteMembersEndpointArgs = z.infer<typeof deleteMembersSchema>;
-export type RespondToMemberRequestEndpointArgs = z.infer<
-  typeof respondToMemberRequestSchema
->;
-export type GetMemberRequestsEndpointArgs = z.infer<
-  typeof getMemberRequestsSchema
->;
 export type UpdateMemberPermissionsEndpointArgs = z.infer<
   typeof updateMemberPermissionsSchema
 >;
 export type CheckMemberPermissionsEndpointArgs = z.infer<
   typeof checkMemberPermissionsSchema
+>;
+export type RespondToMemberRequestEndpointArgs = z.infer<
+  typeof respondToMemberRequestSchema
+>;
+export type GetMemberRequestsEndpointArgs = z.infer<
+  typeof getMemberRequestsSchema
 >;
 
 export interface IGetMembersEndpointResponse {
@@ -225,7 +218,7 @@ export interface IRespondToMemberRequestEndpointResponse {
 
 export interface CheckMemberPermissionsEndpointResponse {
   results: {
-    hasPermission: boolean;
+    isPermitted: boolean;
   }[];
 }
 

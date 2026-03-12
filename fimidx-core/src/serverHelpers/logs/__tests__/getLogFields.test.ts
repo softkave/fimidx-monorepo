@@ -15,7 +15,7 @@ import { createTestSetup } from "./testUtils.js";
 
 const testName = "getLogFields";
 const { storage, cleanup, testData } = createTestSetup({ testName });
-const { appId, by, byType } = testData;
+const { projectId, by, byType } = testData;
 
 // Test counter to ensure unique names
 let testCounter = 0;
@@ -25,7 +25,7 @@ function makeGetLogFieldsArgs(
 ): GetLogFieldsEndpointArgs {
   testCounter++;
   return {
-    appId: appId,
+    query: { projectId: projectId },
     page: undefined,
     limit: undefined,
     ...overrides,
@@ -46,9 +46,9 @@ function makeTestLog(overrides: any = {}) {
   };
 }
 
-// Helper to generate a unique appId for each test
-function makeUniqueAppId() {
-  return `test-app-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+// Helper to generate a unique projectId for each test
+function makeUniqueProjectId() {
+  return `test-project-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 describe("getLogFields integration", () => {
@@ -77,7 +77,7 @@ describe("getLogFields integration", () => {
   }
 
   it("returns empty result when no log fields exist", async () => {
-    const args = makeGetLogFieldsArgs({ appId: appId });
+    const args = makeGetLogFieldsArgs({ query: { projectId } });
     const result = await getLogFields({
       args,
     });
@@ -97,7 +97,7 @@ describe("getLogFields integration", () => {
     ];
     await ingestLogs({
       args: {
-        appId: appId,
+        projectId: projectId,
         logs,
       },
       by: by,
@@ -107,7 +107,7 @@ describe("getLogFields integration", () => {
     });
     // Index only the objects created in this test
     await indexObjectsAfter(beforeIngest);
-    const args = makeGetLogFieldsArgs({ appId: appId });
+    const args = makeGetLogFieldsArgs({ query: { projectId } });
     const result = await getLogFields({
       args,
     });
@@ -139,7 +139,7 @@ describe("getLogFields integration", () => {
     }
     await ingestLogs({
       args: {
-        appId: appId,
+        projectId: projectId,
         logs,
       },
       by: by,
@@ -151,9 +151,9 @@ describe("getLogFields integration", () => {
     await indexObjectsAfter(beforeIngest);
     // Test first page with limit 2
     const args1 = makeGetLogFieldsArgs({
+      query: { projectId },
       page: 1,
       limit: 2,
-      appId: appId,
     });
     const result1 = await getLogFields({
       args: args1,
@@ -164,9 +164,9 @@ describe("getLogFields integration", () => {
     expect(result1.hasMore).toBe(true);
     // Test second page
     const args2 = makeGetLogFieldsArgs({
+      query: { projectId },
       page: 2,
       limit: 2,
-      appId: appId,
     });
     const result2 = await getLogFields({
       args: args2,
@@ -177,16 +177,16 @@ describe("getLogFields integration", () => {
     // hasMore depends on total number of fields
   });
 
-  it("returns only fields for the specified appId", async () => {
+  it("returns only fields for the specified projectId", async () => {
     const beforeIngest = new Date();
-    // Create logs for different apps
-    const appId1 = makeUniqueAppId();
-    const appId2 = makeUniqueAppId();
-    const logs1 = [makeTestLog({ level: "info", message: "App 1 log" })];
-    const logs2 = [makeTestLog({ level: "info", message: "App 2 log" })];
+    // Create logs for different projects
+    const projectId1 = makeUniqueProjectId();
+    const projectId2 = makeUniqueProjectId();
+    const logs1 = [makeTestLog({ level: "info", message: "Project 1 log" })];
+    const logs2 = [makeTestLog({ level: "info", message: "Project 2 log" })];
     await ingestLogs({
       args: {
-        appId: appId1,
+        projectId: projectId1,
         logs: logs1,
       },
       by: by,
@@ -196,7 +196,7 @@ describe("getLogFields integration", () => {
     });
     await ingestLogs({
       args: {
-        appId: appId2,
+        projectId: projectId2,
         logs: logs2,
       },
       by: by,
@@ -206,16 +206,16 @@ describe("getLogFields integration", () => {
     });
     // Index only the objects created in this test
     await indexObjectsAfter(beforeIngest);
-    // Query for app-1 fields
+    // Query for project-1 fields
     const args = makeGetLogFieldsArgs({
-      appId: appId1,
+      query: { projectId: projectId1 },
     });
     const result = await getLogFields({
       args,
     });
     expect(result.fields.length).toBeGreaterThan(0);
     result.fields.forEach((field) => {
-      expect(field.appId).toBe(appId1);
+      expect(field.projectId).toBe(projectId1);
     });
   });
 
@@ -234,7 +234,7 @@ describe("getLogFields integration", () => {
     ];
     await ingestLogs({
       args: {
-        appId: appId,
+        projectId: projectId,
         logs,
       },
       by: by,
@@ -244,7 +244,7 @@ describe("getLogFields integration", () => {
     });
     // Index only the objects created in this test
     await indexObjectsAfter(beforeIngest);
-    const args = makeGetLogFieldsArgs({ appId: appId });
+    const args = makeGetLogFieldsArgs({ query: { projectId } });
     const result = await getLogFields({
       args,
     });
@@ -270,7 +270,7 @@ describe("getLogFields integration", () => {
     ];
     await ingestLogs({
       args: {
-        appId: appId,
+        projectId: projectId,
         logs,
       },
       by: by,
@@ -280,7 +280,7 @@ describe("getLogFields integration", () => {
     });
     // Index only the objects created in this test
     await indexObjectsAfter(beforeIngest);
-    const args = makeGetLogFieldsArgs({ appId: appId });
+    const args = makeGetLogFieldsArgs({ query: { projectId } });
     const result = await getLogFields({
       args,
     });

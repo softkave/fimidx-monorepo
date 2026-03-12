@@ -4,8 +4,8 @@ import { useCallback } from "react";
 import { Copyable } from "../internal/copyable";
 import { ObfuscateText } from "../internal/obfuscate-text";
 import { Button } from "../ui/button";
-import { Separator } from "../ui/separator";
 import { ClientTokenItemMenu } from "./client-token-item-menu";
+import { PermissionSelector } from "./permission-selector";
 export interface IClientTokenProps {
   clientToken: IClientToken;
 }
@@ -16,19 +16,36 @@ export function ClientToken(props: IClientTokenProps) {
   });
 
   const handleEncodeClientTokenJWT = useCallback(async () => {
+    const projectId =
+      props.clientToken.meta?.projectId ?? props.clientToken.projectId;
+    const groupId = props.clientToken.meta?.orgId ?? props.clientToken.groupId;
+    if (!projectId || !groupId) return;
     await encodeClientTokenJWT.trigger({
       id: props.clientToken.id,
+      projectId,
+      groupId,
     });
-  }, [encodeClientTokenJWT, props.clientToken.id]);
+  }, [
+    encodeClientTokenJWT,
+    props.clientToken.id,
+    props.clientToken.projectId,
+    props.clientToken.groupId,
+    props.clientToken.meta?.projectId,
+    props.clientToken.meta?.orgId,
+  ]);
 
   const { data } = encodeClientTokenJWT;
 
   const orgId = props.clientToken.meta?.orgId;
-  const appId = props.clientToken.meta?.appId;
+  const projectId =
+    props.clientToken.meta?.projectId ?? props.clientToken.projectId;
+  const groupId = props.clientToken.meta?.groupId ?? props.clientToken.groupId;
 
-  if (!orgId || !appId) {
+  if (!orgId || !projectId) {
     return null;
   }
+
+  const permissions = props.clientToken.permissions ?? [];
 
   return (
     <div className="flex flex-col gap-4 p-4 pt-0">
@@ -38,7 +55,10 @@ export function ClientToken(props: IClientTokenProps) {
             {props.clientToken.name}
           </h1>
         </div>
-        <ClientTokenItemMenu clientToken={props.clientToken} appId={appId} />
+        <ClientTokenItemMenu
+          clientToken={props.clientToken}
+          projectId={projectId}
+        />
       </div>
       <div className="flex flex-col gap-4">
         {props.clientToken.description && (
@@ -46,16 +66,35 @@ export function ClientToken(props: IClientTokenProps) {
             {props.clientToken.description}
           </p>
         )}
-        <Separator />
         <div className="flex flex-col gap-2">
-          <h3 className="text-sm font-medium text-muted-foreground">App ID</h3>
-          <Copyable produceText={() => appId}>
+          <h3 className="text-sm font-medium text-muted-foreground">
+            Project ID
+          </h3>
+          <Copyable produceText={() => projectId}>
             <pre className="text-sm text-muted-foreground bg-muted p-2 rounded-md whitespace-pre-wrap break-all">
-              <code>{appId}</code>
+              <code>{projectId}</code>
             </pre>
           </Copyable>
         </div>
-        <Separator />
+        <div className="flex flex-col gap-2">
+          <h3 className="text-sm font-medium text-muted-foreground">
+            Group ID
+          </h3>
+          <Copyable produceText={() => groupId}>
+            <pre className="text-sm text-muted-foreground bg-muted p-2 rounded-md whitespace-pre-wrap break-all">
+              <code>{groupId}</code>
+            </pre>
+          </Copyable>
+        </div>
+        {permissions.length > 0 && (
+          <>
+            <PermissionSelector
+              value={permissions}
+              targetId={projectId}
+              readonly
+            />
+          </>
+        )}
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center gap-2">
             <h3 className="text-md font-medium">Encode Token</h3>

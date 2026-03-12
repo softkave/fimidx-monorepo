@@ -1,8 +1,13 @@
-import { get } from "lodash-es";
+import { get, set, uniq } from "lodash-es";
 import type { Model, SortOrder } from "mongoose";
 import { mergeObjects, type AnyObject } from "softkave-js-utils";
 import { v7 as uuidv7 } from "uuid";
-import type { IInputObjRecord, IObj } from "../../definitions/obj.js";
+import {
+  prefixObjId,
+  type IGranularUpdate,
+  type IInputObjRecord,
+  type IObj,
+} from "../../definitions/obj.js";
 import { MongoQueryTransformer } from "../query/MongoQueryTransformer.js";
 import type {
   BulkDeleteParams,
@@ -130,17 +135,29 @@ export class MongoObjStorage implements IObjStorage {
       return { updatedCount: 0, updatedObjs: [] };
     }
 
-    const updateWay = params.updateWay || "replace";
+    const updateWay = params.updateWay || "shallowMerge";
     const updatedObjs: IObj[] = [];
     const date = new Date();
 
     for (const obj of objs) {
-      // Merge objRecord using the specified strategy
-      const mergedObjRecord = this.applyMergeStrategy(
-        obj.objRecord,
-        params.update,
-        updateWay
-      );
+      let mergedObjRecord: AnyObject;
+
+      if (params.updates) {
+        mergedObjRecord = this.applyGranularUpdates(
+          obj.objRecord,
+          params.updates,
+          updateWay
+        );
+      } else if (params.update) {
+        mergedObjRecord = this.applyMergeStrategy(
+          obj.objRecord,
+          params.update,
+          updateWay
+        );
+      } else {
+        continue;
+      }
+
       const updatedObj: IObj = {
         ...obj,
         objRecord: mergedObjRecord,
@@ -218,7 +235,7 @@ export class MongoObjStorage implements IObjStorage {
       conflictOnKeys = [],
       onConflict = "replace",
       tag,
-      appId,
+      projectId,
       groupId,
       createdBy,
       createdByType,
@@ -242,11 +259,16 @@ export class MongoObjStorage implements IObjStorage {
       const existingObjs = await this.findExistingObjsForBatch({
         items: batch,
         conflictOnKeys,
-        appId,
+        projectId,
         tag,
         date,
         session,
       });
+
+      // console.log("existingObjs", existingObjs);
+      // console.log("conflictOnKeys", conflictOnKeys);
+      // console.log("batch", batch);
+      // console.log("projectId", projectId);
 
       // Group items into new and existing
       const { newItems, existingItems } = this.groupItemsIntoNewAndExisting(
@@ -258,7 +280,7 @@ export class MongoObjStorage implements IObjStorage {
       if (newItems.length > 0) {
         const createdObjs = await this.createNewObjs({
           items: newItems,
-          appId,
+          projectId,
           tag,
           date,
           groupId,
@@ -310,18 +332,20 @@ export class MongoObjStorage implements IObjStorage {
       query,
       tag,
       update,
+      updates,
       by,
       byType,
-      updateWay = "mergeButReplaceArrays",
+      updateWay = "shallowMerge",
       count,
       shouldIndex,
       fieldsToIndex,
+      fields,
       batchSize = 1000,
       onProgress,
     } = params;
 
     const date = new Date();
-    const filter = this.queryTransformer.transformFilter(query, date);
+    const filter = this.queryTransformer.transformFilter(query, date, fields);
 
     // Add tag filter
     if (tag) {
@@ -364,11 +388,23 @@ export class MongoObjStorage implements IObjStorage {
 
       // Apply updates to each object
       const objsToUpdate = objs.map((obj) => {
-        const updatedObjRecord = this.applyMergeStrategy(
-          obj.objRecord,
-          update,
-          updateWay
-        );
+        let updatedObjRecord: AnyObject;
+
+        if (updates) {
+          updatedObjRecord = this.applyGranularUpdates(
+            obj.objRecord,
+            updates,
+            updateWay
+          );
+        } else if (update) {
+          updatedObjRecord = this.applyMergeStrategy(
+            obj.objRecord,
+            update,
+            updateWay
+          );
+        } else {
+          updatedObjRecord = obj.objRecord;
+        }
 
         return {
           id: obj.id,
@@ -430,16 +466,13 @@ export class MongoObjStorage implements IObjStorage {
       deleteMany = false,
       batchSize = 1000,
       hardDelete = false,
+      fields,
     } = params;
 
-    const filter = this.queryTransformer.transformFilter(query, date);
-
-    // Add tag filter
+    const filter = this.queryTransformer.transformFilter(query, date, fields);
     if (tag) {
       filter.tag = tag;
     }
-
-    // Add deleted filter
     filter.deletedAt = null;
 
     let totalProcessed = 0;
@@ -458,7 +491,7 @@ export class MongoObjStorage implements IObjStorage {
       // console.dir(deletedBy, { depth: null });
 
       const objs = await this.objModel
-        .find(filter, undefined, session ? { session } : undefined)
+        .find(filter, { id: 1, _id: 0 }, session ? { session } : undefined)
         .skip(page * effectiveBatchSize)
         .limit(effectiveBatchSize)
         .sort({ createdAt: -1 })
@@ -473,14 +506,14 @@ export class MongoObjStorage implements IObjStorage {
         // Hard delete
         await this.objModel.deleteMany(
           {
-            id: { $in: objs.map((obj) => obj.id) },
+            id: { $in: uniq(objs.map((obj) => obj.id)) },
           },
           session ? { session } : undefined
         );
       } else {
         // Soft delete
         await this.objModel.updateMany(
-          { id: { $in: objs.map((obj) => obj.id) } },
+          { id: { $in: uniq(objs.map((obj) => obj.id)) } },
           {
             $set: {
               deletedAt: date,
@@ -536,7 +569,7 @@ export class MongoObjStorage implements IObjStorage {
       // For now, just delete the objects
       await this.objModel.deleteMany(
         {
-          id: { $in: objs.map((obj) => obj.id) },
+          id: { $in: uniq(objs.map((obj) => obj.id)) },
         },
         session ? { session } : undefined
       );
@@ -600,12 +633,12 @@ export class MongoObjStorage implements IObjStorage {
   private async findExistingObjsForBatch(params: {
     items: IInputObjRecord[];
     conflictOnKeys: string[];
-    appId: string;
+    projectId: string;
     tag: string;
     date: Date;
     session?: any;
   }): Promise<(IObj | undefined)[]> {
-    const { items, conflictOnKeys, appId, tag, date, session } = params;
+    const { items, conflictOnKeys, projectId, tag, date, session } = params;
 
     if (!conflictOnKeys.length) {
       return new Array(items.length).fill(undefined);
@@ -617,7 +650,7 @@ export class MongoObjStorage implements IObjStorage {
       const conflictFilter = this.buildConflictFilter({
         item,
         conflictOnKeys,
-        appId,
+        projectId,
         tag,
       });
 
@@ -640,12 +673,12 @@ export class MongoObjStorage implements IObjStorage {
   private buildConflictFilter(params: {
     item: IInputObjRecord;
     conflictOnKeys: string[];
-    appId: string;
+    projectId: string;
     tag: string;
   }): any {
-    const { item, conflictOnKeys, appId, tag } = params;
+    const { item, conflictOnKeys, projectId, tag } = params;
     const filter: any = {
-      appId,
+      projectId,
       tag,
       deletedAt: null,
     };
@@ -684,7 +717,7 @@ export class MongoObjStorage implements IObjStorage {
 
   private async createNewObjs(params: {
     items: IInputObjRecord[];
-    appId: string;
+    projectId: string;
     tag: string;
     date: Date;
     groupId: string;
@@ -696,7 +729,7 @@ export class MongoObjStorage implements IObjStorage {
   }): Promise<IObj[]> {
     const {
       items,
-      appId,
+      projectId,
       tag,
       date,
       groupId,
@@ -708,8 +741,8 @@ export class MongoObjStorage implements IObjStorage {
     } = params;
 
     const newObjs: IObj[] = items.map((item) => ({
-      id: uuidv7(),
-      appId,
+      id: prefixObjId(tag, uuidv7()),
+      projectId,
       tag,
       groupId,
       createdAt: date,
@@ -773,6 +806,30 @@ export class MongoObjStorage implements IObjStorage {
     return objsToUpdate.map((item) => item.obj);
   }
 
+  private shallowMerge(
+    existing: AnyObject,
+    update: AnyObject,
+    arrayStrategy: "replace" | "concat" | "retain"
+  ): AnyObject {
+    const result = { ...existing };
+    for (const key of Object.keys(update)) {
+      if (
+        arrayStrategy !== "replace" &&
+        Array.isArray(existing[key]) &&
+        Array.isArray(update[key])
+      ) {
+        if (arrayStrategy === "concat") {
+          result[key] = [...existing[key], ...update[key]];
+        } else if (arrayStrategy === "retain") {
+          result[key] = existing[key];
+        }
+      } else {
+        result[key] = update[key];
+      }
+    }
+    return result;
+  }
+
   private applyMergeStrategy(
     existingRecord: AnyObject,
     updateRecord: AnyObject,
@@ -781,8 +838,28 @@ export class MongoObjStorage implements IObjStorage {
     switch (strategy) {
       case "replace":
         return updateRecord;
+      case "shallowMerge":
+      case "shallowMergeButReplaceArrays":
+        return this.shallowMerge(existingRecord, updateRecord, "replace");
+      case "shallowMergeButConcatArrays":
+        return this.shallowMerge(existingRecord, updateRecord, "concat");
+      case "shallowMergeButKeepArrays":
+        return this.shallowMerge(existingRecord, updateRecord, "retain");
+      case "deepMerge":
+      case "deepMergeButReplaceArrays":
+        return mergeObjects(existingRecord, updateRecord, {
+          arrayUpdateStrategy: "replace",
+        });
+      case "deepMergeButConcatArrays":
+        return mergeObjects(existingRecord, updateRecord, {
+          arrayUpdateStrategy: "concat",
+        });
+      case "deepMergeButKeepArrays":
+        return mergeObjects(existingRecord, updateRecord, {
+          arrayUpdateStrategy: "retain",
+        });
+      // Backwards compatibility - deprecated, use deepMerge variants instead
       case "merge":
-        return { ...existingRecord, ...updateRecord };
       case "mergeButReplaceArrays":
         return mergeObjects(existingRecord, updateRecord, {
           arrayUpdateStrategy: "replace",
@@ -798,5 +875,31 @@ export class MongoObjStorage implements IObjStorage {
       default:
         return existingRecord;
     }
+  }
+
+  private applyGranularUpdates(
+    existingRecord: AnyObject,
+    updates: IGranularUpdate[],
+    defaultUpdateWay: string
+  ): AnyObject {
+    let result = { ...existingRecord };
+
+    for (const update of updates) {
+      const updateWay = update.updateWay || defaultUpdateWay;
+
+      if (!update.key) {
+        result = this.applyMergeStrategy(result, update.value, updateWay);
+      } else {
+        const existingValue = get(result, update.key) || {};
+        const mergedValue = this.applyMergeStrategy(
+          existingValue,
+          update.value,
+          updateWay
+        );
+        result = set({ ...result }, update.key, mergedValue);
+      }
+    }
+
+    return result;
   }
 }

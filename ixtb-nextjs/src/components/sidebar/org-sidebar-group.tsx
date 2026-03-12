@@ -7,16 +7,16 @@ import {
   SidebarMenuItem,
 } from "@/src/components/ui/sidebar";
 import { kClientPaths } from "@/src/lib/clientHelpers/clientPaths";
-import { AppWindow } from "lucide-react";
+import { AppWindowIcon } from "lucide-react";
 import { useMemo } from "react";
 import { ISidebarItem } from "./types";
 
 function getItems(orgId: string) {
   const items: ISidebarItem[] = [
     {
-      title: "Apps",
-      url: kClientPaths.app.org.app.index(orgId),
-      icon: AppWindow,
+      title: "Projects",
+      url: kClientPaths.app.org.project.index(orgId),
+      icon: AppWindowIcon,
     },
   ];
 

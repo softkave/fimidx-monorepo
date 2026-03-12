@@ -45,7 +45,7 @@
     "type-fest": "^4.37.0",
     "ws": "^8.18.0",
     "zod": "^3.24.2",
-    "fimidx-winston-transport": "^0.3.0",
+    "fimidx-winston-transport": "workspace:*",
     "winston": "^3.17.0"
   }
 }

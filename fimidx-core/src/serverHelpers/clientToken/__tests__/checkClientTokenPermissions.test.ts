@@ -7,6 +7,11 @@ import {
   expect,
   it,
 } from "vitest";
+import type {
+  AddClientTokenEndpointArgs,
+  AddClientTokenPermissionsEndpointArgs,
+  CheckClientTokenPermissionsEndpointArgs,
+} from "../../../definitions/clientToken.js";
 import { addClientToken } from "../addClientToken.js";
 import { addClientTokenPermissions } from "../addClientTokenPermissions.js";
 import { checkClientTokenPermissions } from "../checkClientTokenPermissions.js";
@@ -17,47 +22,51 @@ describe("checkClientTokenPermissions integration", () => {
     testName: "checkClientTokenPermissions",
   });
 
-  const { appId, groupId, by, byType } = testData;
+  const { projectId, groupId, by, byType } = testData;
 
-  function makeAddClientTokenArgs(overrides: any = {}) {
+  function makeAddClientTokenArgs(
+    overrides: Partial<AddClientTokenEndpointArgs> = {}
+  ): AddClientTokenEndpointArgs {
     const testData = makeTestData({ testName: "token" });
     return {
       groupId,
       name: testData.tokenName,
       description: "Test description",
-      appId,
+      projectId,
       permissions: [],
       ...overrides,
     };
   }
 
-  function makeAddClientTokenPermissionsArgs(overrides: any = {}) {
+  function makeAddClientTokenPermissionsArgs(
+    overrides: Partial<AddClientTokenPermissionsEndpointArgs> = {}
+  ): AddClientTokenPermissionsEndpointArgs {
     const testData = makeTestData({ testName: "permissions" });
     return {
-      by,
-      byType,
-      groupId,
-      appId,
+      query: {
+        groupId,
+        projectId,
+        clientTokenId: `token-${testData.tokenName}`,
+      },
       permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
+        { action: "read", target: "document" },
       ],
-      clientTokenId: `token-${testData.tokenName}`,
       ...overrides,
     };
   }
 
-  function makeCheckClientTokenPermissionsArgs(overrides: any = {}) {
+  function makeCheckClientTokenPermissionsArgs(
+    overrides: Partial<CheckClientTokenPermissionsEndpointArgs> = {}
+  ): CheckClientTokenPermissionsEndpointArgs {
     return {
-      appId,
-      clientTokenId: "test-token-id",
-      groupId,
+      query: {
+        projectId,
+        clientTokenId: "test-token-id",
+        groupId,
+      },
       items: [
         {
-          entity: "user",
+          entity: "test-token-id",
           action: "read",
           target: "document",
         },
@@ -96,34 +105,32 @@ describe("checkClientTokenPermissions integration", () => {
 
     // Add permissions to the client token
     const permissionsArgs = makeAddClientTokenPermissionsArgs({
-      clientTokenId: token.clientToken.id,
+      query: { groupId, projectId, clientTokenId: token.clientToken.id },
       permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-        {
-          entity: "admin",
-          action: "write",
-          target: "settings",
-        },
+        { action: "read", target: "document" },
+        { action: "write", target: "settings" },
       ],
     });
 
-    await addClientTokenPermissions(permissionsArgs);
+    await addClientTokenPermissions({
+      ...permissionsArgs.query,
+      permissions: permissionsArgs.permissions,
+      by: by,
+      byType: byType,
+      storage,
+    });
 
     // Check if the client token has the permissions
     const checkArgs = makeCheckClientTokenPermissionsArgs({
-      clientTokenId: token.clientToken.id,
+      query: { projectId, groupId, clientTokenId: token.clientToken.id },
       items: [
         {
-          entity: "user",
+          entity: token.clientToken.id,
           action: "read",
           target: "document",
         },
         {
-          entity: "admin",
+          entity: token.clientToken.id,
           action: "write",
           target: "settings",
         },
@@ -136,8 +143,8 @@ describe("checkClientTokenPermissions integration", () => {
     });
 
     expect(result.results).toHaveLength(2);
-    expect(result.results[0].hasPermission).toBe(true);
-    expect(result.results[1].hasPermission).toBe(true);
+    expect(result.results[0].isPermitted).toBe(true);
+    expect(result.results[1].isPermitted).toBe(true);
   });
 
   it("returns false for permissions that don't exist", async () => {
@@ -152,29 +159,29 @@ describe("checkClientTokenPermissions integration", () => {
 
     // Add some permissions to the client token
     const permissionsArgs = makeAddClientTokenPermissionsArgs({
-      clientTokenId: token.clientToken.id,
-      permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-      ],
+      query: { groupId, projectId, clientTokenId: token.clientToken.id },
+      permissions: [{ action: "read", target: "document" }],
     });
 
-    await addClientTokenPermissions(permissionsArgs);
+    await addClientTokenPermissions({
+      ...permissionsArgs.query,
+      permissions: permissionsArgs.permissions,
+      by: by,
+      byType: byType,
+      storage,
+    });
 
     // Check for permissions that don't exist
     const checkArgs = makeCheckClientTokenPermissionsArgs({
-      clientTokenId: token.clientToken.id,
+      query: { projectId, groupId, clientTokenId: token.clientToken.id },
       items: [
         {
-          entity: "user",
+          entity: token.clientToken.id,
           action: "write",
           target: "document",
         },
         {
-          entity: "admin",
+          entity: token.clientToken.id,
           action: "delete",
           target: "settings",
         },
@@ -187,8 +194,8 @@ describe("checkClientTokenPermissions integration", () => {
     });
 
     expect(result.results).toHaveLength(2);
-    expect(result.results[0].hasPermission).toBe(false);
-    expect(result.results[1].hasPermission).toBe(false);
+    expect(result.results[0].isPermitted).toBe(false);
+    expect(result.results[1].isPermitted).toBe(false);
   });
 
   it("handles mixed permissions (some exist, some don't)", async () => {
@@ -203,44 +210,42 @@ describe("checkClientTokenPermissions integration", () => {
 
     // Add some permissions to the client token
     const permissionsArgs = makeAddClientTokenPermissionsArgs({
-      clientTokenId: token.clientToken.id,
+      query: { groupId, projectId, clientTokenId: token.clientToken.id },
       permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-        {
-          entity: "admin",
-          action: "write",
-          target: "settings",
-        },
+        { action: "read", target: "document" },
+        { action: "write", target: "settings" },
       ],
     });
 
-    await addClientTokenPermissions(permissionsArgs);
+    await addClientTokenPermissions({
+      ...permissionsArgs.query,
+      permissions: permissionsArgs.permissions,
+      by: by,
+      byType: byType,
+      storage,
+    });
 
     // Check for mixed permissions
     const checkArgs = makeCheckClientTokenPermissionsArgs({
-      clientTokenId: token.clientToken.id,
+      query: { projectId, groupId, clientTokenId: token.clientToken.id },
       items: [
         {
-          entity: "user",
+          entity: token.clientToken.id,
           action: "read",
           target: "document",
         },
         {
-          entity: "user",
+          entity: token.clientToken.id,
           action: "write",
           target: "document",
         },
         {
-          entity: "admin",
+          entity: token.clientToken.id,
           action: "write",
           target: "settings",
         },
         {
-          entity: "admin",
+          entity: token.clientToken.id,
           action: "delete",
           target: "settings",
         },
@@ -253,10 +258,10 @@ describe("checkClientTokenPermissions integration", () => {
     });
 
     expect(result.results).toHaveLength(4);
-    expect(result.results[0].hasPermission).toBe(true); // user:read:document
-    expect(result.results[1].hasPermission).toBe(false); // user:write:document
-    expect(result.results[2].hasPermission).toBe(true); // admin:write:settings
-    expect(result.results[3].hasPermission).toBe(false); // admin:delete:settings
+    expect(result.results[0].isPermitted).toBe(true); // user:read:document
+    expect(result.results[1].isPermitted).toBe(false); // user:write:document
+    expect(result.results[2].isPermitted).toBe(true); // admin:write:settings
+    expect(result.results[3].isPermitted).toBe(false); // admin:delete:settings
   });
 
   it("handles empty items array", async () => {
@@ -272,7 +277,7 @@ describe("checkClientTokenPermissions integration", () => {
     expect(result.results).toHaveLength(0);
   });
 
-  it("handles object-based permission entities, actions, and targets", async () => {
+  it("handles object-based permission actions, and targets", async () => {
     // First create a client token
     const tokenArgs = makeAddClientTokenArgs();
     const token = await addClientToken({
@@ -282,33 +287,38 @@ describe("checkClientTokenPermissions integration", () => {
       storage,
     });
 
-    // Add permissions with object-based entities, actions, and targets
+    // Add permissions with object-based action and target
     const permissionsArgs = makeAddClientTokenPermissionsArgs({
-      clientTokenId: token.clientToken.id,
+      query: { groupId, projectId, clientTokenId: token.clientToken.id },
       permissions: [
         {
-          entity: { type: "user", id: "123" },
           action: { operation: "read", scope: "full" },
           target: { resource: "document", id: "doc-1" },
         },
       ],
     });
 
-    await addClientTokenPermissions(permissionsArgs);
+    await addClientTokenPermissions({
+      ...permissionsArgs.query,
+      permissions: permissionsArgs.permissions,
+      by: by,
+      byType: byType,
+      storage,
+    });
 
     // Check for the same object-based permissions
     const checkArgs = makeCheckClientTokenPermissionsArgs({
-      clientTokenId: token.clientToken.id,
+      query: { projectId, groupId, clientTokenId: token.clientToken.id },
       items: [
         {
-          entity: { type: "user", id: "123" },
+          entity: token.clientToken.id,
           action: { operation: "read", scope: "full" },
           target: { resource: "document", id: "doc-1" },
         },
         {
-          entity: { type: "user", id: "456" },
-          action: { operation: "read", scope: "full" },
-          target: { resource: "document", id: "doc-1" },
+          entity: token.clientToken.id,
+          action: { operation: "write", scope: "full" },
+          target: { resource: "document", id: "doc-2" },
         },
       ],
     });
@@ -319,8 +329,8 @@ describe("checkClientTokenPermissions integration", () => {
     });
 
     expect(result.results).toHaveLength(2);
-    expect(result.results[0].hasPermission).toBe(true);
-    expect(result.results[1].hasPermission).toBe(false);
+    expect(result.results[0].isPermitted).toBe(true);
+    expect(result.results[1].isPermitted).toBe(false);
   });
 
   it("handles different group IDs correctly", async () => {
@@ -335,22 +345,21 @@ describe("checkClientTokenPermissions integration", () => {
 
     // Add permissions to the client token in the default group
     const permissionsArgs = makeAddClientTokenPermissionsArgs({
-      clientTokenId: token.clientToken.id,
-      permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-      ],
+      query: { groupId, projectId, clientTokenId: token.clientToken.id },
+      permissions: [{ action: "read", target: "document" }],
     });
 
-    await addClientTokenPermissions(permissionsArgs);
+    await addClientTokenPermissions({
+      ...permissionsArgs.query,
+      permissions: permissionsArgs.permissions,
+      by: by,
+      byType: byType,
+      storage,
+    });
 
     // Check for permissions in a different group
     const checkArgs = makeCheckClientTokenPermissionsArgs({
-      clientTokenId: token.clientToken.id,
-      groupId: "different-group",
+      query: { projectId, clientTokenId: token.clientToken.id, groupId: "different-group" },
       items: [
         {
           entity: "user",
@@ -366,6 +375,6 @@ describe("checkClientTokenPermissions integration", () => {
     });
 
     expect(result.results).toHaveLength(1);
-    expect(result.results[0].hasPermission).toBe(false);
+    expect(result.results[0].isPermitted).toBe(false);
   });
 });

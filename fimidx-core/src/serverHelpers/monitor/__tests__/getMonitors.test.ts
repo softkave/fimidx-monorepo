@@ -2,14 +2,17 @@ import { and, eq } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
-import type { GetMonitorsEndpointArgs } from "../../../definitions/monitor.js";
+import type {
+  AddMonitorEndpointArgs,
+  GetMonitorsEndpointArgs,
+} from "../../../definitions/monitor.js";
 import { kObjTags } from "../../../definitions/obj.js";
 import { createDefaultStorage } from "../../../storage/config.js";
 import type { IObjStorage } from "../../../storage/types.js";
 import { addMonitor } from "../addMonitor.js";
 import { getMonitors } from "../getMonitors.js";
 
-const defaultAppId = "test-app-getMonitors";
+const defaultProjectId = "test-project-getMonitors";
 const defaultGroupId = "test-group";
 const defaultBy = "tester";
 const defaultByType = "user";
@@ -22,7 +25,7 @@ function makeGetMonitorsArgs(
 ): GetMonitorsEndpointArgs {
   return {
     query: {
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       ...overrides.query,
     },
     page: overrides.page,
@@ -31,53 +34,21 @@ function makeGetMonitorsArgs(
   };
 }
 
-function makeAddMonitorArgs(overrides: any = {}) {
+function makeAddMonitorArgs(
+  overrides: Partial<AddMonitorEndpointArgs> = {}
+): AddMonitorEndpointArgs {
   testCounter++;
   const uniqueId = `${testCounter}_${Date.now()}_${Math.random()
     .toString(36)
     .substr(2, 9)}`;
   return {
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     name: `Test Monitor ${uniqueId}`,
     description: "Test description",
     status: "enabled",
     reportsTo: ["user1", "user2"],
     interval: { days: 1 },
-    logsQuery: {
-      and: [
-        {
-          op: "eq",
-          field: "level",
-          value: "error",
-        },
-      ],
-    },
-    ...overrides,
-  };
-}
-
-// Helper function to create monitors with specific names for testing
-function makeTestMonitorArgs(name: string, overrides: any = {}) {
-  testCounter++;
-  const uniqueId = `${testCounter}_${Date.now()}_${Math.random()
-    .toString(36)
-    .substr(2, 9)}`;
-  return {
-    appId: defaultAppId,
-    name: `${name}_${uniqueId}`,
-    description: "Test description",
-    status: "enabled",
-    reportsTo: ["user1", "user2"],
-    interval: { days: 1 },
-    logsQuery: {
-      and: [
-        {
-          op: "eq",
-          field: "level",
-          value: "error",
-        },
-      ],
-    },
+    query: { recordQuery: [{ op: "eq", field: "level", value: "error" }] },
     ...overrides,
   };
 }
@@ -94,7 +65,7 @@ async function insertNameFieldForSorting(params: {
     id: uuidv7(),
     createdAt: now,
     updatedAt: now,
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     groupId,
     tag,
     field: "name",
@@ -125,7 +96,7 @@ async function insertStatusFieldForSorting(params: {
     id: uuidv7(),
     createdAt: now,
     updatedAt: now,
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     groupId,
     tag,
     field: "status",
@@ -163,7 +134,7 @@ describe("getMonitors integration", () => {
       ];
       for (const groupId of testGroupIds) {
         await storage.bulkDelete({
-          query: { appId: defaultAppId },
+          query: { metaQuery: { projectId: { eq: defaultProjectId } } },
           tag: kObjTags.monitor,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -178,7 +149,7 @@ describe("getMonitors integration", () => {
           .delete(objFieldsTable)
           .where(
             and(
-              eq(objFieldsTable.appId, defaultAppId),
+              eq(objFieldsTable.projectId, defaultProjectId),
               eq(objFieldsTable.groupId, groupId),
               eq(objFieldsTable.tag, kObjTags.monitor)
             )
@@ -200,7 +171,7 @@ describe("getMonitors integration", () => {
       ];
       for (const groupId of testGroupIds) {
         await storage.bulkDelete({
-          query: { appId: defaultAppId },
+          query: { metaQuery: { projectId: { eq: defaultProjectId } } },
           tag: kObjTags.monitor,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -215,7 +186,7 @@ describe("getMonitors integration", () => {
           .delete(objFieldsTable)
           .where(
             and(
-              eq(objFieldsTable.appId, defaultAppId),
+              eq(objFieldsTable.projectId, defaultProjectId),
               eq(objFieldsTable.groupId, groupId),
               eq(objFieldsTable.tag, kObjTags.monitor)
             )
@@ -287,7 +258,7 @@ describe("getMonitors integration", () => {
 
     const args = makeGetMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         name: { eq: "Error Monitor" },
       },
     });
@@ -321,7 +292,7 @@ describe("getMonitors integration", () => {
 
     const args = makeGetMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         status: { eq: "enabled" },
       },
     });
@@ -359,7 +330,7 @@ describe("getMonitors integration", () => {
 
     const args = makeGetMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         reportsTo: { eq: "user1" },
       },
     });
@@ -383,7 +354,7 @@ describe("getMonitors integration", () => {
 
     const args = makeGetMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: monitor.monitor.id },
       },
     });
@@ -414,7 +385,7 @@ describe("getMonitors integration", () => {
 
     const args = makeGetMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         createdBy: { eq: "user1" },
       },
     });
@@ -599,7 +570,7 @@ describe("getMonitors integration", () => {
 
     const args = makeGetMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         status: { eq: "enabled" },
         reportsTo: { eq: "user1" },
       },
@@ -625,7 +596,7 @@ describe("getMonitors integration", () => {
 
     const args = makeGetMonitorsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         name: { eq: "Non-existent Monitor" },
       },
     });

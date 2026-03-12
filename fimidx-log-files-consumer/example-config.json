@@ -1,5 +1,5 @@
 {
-  "appId": "my-app",
+  "projectId": "my-project",
   "clientToken": "your-client-token",
   "serverURL": "https://your-fimidx-server.com",
   "metadata": {

@@ -1,18 +1,56 @@
+import { uniq } from "lodash-es";
 import type { FilterQuery, SortOrder } from "mongoose";
-import type {
-  INumberMetaQuery,
-  IObj,
-  IObjField,
-  IObjMetaQuery,
-  IObjPartLogicalQuery,
-  IObjPartQueryItem,
-  IObjPartQueryList,
-  IObjQuery,
-  IObjSortList,
-  IStringMetaQuery,
-  ITopLevelFieldQuery,
+import {
+  isObjQueryLeaf,
+  META_QUERY_KEYS,
+  TOP_LEVEL_QUERY_KEYS,
+  type INumberMetaQuery,
+  type IObj,
+  type IObjField,
+  type IObjMetaQuery,
+  type IObjQuery,
+  type IObjQueryLeaf,
+  type IObjQueryLogical,
+  type IObjRecordQueryItem,
+  type IObjRecordQueryList,
+  type IObjSortList,
+  type IStringMetaQuery,
+  type ITopLevelFieldQuery,
 } from "../../definitions/obj.js";
 import { BaseQueryTransformer } from "./BaseQueryTransformer.js";
+
+// List of top-level fields that should not be prefixed
+const topLevelFields = new Set([
+  "id",
+  "createdAt",
+  "updatedAt",
+  "createdBy",
+  "createdByType",
+  "updatedBy",
+  "updatedByType",
+  "projectId",
+  "groupId",
+  "tag",
+  "deletedAt",
+  "deletedBy",
+  "deletedByType",
+  "shouldIndex",
+  "fieldsToIndex",
+]);
+
+// Map meta fields to top-level fields
+const fieldMap: Record<string, string> = {
+  projectId: "projectId",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  updatedBy: "updatedBy",
+  updatedByType: "updatedByType",
+  createdBy: "createdBy",
+  createdByType: "createdByType",
+  deletedAt: "deletedAt",
+  deletedBy: "deletedBy",
+  deletedByType: "deletedByType",
+};
 
 export class MongoQueryTransformer extends BaseQueryTransformer<
   FilterQuery<IObj>
@@ -22,41 +60,104 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
     date: Date,
     fields?: Map<string, IObjField>
   ): FilterQuery<IObj> {
+    // Breaking change: boolean logic is now expressed at obj-query level only.
+    // Still support callers passing a single leaf by treating it as { and: [leaf] }.
+    return isObjQueryLeaf(query)
+      ? this.transformObjLogicalQuery({ and: [query] }, date, fields)
+      : this.transformObjLogicalQuery(query as IObjQueryLogical, date, fields);
+  }
+
+  private transformLeafQuery(
+    leaf: IObjQueryLeaf,
+    date: Date,
+    fields?: Map<string, IObjField>
+  ): FilterQuery<IObj> {
     const filters: FilterQuery<IObj>[] = [];
 
-    // Add appId filter
-    if (query.appId) {
-      filters.push({ appId: query.appId });
-    }
-
-    // Add part query filter
-    if (query.partQuery) {
-      const partFilter = this.transformLogicalQuery(
-        query.partQuery,
+    if (leaf.recordQuery?.length) {
+      const recordFilter = this.transformRecordQuery(
+        leaf.recordQuery,
         date,
         fields
       );
-      if (Object.keys(partFilter).length > 0) filters.push(partFilter);
+      if (Object.keys(recordFilter).length > 0) filters.push(recordFilter);
     }
 
-    // Add meta query filter
-    if (query.metaQuery) {
-      const metaFilter = this.transformMetaQuery(query.metaQuery, date);
-      if (Object.keys(metaFilter).length > 0) filters.push(metaFilter);
-    }
+    if (leaf.metaQuery) {
+      const metaOnly: IObjMetaQuery = {};
+      const topLevelOnly: ITopLevelFieldQuery = {};
+      Object.entries(leaf.metaQuery).forEach(([key, value]) => {
+        if (value === undefined) return;
+        if (META_QUERY_KEYS.has(key)) {
+          (metaOnly as Record<string, unknown>)[key] = value;
+        } else if (TOP_LEVEL_QUERY_KEYS.has(key)) {
+          (topLevelOnly as Record<string, unknown>)[key] = value;
+        }
+      });
 
-    // Add top-level fields filter
-    if (query.topLevelFields) {
-      const topLevelFilter = this.transformTopLevelFields(
-        query.topLevelFields,
-        date
-      );
-      if (Object.keys(topLevelFilter).length > 0) filters.push(topLevelFilter);
+      if (Object.keys(metaOnly).length > 0) {
+        const metaFilter = this.transformMetaQuery(metaOnly, date);
+        if (Object.keys(metaFilter).length > 0) filters.push(metaFilter);
+      }
+
+      if (Object.keys(topLevelOnly).length > 0) {
+        const topLevelFilter = this.transformTopLevelFields(topLevelOnly, date);
+        if (Object.keys(topLevelFilter).length > 0)
+          filters.push(topLevelFilter);
+      }
     }
 
     if (filters.length === 0) return {};
     if (filters.length === 1) return filters[0];
     return { $and: filters };
+  }
+
+  private transformObjLogicalQuery(
+    logicalQuery: IObjQueryLogical,
+    date: Date,
+    fields?: Map<string, IObjField>
+  ): FilterQuery<IObj> {
+    let filter: FilterQuery<IObj> = {};
+
+    const hasAnd = !!logicalQuery.and?.length;
+    const hasOr = !!logicalQuery.or?.length;
+
+    const branchToFilter = (branch: IObjQuery): FilterQuery<IObj> =>
+      isObjQueryLeaf(branch)
+        ? this.transformLeafQuery(branch, date, fields)
+        : this.transformObjLogicalQuery(
+            branch as IObjQueryLogical,
+            date,
+            fields
+          );
+
+    if (hasAnd && hasOr) {
+      const andFilters = logicalQuery.and!.map((b) =>
+        branchToFilter(b as IObjQuery)
+      );
+      const orFilters = logicalQuery.or!.map((b) =>
+        branchToFilter(b as IObjQuery)
+      );
+      filter = { $or: [{ $and: andFilters }, ...orFilters] };
+    } else if (hasAnd) {
+      const andFilters = logicalQuery.and!.map((b) =>
+        branchToFilter(b as IObjQuery)
+      );
+      filter =
+        andFilters.length === 1
+          ? andFilters[0]
+          : ({ $and: andFilters } as FilterQuery<IObj>);
+    } else if (hasOr) {
+      const orFilters = logicalQuery.or!.map((b) =>
+        branchToFilter(b as IObjQuery)
+      );
+      filter =
+        orFilters.length === 1
+          ? orFilters[0]
+          : ({ $or: orFilters } as FilterQuery<IObj>);
+    }
+
+    return filter;
   }
 
   transformSort(
@@ -69,25 +170,6 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
     }
 
     const sortObj: Record<string, SortOrder> = {};
-
-    // List of top-level fields that should not be prefixed
-    const topLevelFields = new Set([
-      "id",
-      "createdAt",
-      "updatedAt",
-      "createdBy",
-      "createdByType",
-      "updatedBy",
-      "updatedByType",
-      "appId",
-      "groupId",
-      "tag",
-      "deletedAt",
-      "deletedBy",
-      "deletedByType",
-      "shouldIndex",
-      "fieldsToIndex",
-    ]);
 
     sort.forEach((sortItem) => {
       const direction = sortItem.direction === "asc" ? 1 : -1;
@@ -122,14 +204,14 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
     };
   }
 
-  protected transformPartQuery(
-    partQuery: IObjPartQueryList,
+  protected transformRecordQuery(
+    recordQuery: IObjRecordQueryList,
     date: Date,
     fields?: Map<string, IObjField>
   ): FilterQuery<IObj> {
     const fieldOps: Record<string, Record<string, any>> = {};
 
-    partQuery.forEach((part) => {
+    recordQuery.forEach((part) => {
       const fieldInfo = fields?.get(part.field);
       const query = this.generateFieldQuery(part, fieldInfo, date);
 
@@ -148,38 +230,6 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
     return mongoQuery;
   }
 
-  protected transformLogicalQuery(
-    logicalQuery: IObjPartLogicalQuery,
-    date: Date,
-    fields?: Map<string, IObjField>
-  ): FilterQuery<IObj> {
-    let filter: FilterQuery<IObj> = {};
-
-    const hasAnd = !!logicalQuery.and;
-    const hasOr = !!logicalQuery.or;
-
-    if (hasAnd && hasOr) {
-      // When both AND and OR are present, we want: (AND conditions) OR (OR conditions)
-      const andQuery = this.transformPartQuery(logicalQuery.and!, date, fields);
-      const orArray = logicalQuery.or!.map((part) =>
-        this.transformPartQuery([part], date, fields)
-      );
-
-      // Create an OR query that combines the AND result with the OR results
-      const orConditions = [andQuery, ...orArray];
-      filter = { $or: orConditions };
-    } else if (hasAnd) {
-      filter = this.transformPartQuery(logicalQuery.and!, date, fields);
-    } else if (hasOr) {
-      const orArray = logicalQuery.or!.map((part) =>
-        this.transformPartQuery([part], date, fields)
-      );
-      filter = { $or: orArray };
-    }
-
-    return filter;
-  }
-
   protected transformMetaQuery(
     metaQuery: IObjMetaQuery,
     date: Date
@@ -195,18 +245,6 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
       ) {
         return;
       }
-      // Map meta fields to top-level fields
-      const fieldMap: Record<string, string> = {
-        createdAt: "createdAt",
-        updatedAt: "updatedAt",
-        updatedBy: "updatedBy",
-        updatedByType: "updatedByType",
-        createdBy: "createdBy",
-        createdByType: "createdByType",
-        deletedAt: "deletedAt",
-        deletedBy: "deletedBy",
-        deletedByType: "deletedByType",
-      };
 
       const mongoField = fieldMap[key] || key;
 
@@ -270,7 +308,7 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
   }
 
   private generateFieldQuery(
-    part: IObjPartQueryItem,
+    part: IObjRecordQueryItem,
     fieldInfo: IObjField | undefined,
     date: Date
   ): Record<string, Record<string, any>> {
@@ -291,7 +329,7 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
   }
 
   private generateDynamicQuery(
-    part: IObjPartQueryItem,
+    part: IObjRecordQueryItem,
     date: Date
   ): Record<string, Record<string, any>> {
     const fieldPath = part.field;
@@ -310,7 +348,7 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
   }
 
   private generateDynamicArrayQuery(
-    part: IObjPartQueryItem,
+    part: IObjRecordQueryItem,
     date: Date
   ): Record<string, Record<string, any>> {
     const fieldPath = part.field;
@@ -326,7 +364,7 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
   }
 
   private generateArrayCompressedQuery(
-    part: IObjPartQueryItem,
+    part: IObjRecordQueryItem,
     fieldInfo: IObjField,
     date: Date
   ): Record<string, Record<string, any>> {
@@ -343,7 +381,7 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
   }
 
   private generateRegularFieldQuery(
-    part: IObjPartQueryItem,
+    part: IObjRecordQueryItem,
     fieldInfo: IObjField,
     date: Date
   ): Record<string, Record<string, any>> {
@@ -358,7 +396,7 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
 
   private addArrayFieldOperation(
     fieldOps: Record<string, any>,
-    part: IObjPartQueryItem,
+    part: IObjRecordQueryItem,
     date: Date
   ): void {
     const { op, value } = part;
@@ -426,11 +464,11 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
         break;
       case "in":
         const inValues = Array.isArray(value) ? value : [value];
-        fieldOps.$elemMatch = { $in: inValues };
+        fieldOps.$elemMatch = { $in: uniq(inValues) };
         break;
       case "not_in":
         const notInValues = Array.isArray(value) ? value : [value];
-        fieldOps.$not = { $elemMatch: { $in: notInValues } };
+        fieldOps.$not = { $elemMatch: { $in: uniq(notInValues) } };
         break;
       case "between":
         const [min, max] = Array.isArray(value) ? value : [value, value];
@@ -488,7 +526,7 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
 
   private addFieldOperation(
     fieldOps: Record<string, any>,
-    part: IObjPartQueryItem,
+    part: IObjRecordQueryItem,
     date: Date
   ): void {
     const { op, value } = part;
@@ -556,11 +594,11 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
         break;
       case "in":
         const inValues = Array.isArray(value) ? value : [value];
-        fieldOps.$in = inValues;
+        fieldOps.$in = uniq(inValues);
         break;
       case "not_in":
         const notInValues = Array.isArray(value) ? value : [value];
-        fieldOps.$nin = notInValues;
+        fieldOps.$nin = uniq(notInValues);
         break;
       case "between":
         const [min, max] = Array.isArray(value) ? value : [value, value];
@@ -640,10 +678,10 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
       fieldFilter.$ne = value.neq;
     }
     if (hasIn) {
-      fieldFilter.$in = value.in;
+      fieldFilter.$in = uniq(value.in);
     }
     if (hasNotIn) {
-      fieldFilter.$nin = value.not_in;
+      fieldFilter.$nin = uniq(value.not_in);
     }
 
     // Assign the field filter to the main filter
@@ -694,16 +732,16 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
     // Process in/not_in operations (they take precedence)
     if (value.in !== undefined && value.in.length > 0) {
       if (isDateField && value.in.some((v) => typeof v !== "number")) {
-        fieldFilter.$in = value.in.map(toDate);
+        fieldFilter.$in = uniq(value.in.map(toDate));
       } else {
-        fieldFilter.$in = value.in;
+        fieldFilter.$in = uniq(value.in);
       }
     }
     if (value.not_in !== undefined && value.not_in.length > 0) {
       if (isDateField && value.not_in.some((v) => typeof v !== "number")) {
-        fieldFilter.$nin = value.not_in.map(toDate);
+        fieldFilter.$nin = uniq(value.not_in.map(toDate));
       } else {
-        fieldFilter.$nin = value.not_in;
+        fieldFilter.$nin = uniq(value.not_in);
       }
     }
 

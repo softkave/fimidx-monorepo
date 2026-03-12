@@ -1,5 +1,6 @@
 import { fimidxLogger } from "../../common/logger/fimidx-logger.js";
 import type { IObjField, IObjQuery } from "../../definitions/obj.js";
+import { getProjectIdFromObjQuery } from "../../definitions/obj.js";
 import { createStorage, getDefaultStorageType } from "../../storage/config.js";
 import type { IObjStorage } from "../../storage/types.js";
 import { getObjFields } from "./getObjFields.js";
@@ -13,6 +14,7 @@ export async function deleteManyObjs(params: {
   deleteMany?: boolean;
   storageType?: "mongo" | "postgres";
   storage?: IObjStorage;
+  hardDelete?: boolean;
 }) {
   const {
     objQuery,
@@ -23,28 +25,26 @@ export async function deleteManyObjs(params: {
     deleteMany = false,
     storageType = getDefaultStorageType(),
     storage = createStorage({ type: storageType }),
+    hardDelete = true,
   } = params;
 
   // Fetch fields for query generation
   let fields: IObjField[] = [];
-
-  if (objQuery.appId) {
-    // Fetch fields
+  const projectId = getProjectIdFromObjQuery(objQuery);
+  if (projectId) {
     const fieldsResult = await getObjFields({
-      appId: objQuery.appId,
+      projectId,
       tag,
-      limit: 1000, // Fetch all fields for this app/tag combination
+      limit: 1000,
     });
     fields = fieldsResult.fields.map((field) => ({
       ...field,
-      type: field.type as any, // Cast to fix type issue
+      type: field.type as any,
     }));
   }
 
-  // Convert to Maps for O(1) lookup
   const fieldsMap = new Map(fields.map((f) => [f.path, f]));
 
-  // Use the new bulkDelete method from the storage abstraction
   const result = await storage.bulkDelete({
     query: objQuery,
     tag,
@@ -53,7 +53,7 @@ export async function deleteManyObjs(params: {
     deletedByType,
     deleteMany,
     batchSize: 1000,
-    hardDelete: false, // Always soft delete for this function
+    hardDelete,
     fields: fieldsMap,
   });
 

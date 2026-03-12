@@ -26,8 +26,8 @@ export const kgroupId = mfdocConstruct.constructString({
   description: 'The group ID',
 });
 
-export const kAppId = mfdocConstruct.constructString({
-  description: 'The app ID',
+export const kProjectId = mfdocConstruct.constructString({
+  description: 'The project ID',
 });
 
 export const kClientTokenId = mfdocConstruct.constructString({

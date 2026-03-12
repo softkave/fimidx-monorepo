@@ -3,7 +3,7 @@ import { AnyFn, AnyObject } from "softkave-js-utils";
 
 export class WsBrowser implements IWsBase {
   protected ws: WebSocket;
-  protected wrappedListeners = new Map<AnyFn, AnyFn>();
+  protected projectListeners = new Map<AnyFn, AnyFn>();
 
   constructor(host: string) {
     this.ws = new WebSocket(host);
@@ -18,7 +18,7 @@ export class WsBrowser implements IWsBase {
   }
 
   addMessageListener(listener: (message: string) => void) {
-    const wrappedListener = async (event: MessageEvent) => {
+    const projectListener = async (event: MessageEvent) => {
       const data = event.data;
       let message: string | undefined;
 
@@ -35,8 +35,8 @@ export class WsBrowser implements IWsBase {
       }
     };
 
-    this.wrappedListeners.set(listener, wrappedListener);
-    this.ws.addEventListener("message", wrappedListener);
+    this.projectListeners.set(listener, projectListener);
+    this.ws.addEventListener("message", projectListener);
   }
 
   addCloseListener(listener: () => void) {
@@ -44,10 +44,10 @@ export class WsBrowser implements IWsBase {
   }
 
   removeMessageListener(listener: (message: string) => void) {
-    const wrappedListener = this.wrappedListeners.get(listener);
-    if (wrappedListener) {
-      this.ws.removeEventListener("message", wrappedListener);
-      this.wrappedListeners.delete(listener);
+    const projectListener = this.projectListeners.get(listener);
+    if (projectListener) {
+      this.ws.removeEventListener("message", projectListener);
+      this.projectListeners.delete(listener);
     }
   }
 

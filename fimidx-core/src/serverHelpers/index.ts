@@ -1,4 +1,3 @@
-export * from "./app/index.js";
 export * from "./callback/index.js";
 export * from "./clientToken/index.js";
 export * from "./group/index.js";
@@ -8,4 +7,5 @@ export * from "./member/index.js";
 export * from "./monitor/index.js";
 export * from "./obj/index.js";
 export * from "./permission/index.js";
+export * from "./project/index.js";
 export * from "./user.js";

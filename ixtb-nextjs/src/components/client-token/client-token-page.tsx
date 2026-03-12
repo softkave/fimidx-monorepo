@@ -1,34 +1,37 @@
 "use client";
 
 import { cn } from "@/src/lib/utils";
-import { AppContainer } from "../app/app-container";
-import { AppUpdateState } from "../app/app-update-state";
-import { AppPage } from "../internal/app-page";
+import { ProjectPage } from "../internal/project-page";
+import { ProjectContainer } from "../project/project-container";
+import { ProjectUpdateState } from "../project/project-update-state";
 import { ClientTokenContainer } from "./client-token-container";
 
 export interface IClientTokenPageProps {
   clientTokenId: string;
-  appId: string;
+  projectId: string;
+  orgId: string;
   className?: string;
 }
 
 export function ClientTokenPage(props: IClientTokenPageProps) {
   return (
-    <AppPage>
-      <AppContainer
-        appId={props.appId}
-        render={({ app }) => (
+    <ProjectPage>
+      <ProjectContainer
+        projectId={props.projectId}
+        orgId={props.orgId}
+        render={({ project }) => (
           <div
             className={cn("flex flex-col max-w-lg mx-auto", props.className)}
           >
-            <AppUpdateState app={app} />
+            <ProjectUpdateState project={project} />
             <ClientTokenContainer
-              appId={props.appId}
+              projectId={props.projectId}
               clientTokenId={props.clientTokenId}
+              groupId={project.orgId}
             />
           </div>
         )}
       />
-    </AppPage>
+    </ProjectPage>
   );
 }

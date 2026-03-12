@@ -56,7 +56,7 @@ export async function executeCallback(params: {callbackId: string}) {
     // separate execution to ensure the only error thrown is the one from axios
     kPromiseStore.callAndForget(async () => {
       await addCallbackExecution({
-        appId: callback.appId,
+        projectId: callback.projectId,
         groupId: callback.groupId,
         callbackId,
         error: null,
@@ -77,7 +77,7 @@ export async function executeCallback(params: {callbackId: string}) {
       const axiosError = error as AxiosError;
       if (axiosError.response) {
         await addCallbackExecution({
-          appId: callback.appId,
+          projectId: callback.projectId,
           groupId: callback.groupId,
           callbackId,
           error: axiosError.message,
@@ -96,7 +96,7 @@ export async function executeCallback(params: {callbackId: string}) {
         });
       } else {
         await addCallbackExecution({
-          appId: callback.appId,
+          projectId: callback.projectId,
           groupId: callback.groupId,
           callbackId,
           error: error instanceof Error ? error.message : String(error),

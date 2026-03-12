@@ -2,7 +2,7 @@ import type { AnyObject } from "softkave-js-utils";
 import { z } from "zod";
 import {
   numberMetaQuerySchema,
-  objPartQueryListSchema,
+  objRecordQueryListSchema,
   objSortListSchema,
   stringMetaQuerySchema,
 } from "./obj.js";
@@ -12,7 +12,7 @@ export interface ICallback {
   createdAt: number | Date;
   updatedAt: number | Date;
   groupId: string;
-  appId: string;
+  projectId: string;
   name: string;
   description?: string | null;
   createdBy: string;
@@ -65,7 +65,7 @@ export interface ICallbackObjRecord {
 export interface ICallbackExecution {
   id: string;
   groupId: string;
-  appId: string;
+  projectId: string;
   callbackId: string;
   /** The callback error from network, fimidx, etc. */
   error: string | null;
@@ -95,7 +95,7 @@ export const callbackMethodSchema = z.enum([
 ]);
 
 export const addCallbackSchema = z.object({
-  appId: z.string(),
+  projectId: z.string().min(1),
   url: z.string().url(),
   method: callbackMethodSchema,
   requestHeaders: z.record(z.string(), z.string()).optional(),
@@ -103,13 +103,13 @@ export const addCallbackSchema = z.object({
   timeout: z.string().datetime().optional(),
   intervalFrom: z.string().datetime().optional(),
   intervalMs: z.number().optional(),
-  idempotencyKey: z.string().optional(),
+  idempotencyKey: z.string().min(1).optional(),
   description: z.string().optional(),
-  name: z.string().optional(),
+  name: z.string().min(1).optional(),
 });
 
 export const callbacksQuerySchema = z.object({
-  appId: z.string(),
+  projectId: z.string().min(1),
   id: stringMetaQuerySchema.optional(),
   createdAt: numberMetaQuerySchema.optional(),
   updatedAt: numberMetaQuerySchema.optional(),
@@ -118,8 +118,8 @@ export const callbacksQuerySchema = z.object({
   idempotencyKey: stringMetaQuerySchema.optional(),
   url: stringMetaQuerySchema.optional(),
   method: stringMetaQuerySchema.optional(),
-  requestHeaders: objPartQueryListSchema.optional(),
-  requestBody: objPartQueryListSchema.optional(),
+  requestHeaders: objRecordQueryListSchema.optional(),
+  requestBody: objRecordQueryListSchema.optional(),
   timeout: numberMetaQuerySchema.optional(),
   intervalFrom: numberMetaQuerySchema.optional(),
   intervalMs: numberMetaQuerySchema.optional(),
@@ -142,7 +142,7 @@ export const deleteCallbacksSchema = z.object({
 });
 
 export const getCallbackExecutionsSchema = z.object({
-  callbackId: z.string(),
+  callbackId: z.string().min(1),
   page: z.number().optional(),
   limit: z.number().optional(),
   sort: objSortListSchema.optional(),

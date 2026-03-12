@@ -17,14 +17,21 @@ export async function addMonitor(params: {
   storage?: IObjStorage;
 }) {
   const { args, by, byType, groupId, storage } = params;
-  const { name, status, interval, reportsTo, appId, logsQuery, description } =
-    args;
+  const {
+    name,
+    status,
+    interval,
+    reportsTo,
+    projectId,
+    query,
+    description,
+  } = args;
   const objRecord: IMonitorObjRecord = {
     name,
     status,
     interval,
     reportsTo: reportsTo.map((userId) => ({ userId })),
-    logsQuery,
+    query,
     description,
   };
 
@@ -34,7 +41,7 @@ export async function addMonitor(params: {
     groupId,
     tag: kObjTags.monitor,
     input: {
-      appId,
+      projectId,
       items: [objRecord],
       conflictOnKeys: ["name"],
       onConflict: "fail",

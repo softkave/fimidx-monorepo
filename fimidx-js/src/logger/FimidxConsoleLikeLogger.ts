@@ -13,7 +13,7 @@ export interface IFimidxConsoleLikeLoggerOptions {
   /**
    * Whether to log to fimidx. It does not affect console fallback.
    */
-  enabled?: boolean; // default: true
+  logToFimidx?: boolean; // default: true
 }
 
 function isPrimitiveLike(value: unknown): boolean {
@@ -23,7 +23,7 @@ function isPrimitiveLike(value: unknown): boolean {
 export class FimidxConsoleLikeLogger {
   private readonly fimidxLogger: FimidxLogger;
   private readonly enableConsoleFallback: boolean;
-  private enabled: boolean;
+  private logToFimidx: boolean;
 
   // Console state tracking
   private counters: Map<string, number> = new Map();
@@ -34,21 +34,21 @@ export class FimidxConsoleLikeLogger {
   constructor(opts: IFimidxConsoleLikeLoggerOptions) {
     this.fimidxLogger = opts.fimidxLogger;
     this.enableConsoleFallback = opts.enableConsoleFallback ?? true;
-    this.enabled = opts.enabled ?? true;
+    this.logToFimidx = opts.logToFimidx ?? true;
   }
 
   // Enable/disable functionality
-  setEnabled = (enabled: boolean): void => {
-    this.enabled = enabled;
+  setLogToFimidx = (logToFimidx: boolean): void => {
+    this.logToFimidx = logToFimidx;
   };
 
-  isEnabled = (): boolean => {
-    return this.enabled;
+  isLogToFimidxEnabled = (): boolean => {
+    return this.logToFimidx;
   };
 
   // Core logging methods
   log = (...params: any[]): void => {
-    if (!this.enabled) {
+    if (!this.logToFimidx) {
       this.consoleFallback('log', ...params);
       return;
     }
@@ -59,7 +59,7 @@ export class FimidxConsoleLikeLogger {
   };
 
   debug = (...params: any[]): void => {
-    if (!this.enabled) {
+    if (!this.logToFimidx) {
       this.consoleFallback('debug', ...params);
       return;
     }
@@ -70,7 +70,7 @@ export class FimidxConsoleLikeLogger {
   };
 
   info = (...params: any[]): void => {
-    if (!this.enabled) {
+    if (!this.logToFimidx) {
       this.consoleFallback('info', ...params);
       return;
     }
@@ -81,7 +81,7 @@ export class FimidxConsoleLikeLogger {
   };
 
   warn = (...params: any[]): void => {
-    if (!this.enabled) {
+    if (!this.logToFimidx) {
       this.consoleFallback('warn', ...params);
       return;
     }
@@ -92,7 +92,7 @@ export class FimidxConsoleLikeLogger {
   };
 
   error = (...params: any[]): void => {
-    if (!this.enabled) {
+    if (!this.logToFimidx) {
       this.consoleFallback('error', ...params);
       return;
     }
@@ -109,7 +109,7 @@ export class FimidxConsoleLikeLogger {
     if (!value) {
       const assertMessage = message || 'Assertion failed';
 
-      if (!this.enabled) {
+      if (!this.logToFimidx) {
         this.consoleFallback('assert', value, assertMessage, ...optionalParams);
         return;
       }
@@ -139,7 +139,7 @@ export class FimidxConsoleLikeLogger {
 
     const message = `${label}: ${newCount}`;
 
-    if (!this.enabled) {
+    if (!this.logToFimidx) {
       this.consoleFallback('count', label);
       return;
     }
@@ -153,7 +153,7 @@ export class FimidxConsoleLikeLogger {
     this.counters.delete(label);
     const message = `${label}: 0`;
 
-    if (!this.enabled) {
+    if (!this.logToFimidx) {
       this.consoleFallback('countReset', label);
       return;
     }
@@ -168,7 +168,7 @@ export class FimidxConsoleLikeLogger {
     this.timers.set(label, Date.now());
     const message = `Timer '${label}' started`;
 
-    if (!this.enabled) {
+    if (!this.logToFimidx) {
       this.consoleFallback('time', label);
       return;
     }
@@ -184,7 +184,7 @@ export class FimidxConsoleLikeLogger {
       const duration = Date.now() - startTime;
       const message = `${label}: ${duration}ms`;
 
-      if (!this.enabled) {
+      if (!this.logToFimidx) {
         this.consoleFallback('timeEnd', label);
         this.timers.delete(label);
         return;
@@ -197,7 +197,7 @@ export class FimidxConsoleLikeLogger {
     } else {
       const message = `Timer '${label}' does not exist`;
 
-      if (!this.enabled) {
+      if (!this.logToFimidx) {
         this.consoleFallback('timeEnd', label);
         return;
       }
@@ -214,7 +214,7 @@ export class FimidxConsoleLikeLogger {
       const duration = Date.now() - startTime;
       const message = `${label}: ${duration}ms`;
 
-      if (!this.enabled) {
+      if (!this.logToFimidx) {
         this.consoleFallback('timeLog', label, ...data);
         return;
       }
@@ -225,7 +225,7 @@ export class FimidxConsoleLikeLogger {
     } else {
       const message = `Timer '${label}' does not exist`;
 
-      if (!this.enabled) {
+      if (!this.logToFimidx) {
         this.consoleFallback('timeLog', label, ...data);
         return;
       }
@@ -241,7 +241,7 @@ export class FimidxConsoleLikeLogger {
     this.groupIndentation += this.groupIndentationSize;
     const message = label.length > 0 ? label.join(' ') : 'Group';
 
-    if (!this.enabled) {
+    if (!this.logToFimidx) {
       this.consoleFallback('group', ...label);
       return;
     }
@@ -252,7 +252,7 @@ export class FimidxConsoleLikeLogger {
   };
 
   groupCollapsed = (...label: any[]): void => {
-    if (!this.enabled) {
+    if (!this.logToFimidx) {
       this.consoleFallback('groupCollapsed', ...label);
       return;
     }
@@ -267,7 +267,7 @@ export class FimidxConsoleLikeLogger {
       this.groupIndentation - this.groupIndentationSize,
     );
 
-    if (!this.enabled) {
+    if (!this.logToFimidx) {
       this.consoleFallback('groupEnd');
       return;
     }
@@ -279,7 +279,7 @@ export class FimidxConsoleLikeLogger {
 
   // Inspection
   dir = (obj: any, options?: any): void => {
-    if (!this.enabled) {
+    if (!this.logToFimidx) {
       this.consoleFallback('dir', obj, options);
       return;
     }
@@ -291,7 +291,7 @@ export class FimidxConsoleLikeLogger {
   };
 
   dirxml = (...data: any[]): void => {
-    if (!this.enabled) {
+    if (!this.logToFimidx) {
       this.consoleFallback('dirxml', ...data);
       return;
     }
@@ -302,7 +302,7 @@ export class FimidxConsoleLikeLogger {
   };
 
   table = (tabularData: any, properties?: readonly string[]): void => {
-    if (!this.enabled) {
+    if (!this.logToFimidx) {
       this.consoleFallback('table', tabularData, properties);
       return;
     }
@@ -315,7 +315,7 @@ export class FimidxConsoleLikeLogger {
 
   // Tracing
   trace = (...params: any[]): void => {
-    if (!this.enabled) {
+    if (!this.logToFimidx) {
       this.consoleFallback('trace', ...params);
       return;
     }
@@ -330,7 +330,7 @@ export class FimidxConsoleLikeLogger {
 
   // Utility methods
   clear = (): void => {
-    if (!this.enabled) {
+    if (!this.logToFimidx) {
       this.consoleFallback('clear');
       return;
     }
@@ -342,7 +342,7 @@ export class FimidxConsoleLikeLogger {
 
   // Inspector-only methods (no-op in our implementation)
   profile = (label?: string): void => {
-    if (!this.enabled) {
+    if (!this.logToFimidx) {
       this.consoleFallback('profile', label);
       return;
     }
@@ -355,7 +355,7 @@ export class FimidxConsoleLikeLogger {
   };
 
   profileEnd = (label?: string): void => {
-    if (!this.enabled) {
+    if (!this.logToFimidx) {
       this.consoleFallback('profileEnd', label);
       return;
     }
@@ -368,7 +368,7 @@ export class FimidxConsoleLikeLogger {
   };
 
   timeStamp = (label?: string): void => {
-    if (!this.enabled) {
+    if (!this.logToFimidx) {
       this.consoleFallback('timeStamp', label);
       return;
     }
@@ -382,13 +382,13 @@ export class FimidxConsoleLikeLogger {
 
   // Utility methods for FimidxLogger
   flush = async (): Promise<void> => {
-    if (!this.enabled) return;
+    if (!this.logToFimidx) return;
 
     return this.fimidxLogger.flush();
   };
 
   close = async (): Promise<void> => {
-    if (!this.enabled) return;
+    if (!this.logToFimidx) return;
 
     return this.fimidxLogger.close();
   };

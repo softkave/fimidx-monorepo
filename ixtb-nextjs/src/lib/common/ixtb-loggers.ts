@@ -5,7 +5,7 @@ import {
 } from "fimidx-core/common/logger/index";
 
 fimidxLogger.mergeMetadata({
-  app: "ixtb-nextjs",
+  project: "ixtb-nextjs",
 });
 
 export const ixtbConsoleLogger = fimidxConsoleLogger;

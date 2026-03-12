@@ -9,7 +9,7 @@ import type { IObjStorage } from "../../../storage/types.js";
 import { addGroup } from "../addGroup.js";
 import { getGroups } from "../getGroups.js";
 
-const defaultAppId = "test-app-getGroups";
+const defaultProjectId = "test-project-getGroups";
 const defaultGroupId = "test-group";
 const defaultBy = "tester";
 const defaultByType = "user";
@@ -22,7 +22,7 @@ function makeGetGroupsArgs(
 ): GetGroupsEndpointArgs {
   return {
     query: {
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       ...overrides.query,
     },
     page: overrides.page,
@@ -39,7 +39,7 @@ function makeAddGroupArgs(overrides: any = {}) {
   return {
     name: `Test Group ${uniqueId}`,
     description: "Test description",
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     ...overrides,
   };
 }
@@ -53,25 +53,25 @@ function makeTestGroupArgs(name: string, overrides: any = {}) {
   return {
     name: `${name}_${uniqueId}`,
     description: "Test description",
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     ...overrides,
   };
 }
 
 // Helper function to insert objFields for the "name" field
 async function insertNameFieldForSorting(params: {
-  appId: string;
+  projectId: string;
   groupId: string;
   tag: string;
 }) {
-  const { appId, groupId, tag } = params;
+  const { projectId, groupId, tag } = params;
   const now = new Date();
 
   const nameField = {
     id: uuidv7(),
     createdAt: now,
     updatedAt: now,
-    appId,
+    projectId,
     groupId,
     tag,
     field: "name",
@@ -101,15 +101,15 @@ describe("getGroups integration", () => {
   beforeEach(async () => {
     // Clean up test data before each test using hard deletes for complete isolation
     try {
-      // Delete all groups for all test apps using hard deletes
-      const testAppIds = [
-        defaultAppId,
-        "test-app-getGroups-1",
-        "test-app-getGroups-2",
+      // Delete all groups for all test projects using hard deletes
+      const testProjectIds = [
+        defaultProjectId,
+        "test-project-getGroups-1",
+        "test-project-getGroups-2",
       ];
-      for (const appId of testAppIds) {
+      for (const projectId of testProjectIds) {
         await storage.bulkDelete({
-          query: { appId },
+          query: { metaQuery: { projectId: { eq: projectId } } },
           tag: kObjTags.group,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -118,13 +118,13 @@ describe("getGroups integration", () => {
         });
       }
 
-      // Clean up objFields for test apps
-      for (const appId of testAppIds) {
+      // Clean up objFields for test projects
+      for (const projectId of testProjectIds) {
         await db
           .delete(objFieldsTable)
           .where(
             and(
-              eq(objFieldsTable.appId, appId),
+              eq(objFieldsTable.projectId, projectId),
               eq(objFieldsTable.tag, kObjTags.group)
             )
           );
@@ -137,15 +137,16 @@ describe("getGroups integration", () => {
   afterEach(async () => {
     // Clean up after each test using hard deletes for complete isolation
     try {
-      // Delete all groups for all test apps using hard deletes
-      const testAppIds = [
-        defaultAppId,
-        "test-app-getGroups-1",
-        "test-app-getGroups-2",
+      // Delete all groups for all test projects using hard deletes
+      const testProjectIds = [
+        defaultProjectId,
+        "test-project-getGroups-1",
+        "test-project-getGroups-2",
       ];
-      for (const appId of testAppIds) {
+
+      for (const projectId of testProjectIds) {
         await storage.bulkDelete({
-          query: { appId },
+          query: { metaQuery: { projectId: { eq: projectId } } },
           tag: kObjTags.group,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -154,18 +155,18 @@ describe("getGroups integration", () => {
         });
       }
 
-      // Clean up objFields for test apps
-      for (const appId of testAppIds) {
+      // Clean up objFields for test projects
+      for (const projectId of testProjectIds) {
         await db
           .delete(objFieldsTable)
           .where(
             and(
-              eq(objFieldsTable.appId, appId),
+              eq(objFieldsTable.projectId, projectId),
               eq(objFieldsTable.tag, kObjTags.group)
             )
           );
       }
-    } catch (error) {
+    } catch {
       // Ignore errors in cleanup
     }
   });
@@ -205,7 +206,7 @@ describe("getGroups integration", () => {
     expect(result2.groups[0].name).toBe("Isolation Test Group");
   });
 
-  it("retrieves all groups in an app", async () => {
+  it("retrieves all groups in an project", async () => {
     // Create multiple groups
     const group1 = await addGroup({
       args: makeAddGroupArgs({ name: "First Group" }),
@@ -272,7 +273,7 @@ describe("getGroups integration", () => {
 
     const args = makeGetGroupsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         name: { eq: "Beta Group" },
       },
     });
@@ -321,7 +322,7 @@ describe("getGroups integration", () => {
 
     const args = makeGetGroupsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         name: { in: [alphaGroupArgs.name, betaGroupArgs.name] }, // Use in operator to match specific names
       },
     });
@@ -363,7 +364,7 @@ describe("getGroups integration", () => {
 
     const args = makeGetGroupsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         createdBy: { eq: "user-a" },
       },
     });
@@ -411,7 +412,7 @@ describe("getGroups integration", () => {
 
     const args = makeGetGroupsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         meta: [
           {
             op: "eq",
@@ -468,7 +469,7 @@ describe("getGroups integration", () => {
 
     const args = makeGetGroupsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         meta: [
           {
             op: "eq",
@@ -514,7 +515,7 @@ describe("getGroups integration", () => {
 
     const args = makeGetGroupsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         createdAt: { gt: group1.group.createdAt.getTime() },
       },
     });
@@ -544,7 +545,7 @@ describe("getGroups integration", () => {
 
     const args = makeGetGroupsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: group1.group.id },
       },
     });
@@ -611,7 +612,7 @@ describe("getGroups integration", () => {
   it("sorts groups by name in ascending order", async () => {
     // Insert the name field definition for sorting
     await insertNameFieldForSorting({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       tag: kObjTags.group,
     });
@@ -659,7 +660,7 @@ describe("getGroups integration", () => {
   it("sorts groups by name in descending order", async () => {
     // Insert the name field definition for sorting
     await insertNameFieldForSorting({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       tag: kObjTags.group,
     });
@@ -709,7 +710,7 @@ describe("getGroups integration", () => {
   it("sorts groups by creation date", async () => {
     // Insert the name field definition for sorting (needed for objRecord fields)
     await insertNameFieldForSorting({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       tag: kObjTags.group,
     });
@@ -822,7 +823,7 @@ describe("getGroups integration", () => {
 
     const args = makeGetGroupsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         name: { eq: targetGroupArgs.name },
         createdBy: { eq: "user-a" },
         meta: [
@@ -868,7 +869,7 @@ describe("getGroups integration", () => {
 
     const args = makeGetGroupsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         meta: [
           {
             op: "eq",
@@ -908,10 +909,10 @@ describe("getGroups integration", () => {
       storage,
     });
 
-    // Query for all groups in the app to verify both exist
+    // Query for all groups in the project to verify both exist
     const args = makeGetGroupsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
     });
 
@@ -949,7 +950,7 @@ describe("getGroups integration", () => {
 
     const args = makeGetGroupsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         updatedBy: { eq: "user-a" },
       },
     });
@@ -984,7 +985,7 @@ describe("getGroups integration", () => {
 
     const args = makeGetGroupsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         updatedAt: { gte: group2.group.updatedAt.getTime() },
       },
     });
@@ -1033,7 +1034,7 @@ describe("getGroups integration", () => {
     // Query for groups with priority not equal to "low" AND count greater than "5"
     const args = makeGetGroupsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         meta: [
           {
             op: "neq",
@@ -1074,7 +1075,7 @@ describe("getGroups integration", () => {
 
     const args = makeGetGroupsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: group.group.id },
       },
     });
@@ -1088,7 +1089,7 @@ describe("getGroups integration", () => {
     expect(retrievedGroup.name).toBe("Test Group");
     expect(retrievedGroup.description).toBe("Test description");
     expect(retrievedGroup.meta).toEqual({ key: "value" });
-    expect(retrievedGroup.appId).toBe(defaultAppId);
+    expect(retrievedGroup.projectId).toBe(defaultProjectId);
     expect(retrievedGroup.groupId).toBe(defaultGroupId);
     expect(retrievedGroup.createdBy).toBe(defaultBy);
     expect(retrievedGroup.createdByType).toBe(defaultByType);
@@ -1098,12 +1099,12 @@ describe("getGroups integration", () => {
     expect(retrievedGroup.updatedAt).toBeInstanceOf(Date);
   });
 
-  it("handles groups across different apps", async () => {
-    // Create groups in different apps
+  it("handles groups across different projects", async () => {
+    // Create groups in different projects
     await addGroup({
       args: makeAddGroupArgs({
-        name: "Group in App 1",
-        appId: "test-app-getGroups-1",
+        name: "Group in Project 1",
+        projectId: "test-project-getGroups-1",
       }),
       by: defaultBy,
       byType: defaultByType,
@@ -1113,8 +1114,8 @@ describe("getGroups integration", () => {
 
     await addGroup({
       args: makeAddGroupArgs({
-        name: "Group in App 2",
-        appId: "test-app-getGroups-2",
+        name: "Group in Project 2",
+        projectId: "test-project-getGroups-2",
       }),
       by: defaultBy,
       byType: defaultByType,
@@ -1124,8 +1125,8 @@ describe("getGroups integration", () => {
 
     await addGroup({
       args: makeAddGroupArgs({
-        name: "Group in Default App",
-        appId: defaultAppId,
+        name: "Group in Default Project",
+        projectId: defaultProjectId,
       }),
       by: defaultBy,
       byType: defaultByType,
@@ -1133,43 +1134,43 @@ describe("getGroups integration", () => {
       storage,
     });
 
-    // Query for groups in app-1
+    // Query for groups in project-1
     const args1 = makeGetGroupsArgs({
       query: {
-        appId: "test-app-getGroups-1",
+        projectId: "test-project-getGroups-1",
       },
     });
 
     const result1 = await getGroups({ args: args1, storage });
 
     expect(result1.groups).toHaveLength(1);
-    expect(result1.groups[0].name).toBe("Group in App 1");
-    expect(result1.groups[0].appId).toBe("test-app-getGroups-1");
+    expect(result1.groups[0].name).toBe("Group in Project 1");
+    expect(result1.groups[0].projectId).toBe("test-project-getGroups-1");
 
-    // Query for groups in app-2
+    // Query for groups in project-2
     const args2 = makeGetGroupsArgs({
       query: {
-        appId: "test-app-getGroups-2",
+        projectId: "test-project-getGroups-2",
       },
     });
 
     const result2 = await getGroups({ args: args2, storage });
 
     expect(result2.groups).toHaveLength(1);
-    expect(result2.groups[0].name).toBe("Group in App 2");
-    expect(result2.groups[0].appId).toBe("test-app-getGroups-2");
+    expect(result2.groups[0].name).toBe("Group in Project 2");
+    expect(result2.groups[0].projectId).toBe("test-project-getGroups-2");
 
-    // Query for groups in default app
+    // Query for groups in default project
     const args3 = makeGetGroupsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
     });
 
     const result3 = await getGroups({ args: args3, storage });
 
     expect(result3.groups).toHaveLength(1);
-    expect(result3.groups[0].name).toBe("Group in Default App");
-    expect(result3.groups[0].appId).toBe(defaultAppId);
+    expect(result3.groups[0].name).toBe("Group in Default Project");
+    expect(result3.groups[0].projectId).toBe(defaultProjectId);
   });
 });

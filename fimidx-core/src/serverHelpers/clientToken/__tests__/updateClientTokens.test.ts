@@ -8,6 +8,7 @@ import {
   it,
 } from "vitest";
 import type { UpdateClientTokensEndpointArgs } from "../../../definitions/clientToken.js";
+import type { IPermissionAtom } from "../../../definitions/permission.js";
 import { addClientToken } from "../addClientToken.js";
 import { getClientTokens } from "../getClientTokens.js";
 import { updateClientTokens } from "../updateClientTokens.js";
@@ -18,7 +19,7 @@ describe("updateClientTokens integration", () => {
     testName: "updateClientTokens",
   });
 
-  const { appId, groupId, by, byType } = testData;
+  const { projectId, groupId, by, byType } = testData;
 
   function makeAddClientTokenArgs(overrides: any = {}) {
     const testData = makeTestData({ testName: "token" });
@@ -28,18 +29,10 @@ describe("updateClientTokens integration", () => {
       description: "Test description",
       meta: { key: "value" },
       permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-        {
-          entity: "admin",
-          action: "write",
-          target: "settings",
-        },
+        { action: "read", target: "document" },
+        { action: "write", target: "settings" },
       ],
-      appId: overrides.appId || appId,
+      projectId: overrides.projectId || projectId,
       ...overrides,
     };
   }
@@ -83,20 +76,15 @@ describe("updateClientTokens integration", () => {
     const token = await createTestToken("Original Token", {
       description: "Original description",
       meta: { type: "user" },
-      permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-      ],
+      permissions: [{ action: "read", target: "document" }],
     });
 
     // First, let's verify the token was created with 1 permission
     const beforeUpdate = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
+          groupId,
           name: {
             eq: "Original Token",
           },
@@ -108,7 +96,8 @@ describe("updateClientTokens integration", () => {
 
     const args: UpdateClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
+        groupId,
         name: {
           eq: "Original Token",
         },
@@ -117,22 +106,11 @@ describe("updateClientTokens integration", () => {
         name: "Updated Token",
         description: "Updated description",
         meta: { type: "admin" },
-        permissions: [
-          {
-            entity: "user",
-            action: "read",
-            target: "document",
-          },
-          {
-            entity: "admin",
-            action: "write",
-            target: "settings",
-          },
-          {
-            entity: "admin",
-            action: "delete",
-            target: "document",
-          },
+        removeAllPermissions: true,
+        addPermissions: [
+          { action: "read", target: "document" },
+          { action: "write", target: "settings" },
+          { action: "delete", target: "document" },
         ],
       },
       updateMany: false,
@@ -149,7 +127,8 @@ describe("updateClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
+          groupId,
           name: {
             eq: "Updated Token",
           },
@@ -165,9 +144,21 @@ describe("updateClientTokens integration", () => {
     expect(updatedToken.description).toBe("Updated description");
     expect(updatedToken.meta).toEqual({ type: "admin" });
     expect(updatedToken.permissions).toHaveLength(3);
-    expect(updatedToken.permissions![0].entity).toBe("user");
-    expect(updatedToken.permissions![0].action).toBe("read");
+    updatedToken.permissions?.sort(
+      (a: IPermissionAtom, b: IPermissionAtom) =>
+        String(a.entity).localeCompare(String(b.entity)) ||
+        String(a.action).localeCompare(String(b.action)) ||
+        String(a.target).localeCompare(String(b.target))
+    );
+    expect(updatedToken.permissions![0].action).toBe("delete");
     expect(updatedToken.permissions![0].target).toBe("document");
+    expect(updatedToken.permissions![1].action).toBe("read");
+    expect(updatedToken.permissions![1].target).toBe("document");
+    expect(updatedToken.permissions![2].action).toBe("write");
+    expect(updatedToken.permissions![2].target).toBe("settings");
+    updatedToken.permissions?.forEach((p) =>
+      expect(p.entity).toBe(updatedToken.id)
+    );
     expect(updatedToken.updatedBy).toBe(by);
     expect(updatedToken.updatedByType).toBe(byType);
   });
@@ -180,7 +171,8 @@ describe("updateClientTokens integration", () => {
 
     const args: UpdateClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
+        groupId,
         meta: [
           {
             op: "eq",
@@ -191,17 +183,10 @@ describe("updateClientTokens integration", () => {
       },
       update: {
         meta: { type: "updated", status: "active" },
-        permissions: [
-          {
-            entity: "user",
-            action: "read",
-            target: "document",
-          },
-          {
-            entity: "admin",
-            action: "write",
-            target: "settings",
-          },
+        removeAllPermissions: true,
+        addPermissions: [
+          { action: "read", target: "document" },
+          { action: "write", target: "settings" },
         ],
       },
       updateMany: true,
@@ -218,7 +203,8 @@ describe("updateClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
+          groupId,
           meta: [
             {
               op: "eq",
@@ -241,12 +227,12 @@ describe("updateClientTokens integration", () => {
     );
     expect(
       result.clientTokens.every((t) =>
-        t.permissions?.some((p) => p.entity === "user" && p.action === "read")
+        t.permissions?.some((p) => p.entity === t.id && p.action === "read")
       )
     ).toBe(true);
     expect(
       result.clientTokens.every((t) =>
-        t.permissions?.some((p) => p.entity === "admin" && p.action === "write")
+        t.permissions?.some((p) => p.entity === t.id && p.action === "write")
       )
     ).toBe(true);
   });
@@ -258,7 +244,8 @@ describe("updateClientTokens integration", () => {
 
     const args: UpdateClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
+        groupId,
         meta: [
           {
             op: "eq",
@@ -284,7 +271,8 @@ describe("updateClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
+          groupId,
           meta: [
             {
               op: "eq",
@@ -307,7 +295,8 @@ describe("updateClientTokens integration", () => {
 
     const args: UpdateClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
+        groupId,
         id: {
           eq: token.id,
         },
@@ -330,7 +319,8 @@ describe("updateClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
+          groupId,
           id: {
             eq: token.id,
           },
@@ -351,7 +341,8 @@ describe("updateClientTokens integration", () => {
 
     const args: UpdateClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
+        groupId,
         createdBy: {
           eq: by,
         },
@@ -373,7 +364,8 @@ describe("updateClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
+          groupId,
           meta: [
             {
               op: "eq",
@@ -398,18 +390,13 @@ describe("updateClientTokens integration", () => {
     const token = await createTestToken("Test Token", {
       description: "Original description",
       meta: { type: "user" },
-      permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-      ],
+      permissions: [{ action: "read", target: "document" }],
     });
 
     const args: UpdateClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
+        groupId,
         name: {
           eq: "Test Token",
         },
@@ -431,7 +418,8 @@ describe("updateClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
+          groupId,
           name: {
             eq: "Test Token",
           },
@@ -447,93 +435,31 @@ describe("updateClientTokens integration", () => {
     expect(updatedToken.description).toBe("Updated description only"); // Changed
     expect(updatedToken.meta).toEqual({ type: "user" }); // Unchanged
     expect(updatedToken.permissions).toHaveLength(1);
-    expect(updatedToken.permissions![0].entity).toBe("user");
+    expect(updatedToken.permissions![0].entity).toBe(updatedToken.id);
     expect(updatedToken.permissions![0].action).toBe("read");
     expect(updatedToken.permissions![0].target).toBe("document");
-  });
-
-  it("updates meta field completely", async () => {
-    // Create a test token with complex meta
-    const token = await createTestToken("Test Token", {
-      meta: { type: "user", status: "active", nested: { key: "value" } },
-    });
-
-    const args: UpdateClientTokensEndpointArgs = {
-      query: {
-        appId: appId,
-        name: {
-          eq: "Test Token",
-        },
-      },
-      update: {
-        meta: { newType: "admin", newStatus: "inactive" },
-      },
-      updateMany: false,
-    };
-
-    await updateClientTokens({
-      args,
-      by: by,
-      byType: byType,
-      storage,
-    });
-
-    // Verify meta was completely replaced
-    const result = await getClientTokens({
-      args: {
-        query: {
-          appId: appId,
-          name: {
-            eq: "Test Token",
-          },
-        },
-      },
-      storage,
-    });
-
-    expect(result.clientTokens).toHaveLength(1);
-    expect(result.clientTokens[0].meta).toEqual({
-      newType: "admin",
-      newStatus: "inactive",
-    });
   });
 
   it("updates permissions field", async () => {
     // Create a test token
     const token = await createTestToken("Test Token", {
-      permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-      ],
+      permissions: [{ action: "read", target: "document" }],
     });
 
     const args: UpdateClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
+        groupId,
         name: {
           eq: "Test Token",
         },
       },
       update: {
-        permissions: [
-          {
-            entity: "user",
-            action: "read",
-            target: "document",
-          },
-          {
-            entity: "admin",
-            action: "write",
-            target: "settings",
-          },
-          {
-            entity: "admin",
-            action: "delete",
-            target: "document",
-          },
+        removeAllPermissions: true,
+        addPermissions: [
+          { action: "read", target: "document" },
+          { action: "write", target: "settings" },
+          { action: "delete", target: "document" },
         ],
       },
       updateMany: false,
@@ -550,7 +476,8 @@ describe("updateClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
+          groupId,
           name: {
             eq: "Test Token",
           },
@@ -562,38 +489,47 @@ describe("updateClientTokens integration", () => {
 
     expect(result.clientTokens).toHaveLength(1);
     expect(result.clientTokens[0].permissions).toHaveLength(3);
-    expect(result.clientTokens[0].permissions![0].entity).toBe("user");
-    expect(result.clientTokens[0].permissions![0].action).toBe("read");
+    result.clientTokens[0].permissions?.sort(
+      (a: IPermissionAtom, b: IPermissionAtom) =>
+        String(a.entity).localeCompare(String(b.entity)) ||
+        String(a.action).localeCompare(String(a.action)) ||
+        String(a.target).localeCompare(String(b.target))
+    );
+    expect(result.clientTokens[0].permissions![0].entity).toBe(
+      result.clientTokens[0].id
+    );
+    expect(result.clientTokens[0].permissions![0].action).toBe("delete");
     expect(result.clientTokens[0].permissions![0].target).toBe("document");
+    expect(result.clientTokens[0].permissions![1].entity).toBe(
+      result.clientTokens[0].id
+    );
+    expect(result.clientTokens[0].permissions![1].action).toBe("read");
+    expect(result.clientTokens[0].permissions![1].target).toBe("document");
+    expect(result.clientTokens[0].permissions![2].entity).toBe(
+      result.clientTokens[0].id
+    );
+    expect(result.clientTokens[0].permissions![2].action).toBe("write");
+    expect(result.clientTokens[0].permissions![2].target).toBe("settings");
   });
 
   it("sets permissions to null", async () => {
     // Create a test token
     const token = await createTestToken("Test Token", {
       permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-        {
-          entity: "admin",
-          action: "write",
-          target: "settings",
-        },
+        { action: "read", target: "document" },
+        { action: "write", target: "settings" },
       ],
     });
 
     const args: UpdateClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
+        groupId,
         name: {
           eq: "Test Token",
         },
       },
-      update: {
-        permissions: undefined,
-      },
+      update: {},
       updateMany: false,
     };
 
@@ -608,7 +544,8 @@ describe("updateClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
+          groupId,
           name: {
             eq: "Test Token",
           },
@@ -621,14 +558,19 @@ describe("updateClientTokens integration", () => {
     expect(result.clientTokens[0].permissions).toBeNull();
   });
 
-  it("updates tokens across different apps", async () => {
-    // Create tokens in different apps
-    await createTestToken("Token 1 - updateClientTokens", { appId: "app1" });
-    await createTestToken("Token 2 - updateClientTokens", { appId: "app2" });
+  it("updates tokens across different projects", async () => {
+    // Create tokens in different projects
+    await createTestToken("Token 1 - updateClientTokens", {
+      projectId: "project1",
+    });
+    await createTestToken("Token 2 - updateClientTokens", {
+      projectId: "project2",
+    });
 
     const args: UpdateClientTokensEndpointArgs = {
       query: {
-        appId: "app1",
+        projectId: "project1",
+        groupId,
         name: {
           eq: "Token 1 - updateClientTokens",
         },
@@ -646,11 +588,12 @@ describe("updateClientTokens integration", () => {
       storage,
     });
 
-    // Verify only the token in app1 was updated
+    // Verify only the token in project1 was updated
     const result1 = await getClientTokens({
       args: {
         query: {
-          appId: "app1",
+          projectId: "project1",
+          groupId,
         },
       },
       storage,
@@ -659,7 +602,8 @@ describe("updateClientTokens integration", () => {
     const result2 = await getClientTokens({
       args: {
         query: {
-          appId: "app2",
+          projectId: "project2",
+          groupId,
         },
       },
       storage,

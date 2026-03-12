@@ -1,5 +1,5 @@
 import { first, isString } from "lodash-es";
-import { jsRecordToObjPartQueryList } from "../../common/obj.js";
+import { jsRecordToObjRecordQueryList } from "../../common/obj.js";
 import type {
   CheckMemberPermissionsEndpointArgs,
   CheckMemberPermissionsEndpointResponse,
@@ -13,13 +13,20 @@ export async function checkMemberPermissions(params: {
   storage?: IObjStorage;
 }) {
   const { args, storage } = params;
-  const { appId, memberId, groupId, items } = args;
+  const { query, items } = args;
+  const { projectId, groupId, id: memberId } = query;
 
   const permissions = await Promise.all(
     items.map(async (item) => {
-      // Transform the permission to the managed format that's stored in the database
+      // Entity is memberId; build full atom from item (action + target only)
+      const permission = {
+        entity: memberId,
+        action: item.action,
+        target: item.target,
+        granted: item.granted,
+      };
       const managedPermission = getFimidxManagedMemberPermission({
-        permission: item,
+        permission,
         memberId,
         groupId,
       });
@@ -27,28 +34,17 @@ export async function checkMemberPermissions(params: {
       const { permissions } = await getPermissions({
         args: {
           query: {
-            appId,
+            projectId,
+            groupId: groupId ? { eq: groupId } : undefined,
             entity: isString(managedPermission.entity)
               ? { eq: managedPermission.entity }
-              : jsRecordToObjPartQueryList(managedPermission.entity),
+              : jsRecordToObjRecordQueryList(managedPermission.entity),
             action: isString(managedPermission.action)
               ? { eq: managedPermission.action }
-              : jsRecordToObjPartQueryList(managedPermission.action),
+              : jsRecordToObjRecordQueryList(managedPermission.action),
             target: isString(managedPermission.target)
               ? { eq: managedPermission.target }
-              : jsRecordToObjPartQueryList(managedPermission.target),
-            meta: [
-              {
-                op: "eq",
-                field: "__fimidx_managed_memberId",
-                value: memberId,
-              },
-              {
-                op: "eq",
-                field: "__fimidx_managed_groupId",
-                value: groupId,
-              },
-            ],
+              : jsRecordToObjRecordQueryList(managedPermission.target),
           },
           limit: 1,
         },
@@ -61,7 +57,7 @@ export async function checkMemberPermissions(params: {
 
   const response: CheckMemberPermissionsEndpointResponse = {
     results: permissions.map((permission) => ({
-      hasPermission: !!permission,
+      isPermitted: !!permission && permission.granted !== false,
     })),
   };
 

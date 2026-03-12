@@ -3,13 +3,16 @@ import { v7 as uuidv7 } from "uuid";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
 import { kObjTags } from "../../../definitions/obj.js";
-import type { GetPermissionsEndpointArgs } from "../../../definitions/permission.js";
+import type {
+  AddPermissionsEndpointArgs,
+  GetPermissionsEndpointArgs,
+} from "../../../definitions/permission.js";
 import { createDefaultStorage } from "../../../storage/config.js";
 import type { IObjStorage } from "../../../storage/types.js";
 import { addPermissions } from "../addPermissions.js";
 import { getPermissions } from "../getPermissions.js";
 
-const defaultAppId = "test-app-getPermissions";
+const defaultProjectId = "test-project-getPermissions";
 const defaultGroupId = "test-group";
 const defaultBy = "tester";
 const defaultByType = "user";
@@ -17,13 +20,15 @@ const defaultByType = "user";
 // Test counter to ensure unique permissions
 let testCounter = 0;
 
-function makeAddPermissionsArgs(overrides: any = {}): any {
+function makeAddPermissionsArgs(
+  overrides: Partial<AddPermissionsEndpointArgs> = {}
+): AddPermissionsEndpointArgs {
   testCounter++;
   const uniqueId = `${testCounter}_${Date.now()}_${Math.random()
     .toString(36)
     .substr(2, 9)}`;
   return {
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     permissions: [
       {
         entity: "user",
@@ -42,7 +47,7 @@ function makeGetPermissionsArgs(
 ): GetPermissionsEndpointArgs {
   return {
     query: {
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       ...overrides.query,
     },
     page: overrides.page,
@@ -63,7 +68,7 @@ async function insertActionFieldForSorting(params: {
     id: uuidv7(),
     createdAt: now,
     updatedAt: now,
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     groupId,
     tag,
     field: "action",
@@ -92,7 +97,7 @@ describe("getPermissions integration", () => {
   beforeEach(async () => {
     try {
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.permission,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -105,7 +110,7 @@ describe("getPermissions integration", () => {
         .delete(objFieldsTable)
         .where(
           and(
-            eq(objFieldsTable.appId, defaultAppId),
+            eq(objFieldsTable.projectId, defaultProjectId),
             eq(objFieldsTable.groupId, defaultGroupId),
             eq(objFieldsTable.tag, kObjTags.permission)
           )
@@ -118,7 +123,7 @@ describe("getPermissions integration", () => {
   afterEach(async () => {
     try {
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.permission,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -131,7 +136,7 @@ describe("getPermissions integration", () => {
         .delete(objFieldsTable)
         .where(
           and(
-            eq(objFieldsTable.appId, defaultAppId),
+            eq(objFieldsTable.projectId, defaultProjectId),
             eq(objFieldsTable.groupId, defaultGroupId),
             eq(objFieldsTable.tag, kObjTags.permission)
           )
@@ -155,7 +160,7 @@ describe("getPermissions integration", () => {
     expect(result.hasMore).toBe(false);
   });
 
-  it("retrieves all permissions for an app", async () => {
+  it("retrieves all permissions for an project", async () => {
     // Create test permissions
     const addArgs1 = makeAddPermissionsArgs({
       permissions: [
@@ -232,7 +237,7 @@ describe("getPermissions integration", () => {
 
     const args = makeGetPermissionsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         entity: { eq: "user" },
       },
     });
@@ -274,7 +279,7 @@ describe("getPermissions integration", () => {
 
     const args = makeGetPermissionsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         action: { eq: "write" },
       },
     });
@@ -315,7 +320,7 @@ describe("getPermissions integration", () => {
 
     const args = makeGetPermissionsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         target: { eq: "image" },
       },
     });
@@ -351,7 +356,7 @@ describe("getPermissions integration", () => {
 
     const args = makeGetPermissionsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         createdBy: { eq: defaultBy },
       },
     });
@@ -500,7 +505,7 @@ describe("getPermissions integration", () => {
 
     const args = makeGetPermissionsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         entity: [{ op: "eq", field: "type", value: "user" }],
       },
     });

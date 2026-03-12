@@ -1,5 +1,4 @@
 import { MongoObjStorage } from "./mongo/MongoObjStorage.js";
-import { PostgresObjStorage } from "./postgresql/PostgresObjStorage.js";
 import type { IObjStorage, StorageConfig } from "./types.js";
 
 export class StorageFactory {
@@ -12,7 +11,7 @@ export class StorageFactory {
         return new MongoObjStorage(config.mongoModel);
 
       case "postgres":
-        return new PostgresObjStorage();
+        throw new Error("PostgreSQL storage is not supported yet");
 
       default:
         throw new Error(`Unsupported storage type: ${config.type}`);

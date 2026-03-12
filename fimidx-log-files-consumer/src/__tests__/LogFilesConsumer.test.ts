@@ -30,7 +30,7 @@ vi.mock('../consumeLogFile.js', () => ({
 
 describe('LogFilesConsumer', () => {
   const mockConfig = {
-    appId: 'test-app',
+    projectId: 'test-project',
     clientToken: 'test-token',
     serverURL: 'https://test-server.com',
     metadata: {environment: 'test'},
@@ -41,7 +41,7 @@ describe('LogFilesConsumer', () => {
       },
       {
         path: '/var/log/another.log',
-        appId: 'another-app',
+        projectId: 'another-project',
         clientToken: 'another-token',
       },
     ],
@@ -148,7 +148,7 @@ describe('LogFilesConsumer', () => {
       vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(invalidConfig));
 
       await expect(consumer.start()).rejects.toThrow(
-        'Missing required config for file /var/log/test.log: appId and clientToken are required',
+        'Missing required config for file /var/log/test.log: projectId and clientToken are required',
       );
     });
 
@@ -156,7 +156,11 @@ describe('LogFilesConsumer', () => {
       const configWithMissingFile = {
         ...mockConfig,
         logFiles: [
-          {path: '/var/log/missing.log', appId: 'test', clientToken: 'test'},
+          {
+            path: '/var/log/missing.log',
+            projectId: 'test',
+            clientToken: 'test',
+          },
         ],
       };
 
@@ -360,7 +364,7 @@ describe('LogFilesConsumer', () => {
         logFiles: [
           {
             path: '/var/log/test.log',
-            // Missing appId and clientToken
+            // Missing projectId and clientToken
           },
         ],
         trackConsumptionFilepath: './test-consumption.json',
@@ -369,19 +373,19 @@ describe('LogFilesConsumer', () => {
       vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(invalidConfig));
 
       await expect(consumer.start()).rejects.toThrow(
-        'Missing required config for file /var/log/test.log: appId and clientToken are required',
+        'Missing required config for file /var/log/test.log: projectId and clientToken are required',
       );
     });
 
     it('should merge config options correctly', async () => {
       const configWithMergedOptions = {
-        appId: 'global-app',
+        projectId: 'global-project',
         clientToken: 'global-token',
         metadata: {global: true},
         logFiles: [
           {
             path: '/var/log/test.log',
-            appId: 'local-app',
+            projectId: 'local-project',
             metadata: {local: true},
           },
         ],
@@ -394,10 +398,10 @@ describe('LogFilesConsumer', () => {
 
       await consumer.start();
 
-      // Should use local appId and merge metadata
+      // Should use local projectId and merge metadata
       expect(consumeLogFile).toHaveBeenCalledWith(
         expect.objectContaining({
-          appId: 'local-app',
+          projectId: 'local-project',
           clientToken: 'global-token',
           metadata: {local: true},
           path: '/var/log/test.log',

@@ -1,7 +1,7 @@
 "use client";
 
 import { kClientPaths } from "@/src/lib/clientHelpers/clientPaths.ts";
-import { useAppSession } from "@/src/lib/clientHooks/userHooks.ts";
+import { useProjectSession } from "@/src/lib/clientHooks/userHooks.ts";
 import { UserIcon } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -15,7 +15,7 @@ import {
 
 export function UserMenu() {
   const router = useRouter();
-  const { status } = useAppSession();
+  const { status } = useProjectSession();
 
   if (status !== "authenticated") {
     return null;
@@ -31,7 +31,7 @@ export function UserMenu() {
       <DropdownMenuContent>
         {/* <DropdownMenuItem
           onSelect={() => {
-            router.push(kClientPaths.app.profile);
+            router.push(kClientPaths.project.profile);
           }}
         >
           Profile

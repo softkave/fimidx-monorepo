@@ -1,6 +1,6 @@
-import { AppHeader } from "@/src/components/internal/app-header";
 import { DefaultErrorMessage } from "@/src/components/internal/default-error-message.tsx";
 import { ErrorTypeMessage } from "@/src/components/internal/error-type-message.tsx";
+import { ProjectHeader } from "@/src/components/internal/project-header";
 import { kAppConstants } from "fimidx-core/definitions/appConstants";
 import { Metadata } from "next";
 import { Suspense } from "react";
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default function AuthErrorPage() {
   return (
     <main className="flex flex-col h-screen flex-1">
-      <AppHeader />
+      <ProjectHeader />
       <div className="flex h-screen w-full flex-col items-center justify-center flex-1">
         <a
           href="#"

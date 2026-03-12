@@ -1,3 +1,4 @@
+import { first } from "lodash-es";
 import {
   afterAll,
   afterEach,
@@ -8,6 +9,7 @@ import {
   it,
 } from "vitest";
 import { addMember } from "../addMember.js";
+import { getMembers } from "../getMembers.js";
 import { updateMemberPermissions } from "../updateMemberPermissions.js";
 import { createTestSetup, makeTestData } from "./testUtils.js";
 
@@ -16,18 +18,15 @@ describe("updateMemberPermissions integration", () => {
     testName: "updateMemberPermissions",
   });
 
-  const { appId, groupId, by, byType } = testData;
+  const { projectId, groupId, by, byType } = testData;
 
   function makeAddMemberArgs(overrides: any = {}) {
     const testData = makeTestData({ testName: "member" });
     return {
-      name: testData.name,
-      description: "Test description",
-      appId,
+      projectId,
       groupId,
-      email: testData.email,
-      memberId: testData.memberId,
       permissions: [],
+      meta: { name: testData.name, userId: testData.memberId },
       ...overrides,
     };
   }
@@ -35,19 +34,13 @@ describe("updateMemberPermissions integration", () => {
   function makeUpdateMemberPermissionsArgs(overrides: any = {}) {
     return {
       query: {
-        memberId: "test-member-id",
+        id: "test-member-id",
         groupId,
-        appId,
+        projectId,
         ...overrides.query,
       },
       update: {
-        permissions: [
-          {
-            entity: "user",
-            action: "read",
-            target: "document",
-          },
-        ],
+        addPermissions: [{ action: "read", target: "document" }],
         ...overrides.update,
       },
       ...overrides,
@@ -74,7 +67,7 @@ describe("updateMemberPermissions integration", () => {
 
   it("updates member permissions successfully", async () => {
     // Create a member
-    const memberArgs = makeAddMemberArgs({ memberId: "test-member" });
+    const memberArgs = makeAddMemberArgs({ meta: { userId: "test-member" } });
     const member = await addMember({
       args: memberArgs,
       by: by,
@@ -84,51 +77,51 @@ describe("updateMemberPermissions integration", () => {
 
     const args = makeUpdateMemberPermissionsArgs({
       query: {
-        memberId: member.member.memberId,
+        id: member.member.id,
       },
       update: {
-        permissions: [
-          {
-            entity: "user",
-            action: "read",
-            target: "document",
-          },
-          {
-            entity: "admin",
-            action: "write",
-            target: "settings",
-          },
+        addPermissions: [
+          { action: "read", target: "document" },
+          { action: "write", target: "settings" },
         ],
       },
     });
 
-    const result = await updateMemberPermissions({
+    await updateMemberPermissions({
       args,
       by: by,
       byType: byType,
       storage,
     });
 
-    expect(result.member).toBeDefined();
-    expect(result.member.permissions).toBeDefined();
-    expect(result.member.permissions).toHaveLength(2);
+    const { members } = await getMembers({
+      args: {
+        query: { projectId, groupId, id: { eq: member.member.id } },
+        includePermissions: true,
+      },
+      storage,
+    });
+    const updated = first(members);
+    expect(updated).toBeDefined();
+    expect(updated!.permissions).toBeDefined();
+    expect(updated!.permissions).toHaveLength(2);
 
     // Verify the permissions are properly managed
-    const permission1 = result.member.permissions![0];
-    const permission2 = result.member.permissions![1];
+    const permission1 = updated!.permissions![0];
+    const permission2 = updated!.permissions![1];
 
-    expect(permission1.entity).toBe("user");
-    expect(permission1.action).toBe("read");
-    expect(permission1.target).toBe("document");
+    expect(permission1.entity).toBe(member.member.id);
+    expect(permission1.action).toBe("write");
+    expect(permission1.target).toBe("settings");
 
-    expect(permission2.entity).toBe("admin");
-    expect(permission2.action).toBe("write");
-    expect(permission2.target).toBe("settings");
+    expect(permission2.entity).toBe(member.member.id);
+    expect(permission2.action).toBe("read");
+    expect(permission2.target).toBe("document");
   });
 
   it("updates member permissions with complex entity, action, and target objects", async () => {
     // Create a member
-    const memberArgs = makeAddMemberArgs({ memberId: "test-member" });
+    const memberArgs = makeAddMemberArgs({ meta: { userId: "test-member" } });
     const member = await addMember({
       args: memberArgs,
       by: by,
@@ -138,12 +131,11 @@ describe("updateMemberPermissions integration", () => {
 
     const args = makeUpdateMemberPermissionsArgs({
       query: {
-        memberId: member.member.memberId,
+        id: member.member.id,
       },
       update: {
-        permissions: [
+        addPermissions: [
           {
-            entity: { type: "user", id: "123" },
             action: { operation: "read", scope: "document" },
             target: { resource: "document", id: "456" },
           },
@@ -151,26 +143,37 @@ describe("updateMemberPermissions integration", () => {
       },
     });
 
-    const result = await updateMemberPermissions({
+    await updateMemberPermissions({
       args,
       by: by,
       byType: byType,
       storage,
     });
 
-    expect(result.member).toBeDefined();
-    expect(result.member.permissions).toBeDefined();
-    expect(result.member.permissions).toHaveLength(1);
+    const { members } = await getMembers({
+      args: {
+        query: { projectId, groupId, id: { eq: member.member.id } },
+        includePermissions: true,
+      },
+      storage,
+    });
+    const updated = first(members);
+    expect(updated).toBeDefined();
+    expect(updated!.permissions).toBeDefined();
+    expect(updated!.permissions).toHaveLength(1);
 
-    const permission = result.member.permissions![0];
-    expect(permission.entity).toEqual({ type: "user", id: "123" });
+    const permission = updated!.permissions![0];
+    expect(permission.entity).toBe(member.member.id);
     expect(permission.action).toEqual({ operation: "read", scope: "document" });
     expect(permission.target).toEqual({ resource: "document", id: "456" });
   });
 
-  it("updates member permissions with empty permissions array", async () => {
+  it("updates member permissions with removeAllPermissions", async () => {
     // Create a member
-    const memberArgs = makeAddMemberArgs({ memberId: "test-member" });
+    const memberArgs = makeAddMemberArgs({
+      meta: { userId: "test-member" },
+      permissions: [{ action: "read", target: "document" }],
+    });
     const member = await addMember({
       args: memberArgs,
       by: by,
@@ -180,29 +183,36 @@ describe("updateMemberPermissions integration", () => {
 
     const args = makeUpdateMemberPermissionsArgs({
       query: {
-        memberId: member.member.memberId,
+        id: member.member.id,
       },
       update: {
-        permissions: [],
+        removeAllPermissions: true,
       },
     });
 
-    const result = await updateMemberPermissions({
+    await updateMemberPermissions({
       args,
       by: by,
       byType: byType,
       storage,
     });
 
-    expect(result.member).toBeDefined();
-    expect(result.member.permissions).toBeDefined();
-    expect(result.member.permissions).toHaveLength(0);
+    const { members } = await getMembers({
+      args: {
+        query: { projectId, groupId, id: { eq: member.member.id } },
+        includePermissions: true,
+      },
+      storage,
+    });
+    const updated = first(members);
+    expect(updated).toBeDefined();
+    expect(updated!.permissions).toBeFalsy();
   });
 
   it("throws error when member not found", async () => {
     const args = makeUpdateMemberPermissionsArgs({
       query: {
-        memberId: "non-existent-member",
+        id: "non-existent-member",
       },
     });
 
@@ -216,11 +226,11 @@ describe("updateMemberPermissions integration", () => {
     ).rejects.toThrow("Member not found");
   });
 
-  it("handles different app IDs", async () => {
-    // Create a member in a different app
+  it("handles different project IDs", async () => {
+    // Create a member in a different project
     const memberArgs = makeAddMemberArgs({
-      memberId: "test-member-updateMemberPermissions",
-      appId: "different-app",
+      projectId: "different-project",
+      meta: { userId: "test-member-updateMemberPermissions" },
     });
     const member = await addMember({
       args: memberArgs,
@@ -231,37 +241,43 @@ describe("updateMemberPermissions integration", () => {
 
     const args = makeUpdateMemberPermissionsArgs({
       query: {
-        memberId: member.member.memberId,
-        appId: "different-app",
+        id: member.member.id,
+        projectId: "different-project",
       },
       update: {
-        permissions: [
-          {
-            entity: "user",
-            action: "read",
-            target: "document",
-          },
-        ],
+        addPermissions: [{ action: "read", target: "document" }],
       },
     });
 
-    const result = await updateMemberPermissions({
+    await updateMemberPermissions({
       args,
       by: by,
       byType: byType,
       storage,
     });
 
-    expect(result.member).toBeDefined();
-    expect(result.member.appId).toBe("different-app");
-    expect(result.member.permissions).toHaveLength(1);
+    const { members } = await getMembers({
+      args: {
+        query: {
+          projectId: "different-project",
+          groupId: member.member.groupId,
+          id: { eq: member.member.id },
+        },
+        includePermissions: true,
+      },
+      storage,
+    });
+    const updated = first(members);
+    expect(updated).toBeDefined();
+    expect(updated!.projectId).toBe("different-project");
+    expect(updated!.permissions).toHaveLength(1);
   });
 
   it("handles different group IDs", async () => {
     // Create a member in a different group
     const memberArgs = makeAddMemberArgs({
-      memberId: "test-member",
       groupId: "different-group",
+      meta: { userId: "test-member" },
     });
     const member = await addMember({
       args: memberArgs,
@@ -272,35 +288,41 @@ describe("updateMemberPermissions integration", () => {
 
     const args = makeUpdateMemberPermissionsArgs({
       query: {
-        memberId: member.member.memberId,
+        id: member.member.id,
         groupId: "different-group",
       },
       update: {
-        permissions: [
-          {
-            entity: "user",
-            action: "read",
-            target: "document",
-          },
-        ],
+        addPermissions: [{ action: "read", target: "document" }],
       },
     });
 
-    const result = await updateMemberPermissions({
+    await updateMemberPermissions({
       args,
       by: by,
       byType: byType,
       storage,
     });
 
-    expect(result.member).toBeDefined();
-    expect(result.member.groupId).toBe("different-group");
-    expect(result.member.permissions).toHaveLength(1);
+    const { members } = await getMembers({
+      args: {
+        query: {
+          projectId,
+          groupId: "different-group",
+          id: { eq: member.member.id },
+        },
+        includePermissions: true,
+      },
+      storage,
+    });
+    const updated = first(members);
+    expect(updated).toBeDefined();
+    expect(updated!.groupId).toBe("different-group");
+    expect(updated!.permissions).toHaveLength(1);
   });
 
   it("handles different by/byType values", async () => {
     // Create a member
-    const memberArgs = makeAddMemberArgs({ memberId: "test-member" });
+    const memberArgs = makeAddMemberArgs({ meta: { userId: "test-member" } });
     const member = await addMember({
       args: memberArgs,
       by: by,
@@ -310,34 +332,36 @@ describe("updateMemberPermissions integration", () => {
 
     const args = makeUpdateMemberPermissionsArgs({
       query: {
-        memberId: member.member.memberId,
+        id: member.member.id,
       },
       update: {
-        permissions: [
-          {
-            entity: "user",
-            action: "read",
-            target: "document",
-          },
-        ],
+        addPermissions: [{ action: "read", target: "document" }],
       },
     });
 
-    const result = await updateMemberPermissions({
+    await updateMemberPermissions({
       args,
       by: "different-user",
       byType: "admin",
       storage,
     });
 
-    expect(result.member).toBeDefined();
-    expect(result.member.permissions).toHaveLength(1);
+    const { members } = await getMembers({
+      args: {
+        query: { projectId, groupId, id: { eq: member.member.id } },
+        includePermissions: true,
+      },
+      storage,
+    });
+    const updated = first(members);
+    expect(updated).toBeDefined();
+    expect(updated!.permissions).toHaveLength(1);
   });
 
   it("updates permissions for multiple members with different member IDs", async () => {
     // Create two members
-    const member1Args = makeAddMemberArgs({ memberId: "member-1" });
-    const member2Args = makeAddMemberArgs({ memberId: "member-2" });
+    const member1Args = makeAddMemberArgs({ meta: { userId: "member-1" } });
+    const member2Args = makeAddMemberArgs({ meta: { userId: "member-2" } });
 
     const member1 = await addMember({
       args: member1Args,
@@ -356,20 +380,14 @@ describe("updateMemberPermissions integration", () => {
     // Update permissions for member 1
     const args1 = makeUpdateMemberPermissionsArgs({
       query: {
-        memberId: member1.member.memberId,
+        id: member1.member.id,
       },
       update: {
-        permissions: [
-          {
-            entity: "user",
-            action: "read",
-            target: "document",
-          },
-        ],
+        addPermissions: [{ action: "read", target: "document" }],
       },
     });
 
-    const result1 = await updateMemberPermissions({
+    await updateMemberPermissions({
       args: args1,
       by: by,
       byType: byType,
@@ -379,41 +397,49 @@ describe("updateMemberPermissions integration", () => {
     // Update permissions for member 2
     const args2 = makeUpdateMemberPermissionsArgs({
       query: {
-        memberId: member2.member.memberId,
+        id: member2.member.id,
       },
       update: {
-        permissions: [
-          {
-            entity: "admin",
-            action: "write",
-            target: "settings",
-          },
-        ],
+        addPermissions: [{ action: "write", target: "settings" }],
       },
     });
 
-    const result2 = await updateMemberPermissions({
+    await updateMemberPermissions({
       args: args2,
       by: by,
       byType: byType,
       storage,
     });
 
-    expect(result1.member.permissions).toHaveLength(1);
-    expect(result1.member.permissions![0].entity).toBe("user");
+    const { members: members1 } = await getMembers({
+      args: {
+        query: { projectId, groupId, id: { eq: member1.member.id } },
+        includePermissions: true,
+      },
+      storage,
+    });
+    const { members: members2 } = await getMembers({
+      args: {
+        query: { projectId, groupId, id: { eq: member2.member.id } },
+        includePermissions: true,
+      },
+      storage,
+    });
+    expect(members1[0].permissions).toHaveLength(1);
+    expect(members1[0].permissions![0].entity).toBe(member1.member.id);
 
-    expect(result2.member.permissions).toHaveLength(1);
-    expect(result2.member.permissions![0].entity).toBe("admin");
+    expect(members2[0].permissions).toHaveLength(1);
+    expect(members2[0].permissions![0].entity).toBe(member2.member.id);
   });
 
   it("preserves member properties after permission update", async () => {
     // Create a member with specific properties
     const memberArgs = makeAddMemberArgs({
-      memberId: "test-member",
-      name: "Test Member",
-      email: "test@example.com",
-      description: "Test description",
-      meta: { department: "engineering" },
+      meta: {
+        name: "Test Member",
+        email: "test@example.com",
+        department: "engineering",
+      },
     });
     const member = await addMember({
       args: memberArgs,
@@ -424,31 +450,32 @@ describe("updateMemberPermissions integration", () => {
 
     const args = makeUpdateMemberPermissionsArgs({
       query: {
-        memberId: member.member.memberId,
+        id: member.member.id,
       },
       update: {
-        permissions: [
-          {
-            entity: "user",
-            action: "read",
-            target: "document",
-          },
-        ],
+        addPermissions: [{ action: "read", target: "document" }],
       },
     });
 
-    const result = await updateMemberPermissions({
+    await updateMemberPermissions({
       args,
       by: by,
       byType: byType,
       storage,
     });
 
-    expect(result.member).toBeDefined();
-    expect(result.member.name).toBe("Test Member");
-    expect(result.member.email).toBe("test@example.com");
-    expect(result.member.description).toBe("Test description");
-    expect(result.member.meta).toEqual({ department: "engineering" });
-    expect(result.member.permissions).toHaveLength(1);
+    const { members } = await getMembers({
+      args: {
+        query: { projectId, groupId, id: { eq: member.member.id } },
+        includePermissions: true,
+      },
+      storage,
+    });
+    const updated = first(members);
+    expect(updated).toBeDefined();
+    expect(updated!.meta?.name).toBe("Test Member");
+    expect(updated!.meta?.email).toBe("test@example.com");
+    expect(updated!.meta?.department).toBe("engineering");
+    expect(updated!.permissions).toHaveLength(1);
   });
 });

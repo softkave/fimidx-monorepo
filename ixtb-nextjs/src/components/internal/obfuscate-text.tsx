@@ -15,7 +15,7 @@ export function ObfuscateText(props: IObfuscateTextProps) {
   const [showText, setShowText] = useState(false);
 
   const dots = useMemo(() => {
-    return "·".repeat(text.length);
+    return "*".repeat(text.length);
   }, [text]);
 
   if (text.length === 0) {
@@ -32,7 +32,7 @@ export function ObfuscateText(props: IObfuscateTextProps) {
             text
           )
         ) : (
-          <div className="w-full break-words text-wrap leading-[24px] text-4xl text-muted-foreground">
+          <div className="w-full break-words text-wrap leading-[24px] text-sm text-muted-foreground">
             {dots}
           </div>
         )}

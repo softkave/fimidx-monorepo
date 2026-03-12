@@ -1,34 +1,35 @@
 import { cn } from "@/src/lib/utils.ts";
-import { AppPage } from "../internal/app-page.tsx";
+import { ProjectPage } from "../internal/project-page.tsx";
 import { ClientTokenListContainer } from "./client-tokens-container.tsx";
 import { ClientTokensHeader } from "./client-tokens-header.tsx";
 
 export function ClientTokensPage(props: {
-  appId: string;
+  projectId: string;
   orgId: string;
   className?: string;
   title?: string;
   description?: string;
-  withAppWrapper?: boolean;
+  withProjectWrapper?: boolean;
 }) {
-  const { withAppWrapper = true } = props;
+  const { withProjectWrapper = true } = props;
   const contentNode = (
     <div className={cn("flex flex-col max-w-lg mx-auto", props.className)}>
       <ClientTokensHeader
-        appId={props.appId}
+        projectId={props.projectId}
         orgId={props.orgId}
         title={props.title}
         description={props.description}
       />
       <ClientTokenListContainer
-        appId={props.appId}
+        projectId={props.projectId}
         showNoClientTokensMessage={false}
+        groupId={props.orgId}
       />
     </div>
   );
 
-  if (withAppWrapper) {
-    return <AppPage>{contentNode}</AppPage>;
+  if (withProjectWrapper) {
+    return <ProjectPage>{contentNode}</ProjectPage>;
   }
 
   return contentNode;

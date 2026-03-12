@@ -24,7 +24,7 @@ function makeInputObjRecord(
 }
 
 // Use unique identifiers for each test file to prevent conflicts
-const defaultAppId = "test-app-setObjs";
+const defaultProjectId = "test-project-setObjs";
 const defaultGroupId = "test-group-setObjs";
 const defaultTag = "test-tag-setObjs";
 const defaultBy = "tester";
@@ -52,20 +52,22 @@ describe.each(backends)("setManyObjs integration (%s)", (backend) => {
   beforeEach(async () => {
     if (backend.type === "mongo") {
       const model = getObjModel();
-      await model.deleteMany({ appId: defaultAppId, tag: defaultTag });
+      await model.deleteMany({ projectId: defaultProjectId, tag: defaultTag });
     } else if (backend.type === "postgres") {
       const { fimidxPostgresDb, objs } = await import(
         "../../../db/fimidx.postgres.js"
       );
       await fimidxPostgresDb
         .delete(objs)
-        .where(and(eq(objs.appId, defaultAppId), eq(objs.tag, defaultTag)));
+        .where(
+          and(eq(objs.projectId, defaultProjectId), eq(objs.tag, defaultTag))
+        );
     }
   });
 
   it("creates new objects", async () => {
     const input: ISetManyObjsEndpointArgs = {
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       items: [makeInputObjRecord({ foo: "bar" })],
     };
     const result = await setManyObjs({
@@ -86,7 +88,7 @@ describe.each(backends)("setManyObjs integration (%s)", (backend) => {
   it("updates existing objects with onConflict=replace", async () => {
     // First insert
     const input1: ISetManyObjsEndpointArgs = {
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       items: [makeInputObjRecord({ foo: "bar", unique: "u1" })],
       conflictOnKeys: ["unique"],
     };
@@ -100,7 +102,7 @@ describe.each(backends)("setManyObjs integration (%s)", (backend) => {
     });
     // Second insert with same unique, different value
     const input2: ISetManyObjsEndpointArgs = {
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       items: [makeInputObjRecord({ foo: "baz", unique: "u1" })],
       conflictOnKeys: ["unique"],
       onConflict: "replace",
@@ -121,7 +123,7 @@ describe.each(backends)("setManyObjs integration (%s)", (backend) => {
   it("ignores existing objects with onConflict=ignore", async () => {
     // First insert
     const input1: ISetManyObjsEndpointArgs = {
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       items: [makeInputObjRecord({ foo: "bar", unique: "u2" })],
       conflictOnKeys: ["unique"],
     };
@@ -135,7 +137,7 @@ describe.each(backends)("setManyObjs integration (%s)", (backend) => {
     });
     // Second insert with same unique, different value
     const input2: ISetManyObjsEndpointArgs = {
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       items: [makeInputObjRecord({ foo: "baz", unique: "u2" })],
       conflictOnKeys: ["unique"],
       onConflict: "ignore",
@@ -157,7 +159,7 @@ describe.each(backends)("setManyObjs integration (%s)", (backend) => {
   it("fails existing objects with onConflict=fail", async () => {
     // First insert
     const input1: ISetManyObjsEndpointArgs = {
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       items: [makeInputObjRecord({ foo: "bar", unique: "u3" })],
       conflictOnKeys: ["unique"],
     };
@@ -171,7 +173,7 @@ describe.each(backends)("setManyObjs integration (%s)", (backend) => {
     });
     // Second insert with same unique, different value
     const input2: ISetManyObjsEndpointArgs = {
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       items: [makeInputObjRecord({ foo: "baz", unique: "u3" })],
       conflictOnKeys: ["unique"],
       onConflict: "fail",
@@ -192,7 +194,7 @@ describe.each(backends)("setManyObjs integration (%s)", (backend) => {
 
   it("can insert multiple objects in one call", async () => {
     const input: ISetManyObjsEndpointArgs = {
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       items: [
         makeInputObjRecord({ foo: "multi1" }),
         makeInputObjRecord({ foo: "multi2" }),
@@ -217,7 +219,7 @@ describe.each(backends)("setManyObjs integration (%s)", (backend) => {
   it("handles mixed new and existing objects", async () => {
     // First insert
     const input1: ISetManyObjsEndpointArgs = {
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       items: [makeInputObjRecord({ foo: "existing", unique: "mixed" })],
       conflictOnKeys: ["unique"],
     };
@@ -231,7 +233,7 @@ describe.each(backends)("setManyObjs integration (%s)", (backend) => {
     });
     // Second insert with one existing and one new
     const input2: ISetManyObjsEndpointArgs = {
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       items: [
         makeInputObjRecord({ foo: "updated", unique: "mixed" }),
         makeInputObjRecord({ foo: "new", unique: "new" }),

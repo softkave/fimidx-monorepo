@@ -4,13 +4,16 @@ import {
   addCallbackSchema,
   IAddCallbackEndpointResponse,
   ICallback,
+  kFimidxPermissions,
 } from "fimidx-core/definitions/index";
 import { v7 as uuidv7 } from "uuid";
 import {
   getNodeServerInternalAccessKey,
   getNodeServerURL,
 } from "../../../serverHelpers/nodeServer";
+import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
+import { sanitizeAddCallbackInput } from "../../utils/sanitizeKId0";
 
 async function callNodeServerAddCallback(params: {
   item: AddCallbackEndpointArgs;
@@ -53,6 +56,14 @@ export const addCallbackEndpoint: NextClientTokenAuthenticatedEndpointFn<
   } = params;
 
   const input = addCallbackSchema.parse(await req.json());
+  sanitizeAddCallbackInput(input);
+
+  await checkPermissionProjectThenOrg({
+    clientToken,
+    projectId: input.projectId,
+    action: kFimidxPermissions.callback.mutate,
+  });
+
   const idempotencyKey =
     input.idempotencyKey ?? `__fimidx_generated_${uuidv7()}_${Date.now()}`;
   const callback = await callNodeServerAddCallback({

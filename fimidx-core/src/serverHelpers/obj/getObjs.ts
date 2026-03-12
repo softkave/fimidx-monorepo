@@ -1,23 +1,22 @@
-import { and, eq, inArray } from "drizzle-orm";
-import { db, objFields as objFieldsTable } from "../../db/fimidx.sqlite.js";
 import type {
   INumberMetaQuery,
   IObjField,
-  IObjPartQueryList,
+  IObjRecordQueryList,
   IObjQuery,
   IObjSortList,
   IStringMetaQuery,
 } from "../../definitions/obj.js";
+import { getProjectIdFromObjQuery, isObjQueryLeaf } from "../../definitions/obj.js";
 import { createStorage, getDefaultStorageType } from "../../storage/config.js";
 import type { IObjStorage } from "../../storage/types.js";
 import { getObjFields } from "./getObjFields.js";
 
-export function metaQueryToPartQueryList(params: {
+export function metaQueryToRecordQueryList(params: {
   metaQuery: Record<string, IStringMetaQuery | INumberMetaQuery>;
   prefix?: string;
-}): IObjPartQueryList | undefined {
+}): IObjRecordQueryList | undefined {
   const { metaQuery, prefix } = params;
-  const partQuery: IObjPartQueryList = [];
+  const recordQuery: IObjRecordQueryList = [];
   Object.entries(metaQuery).forEach(([key, value]) => {
     Object.keys(value).forEach((op) => {
       const opValue = value[op as keyof typeof value];
@@ -29,63 +28,63 @@ export function metaQueryToPartQueryList(params: {
 
       switch (op) {
         case "eq":
-          partQuery.push({
+          recordQuery.push({
             op: "eq",
             field,
             value: opValue as string | number,
           });
           break;
         case "neq":
-          partQuery.push({
+          recordQuery.push({
             op: "neq",
             field,
             value: opValue as string | number,
           });
           break;
         case "in":
-          partQuery.push({
+          recordQuery.push({
             op: "in",
             field,
             value: opValue as string[] | number[],
           });
           break;
         case "not_in":
-          partQuery.push({
+          recordQuery.push({
             op: "not_in",
             field,
             value: opValue as string[] | number[],
           });
           break;
         case "gt":
-          partQuery.push({
+          recordQuery.push({
             op: "gt",
             field,
             value: opValue as string | number,
           });
           break;
         case "gte":
-          partQuery.push({
+          recordQuery.push({
             op: "gte",
             field,
             value: opValue as string | number,
           });
           break;
         case "lt":
-          partQuery.push({
+          recordQuery.push({
             op: "lt",
             field,
             value: opValue as string | number,
           });
           break;
         case "lte":
-          partQuery.push({
+          recordQuery.push({
             op: "lte",
             field,
             value: opValue as string | number,
           });
           break;
         case "between":
-          partQuery.push({
+          recordQuery.push({
             op: "between",
             field,
             value: opValue as [string | number, string | number],
@@ -97,27 +96,7 @@ export function metaQueryToPartQueryList(params: {
     });
   });
 
-  return partQuery.length ? partQuery : undefined;
-}
-
-async function getObjFieldsFromDb(params: {
-  appId: string;
-  tag: string;
-  limit?: number;
-  fields?: string[];
-}) {
-  const { appId, tag, limit = 100, fields } = params;
-  return await db
-    .select()
-    .from(objFieldsTable)
-    .where(
-      and(
-        eq(objFieldsTable.appId, appId),
-        eq(objFieldsTable.tag, tag),
-        fields ? inArray(objFieldsTable.path, fields) : undefined
-      )
-    )
-    .limit(limit);
+  return recordQuery.length ? recordQuery : undefined;
 }
 
 export async function getManyObjs(params: {
@@ -144,12 +123,13 @@ export async function getManyObjs(params: {
   // Fetch fields for query generation
   let fields: IObjField[] = [];
 
-  if (objQuery.appId) {
+  const projectId = getProjectIdFromObjQuery(objQuery);
+  if (projectId) {
     // Fetch fields
     const fieldsResult = await getObjFields({
-      appId: objQuery.appId,
+      projectId,
       tag,
-      limit: 1000, // Fetch all fields for this app/tag combination
+      limit: 1000, // Fetch all fields for this project/tag combination
     });
     fields = fieldsResult.fields.map((field) => ({
       ...field,
@@ -160,9 +140,20 @@ export async function getManyObjs(params: {
   // Convert to Maps for O(1) lookup
   const fieldsMap = new Map(fields.map((f) => [f.path, f]));
 
+  const getIncludeDeletedFromObjQuery = (query: IObjQuery): boolean => {
+    if (isObjQueryLeaf(query)) {
+      return query.metaQuery?.deletedAt === null;
+    }
+    const logical = query as any as { and?: IObjQuery[]; or?: IObjQuery[] };
+    return (
+      (logical.and?.some(getIncludeDeletedFromObjQuery) ?? false) ||
+      (logical.or?.some(getIncludeDeletedFromObjQuery) ?? false)
+    );
+  };
+
   // Determine if we should include deleted objects
-  // If topLevelFields.deletedAt is explicitly set to null, include deleted objects
-  const includeDeleted = objQuery.topLevelFields?.deletedAt === null;
+  // If metaQuery.deletedAt is explicitly set to null, include deleted objects
+  const includeDeleted = getIncludeDeletedFromObjQuery(objQuery);
 
   // Use the new read method from the storage abstraction
   const result = await storage.read({

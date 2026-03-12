@@ -1,6 +1,6 @@
 {
   "name": "fimidx",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "fimidx js sdk",
   "author": {
     "email": "ywordk@gmail.com",
@@ -60,7 +60,6 @@
     "vitest": "^3.1.4"
   },
   "dependencies": {
-    "fimidara": "^1.39.0",
     "lodash-es": "^4.17.21",
     "mfdoc-js-sdk-base": "^0.3.1",
     "softkave-js-utils": "^0.17.0"

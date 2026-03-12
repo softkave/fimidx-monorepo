@@ -12,7 +12,7 @@ if (!fimidxTursoAuthToken) {
 
 export default defineConfig({
   out: "./drizzle/fimidx/sqlite",
-  schema: "./src/db/fimidx.sqlite.ts",
+  schema: "./src/db/fimidx.sqlite.schema.ts",
   dialect: "turso",
   dbCredentials: {
     authToken: fimidxTursoAuthToken,

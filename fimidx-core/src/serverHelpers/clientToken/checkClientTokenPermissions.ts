@@ -1,5 +1,5 @@
 import { first, isString } from "lodash-es";
-import { jsRecordToObjPartQueryList } from "../../common/obj.js";
+import { jsRecordToObjRecordQueryList } from "../../common/obj.js";
 import type {
   CheckClientTokenPermissionsEndpointArgs,
   CheckClientTokenPermissionsEndpointResponse,
@@ -13,11 +13,13 @@ export async function checkClientTokenPermissions(params: {
   storage?: IObjStorage;
 }) {
   const { args, storage } = params;
-  const { appId, clientTokenId, groupId, items } = args;
+  const { query, items } = args;
+  const { projectId, clientTokenId, groupId } = query;
 
   const permissions = await Promise.all(
     items.map(async (item) => {
-      // Transform the permission to the managed format that's stored in the database
+      // Transform the permission to the managed format that's stored in the
+      // database
       const managedPermission = getFimidxManagedClientTokenPermission({
         permission: item,
         clientTokenId,
@@ -27,28 +29,17 @@ export async function checkClientTokenPermissions(params: {
       const { permissions } = await getPermissions({
         args: {
           query: {
-            appId,
+            projectId,
+            groupId: groupId ? { eq: groupId } : undefined,
             entity: isString(managedPermission.entity)
               ? { eq: managedPermission.entity }
-              : jsRecordToObjPartQueryList(managedPermission.entity),
+              : jsRecordToObjRecordQueryList(managedPermission.entity),
             action: isString(managedPermission.action)
               ? { eq: managedPermission.action }
-              : jsRecordToObjPartQueryList(managedPermission.action),
+              : jsRecordToObjRecordQueryList(managedPermission.action),
             target: isString(managedPermission.target)
               ? { eq: managedPermission.target }
-              : jsRecordToObjPartQueryList(managedPermission.target),
-            meta: [
-              {
-                op: "eq",
-                field: "__fimidx_managed_clientTokenId",
-                value: clientTokenId,
-              },
-              {
-                op: "eq",
-                field: "__fimidx_managed_groupId",
-                value: groupId,
-              },
-            ],
+              : jsRecordToObjRecordQueryList(managedPermission.target),
           },
           limit: 1,
         },
@@ -61,7 +52,7 @@ export async function checkClientTokenPermissions(params: {
 
   const response: CheckClientTokenPermissionsEndpointResponse = {
     results: permissions.map((permission) => ({
-      hasPermission: !!permission,
+      isPermitted: !!permission && permission.granted !== false,
     })),
   };
 

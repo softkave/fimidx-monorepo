@@ -2,9 +2,12 @@ import assert from "assert";
 import { kOwnServerErrorCodes, OwnServerError } from "fimidx-core/common/error";
 import { ingestLogsSchema } from "fimidx-core/definitions/log";
 import { kByTypes } from "fimidx-core/definitions/other";
-import { getApps, ingestLogs } from "fimidx-core/serverHelpers/index";
+import { kFimidxPermissions } from "fimidx-core/definitions/permission";
+import { getProjects, ingestLogs } from "fimidx-core/serverHelpers/index";
 import { first } from "lodash-es";
+import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
+import { sanitizeIngestLogsInput } from "../../utils/sanitizeKId0";
 
 export const ingestLogsEndpoint: NextClientTokenAuthenticatedEndpointFn<
   void
@@ -15,23 +18,30 @@ export const ingestLogsEndpoint: NextClientTokenAuthenticatedEndpointFn<
   } = params;
 
   const input = ingestLogsSchema.parse(await req.json());
-  const { apps } = await getApps({
+  sanitizeIngestLogsInput(input);
+
+  await checkPermissionProjectThenOrg({
+    clientToken,
+    projectId: input.projectId,
+    action: kFimidxPermissions.log.ingest,
+  });
+
+  const { projects } = await getProjects({
     args: {
       query: {
-        id: {
-          eq: input.appId,
-        },
+        orgId: clientToken.groupId,
+        id: { eq: input.projectId },
       },
     },
   });
 
-  const app = first(apps);
+  const project = first(projects);
   assert.ok(
-    app,
-    new OwnServerError("App not found", kOwnServerErrorCodes.NotFound)
+    project,
+    new OwnServerError("Project not found", kOwnServerErrorCodes.NotFound)
   );
   assert.ok(
-    app?.id === clientToken.meta?.appId,
+    project?.id === clientToken.projectId,
     new OwnServerError("Permission denied", kOwnServerErrorCodes.Unauthorized)
   );
 
@@ -39,6 +49,6 @@ export const ingestLogsEndpoint: NextClientTokenAuthenticatedEndpointFn<
     args: input,
     by: clientToken.id,
     byType: kByTypes.clientToken,
-    groupId: app.orgId,
+    groupId: project.orgId,
   });
 };

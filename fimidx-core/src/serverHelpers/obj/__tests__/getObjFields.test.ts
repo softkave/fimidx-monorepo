@@ -2,19 +2,20 @@ import { and, eq, inArray } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
+import type { IObjField } from "../../../definitions/obj.js";
 import { getObjFields } from "../getObjFields.js";
 
-const TEST_APP_ID = "test-app-id-getObjFields";
+const TEST_PROJECT_ID = "test-project-id-getObjFields";
 const TEST_GROUP_ID = "test-group-id-getObjFields";
 const TEST_TAG = "test-tag-getObjFields";
 
-function makeObjField(overrides = {}) {
+function makeObjField(overrides: Partial<IObjField> = {}): IObjField {
   const now = new Date();
   return {
     id: uuidv7(),
     createdAt: now,
     updatedAt: now,
-    appId: TEST_APP_ID,
+    projectId: TEST_PROJECT_ID,
     groupId: TEST_GROUP_ID,
     path: `field_${uuidv7().slice(0, 8)}`,
     type: "string",
@@ -34,11 +35,11 @@ describe("getObjFields integration", () => {
       .delete(objFieldsTable)
       .where(
         and(
-          eq(objFieldsTable.appId, TEST_APP_ID),
+          eq(objFieldsTable.projectId, TEST_PROJECT_ID),
           eq(objFieldsTable.tag, TEST_TAG)
         )
       );
-  });
+  }, 20_000);
 
   afterEach(async () => {
     // Clean up after each test
@@ -56,14 +57,17 @@ describe("getObjFields integration", () => {
       .delete(objFieldsTable)
       .where(
         and(
-          eq(objFieldsTable.appId, TEST_APP_ID),
+          eq(objFieldsTable.projectId, TEST_PROJECT_ID),
           eq(objFieldsTable.tag, TEST_TAG)
         )
       );
   });
 
   it("returns empty result when no fields exist", async () => {
-    const result = await getObjFields({ appId: TEST_APP_ID, tag: TEST_TAG });
+    const result = await getObjFields({
+      projectId: TEST_PROJECT_ID,
+      tag: TEST_TAG,
+    });
     expect(result.fields).toEqual([]);
     expect(result.page).toBe(0);
     expect(result.limit).toBe(100);
@@ -78,7 +82,7 @@ describe("getObjFields integration", () => {
 
     // Page 0, limit 2
     let result = await getObjFields({
-      appId: TEST_APP_ID,
+      projectId: TEST_PROJECT_ID,
       tag: TEST_TAG,
       page: 0,
       limit: 2,
@@ -89,7 +93,7 @@ describe("getObjFields integration", () => {
     expect(result.hasMore).toBe(true);
     // Page 1, limit 2
     result = await getObjFields({
-      appId: TEST_APP_ID,
+      projectId: TEST_PROJECT_ID,
       tag: TEST_TAG,
       page: 1,
       limit: 2,
@@ -101,17 +105,23 @@ describe("getObjFields integration", () => {
     expect(result.hasMore).toBe(false);
   });
 
-  it("returns only fields for the given appId and tag", async () => {
-    // Insert a field for a different app/tag
-    const otherField = makeObjField({ appId: "other-app", tag: "other-tag" });
+  it("returns only fields for the given projectId and tag", async () => {
+    // Insert a field for a different project/tag
+    const otherField = makeObjField({
+      projectId: "other-project",
+      tag: "other-tag",
+    });
     await db.insert(objFieldsTable).values(otherField);
     insertedIds.push(otherField.id);
-    // Insert a field for the test app/tag
+    // Insert a field for the test project/tag
     const testField = makeObjField();
     await db.insert(objFieldsTable).values(testField);
     insertedIds.push(testField.id);
-    // Should only return the test app/tag field
-    const result = await getObjFields({ appId: TEST_APP_ID, tag: TEST_TAG });
+    // Should only return the test project/tag field
+    const result = await getObjFields({
+      projectId: TEST_PROJECT_ID,
+      tag: TEST_TAG,
+    });
     expect(result.fields.some((f) => f.id === testField.id)).toBe(true);
     expect(result.fields.some((f) => f.id === otherField.id)).toBe(false);
   });

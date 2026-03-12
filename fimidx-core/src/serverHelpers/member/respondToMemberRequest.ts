@@ -1,53 +1,56 @@
 import assert from "assert";
 import { first } from "lodash-es";
 import { OwnServerError } from "../../common/error.js";
+import type { IFimidxMemberInternal } from "../../definitions/member.js";
 import {
   kMemberStatus,
-  type IMemberObjRecord,
   type RespondToMemberRequestEndpointArgs,
 } from "../../definitions/member.js";
 import { kObjTags } from "../../definitions/obj.js";
 import { kId0 } from "../../definitions/system.js";
 import type { IObjStorage } from "../../storage/types.js";
+import { getManyObjs } from "../obj/getObjs.js";
 import { updateManyObjs } from "../obj/updateObjs.js";
-import { getMembers } from "./getMembers.js";
 
 export async function respondToMemberRequest(params: {
   args: RespondToMemberRequestEndpointArgs;
   storage?: IObjStorage;
 }) {
   const { args, storage } = params;
-  const { status, requestId, appId, groupId } = args;
+  const { status, query } = args;
+  const { projectId, groupId, id } = query;
 
-  const { members } = await getMembers({
-    args: {
-      query: {
-        appId,
-        groupId,
-        id: { eq: requestId },
+  const { objs } = await getManyObjs({
+    objQuery: {
+      metaQuery: {
+        projectId: { eq: projectId },
+        id: { eq: id },
+        groupId: { eq: groupId },
       },
-      limit: 1,
     },
+    tag: kObjTags.member,
+    limit: 1,
     storage,
   });
 
-  const member = first(members);
-  assert.ok(member, new OwnServerError("Member request not found", 404));
+  const obj = first(objs);
+  assert.ok(obj, new OwnServerError("Member request not found", 404));
+  const record = obj.objRecord.meta as IFimidxMemberInternal | undefined;
   assert.ok(
-    member.status === kMemberStatus.pending,
+    record?.status === kMemberStatus.pending,
     new OwnServerError("Invalid status", 400)
   );
 
-  const update: Partial<IMemberObjRecord> = {
-    status,
-    statusUpdatedAt: new Date(),
+  const update: Record<string, unknown> = {
+    meta: { status, statusUpdatedAt: new Date() },
   };
 
   await updateManyObjs({
     objQuery: {
-      appId,
       metaQuery: {
-        id: { eq: requestId },
+        projectId: { eq: projectId },
+        id: { eq: id },
+        groupId: { eq: groupId },
       },
     },
     tag: kObjTags.member,

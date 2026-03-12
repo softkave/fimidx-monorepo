@@ -12,7 +12,7 @@ import { isString } from "lodash-es";
 import { Session } from "next-auth";
 import { NextRequest } from "next/server";
 import { AnyFn, AnyObject } from "softkave-js-utils";
-import { getClientToken } from "./clientToken/getClientToken";
+import { getClientTokenById } from "fimidx-core/serverHelpers/index";
 import { IRouteContext, wrapRoute } from "./wrapRoute";
 
 export interface IUserAuthenticatedRequest {
@@ -83,12 +83,14 @@ async function tryGetClientTokenAuthenticatedRequest(
       getJWTSecret()
     ) as IEncodeClientTokenJWTContent;
 
-    const { clientToken } = await getClientToken({
-      input: { clientTokenId: decodedToken.id },
+    const clientToken = await getClientTokenById({
+      id: decodedToken.id,
+      projectId: decodedToken.projectId,
+      groupId: decodedToken.groupId,
     });
 
     assert.ok(
-      clientToken.appId === decodedToken.appId,
+      clientToken.projectId === decodedToken.projectId,
       new OwnServerError("Unauthorized", 401)
     );
     assert.ok(

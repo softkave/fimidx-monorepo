@@ -1,8 +1,9 @@
 import { z } from "zod";
 import {
   numberMetaQuerySchema,
-  objPartQueryListSchema,
+  objRecordQueryListSchema,
   objSortListSchema,
+  onConflictSchema,
   stringMetaQuerySchema,
 } from "./obj.js";
 
@@ -17,7 +18,7 @@ export interface IGroup {
   updatedBy: string;
   updatedByType: string;
   meta?: Record<string, string> | null;
-  appId: string;
+  projectId: string;
   groupId: string;
 }
 
@@ -28,10 +29,10 @@ export interface IGroupObjRecord {
 }
 
 export const addGroupSchema = z.object({
-  name: z.string(),
+  name: z.string().min(1),
   description: z.string().optional(),
-  meta: z.record(z.string(), z.string()).optional(),
-  appId: z.string(),
+  meta: z.record(z.string().min(1), z.string()).optional(),
+  projectId: z.string().min(1),
 });
 
 export const groupQuerySchema = z.object({
@@ -41,18 +42,19 @@ export const groupQuerySchema = z.object({
   updatedAt: numberMetaQuerySchema.optional(),
   createdBy: stringMetaQuerySchema.optional(),
   updatedBy: stringMetaQuerySchema.optional(),
-  meta: objPartQueryListSchema.optional(),
-  appId: z.string(),
+  meta: objRecordQueryListSchema.optional(),
+  projectId: z.string().min(1),
 });
 
 export const updateGroupsSchema = z.object({
   update: z.object({
-    name: z.string().optional(),
+    name: z.string().min(1).optional(),
     description: z.string().optional(),
-    meta: z.record(z.string(), z.string()).optional(),
+    meta: z.record(z.string().min(1), z.string()).optional(),
   }),
   updateMany: z.boolean().optional(),
   query: groupQuerySchema,
+  metaUpdateWay: onConflictSchema.optional(),
 });
 
 export const deleteGroupsSchema = z.object({

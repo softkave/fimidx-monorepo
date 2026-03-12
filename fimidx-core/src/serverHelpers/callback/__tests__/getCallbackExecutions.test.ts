@@ -6,7 +6,7 @@ import { addCallback } from "../addCallback.js";
 import { addCallbackExecution } from "../addCallbackExecution.js";
 import { getCallbackExecutions } from "../getCallbackExecutions.js";
 
-const defaultAppId = "test-app-getCallbackExecutions";
+const defaultProjectId = "test-project-getCallbackExecutions";
 const defaultGroupId = "test-group";
 const defaultBy = "tester";
 const defaultByType = "user";
@@ -21,7 +21,7 @@ function makeAddCallbackArgs(overrides: any = {}) {
     .toString(36)
     .substr(2, 9)}`;
   return {
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     url: "https://example.com/webhook",
     method: "POST",
     name: `Test Callback ${uniqueId}`,
@@ -43,7 +43,7 @@ describe("getCallbackExecutions integration", () => {
     try {
       // Clean up callbacks
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.callback,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -53,7 +53,7 @@ describe("getCallbackExecutions integration", () => {
 
       // Clean up callback executions
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.callbackExecution,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -70,7 +70,7 @@ describe("getCallbackExecutions integration", () => {
     try {
       // Clean up callbacks
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.callback,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -80,7 +80,7 @@ describe("getCallbackExecutions integration", () => {
 
       // Clean up callback executions
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.callbackExecution,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -96,7 +96,7 @@ describe("getCallbackExecutions integration", () => {
     // Create a callback but no executions
     const callback = await addCallback({
       args: makeAddCallbackArgs(),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -107,7 +107,7 @@ describe("getCallbackExecutions integration", () => {
       args: {
         callbackId: callback.id,
       },
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       storage,
     });
 
@@ -121,7 +121,7 @@ describe("getCallbackExecutions integration", () => {
     // Create a callback
     const callback = await addCallback({
       args: makeAddCallbackArgs(),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -133,7 +133,7 @@ describe("getCallbackExecutions integration", () => {
     const executedAt2 = new Date();
 
     await addCallbackExecution({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       callbackId: callback.id,
       error: null,
@@ -146,7 +146,7 @@ describe("getCallbackExecutions integration", () => {
     });
 
     await addCallbackExecution({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       callbackId: callback.id,
       error: "Network error",
@@ -162,7 +162,7 @@ describe("getCallbackExecutions integration", () => {
       args: {
         callbackId: callback.id,
       },
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       storage,
     });
 
@@ -187,7 +187,7 @@ describe("getCallbackExecutions integration", () => {
     // Create a callback
     const callback = await addCallback({
       args: makeAddCallbackArgs(),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -197,7 +197,7 @@ describe("getCallbackExecutions integration", () => {
     // Create 5 executions
     for (let i = 1; i <= 5; i++) {
       await addCallbackExecution({
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         groupId: defaultGroupId,
         callbackId: callback.id,
         error: i % 2 === 0 ? "Error" : null,
@@ -217,7 +217,7 @@ describe("getCallbackExecutions integration", () => {
         page: 1,
         limit: 2,
       },
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       storage,
     });
 
@@ -233,7 +233,7 @@ describe("getCallbackExecutions integration", () => {
         page: 2,
         limit: 2,
       },
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       storage,
     });
 
@@ -249,7 +249,7 @@ describe("getCallbackExecutions integration", () => {
         page: 3,
         limit: 2,
       },
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       storage,
     });
 
@@ -263,7 +263,7 @@ describe("getCallbackExecutions integration", () => {
     // Create a callback
     const callback = await addCallback({
       args: makeAddCallbackArgs(),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -277,7 +277,7 @@ describe("getCallbackExecutions integration", () => {
 
     // Create executions in reverse order to test sorting
     await addCallbackExecution({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       callbackId: callback.id,
       error: null,
@@ -293,7 +293,7 @@ describe("getCallbackExecutions integration", () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
 
     await addCallbackExecution({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       callbackId: callback.id,
       error: null,
@@ -309,7 +309,7 @@ describe("getCallbackExecutions integration", () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
 
     await addCallbackExecution({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       callbackId: callback.id,
       error: null,
@@ -327,11 +327,9 @@ describe("getCallbackExecutions integration", () => {
         callbackId: callback.id,
         sort: [{ field: "executedAt", direction: "asc" }],
       },
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       storage,
     });
-
-    console.dir(resultAsc, { depth: null });
 
     expect(resultAsc.executions).toHaveLength(3);
     // Should be sorted by executedAt ASC, so execution 1 (oldest) should be first
@@ -345,7 +343,7 @@ describe("getCallbackExecutions integration", () => {
         callbackId: callback.id,
         sort: [{ field: "executedAt", direction: "desc" }],
       },
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       storage,
     });
 
@@ -360,7 +358,7 @@ describe("getCallbackExecutions integration", () => {
     // Create two callbacks
     const callback1 = await addCallback({
       args: makeAddCallbackArgs(),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -369,7 +367,7 @@ describe("getCallbackExecutions integration", () => {
 
     const callback2 = await addCallback({
       args: makeAddCallbackArgs(),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -378,7 +376,7 @@ describe("getCallbackExecutions integration", () => {
 
     // Create executions for both callbacks
     await addCallbackExecution({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       callbackId: callback1.id,
       error: null,
@@ -391,7 +389,7 @@ describe("getCallbackExecutions integration", () => {
     });
 
     await addCallbackExecution({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       callbackId: callback2.id,
       error: null,
@@ -408,7 +406,7 @@ describe("getCallbackExecutions integration", () => {
       args: {
         callbackId: callback1.id,
       },
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       storage,
     });
 
@@ -420,7 +418,7 @@ describe("getCallbackExecutions integration", () => {
       args: {
         callbackId: callback2.id,
       },
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       storage,
     });
 
@@ -432,7 +430,7 @@ describe("getCallbackExecutions integration", () => {
     // Create a callback
     const callback = await addCallback({
       args: makeAddCallbackArgs(),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -441,7 +439,7 @@ describe("getCallbackExecutions integration", () => {
 
     // Create executions with different response types
     await addCallbackExecution({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       callbackId: callback.id,
       error: null,
@@ -454,7 +452,7 @@ describe("getCallbackExecutions integration", () => {
     });
 
     await addCallbackExecution({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       callbackId: callback.id,
       error: null,
@@ -467,7 +465,7 @@ describe("getCallbackExecutions integration", () => {
     });
 
     await addCallbackExecution({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       callbackId: callback.id,
       error: "Network timeout",
@@ -483,7 +481,7 @@ describe("getCallbackExecutions integration", () => {
       args: {
         callbackId: callback.id,
       },
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       storage,
     });
 
@@ -517,7 +515,7 @@ describe("getCallbackExecutions integration", () => {
       args: {
         callbackId: "non-existent-callback-id",
       },
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       storage,
     });
 

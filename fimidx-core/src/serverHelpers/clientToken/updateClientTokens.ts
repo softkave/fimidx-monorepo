@@ -1,10 +1,17 @@
+import { chunk } from "lodash-es";
 import type { UpdateClientTokensEndpointArgs } from "../../definitions/clientToken.js";
+import type { GetPermissionsEndpointArgs } from "../../definitions/permission.js";
 import { kObjTags } from "../../definitions/obj.js";
 import type { IObjStorage } from "../../storage/types.js";
-import { updateManyObjs } from "../obj/updateObjs.js";
-import { deletePermissions } from "../permission/deletePermissions.js";
-import { addClientTokenPermissions } from "./addClientTokenPermissions.js";
+import { splitMetaUpdate, updateManyObjs } from "../obj/updateObjs.js";
+import {
+  addClientTokenPermissions,
+  getFimidxManagedClientTokenPermission,
+} from "./addClientTokenPermissions.js";
 import { getClientTokens, getClientTokensObjQuery } from "./getClientTokens.js";
+import { deletePermissions } from "../permission/deletePermissions.js";
+
+const CHUNK_SIZE = 50;
 
 export async function updateClientTokens(params: {
   args: UpdateClientTokensEndpointArgs;
@@ -13,14 +20,17 @@ export async function updateClientTokens(params: {
   storage?: IObjStorage;
 }) {
   const { args, by, byType, storage } = params;
-  const { update, updateMany } = args;
+  const { update, updateMany, metaUpdateWay } = args;
 
-  // Extract permissions from update to handle separately
-  const { permissions, ...otherUpdates } = update;
+  const hasPermissionUpdates =
+    update.removeAllPermissions ||
+    (update.removePermissions?.length ?? 0) > 0 ||
+    (update.addPermissions?.length ?? 0) > 0;
 
-  // Get the tokens to update BEFORE updating the object (so we have the right IDs)
-  let tokensToUpdate: any[] = [];
-  if (permissions !== undefined) {
+  let tokensToUpdate: Awaited<
+    ReturnType<typeof getClientTokens>
+  >["clientTokens"] = [];
+  if (hasPermissionUpdates) {
     const result = await getClientTokens({
       args: {
         query: args.query,
@@ -31,72 +41,91 @@ export async function updateClientTokens(params: {
     tokensToUpdate = result.clientTokens;
   }
 
+  const {
+    addPermissions: addPerms,
+    removePermissions: removePerms,
+    removeAllPermissions: removeAllPerms,
+    ...otherUpdates
+  } = update;
+
   const objQuery = getClientTokensObjQuery({ args });
 
-  // Use merge strategy for partial updates, but handle meta field specially
-  // The meta field will be completely replaced when present in the update
-  await updateManyObjs({
-    objQuery,
-    tag: kObjTags.clientToken,
-    by,
-    byType,
-    update: otherUpdates,
-    count: updateMany ? undefined : 1,
-    updateWay: "merge",
-    storage,
-  });
+  // Split meta update for granular handling
+  const hasUpdates = Object.keys(otherUpdates).length > 0;
+  if (hasUpdates) {
+    const updates = splitMetaUpdate(otherUpdates, metaUpdateWay);
+    await updateManyObjs({
+      objQuery,
+      tag: kObjTags.clientToken,
+      by,
+      byType,
+      updates,
+      count: updateMany ? undefined : 1,
+      updateWay: "shallowMerge",
+      storage,
+    });
+  }
 
-  // Handle permissions separately if provided
-  if (permissions !== undefined) {
+  if (hasPermissionUpdates) {
+    const deleteQueries: GetPermissionsEndpointArgs["query"][] = [];
     for (const clientToken of tokensToUpdate) {
-      if (permissions.length === 0) {
-        // Clear all existing permissions for this client token
-        await deletePermissions({
-          query: {
-            appId: clientToken.appId,
-            meta: [
-              {
-                op: "eq",
-                field: "__fimidx_managed_clientTokenId",
-                value: clientToken.id,
-              },
-            ],
-          },
-          deleteMany: true,
-          by,
-          byType,
-          storage,
-        });
-      } else {
-        // Clear existing permissions first, then add new ones
-        await deletePermissions({
-          query: {
-            appId: clientToken.appId,
-            meta: [
-              {
-                op: "eq",
-                field: "__fimidx_managed_clientTokenId",
-                value: clientToken.id,
-              },
-            ],
-          },
-          deleteMany: true,
-          by,
-          byType,
-          storage,
-        });
+      const clientTokenId = clientToken.id;
 
-        // Add new permissions
-        await addClientTokenPermissions({
-          by,
-          byType,
-          groupId: clientToken.groupId,
-          appId: clientToken.appId,
-          permissions,
-          clientTokenId: clientToken.id,
-          storage,
+      if (removeAllPerms) {
+        deleteQueries.push({
+          projectId: clientToken.projectId,
+          entity: { eq: clientTokenId },
         });
+      } else if (removePerms?.length) {
+        for (const item of removePerms) {
+          const managed = getFimidxManagedClientTokenPermission({
+            permission: {
+              entity: clientTokenId,
+              action: item.action,
+              target: item.target,
+            },
+            clientTokenId,
+            groupId: clientToken.groupId,
+          });
+          deleteQueries.push({
+            projectId: clientToken.projectId,
+            entity: { eq: managed.entity as string },
+            action: { eq: managed.action as string },
+            target: { eq: managed.target as string },
+          });
+        }
       }
+    }
+
+    if (deleteQueries.length > 0) {
+      await deletePermissions({
+        queries: deleteQueries,
+        deleteMany: true,
+        by,
+        byType,
+        storage,
+      });
+    }
+
+    if (addPerms?.length) {
+      const chunks = chunk(tokensToUpdate, CHUNK_SIZE);
+      await Promise.all(
+        chunks.map((tokenChunk) =>
+          Promise.all(
+            tokenChunk.map((clientToken) =>
+              addClientTokenPermissions({
+                by,
+                byType,
+                groupId: clientToken.groupId,
+                projectId: clientToken.projectId,
+                permissions: addPerms,
+                clientTokenId: clientToken.id,
+                storage,
+              })
+            )
+          )
+        )
+      );
     }
   }
 }

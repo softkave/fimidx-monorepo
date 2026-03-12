@@ -11,7 +11,7 @@ export async function setupIndexObjsCallback() {
   const {callbacks} = await getCallbacks({
     args: {
       query: {
-        appId: kId0,
+        projectId: kId0,
         name: {
           eq: name,
         },
@@ -39,7 +39,7 @@ export async function setupIndexObjsCallback() {
     clientTokenId: kId0,
     groupId: kId0,
     item: {
-      appId: kId0,
+      projectId: kId0,
       url: indexObjsUrl,
       method: 'POST',
       requestHeaders: {

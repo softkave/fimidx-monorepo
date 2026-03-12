@@ -1,7 +1,7 @@
 "use client";
 
 import { kClientPaths } from "@/src/lib/clientHelpers/clientPaths.ts";
-import { useAppSession } from "@/src/lib/clientHooks/userHooks.ts";
+import { useProjectSession } from "@/src/lib/clientHooks/userHooks.ts";
 import { IUser } from "fimidx-core/definitions/user";
 import { redirect, usePathname } from "next/navigation";
 import { useEffect } from "react";
@@ -17,7 +17,7 @@ export function WrapAdminComponent({
   render,
   children,
 }: IWrapAdminComponentProps) {
-  const { status, user } = useAppSession();
+  const { status, user } = useProjectSession();
   const pathname = usePathname();
 
   useEffect(() => {

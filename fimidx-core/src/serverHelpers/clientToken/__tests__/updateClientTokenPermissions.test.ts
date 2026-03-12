@@ -1,3 +1,4 @@
+import { first } from "lodash-es";
 import {
   afterAll,
   afterEach,
@@ -9,6 +10,7 @@ import {
 } from "vitest";
 import { addClientToken } from "../addClientToken.js";
 import { addClientTokenPermissions } from "../addClientTokenPermissions.js";
+import { getClientTokens } from "../getClientTokens.js";
 import { updateClientTokenPermissions } from "../updateClientTokenPermissions.js";
 import { createTestSetup, makeTestData } from "./testUtils.js";
 
@@ -17,7 +19,7 @@ describe("updateClientTokenPermissions integration", () => {
     testName: "updateClientTokenPermissions",
   });
 
-  const { appId, groupId, by, byType } = testData;
+  const { projectId, groupId, by, byType } = testData;
 
   function makeAddClientTokenArgs(overrides: any = {}) {
     const testData = makeTestData({ testName: "token" });
@@ -25,7 +27,7 @@ describe("updateClientTokenPermissions integration", () => {
       groupId,
       name: testData.tokenName,
       description: "Test description",
-      appId,
+      projectId,
       permissions: [],
       ...overrides,
     };
@@ -37,16 +39,10 @@ describe("updateClientTokenPermissions integration", () => {
       query: {
         id: `token-${testData.tokenName}`,
         groupId,
-        appId,
+        projectId,
       },
       update: {
-        permissions: [
-          {
-            entity: "user",
-            action: "read",
-            target: "document",
-          },
-        ],
+        addPermissions: [{ action: "read", target: "document" }],
       },
       ...overrides,
     };
@@ -85,63 +81,62 @@ describe("updateClientTokenPermissions integration", () => {
       by: by,
       byType: byType,
       groupId: groupId,
-      appId: appId,
-      permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-      ],
+      projectId: projectId,
+      permissions: [{ action: "read", target: "document" }],
       clientTokenId: token.clientToken.id,
       storage,
     });
 
-    // Update permissions
+    // Replace permissions: remove all then add new set
     const updateArgs = makeUpdateClientTokenPermissionsArgs({
       query: {
         id: token.clientToken.id,
         groupId: groupId,
-        appId: appId,
+        projectId: projectId,
       },
       update: {
-        permissions: [
-          {
-            entity: "admin",
-            action: "write",
-            target: "settings",
-          },
-          {
-            entity: "user",
-            action: "delete",
-            target: "document",
-          },
+        removeAllPermissions: true,
+        addPermissions: [
+          { action: "write", target: "settings" },
+          { action: "delete", target: "document" },
         ],
       },
     });
 
-    const result = await updateClientTokenPermissions({
+    await updateClientTokenPermissions({
       args: updateArgs,
       by: by,
       byType: byType,
       storage,
     });
 
-    expect(result.clientToken).toBeDefined();
-    expect(result.clientToken.permissions).toBeDefined();
-    expect(result.clientToken.permissions).toHaveLength(2);
+    const { clientTokens } = await getClientTokens({
+      args: {
+        query: {
+          projectId,
+          groupId,
+          id: { eq: token.clientToken.id },
+        },
+        includePermissions: true,
+      },
+      storage,
+    });
+    const updated = first(clientTokens);
+    expect(updated).toBeDefined();
+    expect(updated!.permissions).toBeDefined();
+    expect(updated!.permissions).toHaveLength(2);
 
     // Verify the updated permissions
-    const permission1 = result.clientToken.permissions![0];
-    const permission2 = result.clientToken.permissions![1];
+    const permission1 = updated!.permissions![0];
+    const permission2 = updated!.permissions![1];
 
-    expect(permission1.entity).toBe("admin");
-    expect(permission1.action).toBe("write");
-    expect(permission1.target).toBe("settings");
+    expect(permission1.entity).toBe(updated!.id);
+    expect(permission1.action).toBe("delete");
+    expect(permission1.target).toBe("document");
 
-    expect(permission2.entity).toBe("user");
-    expect(permission2.action).toBe("delete");
-    expect(permission2.target).toBe("document");
+    expect(permission2.entity).toBe(updated!.id);
+    expect(permission2.action).toBe("write");
+    expect(permission2.target).toBe("settings");
   });
 
   it("throws error when client token not found", async () => {
@@ -149,16 +144,10 @@ describe("updateClientTokenPermissions integration", () => {
       query: {
         id: "non-existent-token",
         groupId: groupId,
-        appId: appId,
+        projectId: projectId,
       },
       update: {
-        permissions: [
-          {
-            entity: "user",
-            action: "read",
-            target: "document",
-          },
-        ],
+        addPermissions: [{ action: "read", target: "document" }],
       },
     });
 
@@ -187,40 +176,45 @@ describe("updateClientTokenPermissions integration", () => {
       by: by,
       byType: byType,
       groupId: groupId,
-      appId: appId,
-      permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-      ],
+      projectId: projectId,
+      permissions: [{ action: "read", target: "document" }],
       clientTokenId: token.clientToken.id,
       storage,
     });
 
-    // Update with empty permissions
+    // Update with removeAllPermissions
     const updateArgs = makeUpdateClientTokenPermissionsArgs({
       query: {
         id: token.clientToken.id,
         groupId: groupId,
-        appId: appId,
+        projectId: projectId,
       },
       update: {
-        permissions: [],
+        removeAllPermissions: true,
       },
     });
 
-    const result = await updateClientTokenPermissions({
+    await updateClientTokenPermissions({
       args: updateArgs,
       by: by,
       byType: byType,
       storage,
     });
 
-    expect(result.clientToken).toBeDefined();
-    expect(result.clientToken.permissions).toBeDefined();
-    expect(result.clientToken.permissions).toHaveLength(0);
+    const { clientTokens } = await getClientTokens({
+      args: {
+        query: {
+          projectId,
+          groupId,
+          id: { eq: token.clientToken.id },
+        },
+        includePermissions: true,
+      },
+      storage,
+    });
+    const updated = first(clientTokens);
+    expect(updated).toBeDefined();
+    expect(updated!.permissions).toBeFalsy();
   });
 
   it("handles complex permission objects", async () => {
@@ -238,12 +232,11 @@ describe("updateClientTokenPermissions integration", () => {
       query: {
         id: token.clientToken.id,
         groupId: groupId,
-        appId: appId,
+        projectId: projectId,
       },
       update: {
-        permissions: [
+        addPermissions: [
           {
-            entity: { type: "user", id: "123" },
             action: { operation: "read", scope: "full" },
             target: { resource: "document", id: "456" },
           },
@@ -251,19 +244,31 @@ describe("updateClientTokenPermissions integration", () => {
       },
     });
 
-    const result = await updateClientTokenPermissions({
+    await updateClientTokenPermissions({
       args: updateArgs,
       by: by,
       byType: byType,
       storage,
     });
 
-    expect(result.clientToken).toBeDefined();
-    expect(result.clientToken.permissions).toBeDefined();
-    expect(result.clientToken.permissions).toHaveLength(1);
+    const { clientTokens } = await getClientTokens({
+      args: {
+        query: {
+          projectId,
+          groupId,
+          id: { eq: token.clientToken.id },
+        },
+        includePermissions: true,
+      },
+      storage,
+    });
+    const updated = first(clientTokens);
+    expect(updated).toBeDefined();
+    expect(updated!.permissions).toBeDefined();
+    expect(updated!.permissions).toHaveLength(1);
 
-    const permission = result.clientToken.permissions![0];
-    expect(permission.entity).toEqual({ type: "user", id: "123" });
+    const permission = updated!.permissions![0];
+    expect(permission.entity).toEqual(token.clientToken.id);
     expect(permission.action).toEqual({ operation: "read", scope: "full" });
     expect(permission.target).toEqual({ resource: "document", id: "456" });
   });

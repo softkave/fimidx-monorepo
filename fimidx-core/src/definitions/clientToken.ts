@@ -1,21 +1,36 @@
 import { z } from "zod";
 import {
+  inputObjRecordSchema,
   numberMetaQuerySchema,
-  objPartQueryListSchema,
+  objRecordQueryListSchema,
   objSortListSchema,
+  onConflictSchema,
   stringMetaQuerySchema,
 } from "./obj.js";
 import {
-  actionQuerySchema,
+  actionSchema,
   checkPermissionItemSchema,
-  entityQuerySchema,
-  permissionAtomSchema,
-  targetQuerySchema,
+  targetSchema,
 } from "./permission.js";
+
+/** Permission input for client tokens: action + target only; entity is the
+ * client token id. */
+export const clientTokenPermissionSchema = z.object({
+  action: actionSchema,
+  target: targetSchema,
+  /** When true, this atom grants the permission; when false, it denies.
+   * Optional, default true when omitted. */
+  granted: z.boolean().optional(),
+});
+
+/** Input type (granted optional); output after parse has granted: boolean. */
+export type IClientTokenPermissionInput = z.input<
+  typeof clientTokenPermissionSchema
+>;
 
 export interface IClientToken {
   id: string;
-  name: string;
+  name?: string;
   description?: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -23,7 +38,7 @@ export interface IClientToken {
   createdByType: string;
   updatedBy: string;
   updatedByType: string;
-  appId: string;
+  projectId: string;
   groupId: string;
   meta?: Record<string, string> | null;
   /** Permissions are null if reading other client tokens and user does not have
@@ -32,35 +47,26 @@ export interface IClientToken {
 }
 
 export interface IClientTokenObjRecord {
-  name: string;
+  name?: string;
   description?: string | null;
   meta?: Record<string, string> | null;
-  permissions: import("./permission.js").IPermissionAtom[] | null;
-}
-
-export interface IClientTokenObjRecordMeta
-  extends NonNullable<import("./permission.js").IPermissionMeta> {
-  __fimidx_managed_clientTokenId: string;
-  __fimidx_managed_groupId: string;
 }
 
 export const addClientTokenSchema = z.object({
-  groupId: z.string(),
-  appId: z.string(),
-  name: z.string().optional(),
+  groupId: z.string().min(1),
+  projectId: z.string().min(1),
+  name: z.string().min(1).optional(),
   description: z.string().optional(),
-  meta: z.record(z.string(), z.string()).optional(),
-  permissions: z.array(permissionAtomSchema).optional(),
+  meta: inputObjRecordSchema.optional(),
+  permissions: z.array(clientTokenPermissionSchema).max(100).optional(),
 });
 
 export const clientTokenQuerySchema = z.object({
-  appId: z.string(),
+  projectId: z.string().min(1),
+  groupId: z.string().min(1),
   id: stringMetaQuerySchema.optional(),
   name: stringMetaQuerySchema.optional(),
-  meta: objPartQueryListSchema.optional(),
-  permissionEntity: entityQuerySchema.optional(),
-  permissionAction: actionQuerySchema.optional(),
-  permissionTarget: targetQuerySchema.optional(),
+  meta: objRecordQueryListSchema.optional(),
   createdAt: numberMetaQuerySchema.optional(),
   updatedAt: numberMetaQuerySchema.optional(),
   createdBy: stringMetaQuerySchema.optional(),
@@ -69,31 +75,38 @@ export const clientTokenQuerySchema = z.object({
 
 export const updateClientTokensSchema = z.object({
   update: z.object({
-    name: z.string().optional(),
+    name: z.string().min(1).optional(),
     description: z.string().optional(),
-    meta: z.record(z.string(), z.string()).optional(),
-    permissions: z.array(permissionAtomSchema).optional(),
+    meta: inputObjRecordSchema.optional(),
+    addPermissions: z.array(clientTokenPermissionSchema).max(100).optional(),
+    removePermissions: z.array(clientTokenPermissionSchema).max(100).optional(),
+    removeAllPermissions: z.boolean().optional(),
   }),
   query: clientTokenQuerySchema,
   updateMany: z.boolean().optional(),
+  metaUpdateWay: onConflictSchema.optional(),
 });
 
 export const updateClientTokenPermissionsSchema = z.object({
   query: z.object({
     id: z.string().min(1),
-    groupId: z.string(),
-    appId: z.string(),
+    groupId: z.string().min(1),
+    projectId: z.string().min(1),
   }),
   update: z.object({
-    permissions: z.array(permissionAtomSchema),
+    addPermissions: z.array(clientTokenPermissionSchema).max(100).optional(),
+    removePermissions: z.array(clientTokenPermissionSchema).max(100).optional(),
+    removeAllPermissions: z.boolean().optional(),
   }),
 });
 
 export const addClientTokenPermissionsSchema = z.object({
-  groupId: z.string(),
-  appId: z.string(),
-  permissions: z.array(permissionAtomSchema),
-  clientTokenId: z.string(),
+  query: z.object({
+    groupId: z.string().min(1),
+    projectId: z.string().min(1),
+    clientTokenId: z.string().min(1),
+  }),
+  permissions: z.array(clientTokenPermissionSchema).max(100),
 });
 
 export const deleteClientTokensSchema = z.object({
@@ -110,20 +123,24 @@ export const getClientTokensSchema = z.object({
 });
 
 export const encodeClientTokenJWTSchema = z.object({
-  id: z.string(),
+  id: z.string().min(1),
+  projectId: z.string().min(1),
+  groupId: z.string().min(1).optional(),
   refresh: z.boolean().optional(),
   expiresAt: z.date().optional(),
 });
 
 export const refreshClientTokenJWTSchema = z.object({
-  refreshToken: z.string(),
+  refreshToken: z.string().min(1),
 });
 
 export const checkClientTokenPermissionsSchema = z.object({
-  appId: z.string(),
-  clientTokenId: z.string(),
-  groupId: z.string(),
-  items: z.array(checkPermissionItemSchema),
+  query: z.object({
+    projectId: z.string().min(1),
+    clientTokenId: z.string().min(1),
+    groupId: z.string().min(1),
+  }),
+  items: z.array(checkPermissionItemSchema).max(100),
 });
 
 export type AddClientTokenEndpointArgs = z.infer<typeof addClientTokenSchema>;
@@ -181,7 +198,7 @@ export interface RefreshClientTokenJWTEndpointResponse {
 
 export interface CheckClientTokenPermissionsEndpointResponse {
   results: {
-    hasPermission: boolean;
+    isPermitted: boolean;
   }[];
 }
 

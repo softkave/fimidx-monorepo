@@ -1,8 +1,10 @@
 import { z } from "zod";
 import {
+  inputObjRecordSchema,
   numberMetaQuerySchema,
-  objPartQueryListSchema,
+  objRecordQueryListSchema,
   objSortListSchema,
+  onConflictSchema,
   stringMetaQuerySchema,
 } from "./obj.js";
 
@@ -10,19 +12,18 @@ export const kFimidxPermissions = {
   wildcard: "*",
   group: {
     read: "group:read",
-    update: "group:update",
+    mutate: "group:mutate",
     delete: "group:delete",
   },
-  app: {
-    read: "app:read",
-    update: "app:update",
-    delete: "app:delete",
+  project: {
+    read: "project:read",
+    mutate: "project:mutate",
+    delete: "project:delete",
   },
   member: {
     read: "member:read",
     readPermissions: "member:readPermissions",
-    update: "member:update",
-    invite: "member:invite",
+    mutate: "member:mutate",
     remove: "member:remove",
   },
   log: {
@@ -32,57 +33,57 @@ export const kFimidxPermissions = {
   clientToken: {
     read: "clientToken:read",
     readPermissions: "clientToken:readPermissions",
-    update: "clientToken:update",
+    mutate: "clientToken:mutate",
     delete: "clientToken:delete",
   },
   monitor: {
     read: "monitor:read",
-    update: "monitor:update",
+    mutate: "monitor:mutate",
     delete: "monitor:delete",
   },
   callback: {
     read: "callback:read",
-    update: "callback:update",
+    mutate: "callback:mutate",
     delete: "callback:delete",
   },
   obj: {
     read: "obj:read",
-    update: "obj:update",
+    mutate: "obj:mutate",
     delete: "obj:delete",
   },
   permission: {
     read: "permission:read",
-    update: "permission:update",
+    mutate: "permission:mutate",
     delete: "permission:delete",
   },
 };
 
 export const kFimidxPermissionsList = [
   kFimidxPermissions.wildcard,
-  kFimidxPermissions.group.update,
+  kFimidxPermissions.group.read,
+  kFimidxPermissions.group.mutate,
   kFimidxPermissions.group.delete,
-  kFimidxPermissions.app.read,
-  kFimidxPermissions.app.update,
-  kFimidxPermissions.app.delete,
+  kFimidxPermissions.project.read,
+  kFimidxPermissions.project.mutate,
+  kFimidxPermissions.project.delete,
   kFimidxPermissions.member.read,
   kFimidxPermissions.member.readPermissions,
-  kFimidxPermissions.member.update,
-  kFimidxPermissions.member.invite,
+  kFimidxPermissions.member.mutate,
   kFimidxPermissions.member.remove,
   kFimidxPermissions.log.read,
   kFimidxPermissions.log.ingest,
   kFimidxPermissions.clientToken.read,
   kFimidxPermissions.clientToken.readPermissions,
-  kFimidxPermissions.clientToken.update,
+  kFimidxPermissions.clientToken.mutate,
   kFimidxPermissions.clientToken.delete,
   kFimidxPermissions.monitor.read,
-  kFimidxPermissions.monitor.update,
+  kFimidxPermissions.monitor.mutate,
   kFimidxPermissions.monitor.delete,
   kFimidxPermissions.callback.read,
-  kFimidxPermissions.callback.update,
+  kFimidxPermissions.callback.mutate,
   kFimidxPermissions.callback.delete,
   kFimidxPermissions.obj.read,
-  kFimidxPermissions.obj.update,
+  kFimidxPermissions.obj.mutate,
   kFimidxPermissions.obj.delete,
 ];
 
@@ -94,6 +95,8 @@ export type IPermissionAtom = {
   entity: IPermissionEntity;
   action: IPermissionAction;
   target: IPermissionTarget;
+  /** When true, this atom grants the permission; when false, it denies. Default true for backward compatibility. */
+  granted?: boolean;
 };
 
 export type IPermissionMeta = Record<string, string> | null;
@@ -107,7 +110,7 @@ export interface IPermission extends IPermissionAtom {
   createdByType: string;
   updatedBy: string;
   updatedByType: string;
-  appId: string;
+  projectId: string;
   groupId: string;
   meta?: IPermissionMeta;
 }
@@ -116,11 +119,12 @@ export interface IPermissionObjRecord {
   entity: IPermissionEntity;
   action: IPermissionAction;
   target: IPermissionTarget;
+  granted?: boolean;
   description?: string | null;
   meta?: IPermissionMeta;
 }
 
-export const entitySchema = z.record(z.string(), z.string()).or(z.string());
+export const entitySchema = inputObjRecordSchema.or(z.string().min(1));
 export const actionSchema = entitySchema;
 export const targetSchema = entitySchema;
 
@@ -128,51 +132,66 @@ export const permissionAtomSchema = z.object({
   entity: entitySchema,
   action: actionSchema,
   target: targetSchema,
+  /** When true, this atom grants the permission; when false, it denies. Optional, default true. */
+  granted: z.boolean().optional(),
 });
 
 export const addPermissionItemSchema = permissionAtomSchema.extend({
   description: z.string().optional(),
-  meta: z.record(z.string(), z.string()).optional().nullable().or(z.null()),
+  meta: inputObjRecordSchema.optional().nullable().or(z.null()),
 });
 
 export const addPermissionsSchema = z.object({
-  appId: z.string(),
-  permissions: z.array(addPermissionItemSchema),
+  projectId: z.string().min(1),
+  permissions: z.array(addPermissionItemSchema).max(100),
 });
 
 export const entityQuerySchema = stringMetaQuerySchema.or(
-  objPartQueryListSchema
+  objRecordQueryListSchema
 );
 export const actionQuerySchema = entityQuerySchema;
 export const targetQuerySchema = entityQuerySchema;
 
 export const permissionQuerySchema = z.object({
-  appId: z.string(),
+  projectId: z.string().min(1),
   id: stringMetaQuerySchema.optional(),
   entity: entityQuerySchema.optional(),
   action: actionQuerySchema.optional(),
   target: targetQuerySchema.optional(),
+  groupId: stringMetaQuerySchema.optional(),
   createdAt: numberMetaQuerySchema.optional(),
   updatedAt: numberMetaQuerySchema.optional(),
   createdBy: stringMetaQuerySchema.optional(),
   updatedBy: stringMetaQuerySchema.optional(),
-  meta: objPartQueryListSchema.optional(),
+  meta: objRecordQueryListSchema.optional(),
+});
+
+/** Minimal schema for matching a permission to remove (entity, action, target,
+ * optional granted). */
+export const removePermissionMatchSchema = z.object({
+  entity: entitySchema,
+  action: actionSchema,
+  target: targetSchema,
+  granted: z.boolean().optional(),
 });
 
 export const updatePermissionsSchema = z.object({
   query: permissionQuerySchema,
   update: z.object({
-    entity: entitySchema.optional(),
-    action: actionSchema.optional(),
-    target: targetSchema.optional(),
-    description: z.string().optional(),
-    meta: z.record(z.string(), z.string()).optional().or(z.null()),
+    meta: inputObjRecordSchema.optional(),
+    addPermissions: z.array(addPermissionItemSchema).max(100).optional(),
+    removePermissions: z.array(removePermissionMatchSchema).max(100).optional(),
+    removeAllPermissions: z.boolean().optional(),
   }),
   updateMany: z.boolean().optional(),
+  metaUpdateWay: onConflictSchema.optional(),
 });
 
 export const deletePermissionsSchema = z.object({
-  query: permissionQuerySchema,
+  query: permissionQuerySchema.optional(),
+  /** When provided, delete in one pass (one deleteManyObjs per query). Use
+   * instead of looping. */
+  queries: z.array(permissionQuerySchema).max(100).optional(),
   deleteMany: z.boolean().optional(),
 });
 
@@ -187,11 +206,12 @@ export const checkPermissionItemSchema = z.object({
   entity: entitySchema,
   action: actionSchema,
   target: targetSchema,
+  granted: z.boolean().optional(),
 });
 
 export const checkPermissionsSchema = z.object({
-  appId: z.string(),
-  items: z.array(checkPermissionItemSchema),
+  projectId: z.string().min(1),
+  items: z.array(checkPermissionItemSchema).max(100),
 });
 
 export type AddPermissionsEndpointArgs = z.infer<typeof addPermissionsSchema>;
@@ -215,6 +235,6 @@ export interface GetPermissionsEndpointResponse {
 
 export interface CheckPermissionsEndpointResponse {
   results: {
-    hasPermission: boolean;
+    isPermitted: boolean;
   }[];
 }

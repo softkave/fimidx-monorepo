@@ -10,7 +10,7 @@ import type {
   IObjSortList,
 } from "../../../definitions/obj.js";
 import { createStorage } from "../../../storage/config.js";
-import { getManyObjs, metaQueryToPartQueryList } from "../getObjs.js";
+import { getManyObjs, metaQueryToRecordQueryList } from "../getObjs.js";
 
 const backends: { type: "mongo" | "postgres"; name: string }[] = [
   { type: "mongo", name: "MongoDB" },
@@ -27,7 +27,7 @@ function makeInputObjRecord(
   };
 }
 
-function makeObjFields(overrides: Partial<IObj> = {}): IObj {
+function makeObjs(overrides: Partial<IObj> = {}): IObj {
   const now = new Date();
   return {
     id: uuidv7(),
@@ -37,7 +37,7 @@ function makeObjFields(overrides: Partial<IObj> = {}): IObj {
     createdByType: "user",
     updatedBy: "tester",
     updatedByType: "user",
-    appId: "test-app",
+    projectId: "test-project",
     groupId: "test-group",
     tag: "test-tag",
     objRecord: makeInputObjRecord(),
@@ -56,7 +56,7 @@ function makeObjField(overrides: Partial<IObjField> = {}): IObjField {
     id: uuidv7(),
     createdAt: now,
     updatedAt: now,
-    appId: "test-app",
+    projectId: "test-project",
     groupId: "test-group",
     path: "order",
     type: "number",
@@ -74,7 +74,7 @@ async function setupObjFields(fields: IObjField[]) {
       .delete(objFieldsTable)
       .where(
         and(
-          eq(objFieldsTable.appId, fields[0].appId),
+          eq(objFieldsTable.projectId, fields[0].projectId),
           eq(objFieldsTable.tag, fields[0].tag)
         )
       )
@@ -87,12 +87,12 @@ async function setupObjFields(fields: IObjField[]) {
   }
 }
 
-describe("metaQueryToPartQueryList", () => {
+describe("metaQueryToRecordQueryList", () => {
   it("converts string meta queries", () => {
     const metaQuery = {
       foo: { eq: "bar", neq: "baz", in: ["a", "b"], not_in: ["c"] },
     };
-    const result = metaQueryToPartQueryList({ metaQuery });
+    const result = metaQueryToRecordQueryList({ metaQuery });
     expect(result).toEqual([
       { op: "eq", field: "foo", value: "bar" },
       { op: "neq", field: "foo", value: "baz" },
@@ -112,7 +112,7 @@ describe("metaQueryToPartQueryList", () => {
         between: [1, 5] as [number, number],
       },
     };
-    const result = metaQueryToPartQueryList({ metaQuery });
+    const result = metaQueryToRecordQueryList({ metaQuery });
     expect(result).toEqual([
       { op: "eq", field: "num", value: 1 },
       { op: "gt", field: "num", value: 0 },
@@ -123,19 +123,19 @@ describe("metaQueryToPartQueryList", () => {
     ]);
   });
 
-  it("applies prefix if provided", () => {
+  it("projectlies prefix if provided", () => {
     const metaQuery = { foo: { eq: "bar" } };
-    const result = metaQueryToPartQueryList({ metaQuery, prefix: "p" });
+    const result = metaQueryToRecordQueryList({ metaQuery, prefix: "p" });
     expect(result).toEqual([{ op: "eq", field: "p.foo", value: "bar" }]);
   });
 
   it("returns undefined for empty metaQuery", () => {
-    expect(metaQueryToPartQueryList({ metaQuery: {} })).toBeUndefined();
+    expect(metaQueryToRecordQueryList({ metaQuery: {} })).toBeUndefined();
   });
 });
 
 // Use unique identifiers for each test file to prevent conflicts
-const defaultAppId = "test-app-getObjs";
+const defaultProjectId = "test-project-getObjs";
 const defaultTag = "test-tag-getObjs";
 
 describe.each(backends)("getManyObjs integration (%s)", (backend) => {
@@ -160,14 +160,16 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
   beforeEach(async () => {
     if (backend.type === "mongo") {
       const model = getObjModel();
-      await model.deleteMany({ appId: defaultAppId, tag: defaultTag });
+      await model.deleteMany({ projectId: defaultProjectId, tag: defaultTag });
     } else if (backend.type === "postgres") {
       const { fimidxPostgresDb, objs } = await import(
         "../../../db/fimidx.postgres.js"
       );
       await fimidxPostgresDb
         .delete(objs)
-        .where(and(eq(objs.appId, defaultAppId), eq(objs.tag, defaultTag)));
+        .where(
+          and(eq(objs.projectId, defaultProjectId), eq(objs.tag, defaultTag))
+        );
     }
 
     // Clean up obj fields for all backends
@@ -175,18 +177,18 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
       .delete(objFieldsTable)
       .where(
         and(
-          eq(objFieldsTable.appId, defaultAppId),
+          eq(objFieldsTable.projectId, defaultProjectId),
           eq(objFieldsTable.tag, defaultTag)
         )
       )
       .execute();
   });
 
-  it("returns objects by appId and tag", async () => {
-    const obj = makeObjFields({ appId: defaultAppId, tag: defaultTag });
+  it("returns objects by projectId and tag", async () => {
+    const obj = makeObjs({ projectId: defaultProjectId, tag: defaultTag });
     await storage.create({ objs: [obj] });
     const result = await getManyObjs({
-      objQuery: { appId: obj.appId },
+      objQuery: { metaQuery: { projectId: { eq: obj.projectId } } },
       tag: obj.tag,
       storageType: backend.type,
     });
@@ -194,16 +196,16 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     expect(result.objs.some((o: IObj) => o.id === obj.id)).toBe(true);
   });
 
-  it("supports partQuery (eq)", async () => {
-    const obj = makeObjFields({
-      appId: defaultAppId,
+  it("supports recordQuery (eq)", async () => {
+    const obj = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { foo: "bar" },
     });
 
     // Set up obj fields for querying
     const objField = makeObjField({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       tag: defaultTag,
       path: "foo",
       type: "string",
@@ -214,8 +216,8 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     await storage.create({ objs: [obj] });
     const result = await getManyObjs({
       objQuery: {
-        appId: obj.appId,
-        partQuery: { and: [{ op: "eq", field: "foo", value: "bar" }] },
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: [{ op: "eq", field: "foo", value: "bar" }],
       },
       tag: obj.tag,
       storageType: backend.type,
@@ -224,21 +226,21 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     expect(result.objs.some((o: IObj) => o.id === obj.id)).toBe(true);
   });
 
-  it("supports partQuery (neq)", async () => {
-    const obj1 = makeObjFields({
-      appId: defaultAppId,
+  it("supports recordQuery (neq)", async () => {
+    const obj1 = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { foo: "bar" },
     });
-    const obj2 = makeObjFields({
-      appId: defaultAppId,
+    const obj2 = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { foo: "baz" },
     });
 
     // Set up obj fields for querying
     const objField = makeObjField({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       tag: defaultTag,
       path: "foo",
       type: "string",
@@ -249,8 +251,8 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     await storage.create({ objs: [obj1, obj2] });
     const result = await getManyObjs({
       objQuery: {
-        appId: defaultAppId,
-        partQuery: { and: [{ op: "neq", field: "foo", value: "bar" }] },
+        metaQuery: { projectId: { eq: defaultProjectId } },
+        recordQuery: [{ op: "neq", field: "foo", value: "bar" }],
       },
       tag: defaultTag,
       storageType: backend.type,
@@ -260,26 +262,26 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     expect(result.objs.some((o: IObj) => o.id === obj1.id)).toBe(false);
   });
 
-  it("supports partQuery (in)", async () => {
-    const obj1 = makeObjFields({
-      appId: defaultAppId,
+  it("supports recordQuery (in)", async () => {
+    const obj1 = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { foo: "bar" },
     });
-    const obj2 = makeObjFields({
-      appId: defaultAppId,
+    const obj2 = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { foo: "baz" },
     });
-    const obj3 = makeObjFields({
-      appId: defaultAppId,
+    const obj3 = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { foo: "qux" },
     });
 
     // Set up obj fields for querying
     const objField = makeObjField({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       tag: defaultTag,
       path: "foo",
       type: "string",
@@ -290,8 +292,8 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     await storage.create({ objs: [obj1, obj2, obj3] });
     const result = await getManyObjs({
       objQuery: {
-        appId: defaultAppId,
-        partQuery: { and: [{ op: "in", field: "foo", value: ["bar", "baz"] }] },
+        metaQuery: { projectId: { eq: defaultProjectId } },
+        recordQuery: [{ op: "in", field: "foo", value: ["bar", "baz"] }],
       },
       tag: defaultTag,
       storageType: backend.type,
@@ -302,26 +304,26 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     expect(result.objs.some((o: IObj) => o.id === obj3.id)).toBe(false);
   });
 
-  it("supports partQuery (not_in)", async () => {
-    const obj1 = makeObjFields({
-      appId: defaultAppId,
+  it("supports recordQuery (not_in)", async () => {
+    const obj1 = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { foo: "bar" },
     });
-    const obj2 = makeObjFields({
-      appId: defaultAppId,
+    const obj2 = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { foo: "baz" },
     });
-    const obj3 = makeObjFields({
-      appId: defaultAppId,
+    const obj3 = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { foo: "qux" },
     });
 
     // Set up obj fields for querying
     const objField = makeObjField({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       tag: defaultTag,
       path: "foo",
       type: "string",
@@ -332,10 +334,8 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     await storage.create({ objs: [obj1, obj2, obj3] });
     const result = await getManyObjs({
       objQuery: {
-        appId: defaultAppId,
-        partQuery: {
-          and: [{ op: "not_in", field: "foo", value: ["bar", "baz"] }],
-        },
+        metaQuery: { projectId: { eq: defaultProjectId } },
+        recordQuery: [{ op: "not_in", field: "foo", value: ["bar", "baz"] }],
       },
       tag: defaultTag,
       storageType: backend.type,
@@ -346,26 +346,26 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     expect(result.objs.some((o: IObj) => o.id === obj3.id)).toBe(true);
   });
 
-  it("supports partQuery (gt, gte, lt, lte)", async () => {
-    const obj1 = makeObjFields({
-      appId: defaultAppId,
+  it("supports recordQuery (gt, gte, lt, lte)", async () => {
+    const obj1 = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { num: 5 },
     });
-    const obj2 = makeObjFields({
-      appId: defaultAppId,
+    const obj2 = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { num: 10 },
     });
-    const obj3 = makeObjFields({
-      appId: defaultAppId,
+    const obj3 = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { num: 15 },
     });
 
     // Set up obj fields for querying
     const objField = makeObjField({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       tag: defaultTag,
       path: "num",
       type: "number",
@@ -378,8 +378,8 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     // Test gt
     let result = await getManyObjs({
       objQuery: {
-        appId: defaultAppId,
-        partQuery: { and: [{ op: "gt", field: "num", value: 5 }] },
+        metaQuery: { projectId: { eq: defaultProjectId } },
+        recordQuery: [{ op: "gt", field: "num", value: 5 }],
       },
       tag: defaultTag,
       storageType: backend.type,
@@ -392,8 +392,8 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     // Test gte
     result = await getManyObjs({
       objQuery: {
-        appId: defaultAppId,
-        partQuery: { and: [{ op: "gte", field: "num", value: 10 }] },
+        metaQuery: { projectId: { eq: defaultProjectId } },
+        recordQuery: [{ op: "gte", field: "num", value: 10 }],
       },
       tag: defaultTag,
       storageType: backend.type,
@@ -406,8 +406,8 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     // Test lt
     result = await getManyObjs({
       objQuery: {
-        appId: defaultAppId,
-        partQuery: { and: [{ op: "lt", field: "num", value: 15 }] },
+        metaQuery: { projectId: { eq: defaultProjectId } },
+        recordQuery: [{ op: "lt", field: "num", value: 15 }],
       },
       tag: defaultTag,
       storageType: backend.type,
@@ -420,8 +420,8 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     // Test lte
     result = await getManyObjs({
       objQuery: {
-        appId: defaultAppId,
-        partQuery: { and: [{ op: "lte", field: "num", value: 10 }] },
+        metaQuery: { projectId: { eq: defaultProjectId } },
+        recordQuery: [{ op: "lte", field: "num", value: 10 }],
       },
       tag: defaultTag,
       storageType: backend.type,
@@ -432,26 +432,26 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     expect(result.objs.some((o: IObj) => o.id === obj3.id)).toBe(false);
   });
 
-  it("supports partQuery (between)", async () => {
-    const obj1 = makeObjFields({
-      appId: defaultAppId,
+  it("supports recordQuery (between)", async () => {
+    const obj1 = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { num: 5 },
     });
-    const obj2 = makeObjFields({
-      appId: defaultAppId,
+    const obj2 = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { num: 10 },
     });
-    const obj3 = makeObjFields({
-      appId: defaultAppId,
+    const obj3 = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { num: 15 },
     });
 
     // Set up obj fields for querying
     const objField = makeObjField({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       tag: defaultTag,
       path: "num",
       type: "number",
@@ -462,8 +462,8 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     await storage.create({ objs: [obj1, obj2, obj3] });
     const result = await getManyObjs({
       objQuery: {
-        appId: defaultAppId,
-        partQuery: { and: [{ op: "between", field: "num", value: [8, 12] }] },
+        metaQuery: { projectId: { eq: defaultProjectId } },
+        recordQuery: [{ op: "between", field: "num", value: [8, 12] }],
       },
       tag: defaultTag,
       storageType: backend.type,
@@ -474,19 +474,19 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     expect(result.objs.some((o: IObj) => o.id === obj3.id)).toBe(false);
   });
 
-  it("supports multiple partQuery conditions", async () => {
-    const obj1 = makeObjFields({
-      appId: defaultAppId,
+  it("supports multiple recordQuery conditions", async () => {
+    const obj1 = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { foo: "bar", num: 5 },
     });
-    const obj2 = makeObjFields({
-      appId: defaultAppId,
+    const obj2 = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { foo: "bar", num: 15 },
     });
-    const obj3 = makeObjFields({
-      appId: defaultAppId,
+    const obj3 = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { foo: "baz", num: 10 },
     });
@@ -494,14 +494,14 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     // Set up obj fields for querying
     const objFields = [
       makeObjField({
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         tag: defaultTag,
         path: "foo",
         type: "string",
         arrayTypes: [],
       }),
       makeObjField({
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         tag: defaultTag,
         path: "num",
         type: "number",
@@ -513,13 +513,11 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     await storage.create({ objs: [obj1, obj2, obj3] });
     const result = await getManyObjs({
       objQuery: {
-        appId: defaultAppId,
-        partQuery: {
-          and: [
-            { op: "eq", field: "foo", value: "bar" },
-            { op: "lt", field: "num", value: 10 },
-          ],
-        },
+        metaQuery: { projectId: { eq: defaultProjectId } },
+        recordQuery: [
+          { op: "eq", field: "foo", value: "bar" },
+          { op: "lt", field: "num", value: 10 },
+        ],
       },
       tag: defaultTag,
       storageType: backend.type,
@@ -531,13 +529,13 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
   });
 
   it("supports metaQuery", async () => {
-    const obj1 = makeObjFields({
-      appId: defaultAppId,
+    const obj1 = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { foo: "bar", num: 5 },
     });
-    const obj2 = makeObjFields({
-      appId: defaultAppId,
+    const obj2 = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { foo: "baz", num: 15 },
     });
@@ -545,14 +543,14 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     // Set up obj fields for querying
     const objFields = [
       makeObjField({
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         tag: defaultTag,
         path: "foo",
         type: "string",
         arrayTypes: [],
       }),
       makeObjField({
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         tag: defaultTag,
         path: "num",
         type: "number",
@@ -564,8 +562,8 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     await storage.create({ objs: [obj1, obj2] });
     const result = await getManyObjs({
       objQuery: {
-        appId: defaultAppId,
         metaQuery: {
+          projectId: { eq: defaultProjectId },
           createdBy: { eq: "tester" },
         },
       },
@@ -578,18 +576,18 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
   });
 
   it("supports sorting", async () => {
-    const obj1 = makeObjFields({
-      appId: defaultAppId,
+    const obj1 = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { name: "Alice", age: 25 },
     });
-    const obj2 = makeObjFields({
-      appId: defaultAppId,
+    const obj2 = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { name: "Bob", age: 30 },
     });
-    const obj3 = makeObjFields({
-      appId: defaultAppId,
+    const obj3 = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       objRecord: { name: "Charlie", age: 20 },
     });
@@ -597,14 +595,14 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     // Set up obj fields for querying
     const objFields = [
       makeObjField({
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         tag: defaultTag,
         path: "name",
         type: "string",
         arrayTypes: [],
       }),
       makeObjField({
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         tag: defaultTag,
         path: "age",
         type: "number",
@@ -617,7 +615,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
 
     // Test ascending sort
     let result = await getManyObjs({
-      objQuery: { appId: defaultAppId },
+      objQuery: { metaQuery: { projectId: { eq: defaultProjectId } } },
       tag: defaultTag,
       sort: [{ field: "name", direction: "asc" }] as IObjSortList,
       storageType: backend.type,
@@ -629,7 +627,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
 
     // Test descending sort
     result = await getManyObjs({
-      objQuery: { appId: defaultAppId },
+      objQuery: { metaQuery: { projectId: { eq: defaultProjectId } } },
       tag: defaultTag,
       sort: [{ field: "age", direction: "desc" }] as IObjSortList,
       storageType: backend.type,
@@ -642,28 +640,28 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
 
   it("supports pagination", async () => {
     const objs = [
-      makeObjFields({
-        appId: defaultAppId,
+      makeObjs({
+        projectId: defaultProjectId,
         tag: defaultTag,
         objRecord: { id: 1 },
       }),
-      makeObjFields({
-        appId: defaultAppId,
+      makeObjs({
+        projectId: defaultProjectId,
         tag: defaultTag,
         objRecord: { id: 2 },
       }),
-      makeObjFields({
-        appId: defaultAppId,
+      makeObjs({
+        projectId: defaultProjectId,
         tag: defaultTag,
         objRecord: { id: 3 },
       }),
-      makeObjFields({
-        appId: defaultAppId,
+      makeObjs({
+        projectId: defaultProjectId,
         tag: defaultTag,
         objRecord: { id: 4 },
       }),
-      makeObjFields({
-        appId: defaultAppId,
+      makeObjs({
+        projectId: defaultProjectId,
         tag: defaultTag,
         objRecord: { id: 5 },
       }),
@@ -673,7 +671,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
 
     // Test first page
     let result = await getManyObjs({
-      objQuery: { appId: defaultAppId },
+      objQuery: { metaQuery: { projectId: { eq: defaultProjectId } } },
       tag: defaultTag,
       page: 0,
       limit: 2,
@@ -686,7 +684,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
 
     // Test second page
     result = await getManyObjs({
-      objQuery: { appId: defaultAppId },
+      objQuery: { metaQuery: { projectId: { eq: defaultProjectId } } },
       tag: defaultTag,
       page: 1,
       limit: 2,
@@ -699,7 +697,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
 
     // Test last page
     result = await getManyObjs({
-      objQuery: { appId: defaultAppId },
+      objQuery: { metaQuery: { projectId: { eq: defaultProjectId } } },
       tag: defaultTag,
       page: 2,
       limit: 2,
@@ -712,9 +710,12 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
   });
 
   it("excludes deleted objects by default", async () => {
-    const obj1 = makeObjFields({ appId: defaultAppId, tag: defaultTag });
-    const obj2 = makeObjFields({
-      appId: defaultAppId,
+    const obj1 = makeObjs({
+      projectId: defaultProjectId,
+      tag: defaultTag,
+    });
+    const obj2 = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       deletedAt: new Date(),
       deletedBy: "deleter",
@@ -723,7 +724,7 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
 
     await storage.create({ objs: [obj1, obj2] });
     const result = await getManyObjs({
-      objQuery: { appId: defaultAppId },
+      objQuery: { metaQuery: { projectId: { eq: defaultProjectId } } },
       tag: defaultTag,
       storageType: backend.type,
     });
@@ -732,9 +733,12 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
   });
 
   it("includes deleted objects when topLevelFields.deletedAt is null", async () => {
-    const obj1 = makeObjFields({ appId: defaultAppId, tag: defaultTag });
-    const obj2 = makeObjFields({
-      appId: defaultAppId,
+    const obj1 = makeObjs({
+      projectId: defaultProjectId,
+      tag: defaultTag,
+    });
+    const obj2 = makeObjs({
+      projectId: defaultProjectId,
       tag: defaultTag,
       deletedAt: new Date(),
       deletedBy: "deleter",
@@ -744,8 +748,8 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     await storage.create({ objs: [obj1, obj2] });
     const result = await getManyObjs({
       objQuery: {
-        appId: defaultAppId,
-        topLevelFields: {
+        metaQuery: {
+          projectId: { eq: defaultProjectId },
           deletedAt: null,
         },
       },

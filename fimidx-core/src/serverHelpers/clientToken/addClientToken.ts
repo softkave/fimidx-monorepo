@@ -24,7 +24,7 @@ export async function addClientToken(params: {
   const {
     name: inputName,
     description,
-    appId,
+    projectId,
     meta,
     permissions,
     groupId,
@@ -37,7 +37,6 @@ export async function addClientToken(params: {
     name,
     description,
     meta,
-    permissions: null, // Permissions are now managed separately
   };
 
   const { failedItems, newObjs } = await setManyObjs({
@@ -46,9 +45,9 @@ export async function addClientToken(params: {
     groupId,
     tag: kObjTags.clientToken,
     input: {
-      appId,
+      projectId,
       items: [objRecord],
-      conflictOnKeys: ["name", "appId"],
+      conflictOnKeys: ["name", "projectId"],
       onConflict: "fail",
     },
     storage,
@@ -71,14 +70,14 @@ export async function addClientToken(params: {
 
   const clientToken = objToClientToken(newObjs[0], null);
 
-  // Add permissions if provided
+  // Add permissions if provided (entity is set by addClientTokenPermissions)
   if (permissions && permissions.length > 0) {
     const { permissions: managedPermissions } = await addClientTokenPermissions(
       {
         by,
         byType,
         groupId,
-        appId,
+        projectId,
         permissions,
         clientTokenId: clientToken.id,
         storage,

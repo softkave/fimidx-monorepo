@@ -3,7 +3,7 @@ import type {IngestLogsArgs} from '../endpoints/fimidxTypes.js';
 import {MfdocEndpointError} from '../endpoints/index.js';
 
 export interface IFimidxLoggerOptions {
-  appId: string;
+  projectId: string;
   clientToken: string;
   serverURL?: string;
 
@@ -32,7 +32,7 @@ export interface IFimidxLoggerOptions {
 }
 
 export class FimidxLogger {
-  private readonly appId: string;
+  private readonly projectId: string;
   private readonly clientToken: string;
   private readonly serverURL?: string;
   private readonly fimidx: FimidxEndpoints;
@@ -56,12 +56,12 @@ export class FimidxLogger {
 
   constructor(opts: IFimidxLoggerOptions) {
     // Validate required parameters
-    if (!opts.appId) throw new Error('FimidxLogger: appId is required');
+    if (!opts.projectId) throw new Error('FimidxLogger: projectId is required');
     if (!opts.clientToken)
       throw new Error('FimidxLogger: clientToken is required');
 
     // Initialize properties
-    this.appId = opts.appId;
+    this.projectId = opts.projectId;
     this.clientToken = opts.clientToken;
     this.serverURL = opts.serverURL;
 
@@ -191,7 +191,7 @@ export class FimidxLogger {
   private retrySend = async (logs: any[], attempt: number): Promise<void> => {
     try {
       const args: IngestLogsArgs = {
-        appId: this.appId,
+        projectId: this.projectId,
         logs: logs,
       };
 

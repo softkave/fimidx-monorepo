@@ -9,7 +9,7 @@ import type { IObjStorage } from "../../../storage/types.js";
 import { addCallback } from "../addCallback.js";
 import { getCallbacks } from "../getCallbacks.js";
 
-const defaultAppId = "test-app-getCallbacks";
+const defaultProjectId = "test-project-getCallbacks";
 const defaultGroupId = "test-group";
 const defaultBy = "tester";
 const defaultByType = "user";
@@ -22,7 +22,7 @@ function makeGetCallbacksArgs(
 ): GetCallbacksEndpointArgs {
   return {
     query: {
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       ...overrides.query,
     },
     page: overrides.page,
@@ -37,7 +37,7 @@ function makeAddCallbackArgs(overrides: any = {}) {
     .toString(36)
     .substr(2, 9)}`;
   return {
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     url: "https://example.com/webhook",
     method: "POST",
     name: `Test Callback ${uniqueId}`,
@@ -53,7 +53,7 @@ function makeTestCallbackArgs(name: string, overrides: any = {}) {
     .toString(36)
     .substr(2, 9)}`;
   return {
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     url: "https://example.com/webhook",
     method: "POST",
     name: `${name}_${uniqueId}`,
@@ -64,18 +64,18 @@ function makeTestCallbackArgs(name: string, overrides: any = {}) {
 
 // Helper function to insert objFields for the "name" field
 async function insertNameFieldForSorting(params: {
-  appId: string;
+  projectId: string;
   groupId: string;
   tag: string;
 }) {
-  const { appId, groupId, tag } = params;
+  const { projectId, groupId, tag } = params;
   const now = new Date();
 
   const nameField = {
     id: uuidv7(),
     createdAt: now,
     updatedAt: now,
-    appId,
+    projectId,
     groupId,
     tag,
     field: "name",
@@ -106,14 +106,14 @@ describe("getCallbacks integration", () => {
     // Clean up test data before each test using hard deletes for complete isolation
     try {
       // Delete all callbacks for all test groups using hard deletes
-      const testAppIds = [
-        defaultAppId,
-        "test-app-getCallbacks-1",
-        "test-app-getCallbacks-2",
+      const testProjectIds = [
+        defaultProjectId,
+        "test-project-getCallbacks-1",
+        "test-project-getCallbacks-2",
       ];
-      for (const appId of testAppIds) {
+      for (const projectId of testProjectIds) {
         await storage.bulkDelete({
-          query: { appId },
+          query: { metaQuery: { projectId: { eq: projectId } } },
           tag: kObjTags.callback,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -123,12 +123,12 @@ describe("getCallbacks integration", () => {
       }
 
       // Clean up objFields for test groups
-      for (const appId of testAppIds) {
+      for (const projectId of testProjectIds) {
         await db
           .delete(objFieldsTable)
           .where(
             and(
-              eq(objFieldsTable.appId, appId),
+              eq(objFieldsTable.projectId, projectId),
               eq(objFieldsTable.groupId, defaultGroupId),
               eq(objFieldsTable.tag, kObjTags.callback)
             )
@@ -143,14 +143,14 @@ describe("getCallbacks integration", () => {
     // Clean up after each test using hard deletes for complete isolation
     try {
       // Delete all callbacks for all test groups using hard deletes
-      const testAppIds = [
-        defaultAppId,
-        "test-app-getCallbacks-1",
-        "test-app-getCallbacks-2",
+      const testProjectIds = [
+        defaultProjectId,
+        "test-project-getCallbacks-1",
+        "test-project-getCallbacks-2",
       ];
-      for (const appId of testAppIds) {
+      for (const projectId of testProjectIds) {
         await storage.bulkDelete({
-          query: { appId },
+          query: { metaQuery: { projectId: { eq: projectId } } },
           tag: kObjTags.callback,
           deletedBy: defaultBy,
           deletedByType: defaultByType,
@@ -160,12 +160,12 @@ describe("getCallbacks integration", () => {
       }
 
       // Clean up objFields for test groups
-      for (const appId of testAppIds) {
+      for (const projectId of testProjectIds) {
         await db
           .delete(objFieldsTable)
           .where(
             and(
-              eq(objFieldsTable.appId, appId),
+              eq(objFieldsTable.projectId, projectId),
               eq(objFieldsTable.groupId, defaultGroupId),
               eq(objFieldsTable.tag, kObjTags.callback)
             )
@@ -191,7 +191,7 @@ describe("getCallbacks integration", () => {
     // Create test callbacks
     const callback1 = await addCallback({
       args: makeTestCallbackArgs("First Callback"),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -200,7 +200,7 @@ describe("getCallbacks integration", () => {
 
     const callback2 = await addCallback({
       args: makeTestCallbackArgs("Second Callback"),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -226,13 +226,13 @@ describe("getCallbacks integration", () => {
     // Create test callbacks with exact names (no unique suffixes)
     await addCallback({
       args: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         url: "https://example.com/webhook",
         method: "POST",
         name: "Alpha Callback",
         description: "Test description",
       },
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -241,13 +241,13 @@ describe("getCallbacks integration", () => {
 
     await addCallback({
       args: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         url: "https://example.com/webhook",
         method: "POST",
         name: "Beta Callback",
         description: "Test description",
       },
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -256,7 +256,7 @@ describe("getCallbacks integration", () => {
 
     const args = makeGetCallbacksArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         name: { eq: "Alpha Callback" },
       },
     });
@@ -271,7 +271,7 @@ describe("getCallbacks integration", () => {
     // Create test callbacks
     await addCallback({
       args: makeTestCallbackArgs("GET Callback", { method: "GET" }),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -280,7 +280,7 @@ describe("getCallbacks integration", () => {
 
     await addCallback({
       args: makeTestCallbackArgs("POST Callback", { method: "POST" }),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -289,7 +289,7 @@ describe("getCallbacks integration", () => {
 
     const args = makeGetCallbacksArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         method: { eq: "GET" },
       },
     });
@@ -306,7 +306,7 @@ describe("getCallbacks integration", () => {
       args: makeTestCallbackArgs("Callback 1", {
         url: "https://api1.example.com/webhook",
       }),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -317,7 +317,7 @@ describe("getCallbacks integration", () => {
       args: makeTestCallbackArgs("Callback 2", {
         url: "https://api2.example.com/webhook",
       }),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -326,7 +326,7 @@ describe("getCallbacks integration", () => {
 
     const args = makeGetCallbacksArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         url: { eq: "https://api1.example.com/webhook" },
       },
     });
@@ -343,7 +343,7 @@ describe("getCallbacks integration", () => {
     // Create test callbacks
     await addCallback({
       args: makeTestCallbackArgs("Callback 1", { idempotencyKey: uniqueKey }),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -354,7 +354,7 @@ describe("getCallbacks integration", () => {
       args: makeTestCallbackArgs("Callback 2", {
         idempotencyKey: "different-key",
       }),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -363,7 +363,7 @@ describe("getCallbacks integration", () => {
 
     const args = makeGetCallbacksArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         idempotencyKey: { eq: uniqueKey },
       },
     });
@@ -379,7 +379,7 @@ describe("getCallbacks integration", () => {
     for (let i = 1; i <= 5; i++) {
       await addCallback({
         args: makeTestCallbackArgs(`Callback ${i}`),
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         groupId: defaultGroupId,
         by: defaultBy,
         byType: defaultByType,
@@ -430,7 +430,7 @@ describe("getCallbacks integration", () => {
   it("sorts callbacks by name when objFields are set up", async () => {
     // Set up objFields for name sorting
     await insertNameFieldForSorting({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       tag: kObjTags.callback,
     });
@@ -438,7 +438,7 @@ describe("getCallbacks integration", () => {
     // Create test callbacks
     await addCallback({
       args: makeTestCallbackArgs("Charlie Callback"),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -447,7 +447,7 @@ describe("getCallbacks integration", () => {
 
     await addCallback({
       args: makeTestCallbackArgs("Alpha Callback"),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -456,7 +456,7 @@ describe("getCallbacks integration", () => {
 
     await addCallback({
       args: makeTestCallbackArgs("Beta Callback"),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -482,7 +482,7 @@ describe("getCallbacks integration", () => {
         method: "GET",
         url: "https://api.example.com/webhook",
       }),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -494,7 +494,7 @@ describe("getCallbacks integration", () => {
         method: "POST",
         url: "https://api.example.com/webhook",
       }),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -506,7 +506,7 @@ describe("getCallbacks integration", () => {
         method: "GET",
         url: "https://different.example.com/webhook",
       }),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -515,7 +515,7 @@ describe("getCallbacks integration", () => {
 
     const args = makeGetCallbacksArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         method: { eq: "GET" },
         url: { eq: "https://api.example.com/webhook" },
       },
@@ -532,7 +532,7 @@ describe("getCallbacks integration", () => {
     // Create a callback
     await addCallback({
       args: makeTestCallbackArgs("Test Callback"),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -542,7 +542,7 @@ describe("getCallbacks integration", () => {
     // Query for non-existent callback
     const args = makeGetCallbacksArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         name: { eq: "Non-existent Callback" },
       },
     });

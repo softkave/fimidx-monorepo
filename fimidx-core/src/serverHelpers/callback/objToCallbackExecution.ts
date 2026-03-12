@@ -11,7 +11,7 @@ export function objToCallbackExecution(obj: IObj): ICallbackExecution {
   return {
     id: obj.id,
     groupId: obj.groupId,
-    appId: obj.appId,
+    projectId: obj.projectId,
     callbackId: obj.objRecord.callbackId,
     error: obj.objRecord.error,
     responseHeaders: obj.objRecord.responseHeaders,

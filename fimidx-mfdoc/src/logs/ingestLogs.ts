@@ -2,7 +2,7 @@ import {IngestLogsEndpointArgs} from 'fimidx-core/definitions/log';
 import {mfdocConstruct, MfdocHttpEndpointMethod} from 'mfdoc';
 import {AnyObject} from 'softkave-js-utils';
 import {kTags} from '../tags.js';
-import {kAppId} from '../utils.js';
+import {kProjectId} from '../utils.js';
 
 export const ingestLogsSchema = mfdocConstruct.constructHttpEndpointDefinition<
   AnyObject,
@@ -21,9 +21,9 @@ export const ingestLogsSchema = mfdocConstruct.constructHttpEndpointDefinition<
     name: 'IngestLogsArgs',
     description: 'The schema for ingesting logs',
     fields: {
-      appId: mfdocConstruct.constructObjectField({
+      projectId: mfdocConstruct.constructObjectField({
         required: true,
-        data: kAppId,
+        data: kProjectId,
       }),
       logs: mfdocConstruct.constructObjectField({
         required: true,

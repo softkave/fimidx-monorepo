@@ -1,12 +1,11 @@
 import type { EmailRecordStatus } from "../../definitions/email.js";
-import type { IMemberObjRecord } from "../../definitions/member.js";
 import { kObjTags } from "../../definitions/obj.js";
 import { kId0 } from "../../definitions/system.js";
 import type { IObjStorage } from "../../storage/types.js";
 import { updateManyObjs } from "../obj/updateObjs.js";
 
 export async function updateMemberSendEmailStatus(params: {
-  appId: string;
+  projectId: string;
   groupId: string;
   id: string;
   sentEmailCount: number;
@@ -15,7 +14,7 @@ export async function updateMemberSendEmailStatus(params: {
   storage?: IObjStorage;
 }) {
   const {
-    appId,
+    projectId,
     groupId,
     id,
     sentEmailCount,
@@ -23,19 +22,17 @@ export async function updateMemberSendEmailStatus(params: {
     emailLastSentStatus,
     storage,
   } = params;
-  const update: Partial<IMemberObjRecord> = {
-    sentEmailCount,
-    emailLastSentAt,
-    emailLastSentStatus,
+  const update: Record<string, unknown> = {
+    meta: { sentEmailCount, emailLastSentAt, emailLastSentStatus },
   };
 
   await updateManyObjs({
     objQuery: {
-      appId,
-      partQuery: {
-        and: [{ value: id, op: "eq", field: "memberId" }],
+      metaQuery: {
+        projectId: { eq: projectId },
+        id: { eq: id },
+        groupId: { eq: groupId },
       },
-      topLevelFields: { groupId: { eq: groupId } },
     },
     tag: kObjTags.member,
     update,

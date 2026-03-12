@@ -18,7 +18,7 @@ export const coreConfigSchema = z.object({
     uri: z.string(),
     dbName: z.string(),
   }),
-  adminEmails: z.array(z.string()).optional(),
+  adminEmails: z.array(z.string()).max(100).optional(),
   storage: z.object({
     type: z.enum(["postgres", "mongo"]),
   }),
@@ -43,7 +43,7 @@ export const coreConfigSchema = z.object({
     port: z.coerce.number(),
   }),
   logger: z.object({
-    fimidxAppId: z.string(),
+    fimidxProjectId: z.string(),
     fimidxClientToken: z.string(),
     fimidxServerUrl: z.string().optional(),
   }),

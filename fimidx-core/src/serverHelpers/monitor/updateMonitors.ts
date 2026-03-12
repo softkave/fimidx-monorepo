@@ -25,7 +25,8 @@ export async function updateMonitors(params: {
   if (!result.objs.length) return;
   const existing = result.objs[0].objRecord;
 
-  // Prepare the update object: merge all fields except logsQuery, which is replaced if present
+  // Prepare the update object: merge all fields except query, which is replaced
+  // if present
   let updateObj: any = { ...update };
 
   // Normalize reportsTo: always store as array of { userId: string }
@@ -39,12 +40,10 @@ export async function updateMonitors(params: {
     updateObj.reportsTo = existing.reportsTo;
   }
 
-  if (update.logsQuery !== undefined) {
-    // logsQuery is replaced
-    updateObj.logsQuery = update.logsQuery;
-  } else if (existing.logsQuery !== undefined) {
-    // If not updating logsQuery, keep the existing one
-    updateObj.logsQuery = existing.logsQuery;
+  if (update.query !== undefined) {
+    updateObj.query = update.query;
+  } else if (existing.query !== undefined) {
+    updateObj.query = existing.query;
   }
 
   // Merge all other fields
@@ -57,7 +56,6 @@ export async function updateMonitors(params: {
     byType,
     update: updateObj,
     count: 1,
-    updateWay: "merge",
     storage,
   });
 }

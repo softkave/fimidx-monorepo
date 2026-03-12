@@ -29,11 +29,11 @@ importers:
         specifier: ^1.39.0
         version: 1.39.0(nanoid@3.3.11)
       fimidx:
-        specifier: ^0.5.0
-        version: 0.5.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+        specifier: workspace:*
+        version: link:../fimidx-js
       fimidx-winston-transport:
-        specifier: ^0.3.2
-        version: 0.3.2(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+        specifier: workspace:*
+        version: link:../fimidx-winston-transport
       ioredis:
         specifier: ^5.4.2
         version: 5.9.3
@@ -113,9 +113,6 @@ importers:
 
   fimidx-js:
     dependencies:
-      fimidara:
-        specifier: ^1.39.0
-        version: 1.39.0(nanoid@3.3.11)
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.23
@@ -228,8 +225,8 @@ importers:
         specifier: workspace:*
         version: link:../fimidx-core
       fimidx-winston-transport:
-        specifier: ^0.3.0
-        version: 0.3.2(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+        specifier: workspace:*
+        version: link:../fimidx-winston-transport
       path-to-regexp:
         specifier: ^8.2.0
         version: 8.3.0
@@ -283,8 +280,8 @@ importers:
   fimidx-winston-transport:
     dependencies:
       fimidx:
-        specifier: ^0.5.0
-        version: 0.5.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+        specifier: 0.6.0
+        version: 0.6.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
       winston-transport:
         specifier: ^4.9.0
         version: 4.9.0
@@ -4215,16 +4212,12 @@ packages:
     engines: {node: '>=13'}
     hasBin: true
 
-  fimidx-winston-transport@0.3.2:
-    resolution: {integrity: sha512-fJwe4VhkN63CJ2WahzDOvNM12NEKvM7JYJx1jeVhq/n0m/+XV8CAESJO3N5TDIc4Go2iH1Kk5THXWKatolhnNw==}
-    engines: {node: '>=13'}
-
   fimidx@0.4.1:
     resolution: {integrity: sha512-GzH9iUFCViWl0UOgQd23WxUQOIAAGwNOr/tnCC5R6h/EgNrAWMgMrVpKHvHPgeGI08XmUjuXMj7gNg8vzBmg3w==}
     engines: {node: '>=13'}
 
-  fimidx@0.5.0:
-    resolution: {integrity: sha512-GPQDpwaUuowHjvXeeQ8uOzssvc0j4PjinNYQBcsQihQufglOnOY9EoMSQDfh6vLvYu+f1R3r6PLNPQSIp0KEcQ==}
+  fimidx@0.6.0:
+    resolution: {integrity: sha512-xpTRroEDDmGIAy3qL1IMOvVmtoVHVUYrG3bVPFjP7Xnccee2kfp6+UwlEhWCl6wJiKH31XLgvt9rRnJhGAvP1Q==}
     engines: {node: '>=13'}
 
   finalhandler@2.1.1:
@@ -9894,17 +9887,6 @@ snapshots:
       - debug
       - nanoid
 
-  fimidx-winston-transport@0.3.2(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
-    dependencies:
-      fimidx: 0.5.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
-      winston-transport: 4.9.0
-    transitivePeerDependencies:
-      - assert
-      - debug
-      - nanoid
-      - path-browserify
-      - type-fest
-
   fimidx@0.4.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
     dependencies:
       lodash-es: 4.17.23
@@ -9917,7 +9899,7 @@ snapshots:
       - path-browserify
       - type-fest
 
-  fimidx@0.5.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
+  fimidx@0.6.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
     dependencies:
       lodash-es: 4.17.23
       mfdoc-js-sdk-base: 0.3.3(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)

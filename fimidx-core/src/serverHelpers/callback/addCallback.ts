@@ -12,13 +12,13 @@ import { objToCallback } from "./objToCallback.js";
 
 export async function addCallback(params: {
   args: AddCallbackEndpointArgs;
-  appId: string;
+  projectId: string;
   groupId: string;
   by: string;
   byType: string;
   storage?: IObjStorage;
 }) {
-  const { args, appId, groupId, by, byType, storage } = params;
+  const { args, projectId, groupId, by, byType, storage } = params;
   const {
     url,
     method,
@@ -57,7 +57,7 @@ export async function addCallback(params: {
     groupId,
     tag: kObjTags.callback,
     input: {
-      appId,
+      projectId,
       items: [objRecord],
       conflictOnKeys: ["idempotencyKey"],
       onConflict: "ignore",
@@ -78,10 +78,14 @@ export async function addCallback(params: {
     // The object already exists, we need to fetch it
     const existingCallback = await storage?.read({
       query: {
-        appId,
-        partQuery: {
-          and: [{ field: "idempotencyKey", op: "eq", value: idempotencyKey }],
-        },
+        and: [
+          {
+            metaQuery: { projectId: { eq: projectId } },
+            recordQuery: [
+              { field: "idempotencyKey", op: "eq", value: idempotencyKey },
+            ],
+          },
+        ],
       },
       tag: kObjTags.callback,
     });

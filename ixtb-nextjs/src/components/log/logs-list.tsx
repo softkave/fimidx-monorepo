@@ -1,5 +1,5 @@
 import { ILog } from "fimidx-core/definitions/log";
-import { IObjPartQueryList } from "fimidx-core/definitions/obj";
+import { IObjRecordQueryList } from "fimidx-core/definitions/obj";
 import { useMemo } from "react";
 import { ComponentListMessage } from "../internal/component-list/component-list-message.tsx";
 import {
@@ -13,11 +13,11 @@ import { LogsTable } from "./logs-table.tsx";
 
 export interface ILogsProps {
   logs: ILog[];
-  filters?: IObjPartQueryList;
-  onFiltersChange?: (filters: IObjPartQueryList) => void;
+  filters?: IObjRecordQueryList;
+  onFiltersChange?: (filters: IObjRecordQueryList) => void;
   showFiltersAndSort?: boolean;
   orgId: string;
-  appId: string;
+  projectId: string;
 }
 
 export function LogItemsEmpty(props: { title?: string; message?: string }) {
@@ -55,7 +55,7 @@ export function Logs(props: ILogsProps) {
               onChange={props.onFiltersChange}
               filters={props.filters}
               orgId={props.orgId}
-              appId={props.appId}
+              projectId={props.projectId}
             />
           </AccordionContent>
         </AccordionItem>

@@ -1,57 +1,38 @@
-import { mergeObjects, type AnyObject } from "softkave-js-utils";
+import { type AnyObject } from "softkave-js-utils";
 import type {
-  IInputObjRecord,
-  IObj,
+  IGranularUpdate,
   IObjField,
   IObjQuery,
   OnConflict,
 } from "../../definitions/obj.js";
+import { getProjectIdFromObjQuery } from "../../definitions/obj.js";
 import { createStorage, getDefaultStorageType } from "../../storage/config.js";
 import type { IObjStorage } from "../../storage/types.js";
 import { getObjFields } from "./getObjFields.js";
 
-export function getUpdateObj(params: {
-  obj: IObj;
-  item: IInputObjRecord;
-  date: Date;
-  by: string;
-  byType: string;
-  updateWay: OnConflict;
-}) {
-  const { obj, date, by, byType, updateWay, item } = params;
-  return {
-    id: obj.id,
-    obj: {
-      ...obj,
-      updatedAt: date,
-      updatedBy: by,
-      updatedByType: byType,
-      objRecord:
-        updateWay === "replace"
-          ? item
-          : updateWay === "merge"
-          ? { ...obj.objRecord, ...item }
-          : updateWay === "mergeButReplaceArrays"
-          ? mergeObjects(obj.objRecord, item, {
-              arrayUpdateStrategy: "replace",
-            })
-          : updateWay === "mergeButConcatArrays"
-          ? mergeObjects(obj.objRecord, item, {
-              arrayUpdateStrategy: "concat",
-            })
-          : updateWay === "mergeButKeepArrays"
-          ? mergeObjects(obj.objRecord, item, {
-              arrayUpdateStrategy: "retain",
-            })
-          : obj.objRecord,
-    },
-  };
+export function splitMetaUpdate(
+  update: Record<string, any>,
+  metaUpdateWay: OnConflict = "shallowMerge"
+): IGranularUpdate[] {
+  const { meta, ...rest } = update;
+  const updates: IGranularUpdate[] = [];
+
+  if (Object.keys(rest).length > 0) {
+    updates.push({ value: rest });
+  }
+
+  if (meta !== undefined) {
+    updates.push({ key: "meta", value: meta, updateWay: metaUpdateWay });
+  }
+
+  return updates.length > 0 ? updates : [{ value: update }];
 }
 
 export async function updateManyObjs(params: {
   objQuery: IObjQuery;
   tag: string;
-  update: AnyObject;
+  update?: AnyObject;
+  updates?: IGranularUpdate[];
   by: string;
   byType: string;
   updateWay?: OnConflict;
@@ -65,10 +46,11 @@ export async function updateManyObjs(params: {
     objQuery,
     tag,
     update,
+    updates,
     count,
     by,
     byType,
-    updateWay = "mergeButReplaceArrays",
+    updateWay = "shallowMerge",
     shouldIndex = true,
     fieldsToIndex,
     storageType = getDefaultStorageType(),
@@ -78,12 +60,13 @@ export async function updateManyObjs(params: {
   // Fetch fields for query generation
   let fields: IObjField[] = [];
 
-  if (objQuery.appId) {
+  const projectId = getProjectIdFromObjQuery(objQuery);
+  if (projectId) {
     // Fetch fields
     const fieldsResult = await getObjFields({
-      appId: objQuery.appId,
+      projectId,
       tag,
-      limit: 1000, // Fetch all fields for this app/tag combination
+      limit: 1000, // Fetch all fields for this project/tag combination
     });
     fields = fieldsResult.fields.map((field) => ({
       ...field,
@@ -98,6 +81,7 @@ export async function updateManyObjs(params: {
     query: objQuery,
     tag,
     update,
+    updates,
     by,
     byType,
     updateWay,

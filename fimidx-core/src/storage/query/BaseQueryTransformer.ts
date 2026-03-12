@@ -15,10 +15,10 @@ export abstract class BaseQueryTransformer<T> implements IQueryTransformer<T> {
   abstract transformSort(sort: IObjSortList, fields?: IObjField[]): T;
   abstract transformPagination(page: number, limit: number): T;
 
-  protected transformPartQuery(partQuery: any, date: Date): T {
-    // Common logic for transforming part queries
+  protected transformRecordQuery(recordQuery: any, date: Date): T {
+    // Common logic for transforming record queries
     // This will be implemented by concrete classes
-    throw new Error("transformPartQuery must be implemented by concrete class");
+    throw new Error("transformRecordQuery must be implemented by concrete class");
   }
 
   protected transformMetaQuery(metaQuery: any, date: Date): T {

@@ -6,12 +6,12 @@ import {
 import { kClientPaths } from "@/src/lib/clientHelpers/clientPaths";
 import { kAppConstants } from "fimidx-core/definitions/appConstants";
 import Link from "next/link";
-import { AppSidebarGroupContainer } from "./app-sidebar-group-container";
 import { HomeSidebarGroup } from "./home-sidebar-group";
 import { OrgSidebarGroupContainer } from "./org-sidebar-group-container";
+import { ProjectSidebarGroupContainer } from "./project-sidebar-group-container";
 
-export function MainAppSidebar(props: { orgId?: string; appId?: string }) {
-  const { orgId, appId } = props;
+export function MainAppSidebar(props: { orgId?: string; projectId?: string }) {
+  const { orgId, projectId } = props;
 
   const sidebar = (
     <Sidebar>
@@ -23,8 +23,8 @@ export function MainAppSidebar(props: { orgId?: string; appId?: string }) {
       <SidebarContent>
         <HomeSidebarGroup />
         {orgId && <OrgSidebarGroupContainer orgId={orgId} />}
-        {orgId && appId && (
-          <AppSidebarGroupContainer orgId={orgId} appId={appId} />
+        {orgId && projectId && (
+          <ProjectSidebarGroupContainer orgId={orgId} projectId={projectId} />
         )}
       </SidebarContent>
     </Sidebar>

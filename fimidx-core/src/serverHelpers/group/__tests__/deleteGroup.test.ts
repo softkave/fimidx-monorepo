@@ -7,7 +7,7 @@ import { addGroup } from "../addGroup.js";
 import { deleteGroups } from "../deleteGroups.js";
 import { getGroups } from "../getGroups.js";
 
-const defaultAppId = "test-app-deleteGroups";
+const defaultProjectId = "test-project-deleteGroups";
 const defaultBy = "tester";
 const defaultByType = "user";
 
@@ -16,7 +16,7 @@ function makeDeleteGroupsArgs(
 ): DeleteGroupsEndpointArgs {
   return {
     query: {
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       ...overrides.query,
     },
     deleteMany: overrides.deleteMany,
@@ -27,7 +27,7 @@ function makeAddGroupArgs(overrides: any = {}) {
   return {
     name: `Test Group ${Math.random()}`,
     description: "Test description",
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     ...overrides,
   };
 }
@@ -44,7 +44,7 @@ describe("deleteGroups integration", () => {
     // Clean up test data before each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.group,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -60,7 +60,7 @@ describe("deleteGroups integration", () => {
     // Clean up after each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.group,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -92,7 +92,7 @@ describe("deleteGroups integration", () => {
     // Verify the group exists
     const groupsBefore = await getGroups({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });
@@ -102,7 +102,7 @@ describe("deleteGroups integration", () => {
     // Delete the group
     const deleteArgs = makeDeleteGroupsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: groupId },
       },
     });
@@ -117,7 +117,7 @@ describe("deleteGroups integration", () => {
     // Verify the group is deleted
     const groupsAfter = await getGroups({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });
@@ -153,7 +153,7 @@ describe("deleteGroups integration", () => {
     // Verify all groups exist
     const groupsBefore = await getGroups({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });
@@ -162,7 +162,7 @@ describe("deleteGroups integration", () => {
     // Delete the first group by name
     const deleteArgs = makeDeleteGroupsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         name: { eq: "Delete Me Group 1" },
       },
       deleteMany: true,
@@ -177,7 +177,7 @@ describe("deleteGroups integration", () => {
     // Verify only the first group is deleted
     const groupsAfter = await getGroups({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
     });
     expect(groupsAfter.groups).toHaveLength(2);
@@ -215,7 +215,7 @@ describe("deleteGroups integration", () => {
     // Verify all groups exist
     const groupsBefore = await getGroups({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });
@@ -224,7 +224,7 @@ describe("deleteGroups integration", () => {
     // Delete groups created by user-a
     const deleteArgs = makeDeleteGroupsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         createdBy: { eq: "user-a" },
       },
       deleteMany: true,
@@ -240,7 +240,7 @@ describe("deleteGroups integration", () => {
     // Verify only user-a's groups are deleted
     const groupsAfter = await getGroups({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });
@@ -286,7 +286,7 @@ describe("deleteGroups integration", () => {
     // Verify all groups exist
     const groupsBefore = await getGroups({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });
@@ -295,7 +295,7 @@ describe("deleteGroups integration", () => {
     // Delete groups with category "important"
     const deleteArgs = makeDeleteGroupsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         meta: [
           {
             op: "eq",
@@ -317,7 +317,7 @@ describe("deleteGroups integration", () => {
     // Verify only groups with category "important" are deleted
     const groupsAfter = await getGroups({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });
@@ -349,7 +349,7 @@ describe("deleteGroups integration", () => {
     // Verify all groups exist
     const groupsBefore = await getGroups({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });
@@ -358,7 +358,7 @@ describe("deleteGroups integration", () => {
     // Delete groups created before the second group
     const deleteArgs = makeDeleteGroupsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         createdAt: { lt: group2.group.createdAt.getTime() },
       },
       deleteMany: true,
@@ -374,7 +374,7 @@ describe("deleteGroups integration", () => {
     // Verify only the newer group remains
     const groupsAfter = await getGroups({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });
@@ -382,7 +382,7 @@ describe("deleteGroups integration", () => {
     expect(groupsAfter.groups[0].name).toBe("New Group");
   });
 
-  it("deletes all groups in an app", async () => {
+  it("deletes all groups in an project", async () => {
     // Create multiple groups
     const group1 = await addGroup({
       args: makeAddGroupArgs({ name: "Group 1" }),
@@ -411,16 +411,16 @@ describe("deleteGroups integration", () => {
     // Verify all groups exist
     const groupsBefore = await getGroups({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });
     expect(groupsBefore.groups).toHaveLength(3);
 
-    // Delete all groups in the app
+    // Delete all groups in the project
     const deleteArgs = makeDeleteGroupsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
       },
       deleteMany: true,
     });
@@ -435,7 +435,7 @@ describe("deleteGroups integration", () => {
     // Verify all groups are deleted
     const groupsAfter = await getGroups({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
       storage,
     });
@@ -446,7 +446,7 @@ describe("deleteGroups integration", () => {
     // Try to delete a group that doesn't exist
     const deleteArgs = makeDeleteGroupsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         id: { eq: "non-existent-id" },
       },
     });
@@ -508,7 +508,7 @@ describe("deleteGroups integration", () => {
     // Verify all groups exist
     const groupsBefore = await getGroups({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
     });
     expect(groupsBefore.groups).toHaveLength(3);
@@ -516,7 +516,7 @@ describe("deleteGroups integration", () => {
     // Delete groups with status "active" AND type "premium"
     const deleteArgs = makeDeleteGroupsArgs({
       query: {
-        appId: defaultAppId,
+        projectId: defaultProjectId,
         meta: [
           {
             op: "eq",
@@ -542,7 +542,7 @@ describe("deleteGroups integration", () => {
     // Verify only the matching group is deleted
     const groupsAfter = await getGroups({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
     });
     expect(groupsAfter.groups).toHaveLength(2);
@@ -554,12 +554,12 @@ describe("deleteGroups integration", () => {
     ]);
   });
 
-  it("preserves groups in other apps when deleting by appId", async () => {
-    // Create groups in different apps
+  it("preserves groups in other projects when deleting by projectId", async () => {
+    // Create groups in different projects
     const group1 = await addGroup({
       args: makeAddGroupArgs({
-        name: "Group in App 1",
-        appId: "test-app-deleteGroups-1",
+        name: "Group in Project 1",
+        projectId: "test-project-deleteGroups-1",
       }),
       by: defaultBy,
       byType: defaultByType,
@@ -568,8 +568,8 @@ describe("deleteGroups integration", () => {
 
     const group2 = await addGroup({
       args: makeAddGroupArgs({
-        name: "Group in App 2",
-        appId: "test-app-deleteGroups-2",
+        name: "Group in Project 2",
+        projectId: "test-project-deleteGroups-2",
       }),
       by: defaultBy,
       byType: defaultByType,
@@ -578,8 +578,8 @@ describe("deleteGroups integration", () => {
 
     const group3 = await addGroup({
       args: makeAddGroupArgs({
-        name: "Group in Default App",
-        appId: defaultAppId,
+        name: "Group in Default Project",
+        projectId: defaultProjectId,
       }),
       by: defaultBy,
       byType: defaultByType,
@@ -589,15 +589,15 @@ describe("deleteGroups integration", () => {
     // Verify all groups exist
     const allGroupsBefore = await getGroups({
       args: {
-        query: { appId: "test-app-deleteGroups-1" },
+        query: { projectId: "test-project-deleteGroups-1" },
       },
     });
     expect(allGroupsBefore.groups).toHaveLength(1);
 
-    // Delete groups in app-1
+    // Delete groups in project-1
     const deleteArgs = makeDeleteGroupsArgs({
       query: {
-        appId: "test-app-deleteGroups-1",
+        projectId: "test-project-deleteGroups-1",
       },
       deleteMany: true,
     });
@@ -608,26 +608,26 @@ describe("deleteGroups integration", () => {
       byType: defaultByType,
     });
 
-    // Verify only app-1 groups are deleted
-    const app1GroupsAfter = await getGroups({
+    // Verify only project-1 groups are deleted
+    const project1GroupsAfter = await getGroups({
       args: {
-        query: { appId: "test-app-deleteGroups-1" },
+        query: { projectId: "test-project-deleteGroups-1" },
       },
     });
-    expect(app1GroupsAfter.groups).toHaveLength(0);
+    expect(project1GroupsAfter.groups).toHaveLength(0);
 
-    const app2GroupsAfter = await getGroups({
+    const project2GroupsAfter = await getGroups({
       args: {
-        query: { appId: "test-app-deleteGroups-2" },
+        query: { projectId: "test-project-deleteGroups-2" },
       },
     });
-    expect(app2GroupsAfter.groups).toHaveLength(1);
+    expect(project2GroupsAfter.groups).toHaveLength(1);
 
-    const defaultAppGroupsAfter = await getGroups({
+    const defaultProjectGroupsAfter = await getGroups({
       args: {
-        query: { appId: defaultAppId },
+        query: { projectId: defaultProjectId },
       },
     });
-    expect(defaultAppGroupsAfter.groups).toHaveLength(1);
+    expect(defaultProjectGroupsAfter.groups).toHaveLength(1);
   });
 });

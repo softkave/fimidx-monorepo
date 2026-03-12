@@ -2,12 +2,15 @@ import { OwnServerError } from "fimidx-core/common/error";
 import {
   DeleteCallbacksEndpointArgs,
   deleteCallbacksSchema,
+  kFimidxPermissions,
 } from "fimidx-core/definitions/index";
 import {
   getNodeServerInternalAccessKey,
   getNodeServerURL,
 } from "../../../serverHelpers/nodeServer";
+import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
+import { sanitizeDeleteCallbacksInput } from "../../utils/sanitizeKId0";
 
 async function callNodeServerDeleteCallback(
   input: DeleteCallbacksEndpointArgs & { clientTokenId: string }
@@ -38,6 +41,14 @@ export const deleteCallbacksEndpoint: NextClientTokenAuthenticatedEndpointFn<
   } = params;
 
   const input = deleteCallbacksSchema.parse(await req.json());
+  sanitizeDeleteCallbacksInput(input);
+
+  await checkPermissionProjectThenOrg({
+    clientToken,
+    projectId: input.query.projectId,
+    action: kFimidxPermissions.callback.delete,
+  });
+
   await callNodeServerDeleteCallback({
     ...input,
     clientTokenId: clientToken.id,

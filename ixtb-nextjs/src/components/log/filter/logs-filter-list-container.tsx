@@ -10,7 +10,7 @@ export interface ILogsFilterListContainerProps
   extends Pick<
     ILogsFilterListProps,
     | "orgId"
-    | "appId"
+    | "projectId"
     | "onChange"
     | "filters"
     | "applyButtonText"
@@ -28,7 +28,7 @@ export interface ILogsFilterListContainerProps
 export function LogsFilterListContainer({
   className,
   orgId,
-  appId,
+  projectId,
   onChange,
   filters,
   applyButtonText,
@@ -37,7 +37,7 @@ export function LogsFilterListContainer({
   hijackApplyButtonOnClick,
   applyButtonLoading,
 }: ILogsFilterListContainerProps) {
-  const getLogFieldsHook = useGetLogFields({ appId });
+  const getLogFieldsHook = useGetLogFields({ query: { projectId } });
 
   return (
     <div className={cn("flex flex-col items-center w-full", className)}>
@@ -56,7 +56,7 @@ export function LogsFilterListContainer({
             <LogsFilterList
               fields={data.fields}
               orgId={orgId}
-              appId={appId}
+              projectId={projectId}
               onChange={onChange}
               filters={filters}
               applyButtonText={applyButtonText}

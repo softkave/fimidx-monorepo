@@ -6,7 +6,7 @@ import { addCallback } from "../addCallback.js";
 import { addCallbackExecution } from "../addCallbackExecution.js";
 import { getCallbackExecutions } from "../getCallbackExecutions.js";
 
-const defaultAppId = "test-app-addCallbackExecution";
+const defaultProjectId = "test-project-addCallbackExecution";
 const defaultGroupId = "test-group";
 const defaultBy = "tester";
 const defaultByType = "user";
@@ -21,7 +21,7 @@ function makeAddCallbackArgs(overrides: any = {}) {
     .toString(36)
     .substr(2, 9)}`;
   return {
-    appId: defaultAppId,
+    projectId: defaultProjectId,
     url: "https://example.com/webhook",
     method: "POST",
     name: `Test Callback ${uniqueId}`,
@@ -43,7 +43,7 @@ describe("addCallbackExecution integration", () => {
     try {
       // Clean up callbacks
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.callback,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -53,7 +53,7 @@ describe("addCallbackExecution integration", () => {
 
       // Clean up callback executions
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.callbackExecution,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -70,7 +70,7 @@ describe("addCallbackExecution integration", () => {
     try {
       // Clean up callbacks
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.callback,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -80,7 +80,7 @@ describe("addCallbackExecution integration", () => {
 
       // Clean up callback executions
       await storage.bulkDelete({
-        query: { appId: defaultAppId },
+        query: { metaQuery: { projectId: { eq: defaultProjectId } } },
         tag: kObjTags.callbackExecution,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -96,7 +96,7 @@ describe("addCallbackExecution integration", () => {
     // Create a callback first
     const callback = await addCallback({
       args: makeAddCallbackArgs(),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -109,7 +109,7 @@ describe("addCallbackExecution integration", () => {
     const responseStatusCode = 200;
 
     await addCallbackExecution({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       callbackId: callback.id,
       error: null,
@@ -126,7 +126,7 @@ describe("addCallbackExecution integration", () => {
       args: {
         callbackId: callback.id,
       },
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       storage,
     });
 
@@ -145,7 +145,7 @@ describe("addCallbackExecution integration", () => {
     // Create a callback first
     const callback = await addCallback({
       args: makeAddCallbackArgs(),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -156,7 +156,7 @@ describe("addCallbackExecution integration", () => {
     const error = "Network timeout";
 
     await addCallbackExecution({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       callbackId: callback.id,
       error,
@@ -173,7 +173,7 @@ describe("addCallbackExecution integration", () => {
       args: {
         callbackId: callback.id,
       },
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       storage,
     });
 
@@ -192,7 +192,7 @@ describe("addCallbackExecution integration", () => {
     // Create a callback first
     const callback = await addCallback({
       args: makeAddCallbackArgs(),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -204,7 +204,7 @@ describe("addCallbackExecution integration", () => {
     const responseBody = '{"data": {"id": 123, "name": "test"}}';
 
     await addCallbackExecution({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       callbackId: callback.id,
       error: null,
@@ -221,7 +221,7 @@ describe("addCallbackExecution integration", () => {
       args: {
         callbackId: callback.id,
       },
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       storage,
     });
 
@@ -236,7 +236,7 @@ describe("addCallbackExecution integration", () => {
     // Create a callback first
     const callback = await addCallback({
       args: makeAddCallbackArgs(),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -248,7 +248,7 @@ describe("addCallbackExecution integration", () => {
     const responseBody = "Hello, World!";
 
     await addCallbackExecution({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       callbackId: callback.id,
       error: null,
@@ -265,7 +265,7 @@ describe("addCallbackExecution integration", () => {
       args: {
         callbackId: callback.id,
       },
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       storage,
     });
 
@@ -279,7 +279,7 @@ describe("addCallbackExecution integration", () => {
     // Create a callback first
     const callback = await addCallback({
       args: makeAddCallbackArgs(),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -291,7 +291,7 @@ describe("addCallbackExecution integration", () => {
     const responseBody = '{"test": "data"}';
 
     await addCallbackExecution({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       callbackId: callback.id,
       error: null,
@@ -308,7 +308,7 @@ describe("addCallbackExecution integration", () => {
       args: {
         callbackId: callback.id,
       },
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       storage,
     });
 
@@ -321,7 +321,7 @@ describe("addCallbackExecution integration", () => {
     // Create a callback first
     const callback = await addCallback({
       args: makeAddCallbackArgs(),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -333,7 +333,7 @@ describe("addCallbackExecution integration", () => {
     const responseBody = '{"invalid": json}'; // Invalid JSON
 
     await addCallbackExecution({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       callbackId: callback.id,
       error: null,
@@ -350,7 +350,7 @@ describe("addCallbackExecution integration", () => {
       args: {
         callbackId: callback.id,
       },
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       storage,
     });
 
@@ -364,7 +364,7 @@ describe("addCallbackExecution integration", () => {
     // Create a callback first
     const callback = await addCallback({
       args: makeAddCallbackArgs(),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -376,7 +376,7 @@ describe("addCallbackExecution integration", () => {
 
     // Create first execution
     await addCallbackExecution({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       callbackId: callback.id,
       error: null,
@@ -390,7 +390,7 @@ describe("addCallbackExecution integration", () => {
 
     // Create second execution
     await addCallbackExecution({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       callbackId: callback.id,
       error: "Network error",
@@ -407,7 +407,7 @@ describe("addCallbackExecution integration", () => {
       args: {
         callbackId: callback.id,
       },
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       storage,
     });
 
@@ -429,7 +429,7 @@ describe("addCallbackExecution integration", () => {
     // Create a callback first
     const callback = await addCallback({
       args: makeAddCallbackArgs(),
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       by: defaultBy,
       byType: defaultByType,
@@ -439,7 +439,7 @@ describe("addCallbackExecution integration", () => {
     const executedAt = new Date();
 
     await addCallbackExecution({
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       groupId: defaultGroupId,
       callbackId: callback.id,
       error: null,
@@ -456,7 +456,7 @@ describe("addCallbackExecution integration", () => {
       args: {
         callbackId: callback.id,
       },
-      appId: defaultAppId,
+      projectId: defaultProjectId,
       storage,
     });
 

@@ -17,13 +17,14 @@ export async function addPermissions(params: {
   storage?: IObjStorage;
 }) {
   const { args, groupId, by, byType, storage } = params;
-  const { appId, permissions } = args;
+  const { projectId, permissions } = args;
 
   const objRecords = permissions.map((permission): IPermissionObjRecord => {
     return {
       action: permission.action,
       target: permission.target,
       entity: permission.entity,
+      granted: permission.granted ?? true,
       description: permission.description,
       meta: permission.meta,
     };
@@ -35,7 +36,7 @@ export async function addPermissions(params: {
     groupId,
     tag: kObjTags.permission,
     input: {
-      appId,
+      projectId,
       items: objRecords,
     },
     storage,

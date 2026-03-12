@@ -1,5 +1,5 @@
 import { isString } from "lodash-es";
-import type { IClientTokenObjRecordMeta } from "../../definitions/clientToken.js";
+import type { IClientTokenPermissionInput } from "../../definitions/clientToken.js";
 import type {
   IPermission,
   IPermissionAction,
@@ -10,17 +10,11 @@ import type {
 import type { IObjStorage } from "../../storage/types.js";
 import { addPermissions } from "../permission/addPermissions.js";
 
+/** Entity is always the client token id; stored as-is. */
 export function getFimidxManagedClientTokenPermissionEntity(params: {
-  entity: IPermissionEntity;
   clientTokenId: string;
 }) {
-  const { entity, clientTokenId } = params;
-  return isString(entity)
-    ? `__fimidx_managed_permission_entity_${entity}:${clientTokenId}`
-    : {
-        ...entity,
-        __fimidx_managed_permission_entity_clientTokenId: clientTokenId,
-      };
+  return params.clientTokenId;
 }
 
 export function getFimidxManagedClientTokenPermissionAction(params: {
@@ -29,7 +23,7 @@ export function getFimidxManagedClientTokenPermissionAction(params: {
 }) {
   const { action, clientTokenId } = params;
   return isString(action)
-    ? `__fimidx_managed_permission_action_${action}:${clientTokenId}`
+    ? action
     : {
         ...action,
         __fimidx_managed_permission_action_clientTokenId: clientTokenId,
@@ -42,7 +36,7 @@ export function getFimidxManagedClientTokenPermissionTarget(params: {
 }) {
   const { target, clientTokenId } = params;
   return isString(target)
-    ? `__fimidx_managed_permission_target_${target}:${clientTokenId}`
+    ? target
     : {
         ...target,
         __fimidx_managed_permission_target_clientTokenId: clientTokenId,
@@ -53,18 +47,11 @@ export function getFimidxManagedClientTokenPermission(params: {
   permission: IPermissionAtom;
   clientTokenId: string;
   groupId: string;
-}): IPermissionAtom & Pick<IPermission, "meta"> {
-  const { permission, clientTokenId, groupId } = params;
-  const meta: IClientTokenObjRecordMeta = {
-    __fimidx_managed_clientTokenId: clientTokenId,
-    __fimidx_managed_groupId: groupId,
-  };
+}): IPermissionAtom {
+  const { permission, clientTokenId } = params;
   return {
     ...permission,
-    entity: getFimidxManagedClientTokenPermissionEntity({
-      entity: permission.entity,
-      clientTokenId,
-    }),
+    entity: getFimidxManagedClientTokenPermissionEntity({ clientTokenId }),
     action: getFimidxManagedClientTokenPermissionAction({
       action: permission.action,
       clientTokenId,
@@ -73,75 +60,45 @@ export function getFimidxManagedClientTokenPermission(params: {
       target: permission.target,
       clientTokenId,
     }),
-    meta,
   };
 }
 
 // Inverse functions to transform managed permissions back to original format
+/** Entity is stored as client token id; return as-is. */
 export function getOriginalClientTokenPermissionEntity(params: {
   entity: IPermissionEntity;
-  clientTokenId: string;
 }): IPermissionEntity {
-  const { entity, clientTokenId } = params;
-  if (isString(entity)) {
-    const prefix = `__fimidx_managed_permission_entity_`;
-    const suffix = `:${clientTokenId}`;
-    if (entity.startsWith(prefix) && entity.endsWith(suffix)) {
-      return entity.slice(prefix.length, -suffix.length);
-    }
-  } else {
-    // Handle object format
-    const {
-      __fimidx_managed_permission_entity_clientTokenId,
-      ...originalEntity
-    } = entity;
-    return originalEntity;
-  }
-  return entity;
+  return params.entity;
 }
 
 export function getOriginalClientTokenPermissionAction(params: {
   action: IPermissionAction;
   clientTokenId: string;
 }): IPermissionAction {
-  const { action, clientTokenId } = params;
+  const { action } = params;
   if (isString(action)) {
-    const prefix = `__fimidx_managed_permission_action_`;
-    const suffix = `:${clientTokenId}`;
-    if (action.startsWith(prefix) && action.endsWith(suffix)) {
-      return action.slice(prefix.length, -suffix.length);
-    }
-  } else {
-    // Handle object format
-    const {
-      __fimidx_managed_permission_action_clientTokenId,
-      ...originalAction
-    } = action;
-    return originalAction;
+    return action;
   }
-  return action;
+  const {
+    __fimidx_managed_permission_action_clientTokenId,
+    ...originalAction
+  } = action;
+  return originalAction as IPermissionAction;
 }
 
 export function getOriginalClientTokenPermissionTarget(params: {
   target: IPermissionTarget;
   clientTokenId: string;
 }): IPermissionTarget {
-  const { target, clientTokenId } = params;
+  const { target } = params;
   if (isString(target)) {
-    const prefix = `__fimidx_managed_permission_target_`;
-    const suffix = `:${clientTokenId}`;
-    if (target.startsWith(prefix) && target.endsWith(suffix)) {
-      return target.slice(prefix.length, -suffix.length);
-    }
-  } else {
-    // Handle object format
-    const {
-      __fimidx_managed_permission_target_clientTokenId,
-      ...originalTarget
-    } = target;
-    return originalTarget;
+    return target;
   }
-  return target;
+  const {
+    __fimidx_managed_permission_target_clientTokenId,
+    ...originalTarget
+  } = target;
+  return originalTarget as IPermissionTarget;
 }
 
 export function getOriginalClientTokenPermission(params: {
@@ -152,7 +109,6 @@ export function getOriginalClientTokenPermission(params: {
   return {
     entity: getOriginalClientTokenPermissionEntity({
       entity: permission.entity,
-      clientTokenId,
     }),
     action: getOriginalClientTokenPermissionAction({
       action: permission.action,
@@ -162,6 +118,7 @@ export function getOriginalClientTokenPermission(params: {
       target: permission.target,
       clientTokenId,
     }),
+    granted: permission.granted !== false,
   };
 }
 
@@ -169,20 +126,37 @@ export async function addClientTokenPermissions(params: {
   by: string;
   byType: string;
   groupId: string;
-  appId: string;
-  permissions: IPermissionAtom[];
+  projectId: string;
+  permissions: IClientTokenPermissionInput[] | IPermissionAtom[];
   clientTokenId: string;
   storage?: IObjStorage;
 }) {
-  const { by, byType, groupId, appId, permissions, clientTokenId, storage } =
-    params;
+  const {
+    by,
+    byType,
+    groupId,
+    projectId,
+    permissions: inputPermissions,
+    clientTokenId,
+    storage,
+  } = params;
+  const permissionAtoms: IPermissionAtom[] = inputPermissions.map((p) =>
+    "entity" in p && p.entity !== undefined
+      ? (p as IPermissionAtom)
+      : {
+          entity: clientTokenId,
+          action: p.action,
+          target: p.target,
+          granted: (p as IClientTokenPermissionInput).granted ?? true,
+        }
+  );
   const { permissions: newPermissions } = await addPermissions({
     by,
     byType,
     groupId,
     args: {
-      appId,
-      permissions: permissions.map((permission) =>
+      projectId,
+      permissions: permissionAtoms.map((permission) =>
         getFimidxManagedClientTokenPermission({
           permission,
           clientTokenId,

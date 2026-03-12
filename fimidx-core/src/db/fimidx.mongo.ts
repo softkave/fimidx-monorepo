@@ -19,13 +19,21 @@ export function getMongoConnection() {
   return { connection, promise };
 }
 
+export async function closeMongoConnection() {
+  if (connection) {
+    await connection.close();
+    connection = null;
+    promise = null;
+  }
+}
+
 export const objSchema = new Schema<IObj>({
   createdAt: { type: Date, default: Date.now, index: true },
   updatedAt: { type: Date, default: Date.now, index: true },
   createdBy: { type: String, index: true },
   updatedBy: { type: String, index: true },
   groupId: { type: String, index: true },
-  appId: { type: String, index: true },
+  projectId: { type: String, index: true },
   createdByType: { type: String, index: true },
   id: { type: String, unique: true },
   tag: { type: String, index: true },

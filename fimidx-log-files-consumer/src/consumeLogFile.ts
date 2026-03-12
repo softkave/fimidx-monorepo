@@ -5,7 +5,7 @@ import {ILogFileConsumptionEntry} from './types.js';
 export interface IConsumeLogFileInput {
   path: string;
   metadata: Record<string, any>;
-  appId: string;
+  projectId: string;
   clientToken: string;
   serverURL?: string;
 }
@@ -18,7 +18,7 @@ export async function consumeLogFile(
   input: IConsumeLogFileInput,
   lastConsumptionEntry: ILogFileConsumptionEntry | undefined,
 ): Promise<IConsumeLogFileOutput> {
-  const {path, metadata, appId, clientToken, serverURL} = input;
+  const {path, metadata, projectId, clientToken, serverURL} = input;
 
   // Get file stats to check if file has changed
   const fileStats = await fs.stat(path);
@@ -41,7 +41,7 @@ export async function consumeLogFile(
 
   // Create a new Fimidx ConsoleLikeLogger client
   const logger = new FimidxConsoleLikeLogger({
-    appId,
+    projectId,
     clientToken,
     serverURL,
     metadata,

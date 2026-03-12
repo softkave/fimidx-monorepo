@@ -1,6 +1,6 @@
 import { FieldType } from "fimidx-core/common/indexer";
 import { ILogField } from "fimidx-core/definitions/log";
-import { objPartQueryItemOpSchema } from "fimidx-core/definitions/obj";
+import { objRecordQueryItemOpSchema } from "fimidx-core/definitions/obj";
 import { XIcon } from "lucide-react";
 import { useMemo } from "react";
 import { Button } from "../../ui/button";
@@ -17,7 +17,7 @@ import { InInput } from "./in-input";
 import { NumberOrDateInput } from "./number-or-date-input";
 import { IWorkingLogPartFilterItem } from "./types";
 
-const kOps = objPartQueryItemOpSchema.Values;
+const kOps = objRecordQueryItemOpSchema.Values;
 const kOpLabels: Record<keyof typeof kOps, string> = {
   [kOps.eq]: "Equal to",
   [kOps.neq]: "Not equal to",
@@ -49,17 +49,16 @@ const kValueTypeToAllowedOps: Record<FieldType, (keyof typeof kOps)[]> = {
 };
 
 export interface ILogsFilterItemProps {
-  orgId: string;
-  appId: string;
   item: IWorkingLogPartFilterItem;
   fields: ILogField[];
+  fieldsMap: Map<string, ILogField>;
   onChange: (value: IWorkingLogPartFilterItem) => void;
   onRemove: () => void;
   disabled?: boolean;
 }
 
 export function LogsFilterItem(props: ILogsFilterItemProps) {
-  const { fields, item, onChange, onRemove, appId, disabled } = props;
+  const { fields, fieldsMap, item, onChange, onRemove, disabled } = props;
 
   const field = useMemo(() => {
     return fields.find((f) => f.path === item.item.field);
@@ -74,9 +73,11 @@ export function LogsFilterItem(props: ILogsFilterItemProps) {
       <Select
         value={item.item.field}
         onValueChange={(value) => {
+          const selectedField = fieldsMap.get(value);
           onChange({
             ...item,
             item: { ...item.item, field: value },
+            field: selectedField,
           });
         }}
         disabled={disabled}

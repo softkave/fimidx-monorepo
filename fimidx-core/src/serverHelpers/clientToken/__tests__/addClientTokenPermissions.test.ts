@@ -7,6 +7,10 @@ import {
   expect,
   it,
 } from "vitest";
+import type {
+  AddClientTokenEndpointArgs,
+  AddClientTokenPermissionsEndpointArgs,
+} from "../../../definitions/clientToken.js";
 import { addClientToken } from "../addClientToken.js";
 import { addClientTokenPermissions } from "../addClientTokenPermissions.js";
 import { createTestSetup, makeTestData } from "./testUtils.js";
@@ -16,35 +20,38 @@ describe("addClientTokenPermissions integration", () => {
     testName: "addClientTokenPermissions",
   });
 
-  const { appId, groupId, by, byType } = testData;
+  const { projectId, groupId, by, byType } = testData;
 
-  function makeAddClientTokenArgs(overrides: any = {}) {
+  function makeAddClientTokenArgs(
+    overrides: Partial<AddClientTokenEndpointArgs> = {}
+  ): AddClientTokenEndpointArgs {
     const testData = makeTestData({ testName: "token" });
     return {
       groupId,
       name: testData.tokenName,
       description: "Test description",
-      appId,
+      projectId,
       permissions: [],
       ...overrides,
     };
   }
 
-  function makeAddClientTokenPermissionsArgs(overrides: any = {}) {
+  function makeAddClientTokenPermissionsArgs(
+    overrides: Partial<AddClientTokenPermissionsEndpointArgs> = {}
+  ): AddClientTokenPermissionsEndpointArgs {
     const testData = makeTestData({ testName: "permissions" });
     return {
-      by,
-      byType,
-      groupId,
-      appId,
+      query: {
+        groupId,
+        projectId,
+        clientTokenId: `token-${testData.tokenName}`,
+      },
       permissions: [
         {
-          entity: "user",
           action: "read",
           target: "document",
         },
       ],
-      clientTokenId: `token-${testData.tokenName}`,
       ...overrides,
     };
   }
@@ -79,50 +86,44 @@ describe("addClientTokenPermissions integration", () => {
 
     // Add permissions to the client token
     const permissionsArgs = makeAddClientTokenPermissionsArgs({
-      clientTokenId: token.clientToken.id,
+      query: { groupId, projectId, clientTokenId: token.clientToken.id },
       permissions: [
         {
-          entity: "user",
           action: "read",
           target: "document",
         },
         {
-          entity: "admin",
           action: "write",
           target: "settings",
         },
       ],
     });
 
-    const result = await addClientTokenPermissions(permissionsArgs);
+    const result = await addClientTokenPermissions({
+      ...permissionsArgs.query,
+      permissions: permissionsArgs.permissions,
+      by,
+      byType,
+      storage,
+    });
 
     expect(result.permissions).toBeDefined();
     expect(result.permissions).toHaveLength(2);
 
-    // Verify the permissions are properly managed with client token-specific metadata
     const permission1 = result.permissions[0];
     const permission2 = result.permissions[1];
 
-    expect(permission1.meta).toBeDefined();
-    expect(permission1.meta?.__fimidx_managed_clientTokenId).toBe(
-      token.clientToken.id
-    );
-    expect(permission1.meta?.__fimidx_managed_groupId).toBe(groupId);
+    expect(permission1.entity).toBe(token.clientToken.id);
+    expect(permission2.entity).toBe(token.clientToken.id);
 
-    expect(permission2.meta).toBeDefined();
-    expect(permission2.meta?.__fimidx_managed_clientTokenId).toBe(
-      token.clientToken.id
-    );
-    expect(permission2.meta?.__fimidx_managed_groupId).toBe(groupId);
+    // Entity is stored as client token id; action and target as-is
+    expect(permission1.entity).toBe(token.clientToken.id);
+    expect(permission1.action).toBe("read");
+    expect(permission1.target).toBe("document");
 
-    // Verify the entity, action, and target are properly managed
-    expect(permission1.entity).toContain("__fimidx_managed_permission_entity_");
-    expect(permission1.action).toContain("__fimidx_managed_permission_action_");
-    expect(permission1.target).toContain("__fimidx_managed_permission_target_");
-
-    expect(permission2.entity).toContain("__fimidx_managed_permission_entity_");
-    expect(permission2.action).toContain("__fimidx_managed_permission_action_");
-    expect(permission2.target).toContain("__fimidx_managed_permission_target_");
+    expect(permission2.entity).toBe(token.clientToken.id);
+    expect(permission2.action).toBe("write");
+    expect(permission2.target).toBe("settings");
   });
 
   it("handles empty permissions array", async () => {
@@ -137,11 +138,17 @@ describe("addClientTokenPermissions integration", () => {
 
     // Add empty permissions array
     const permissionsArgs = makeAddClientTokenPermissionsArgs({
-      clientTokenId: token.clientToken.id,
+      query: { groupId, projectId, clientTokenId: token.clientToken.id },
       permissions: [],
     });
 
-    const result = await addClientTokenPermissions(permissionsArgs);
+    const result = await addClientTokenPermissions({
+      ...permissionsArgs.query,
+      permissions: permissionsArgs.permissions,
+      by,
+      byType,
+      storage,
+    });
 
     expect(result.permissions).toBeDefined();
     expect(result.permissions).toHaveLength(0);
@@ -159,32 +166,29 @@ describe("addClientTokenPermissions integration", () => {
 
     // Add permissions with complex objects
     const permissionsArgs = makeAddClientTokenPermissionsArgs({
-      clientTokenId: token.clientToken.id,
+      query: { groupId, projectId, clientTokenId: token.clientToken.id },
       permissions: [
         {
-          entity: { type: "user", id: "123" },
           action: { operation: "read", scope: "full" },
           target: { resource: "document", id: "456" },
         },
       ],
     });
 
-    const result = await addClientTokenPermissions(permissionsArgs);
+    const result = await addClientTokenPermissions({
+      ...permissionsArgs.query,
+      permissions: permissionsArgs.permissions,
+      by,
+      byType,
+      storage,
+    });
 
     expect(result.permissions).toBeDefined();
     expect(result.permissions).toHaveLength(1);
 
     const permission = result.permissions[0];
-    expect(permission.meta).toBeDefined();
-    expect(permission.meta?.__fimidx_managed_clientTokenId).toBe(
-      token.clientToken.id
-    );
-    expect(permission.meta?.__fimidx_managed_groupId).toBe(groupId);
-
-    // Verify the complex objects are properly managed
-    expect(permission.entity).toHaveProperty(
-      "__fimidx_managed_permission_entity_clientTokenId"
-    );
+    // Entity is stored as client token id; object action/target keep clientTokenId key
+    expect(permission.entity).toBe(token.clientToken.id);
     expect(permission.action).toHaveProperty(
       "__fimidx_managed_permission_action_clientTokenId"
     );
@@ -213,39 +217,34 @@ describe("addClientTokenPermissions integration", () => {
 
     // Add different permissions to each token
     const permissions1Args = makeAddClientTokenPermissionsArgs({
-      clientTokenId: token1.clientToken.id,
-      permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-      ],
+      query: { groupId, projectId, clientTokenId: token1.clientToken.id },
+      permissions: [{ action: "read", target: "document" }],
     });
 
     const permissions2Args = makeAddClientTokenPermissionsArgs({
-      clientTokenId: token2.clientToken.id,
-      permissions: [
-        {
-          entity: "admin",
-          action: "write",
-          target: "settings",
-        },
-      ],
+      query: { groupId, projectId, clientTokenId: token2.clientToken.id },
+      permissions: [{ action: "write", target: "settings" }],
     });
 
-    const result1 = await addClientTokenPermissions(permissions1Args);
-    const result2 = await addClientTokenPermissions(permissions2Args);
+    const result1 = await addClientTokenPermissions({
+      ...permissions1Args.query,
+      permissions: permissions1Args.permissions,
+      by,
+      byType,
+      storage,
+    });
+    const result2 = await addClientTokenPermissions({
+      ...permissions2Args.query,
+      permissions: permissions2Args.permissions,
+      by,
+      byType,
+      storage,
+    });
 
     expect(result1.permissions).toHaveLength(1);
     expect(result2.permissions).toHaveLength(1);
 
-    // Verify permissions are isolated between tokens
-    expect(result1.permissions[0].meta?.__fimidx_managed_clientTokenId).toBe(
-      token1.clientToken.id
-    );
-    expect(result2.permissions[0].meta?.__fimidx_managed_clientTokenId).toBe(
-      token2.clientToken.id
-    );
+    expect(result1.permissions[0].entity).toBe(token1.clientToken.id);
+    expect(result2.permissions[0].entity).toBe(token2.clientToken.id);
   });
 });

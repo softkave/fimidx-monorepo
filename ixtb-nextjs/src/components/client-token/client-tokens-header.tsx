@@ -11,7 +11,7 @@ import { ClientTokenFormSheet } from "./client-token-form-sheet";
 export function ClientTokensHeader(props: {
   className?: string;
   orgId: string;
-  appId: string;
+  projectId: string;
   title?: string;
   description?: string;
 }) {
@@ -29,22 +29,22 @@ export function ClientTokensHeader(props: {
           }
 
           const orgId = clientToken.meta?.orgId;
-          const appId = clientToken.meta?.appId;
+          const projectId = clientToken.meta?.projectId;
 
-          if (!orgId || !appId) {
+          if (!orgId || !projectId) {
             return;
           }
 
           router.push(
-            kClientPaths.app.org.app.clientToken.single(
+            kClientPaths.app.org.project.clientToken.single(
               orgId,
-              appId,
+              projectId,
               clientToken.id
             )
           );
         }}
         orgId={props.orgId}
-        appId={props.appId}
+        projectId={props.projectId}
       />
       <ComponentListHeader
         title={props.title ?? "Client Tokens"}

@@ -11,14 +11,10 @@
     "type-check": "tsc --noEmit",
     "db:generate:sqlite": "env-cmd -f \".env.local\" npx drizzle-kit generate --config=fimidx.sqlite.drizzle.config.ts",
     "db:generate:postgres": "env-cmd -f \".env.local\" npx drizzle-kit generate --config=fimidx.postgres.drizzle.config.ts",
-    "db:migrate:sqlite:dev": "env-cmd -f \".env.local\" npx drizzle-kit migrate --config=fimidx.sqlite.drizzle.config.ts",
-    "db:migrate:sqlite:prod": "env-cmd -f \".env.prod\" npx drizzle-kit migrate --config=fimidx.sqlite.drizzle.config.ts",
-    "db:migrate:sqlite:test": "env-cmd -f \".env.test\" npx drizzle-kit migrate --config=fimidx.sqlite.drizzle.config.ts",
-    "db:migrate:postgres:dev": "env-cmd -f \".env.local\" npx drizzle-kit migrate --config=fimidx.postgres.drizzle.config.ts",
-    "db:migrate:postgres:prod": "env-cmd -f \".env.prod\" npx drizzle-kit migrate --config=fimidx.postgres.drizzle.config.ts",
-    "db:migrate:postgres:test": "env-cmd -f \".env.test\" npx drizzle-kit migrate --config=fimidx.postgres.drizzle.config.ts",
-    "mongo:dev": "npx run-rs --host localhost --portStart 27010 --dbpath ./local-mongo/dev --keep -v 7.0.0",
-    "mongo:test": "npx run-rs --host localhost --portStart 27015 --dbpath ./local-mongo/test"
+    "db:migrate:sqlite": "npx --yes -- softkave-forerunner run-env -- npx drizzle-kit migrate --config=fimidx.sqlite.drizzle.config.ts",
+    "db:migrate:postgres": "npx --yes -- softkave-forerunner run-env -- npx drizzle-kit migrate --config=fimidx.postgres.drizzle.config.ts",
+    "mongo:dev": "npx run-rs --host localhost --portStart 27010 --dbpath ./local-mongo/dev --keep -v 8.2.3",
+    "mongo:test": "npx run-rs --host localhost --portStart 27015 --dbpath ./local-mongo/test -v 8.2.3"
   },
   "type": "module",
   "exports": {
@@ -42,6 +38,11 @@
       "import": "./dist/common/*.js",
       "default": "./dist/common/*.js"
     },
+    "./vitest/*": {
+      "types": "./dist/vitest/*.d.ts",
+      "import": "./dist/vitest/*.js",
+      "default": "./dist/vitest/*.js"
+    },
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
@@ -55,8 +56,8 @@
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.40.1",
     "fimidara": "^1.39.0",
-    "fimidx": "^0.5.0",
-    "fimidx-winston-transport": "^0.3.2",
+    "fimidx": "workspace:*",
+    "fimidx-winston-transport": "workspace:*",
     "ioredis": "^5.4.2",
     "jsonwebtoken": "^9.0.2",
     "lodash-es": "^4.17.21",

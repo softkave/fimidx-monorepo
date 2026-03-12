@@ -7,7 +7,11 @@ import {
   expect,
   it,
 } from "vitest";
-import type { DeleteClientTokensEndpointArgs } from "../../../definitions/clientToken.js";
+import type {
+  AddClientTokenEndpointArgs,
+  DeleteClientTokensEndpointArgs,
+  IClientToken,
+} from "../../../definitions/clientToken.js";
 import { addClientToken } from "../addClientToken.js";
 import { deleteClientTokens } from "../deleteClientTokens.js";
 import { getClientTokens } from "../getClientTokens.js";
@@ -18,9 +22,11 @@ describe("deleteClientTokens integration", () => {
     testName: "deleteClientTokens",
   });
 
-  const { appId, groupId, by, byType } = testData;
+  const { projectId, groupId, by, byType } = testData;
 
-  function makeAddClientTokenArgs(overrides: any = {}) {
+  function makeAddClientTokenArgs(
+    overrides: Partial<AddClientTokenEndpointArgs> = {}
+  ): AddClientTokenEndpointArgs {
     const testData = makeTestData({ testName: "token" });
     return {
       groupId,
@@ -29,22 +35,23 @@ describe("deleteClientTokens integration", () => {
       meta: { key: "value" },
       permissions: [
         {
-          entity: "user",
           action: "read",
           target: "document",
         },
         {
-          entity: "admin",
           action: "write",
           target: "settings",
         },
       ],
-      appId: overrides.appId || appId,
+      projectId: overrides.projectId || projectId,
       ...overrides,
     };
   }
 
-  async function createTestToken(name: string, overrides: any = {}) {
+  async function createTestToken(
+    name: string,
+    overrides: Partial<AddClientTokenEndpointArgs> = {}
+  ): Promise<IClientToken> {
     const args = makeAddClientTokenArgs({
       name,
       ...overrides,
@@ -84,7 +91,8 @@ describe("deleteClientTokens integration", () => {
 
     const args: DeleteClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
+        groupId,
         name: {
           eq: "Token to Delete",
         },
@@ -103,7 +111,8 @@ describe("deleteClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
+          groupId,
         },
       },
       storage,
@@ -120,7 +129,8 @@ describe("deleteClientTokens integration", () => {
 
     const args: DeleteClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
+        groupId,
         meta: [
           {
             op: "eq",
@@ -143,7 +153,8 @@ describe("deleteClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
+          groupId,
         },
       },
       storage,
@@ -160,7 +171,8 @@ describe("deleteClientTokens integration", () => {
 
     const args: DeleteClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId,
+        groupId,
         meta: [
           {
             op: "eq",
@@ -183,7 +195,8 @@ describe("deleteClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
+          groupId,
         },
       },
       storage,
@@ -198,7 +211,8 @@ describe("deleteClientTokens integration", () => {
 
     const args: DeleteClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
+        groupId,
         id: {
           eq: token.id,
         },
@@ -217,7 +231,8 @@ describe("deleteClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
+          groupId,
         },
       },
       storage,
@@ -233,7 +248,8 @@ describe("deleteClientTokens integration", () => {
 
     const args: DeleteClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
+        groupId,
         createdBy: {
           eq: by,
         },
@@ -252,7 +268,8 @@ describe("deleteClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
+          groupId,
         },
       },
       storage,
@@ -275,7 +292,8 @@ describe("deleteClientTokens integration", () => {
 
     const args: DeleteClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
+        groupId,
         meta: [
           {
             op: "eq",
@@ -303,7 +321,8 @@ describe("deleteClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
+          groupId,
         },
       },
       storage,
@@ -317,20 +336,21 @@ describe("deleteClientTokens integration", () => {
     ).toBe(true);
   });
 
-  it("deletes tokens across different apps", async () => {
-    // Create tokens in different apps
-    await createTestToken("Token 1 - deleteClientTokens - across apps", {
-      appId: "app1 - deleteClientTokens - across apps",
+  it("deletes tokens across different projects", async () => {
+    // Create tokens in different projects
+    await createTestToken("Token 1 - deleteClientTokens - across projects", {
+      projectId: "project1 - deleteClientTokens - across projects",
     });
-    await createTestToken("Token 2 - deleteClientTokens - across apps", {
-      appId: "app2 - deleteClientTokens - across apps",
+    await createTestToken("Token 2 - deleteClientTokens - across projects", {
+      projectId: "project2 - deleteClientTokens - across projects",
     });
 
     const args: DeleteClientTokensEndpointArgs = {
       query: {
-        appId: "app1 - deleteClientTokens - across apps",
+        projectId: "project1 - deleteClientTokens - across projects",
+        groupId,
         name: {
-          eq: "Token 1 - deleteClientTokens - across apps",
+          eq: "Token 1 - deleteClientTokens - across projects",
         },
       },
       deleteMany: false,
@@ -343,11 +363,12 @@ describe("deleteClientTokens integration", () => {
       storage,
     });
 
-    // Verify only the token in app1 was deleted
+    // Verify only the token in project1 was deleted
     const result1 = await getClientTokens({
       args: {
         query: {
-          appId: "app1 - deleteClientTokens - across apps",
+          projectId: "project1 - deleteClientTokens - across projects",
+          groupId,
         },
       },
       storage,
@@ -356,7 +377,8 @@ describe("deleteClientTokens integration", () => {
     const result2 = await getClientTokens({
       args: {
         query: {
-          appId: "app2 - deleteClientTokens - across apps",
+          projectId: "project2 - deleteClientTokens - across projects",
+          groupId,
         },
       },
       storage,
@@ -374,7 +396,8 @@ describe("deleteClientTokens integration", () => {
 
     const args: DeleteClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
+        groupId,
         name: {
           in: ["Admin Token 1", "Admin Token 2"],
         },
@@ -393,7 +416,8 @@ describe("deleteClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
+          groupId,
         },
       },
       storage,
@@ -401,80 +425,6 @@ describe("deleteClientTokens integration", () => {
 
     expect(result.clientTokens).toHaveLength(1);
     expect(result.clientTokens[0].name).toBe("User Token 1");
-  });
-
-  it("deletes tokens by permissions", async () => {
-    // Create tokens with different permissions
-    await createTestToken("Token 1", {
-      permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-        {
-          entity: "admin",
-          action: "write",
-          target: "settings",
-        },
-      ],
-    });
-    await createTestToken("Token 2", {
-      permissions: [
-        {
-          entity: "user",
-          action: "read",
-          target: "document",
-        },
-      ],
-    });
-    await createTestToken("Token 3", {
-      permissions: [
-        {
-          entity: "admin",
-          action: "delete",
-          target: "document",
-        },
-      ],
-    });
-
-    const args: DeleteClientTokensEndpointArgs = {
-      query: {
-        appId: appId,
-        permissionAction: {
-          in: ["read", "write"],
-        },
-      },
-      deleteMany: true,
-    };
-
-    await deleteClientTokens({
-      ...args,
-      by: by,
-      byType: byType,
-      storage,
-    });
-
-    // Verify tokens with read/write permissions were deleted
-    const result = await getClientTokens({
-      args: {
-        query: {
-          appId: appId,
-        },
-        includePermissions: true,
-      },
-      storage,
-    });
-
-    expect(result.clientTokens).toHaveLength(1);
-    // Check that the remaining token has only the delete permission
-    expect(result.clientTokens[0].permissions).toEqual([
-      {
-        entity: "admin",
-        action: "delete",
-        target: "document",
-      },
-    ]);
   });
 
   it("deletes tokens by date range", async () => {
@@ -488,7 +438,8 @@ describe("deleteClientTokens integration", () => {
 
     const args: DeleteClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
+        groupId,
         createdAt: {
           eq: targetTime.toISOString(),
         },
@@ -507,7 +458,8 @@ describe("deleteClientTokens integration", () => {
     const result = await getClientTokens({
       args: {
         query: {
-          appId: appId,
+          projectId: projectId,
+          groupId,
         },
       },
       storage,
@@ -520,7 +472,8 @@ describe("deleteClientTokens integration", () => {
   it("handles deletion of non-existent tokens gracefully", async () => {
     const args: DeleteClientTokensEndpointArgs = {
       query: {
-        appId: appId,
+        projectId: projectId,
+        groupId,
         name: {
           eq: "Non-existent Token",
         },

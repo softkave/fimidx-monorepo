@@ -1,4 +1,4 @@
-import { AppPage } from "../internal/app-page";
+import { ProjectPage } from "../internal/project-page";
 import { OrgTab } from "./org";
 import { OrgContainer } from "./org-container";
 
@@ -9,8 +9,8 @@ export interface IOrgPageProps {
 
 export function OrgPage(props: IOrgPageProps) {
   return (
-    <AppPage>
+    <ProjectPage>
       <OrgContainer orgId={props.orgId} defaultTab={props.defaultTab} />
-    </AppPage>
+    </ProjectPage>
   );
 }

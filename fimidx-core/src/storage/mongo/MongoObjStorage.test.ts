@@ -45,7 +45,7 @@ describe("MongoObjStorage (integration)", () => {
       createdByType: "user",
       updatedBy: "tester",
       updatedByType: "user",
-      appId: "test-app",
+      projectId: "test-project",
       groupId: "test-group",
       tag: "test-tag",
       objRecord: makeInputObjRecord(),
@@ -72,10 +72,10 @@ describe("MongoObjStorage (integration)", () => {
   it("should read objects", async () => {
     const obj = makeObjFields();
     await objModel.create(obj);
-    assert.ok(obj.appId);
+    assert.ok(obj.projectId);
     assert.ok(obj.tag);
     const result = await storage.read({
-      query: { appId: obj.appId },
+      query: { metaQuery: { projectId: { eq: obj.projectId } } },
       tag: obj.tag,
       limit: 10,
     });
@@ -86,11 +86,11 @@ describe("MongoObjStorage (integration)", () => {
   it("should update objects", async () => {
     const obj = makeObjFields();
     await objModel.create(obj);
-    assert.ok(obj.appId);
+    assert.ok(obj.projectId);
     assert.ok(obj.tag);
     const newName = "Updated Name";
     const result = await storage.update({
-      query: { appId: obj.appId },
+      query: { metaQuery: { projectId: { eq: obj.projectId } } },
       tag: obj.tag,
       update: { name: newName },
       by: "updater",
@@ -107,10 +107,10 @@ describe("MongoObjStorage (integration)", () => {
   it("should soft-delete objects", async () => {
     const obj = makeObjFields();
     await objModel.create(obj);
-    assert.ok(obj.appId);
+    assert.ok(obj.projectId);
     assert.ok(obj.tag);
     const result = await storage.delete({
-      query: { appId: obj.appId },
+      query: { metaQuery: { projectId: { eq: obj.projectId } } },
       tag: obj.tag,
       deletedBy: "deleter",
       deletedByType: "user",
@@ -123,6 +123,60 @@ describe("MongoObjStorage (integration)", () => {
     expect(deleted.deletedBy ?? "").toBe("deleter");
   });
 
+  it("should bulk delete using obj-level OR query", async () => {
+    const tag = "bulk-delete-or-tag";
+    const projectId = "bulk-delete-or-project";
+
+    const objA1 = makeObjFields({
+      objRecord: { type: "A" },
+      tag,
+      projectId,
+    });
+    const objA2 = makeObjFields({
+      objRecord: { type: "A", extra: 1 },
+      tag,
+      projectId,
+    });
+    const objB1 = makeObjFields({
+      objRecord: { type: "B" },
+      tag,
+      projectId,
+    });
+    const controlObj = makeObjFields({
+      objRecord: { type: "C" },
+      tag,
+      projectId,
+    });
+
+    await objModel.insertMany([objA1, objA2, objB1, controlObj]);
+
+    const result = await storage.bulkDelete({
+      query: {
+        or: [
+          {
+            metaQuery: { projectId: { eq: projectId } },
+            recordQuery: [{ op: "eq", field: "type", value: "A" }],
+          },
+          {
+            metaQuery: { projectId: { eq: projectId } },
+            recordQuery: [{ op: "eq", field: "type", value: "B" }],
+          },
+        ],
+      },
+      tag,
+      deletedBy: "bulk-deleter",
+      deletedByType: "user",
+      deleteMany: true,
+      hardDelete: true,
+    });
+
+    expect(result.deletedCount).toBe(3);
+
+    const remaining = await objModel.find({ tag }).lean();
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].objRecord?.type).toBe("C");
+  });
+
   it("should bulk upsert objects", async () => {
     const items = [
       makeInputObjRecord({ name: "Bulk1" }),
@@ -133,7 +187,7 @@ describe("MongoObjStorage (integration)", () => {
       conflictOnKeys: ["name"],
       onConflict: "replace" as const,
       tag: "bulk-tag",
-      appId: "bulk-app",
+      projectId: "bulk-project",
       groupId: "bulk-group",
       createdBy: "bulk-tester",
       createdByType: "user",
@@ -154,7 +208,7 @@ describe("MongoObjStorage (integration)", () => {
       conflictOnKeys: ["name"],
       onConflict: "replace" as const,
       tag: "conflict-tag",
-      appId: "conflict-app",
+      projectId: "conflict-project",
       groupId: "conflict-group",
       createdBy: "conflict-tester",
       createdByType: "user",
@@ -176,7 +230,7 @@ describe("MongoObjStorage (integration)", () => {
       conflictOnKeys: ["name"],
       onConflict: "replace" as const,
       tag: "fail-tag",
-      appId: "fail-app",
+      projectId: "fail-project",
       groupId: "fail-group",
       createdBy: "fail-tester",
       createdByType: "user",
@@ -194,10 +248,10 @@ describe("MongoObjStorage (integration)", () => {
   it("should merge fields with merge strategy", async () => {
     const obj = makeObjFields({ objRecord: { a: 1, b: 2 } });
     await objModel.create(obj);
-    assert.ok(obj.appId);
+    assert.ok(obj.projectId);
     assert.ok(obj.tag);
     await storage.update({
-      query: { appId: obj.appId },
+      query: { metaQuery: { projectId: { eq: obj.projectId } } },
       tag: obj.tag,
       update: { b: 3, c: 4 },
       by: "merger",
@@ -215,10 +269,10 @@ describe("MongoObjStorage (integration)", () => {
   it("should merge arrays with mergeButReplaceArrays", async () => {
     const obj = makeObjFields({ objRecord: { arr: [1, 2], x: 1 } });
     await objModel.create(obj);
-    assert.ok(obj.appId);
+    assert.ok(obj.projectId);
     assert.ok(obj.tag);
     await storage.update({
-      query: { appId: obj.appId },
+      query: { metaQuery: { projectId: { eq: obj.projectId } } },
       tag: obj.tag,
       update: { arr: [3, 4] },
       by: "merger",
@@ -235,10 +289,10 @@ describe("MongoObjStorage (integration)", () => {
   it("should merge arrays with mergeButConcatArrays", async () => {
     const obj = makeObjFields({ objRecord: { arr: [1, 2] } });
     await objModel.create(obj);
-    assert.ok(obj.appId);
+    assert.ok(obj.projectId);
     assert.ok(obj.tag);
     await storage.update({
-      query: { appId: obj.appId },
+      query: { metaQuery: { projectId: { eq: obj.projectId } } },
       tag: obj.tag,
       update: { arr: [3, 4] },
       by: "merger",
@@ -254,10 +308,10 @@ describe("MongoObjStorage (integration)", () => {
   it("should merge arrays with mergeButKeepArrays", async () => {
     const obj = makeObjFields({ objRecord: { arr: [1, 2] } });
     await objModel.create(obj);
-    assert.ok(obj.appId);
+    assert.ok(obj.projectId);
     assert.ok(obj.tag);
     await storage.update({
-      query: { appId: obj.appId },
+      query: { metaQuery: { projectId: { eq: obj.projectId } } },
       tag: obj.tag,
       update: { arr: [3, 4] },
       by: "merger",
@@ -279,7 +333,7 @@ describe("MongoObjStorage (integration)", () => {
       conflictOnKeys: ["name"],
       onConflict: "replace" as const,
       tag: "batch-tag",
-      appId: "batch-app",
+      projectId: "batch-project",
       groupId: "batch-group",
       createdBy: "batch-tester",
       createdByType: "user",
@@ -297,13 +351,13 @@ describe("MongoObjStorage (integration)", () => {
     const objs = Array.from({ length: 5 }, (_, i) =>
       makeObjFields({
         objRecord: { name: `BulkUpd${i}` },
-        appId: "bulkupd-app",
+        projectId: "bulkupd-project",
         tag: "bulkupd-tag",
       })
     );
     await objModel.insertMany(objs);
     const result = await storage.bulkUpdate({
-      query: { appId: "bulkupd-app" },
+      query: { metaQuery: { projectId: { eq: "bulkupd-project" } } },
       tag: "bulkupd-tag",
       update: { updated: true },
       by: "batch-updater",
@@ -312,7 +366,7 @@ describe("MongoObjStorage (integration)", () => {
     });
     expect(result.updatedCount).toBe(5);
     const updatedObjs = await objModel
-      .find({ appId: "bulkupd-app", tag: "bulkupd-tag" })
+      .find({ projectId: "bulkupd-project", tag: "bulkupd-tag" })
       .lean();
     updatedObjs.forEach((obj) =>
       expect(obj.objRecord?.updated ?? false).toBe(true)
@@ -326,7 +380,7 @@ describe("MongoObjStorage (integration)", () => {
     try {
       await storage.withTransaction(async (txStorage) => {
         await txStorage.update({
-          query: { appId: String(obj.appId) },
+          query: { metaQuery: { projectId: { eq: String(obj.projectId) } } },
           tag: String(obj.tag),
           update: { name: "TxFail" },
           by: "tx",
@@ -347,7 +401,7 @@ describe("MongoObjStorage (integration)", () => {
     await storage.create({ objs: [obj as IObj] });
     await storage.withTransaction(async (txStorage) => {
       await txStorage.update({
-        query: { appId: String(obj.appId) },
+        query: { metaQuery: { projectId: { eq: String(obj.projectId) } } },
         tag: String(obj.tag),
         update: { name: "TxSuccess" },
         by: "tx",
@@ -363,20 +417,18 @@ describe("MongoObjStorage (integration)", () => {
       const obj1 = makeObjFields({
         objRecord: { user: { name: "john", age: 30 } },
         tag: "nested-tag",
-        appId: "nested-app",
+        projectId: "nested-project",
       });
       const obj2 = makeObjFields({
         objRecord: { user: { name: "jane", age: 25 } },
         tag: "nested-tag",
-        appId: "nested-app",
+        projectId: "nested-project",
       });
       await objModel.insertMany([obj1, obj2]);
       const result = await storage.read({
         query: {
-          appId: "nested-app",
-          partQuery: {
-            and: [{ op: "eq", field: "user.name", value: "john" }],
-          },
+          metaQuery: { projectId: { eq: "nested-project" } },
+          recordQuery: [{ op: "eq", field: "user.name", value: "john" }],
         },
         tag: "nested-tag",
       });
@@ -388,26 +440,24 @@ describe("MongoObjStorage (integration)", () => {
       const obj1 = makeObjFields({
         objRecord: { metadata: { tags: ["important", "urgent"] } },
         tag: "array-tag",
-        appId: "array-app",
+        projectId: "array-project",
       });
       const obj2 = makeObjFields({
         objRecord: { metadata: { tags: ["other"] } },
         tag: "array-tag",
-        appId: "array-app",
+        projectId: "array-project",
       });
       await objModel.insertMany([obj1, obj2]);
       const result = await storage.read({
         query: {
-          appId: "array-app",
-          partQuery: {
-            and: [
-              {
-                op: "in",
-                field: "metadata.tags",
-                value: ["important", "urgent"],
-              },
-            ],
-          },
+          metaQuery: { projectId: { eq: "array-project" } },
+          recordQuery: [
+            {
+              op: "in",
+              field: "metadata.tags",
+              value: ["important", "urgent"],
+            },
+          ],
         },
         tag: "array-tag",
       });
@@ -419,20 +469,20 @@ describe("MongoObjStorage (integration)", () => {
       const obj1 = makeObjFields({
         objRecord: { settings: { enabled: true } },
         tag: "exists-tag",
-        appId: "exists-app",
+        projectId: "exists-project",
       });
       const obj2 = makeObjFields({
         objRecord: { settings: {} },
         tag: "exists-tag",
-        appId: "exists-app",
+        projectId: "exists-project",
       });
       await objModel.insertMany([obj1, obj2]);
       const result = await storage.read({
         query: {
-          appId: "exists-app",
-          partQuery: {
-            and: [{ op: "exists", field: "settings.enabled", value: true }],
-          },
+          metaQuery: { projectId: { eq: "exists-project" } },
+          recordQuery: [
+            { op: "exists", field: "settings.enabled", value: true },
+          ],
         },
         tag: "exists-tag",
       });
@@ -444,20 +494,18 @@ describe("MongoObjStorage (integration)", () => {
       const obj1 = makeObjFields({
         objRecord: { stats: { views: 1500 } },
         tag: "num-tag",
-        appId: "num-app",
+        projectId: "num-project",
       });
       const obj2 = makeObjFields({
         objRecord: { stats: { views: 500 } },
         tag: "num-tag",
-        appId: "num-app",
+        projectId: "num-project",
       });
       await objModel.insertMany([obj1, obj2]);
       const result = await storage.read({
         query: {
-          appId: "num-app",
-          partQuery: {
-            and: [{ op: "gte", field: "stats.views", value: 1000 }],
-          },
+          metaQuery: { projectId: { eq: "num-project" } },
+          recordQuery: [{ op: "gte", field: "stats.views", value: 1000 }],
         },
         tag: "num-tag",
       });
@@ -469,20 +517,20 @@ describe("MongoObjStorage (integration)", () => {
       const obj1 = makeObjFields({
         objRecord: { created: 2022 },
         tag: "between-tag",
-        appId: "between-app",
+        projectId: "between-project",
       });
       const obj2 = makeObjFields({
         objRecord: { created: 2019 },
         tag: "between-tag",
-        appId: "between-app",
+        projectId: "between-project",
       });
       await objModel.insertMany([obj1, obj2]);
       const result = await storage.read({
         query: {
-          appId: "between-app",
-          partQuery: {
-            and: [{ op: "between", field: "created", value: [2020, 2025] }],
-          },
+          metaQuery: { projectId: { eq: "between-project" } },
+          recordQuery: [
+            { op: "between", field: "created", value: [2020, 2025] },
+          ],
         },
         tag: "between-tag",
       });
@@ -490,40 +538,46 @@ describe("MongoObjStorage (integration)", () => {
       expect(result.objs[0].objRecord.created).toBe(2022);
     });
 
-    it("should support logical AND/OR", async () => {
+    it("should support logical OR at obj-level", async () => {
       const obj1 = makeObjFields({
         objRecord: { status: "active", score: 200 },
         tag: "logic-tag",
-        appId: "logic-app",
+        projectId: "logic-project",
       });
       const obj2 = makeObjFields({
         objRecord: { status: "inactive", score: 50 },
         tag: "logic-tag",
-        appId: "logic-app",
+        projectId: "logic-project",
       });
       const obj3 = makeObjFields({
         objRecord: { status: "active", score: 80 },
         tag: "logic-tag",
-        appId: "logic-app",
+        projectId: "logic-project",
       });
       await objModel.insertMany([obj1, obj2, obj3]);
       const result = await storage.read({
         query: {
-          appId: "logic-app",
-          partQuery: {
-            and: [
-              { op: "eq", field: "status", value: "active" },
-              { op: "gt", field: "score", value: 100 },
-            ],
-            or: [
-              { op: "eq", field: "status", value: "inactive" },
-              { op: "lt", field: "score", value: 100 },
-            ],
-          },
+          or: [
+            {
+              metaQuery: { projectId: { eq: "logic-project" } },
+              recordQuery: [
+                { op: "eq", field: "status", value: "active" },
+                { op: "gt", field: "score", value: 100 },
+              ],
+            },
+            {
+              metaQuery: { projectId: { eq: "logic-project" } },
+              recordQuery: [{ op: "eq", field: "status", value: "inactive" }],
+            },
+            {
+              metaQuery: { projectId: { eq: "logic-project" } },
+              recordQuery: [{ op: "lt", field: "score", value: 100 }],
+            },
+          ],
         },
         tag: "logic-tag",
       });
-      // Should match obj1 (AND) and obj2/obj3 (OR)
+      // Should match obj1 (leaf A) and obj2/obj3 (leaf B/C)
       const ids = result.objs.map((o) => o.id);
       expect(ids).toContain(obj1.id);
       expect(ids).toContain(obj2.id);
@@ -536,19 +590,19 @@ describe("MongoObjStorage (integration)", () => {
         createdAt: now,
         updatedBy: "user1",
         tag: "meta-tag",
-        appId: "meta-app",
+        projectId: "meta-project",
       });
       const obj2 = makeObjFields({
         createdAt: new Date(now.getTime() - 100000000),
         updatedBy: "user2",
         tag: "meta-tag",
-        appId: "meta-app",
+        projectId: "meta-project",
       });
       await objModel.insertMany([obj1, obj2]);
       const result = await storage.read({
         query: {
-          appId: "meta-app",
           metaQuery: {
+            projectId: { eq: "meta-project" },
             createdAt: {
               gte: new Date(now.getTime() - 1000 * 60 * 60 * 24).toISOString(),
             },
@@ -568,12 +622,12 @@ describe("MongoObjStorage (integration)", () => {
       const obj1 = makeObjFields({
         updatedAt: now,
         tag: "meta-updated-tag",
-        appId: "meta-updated-app",
+        projectId: "meta-updated-project",
       });
       const obj2 = makeObjFields({
         updatedAt: new Date(now.getTime() - 1000 * 60 * 60 * 48), // 2 days ago
         tag: "meta-updated-tag",
-        appId: "meta-updated-app",
+        projectId: "meta-updated-project",
       });
       await objModel.insertMany([obj1, obj2]);
 
@@ -596,18 +650,18 @@ describe("MongoObjStorage (integration)", () => {
       const obj1 = makeObjFields({
         shouldIndex: true,
         tag: "top-level-tag",
-        appId: "top-level-app",
+        projectId: "top-level-project",
       });
       const obj2 = makeObjFields({
         shouldIndex: false,
         tag: "top-level-tag",
-        appId: "top-level-app",
+        projectId: "top-level-project",
       });
       await objModel.insertMany([obj1, obj2]);
 
       const result = await storage.read({
         query: {
-          topLevelFields: {
+          metaQuery: {
             shouldIndex: true,
           },
         },
@@ -628,7 +682,7 @@ describe("MongoObjStorage (integration)", () => {
         shouldIndex: true,
         updatedAt: now,
         tag: "combined-tag",
-        appId: "combined-app",
+        projectId: "combined-project",
       });
 
       // Object 2: shouldIndex=false, updatedAt=now (should not match - wrong shouldIndex)
@@ -636,7 +690,7 @@ describe("MongoObjStorage (integration)", () => {
         shouldIndex: false,
         updatedAt: now,
         tag: "combined-tag",
-        appId: "combined-app",
+        projectId: "combined-project",
       });
 
       // Object 3: shouldIndex=true, updatedAt=2 days ago (should not match - wrong updatedAt)
@@ -644,7 +698,7 @@ describe("MongoObjStorage (integration)", () => {
         shouldIndex: true,
         updatedAt: new Date(now.getTime() - 1000 * 60 * 60 * 48),
         tag: "combined-tag",
-        appId: "combined-app",
+        projectId: "combined-project",
       });
 
       // Object 4: shouldIndex=false, updatedAt=2 days ago (should not match - both wrong)
@@ -652,7 +706,7 @@ describe("MongoObjStorage (integration)", () => {
         shouldIndex: false,
         updatedAt: new Date(now.getTime() - 1000 * 60 * 60 * 48),
         tag: "combined-tag",
-        appId: "combined-app",
+        projectId: "combined-project",
       });
 
       await objModel.insertMany([obj1, obj2, obj3, obj4]);
@@ -663,8 +717,6 @@ describe("MongoObjStorage (integration)", () => {
             updatedAt: {
               gte: cutoffDate.getTime(),
             },
-          },
-          topLevelFields: {
             shouldIndex: true,
           },
         },
@@ -685,22 +737,22 @@ describe("MongoObjStorage (integration)", () => {
       const obj1 = makeObjFields({
         objRecord: { name: "Charlie" },
         tag: "sort-string-tag",
-        appId: "sort-string-app",
+        projectId: "sort-string-project",
       });
       const obj2 = makeObjFields({
         objRecord: { name: "Alice" },
         tag: "sort-string-tag",
-        appId: "sort-string-app",
+        projectId: "sort-string-project",
       });
       const obj3 = makeObjFields({
         objRecord: { name: "Bob" },
         tag: "sort-string-tag",
-        appId: "sort-string-app",
+        projectId: "sort-string-project",
       });
       await objModel.insertMany([obj1, obj2, obj3]);
 
       const result = await storage.read({
-        query: { appId: "sort-string-app" },
+        query: { metaQuery: { projectId: { eq: "sort-string-project" } } },
         tag: "sort-string-tag",
         sort: [{ field: "objRecord.name", direction: "asc" }],
         fields: new Map([
@@ -714,7 +766,7 @@ describe("MongoObjStorage (integration)", () => {
               isArrayCompressed: false,
               createdAt: new Date(),
               updatedAt: new Date(),
-              appId: "sort-string-app",
+              projectId: "sort-string-project",
               groupId: "test-group",
               tag: "sort-string-tag",
             },
@@ -732,22 +784,22 @@ describe("MongoObjStorage (integration)", () => {
       const obj1 = makeObjFields({
         objRecord: { score: 300 },
         tag: "sort-number-tag",
-        appId: "sort-number-app",
+        projectId: "sort-number-project",
       });
       const obj2 = makeObjFields({
         objRecord: { score: 100 },
         tag: "sort-number-tag",
-        appId: "sort-number-app",
+        projectId: "sort-number-project",
       });
       const obj3 = makeObjFields({
         objRecord: { score: 200 },
         tag: "sort-number-tag",
-        appId: "sort-number-app",
+        projectId: "sort-number-project",
       });
       await objModel.insertMany([obj1, obj2, obj3]);
 
       const result = await storage.read({
-        query: { appId: "sort-number-app" },
+        query: { metaQuery: { projectId: { eq: "sort-number-project" } } },
         tag: "sort-number-tag",
         sort: [{ field: "objRecord.score", direction: "asc" }],
         fields: new Map([
@@ -761,7 +813,7 @@ describe("MongoObjStorage (integration)", () => {
               isArrayCompressed: false,
               createdAt: new Date(),
               updatedAt: new Date(),
-              appId: "sort-number-app",
+              projectId: "sort-number-project",
               groupId: "test-group",
               tag: "sort-number-tag",
             },
@@ -779,22 +831,22 @@ describe("MongoObjStorage (integration)", () => {
       const obj1 = makeObjFields({
         objRecord: { user: { age: 30 } },
         tag: "sort-nested-tag",
-        appId: "sort-nested-app",
+        projectId: "sort-nested-project",
       });
       const obj2 = makeObjFields({
         objRecord: { user: { age: 25 } },
         tag: "sort-nested-tag",
-        appId: "sort-nested-app",
+        projectId: "sort-nested-project",
       });
       const obj3 = makeObjFields({
         objRecord: { user: { age: 35 } },
         tag: "sort-nested-tag",
-        appId: "sort-nested-app",
+        projectId: "sort-nested-project",
       });
       await objModel.insertMany([obj1, obj2, obj3]);
 
       const result = await storage.read({
-        query: { appId: "sort-nested-app" },
+        query: { metaQuery: { projectId: { eq: "sort-nested-project" } } },
         tag: "sort-nested-tag",
         sort: [{ field: "objRecord.user.age", direction: "asc" }],
         fields: new Map([
@@ -808,7 +860,7 @@ describe("MongoObjStorage (integration)", () => {
               isArrayCompressed: false,
               createdAt: new Date(),
               updatedAt: new Date(),
-              appId: "sort-nested-app",
+              projectId: "sort-nested-project",
               groupId: "test-group",
               tag: "sort-nested-tag",
             },
@@ -826,22 +878,22 @@ describe("MongoObjStorage (integration)", () => {
       const obj1 = makeObjFields({
         objRecord: { stats: { views: { daily: 1500 } } },
         tag: "sort-deep-tag",
-        appId: "sort-deep-app",
+        projectId: "sort-deep-project",
       });
       const obj2 = makeObjFields({
         objRecord: { stats: { views: { daily: 500 } } },
         tag: "sort-deep-tag",
-        appId: "sort-deep-app",
+        projectId: "sort-deep-project",
       });
       const obj3 = makeObjFields({
         objRecord: { stats: { views: { daily: 1000 } } },
         tag: "sort-deep-tag",
-        appId: "sort-deep-app",
+        projectId: "sort-deep-project",
       });
       await objModel.insertMany([obj1, obj2, obj3]);
 
       const result = await storage.read({
-        query: { appId: "sort-deep-app" },
+        query: { metaQuery: { projectId: { eq: "sort-deep-project" } } },
         tag: "sort-deep-tag",
         sort: [{ field: "objRecord.stats.views.daily", direction: "asc" }],
         fields: new Map([
@@ -855,7 +907,7 @@ describe("MongoObjStorage (integration)", () => {
               isArrayCompressed: false,
               createdAt: new Date(),
               updatedAt: new Date(),
-              appId: "sort-deep-app",
+              projectId: "sort-deep-project",
               groupId: "test-group",
               tag: "sort-deep-tag",
             },
@@ -873,27 +925,27 @@ describe("MongoObjStorage (integration)", () => {
       const obj1 = makeObjFields({
         objRecord: { category: "A", priority: 1 },
         tag: "sort-multi-tag",
-        appId: "sort-multi-app",
+        projectId: "sort-multi-project",
       });
       const obj2 = makeObjFields({
         objRecord: { category: "A", priority: 2 },
         tag: "sort-multi-tag",
-        appId: "sort-multi-app",
+        projectId: "sort-multi-project",
       });
       const obj3 = makeObjFields({
         objRecord: { category: "B", priority: 1 },
         tag: "sort-multi-tag",
-        appId: "sort-multi-app",
+        projectId: "sort-multi-project",
       });
       const obj4 = makeObjFields({
         objRecord: { category: "B", priority: 2 },
         tag: "sort-multi-tag",
-        appId: "sort-multi-app",
+        projectId: "sort-multi-project",
       });
       await objModel.insertMany([obj1, obj2, obj3, obj4]);
 
       const result = await storage.read({
-        query: { appId: "sort-multi-app" },
+        query: { metaQuery: { projectId: { eq: "sort-multi-project" } } },
         tag: "sort-multi-tag",
         sort: [
           { field: "objRecord.category", direction: "asc" },
@@ -910,7 +962,7 @@ describe("MongoObjStorage (integration)", () => {
               isArrayCompressed: false,
               createdAt: new Date(),
               updatedAt: new Date(),
-              appId: "sort-multi-app",
+              projectId: "sort-multi-project",
               groupId: "test-group",
               tag: "sort-multi-tag",
             },
@@ -925,7 +977,7 @@ describe("MongoObjStorage (integration)", () => {
               isArrayCompressed: false,
               createdAt: new Date(),
               updatedAt: new Date(),
-              appId: "sort-multi-app",
+              projectId: "sort-multi-project",
               groupId: "test-group",
               tag: "sort-multi-tag",
             },
@@ -951,24 +1003,24 @@ describe("MongoObjStorage (integration)", () => {
         createdAt: new Date(now.getTime() + 1000),
         updatedAt: new Date(now.getTime() + 2000),
         tag: "sort-top-level-tag",
-        appId: "sort-top-level-app",
+        projectId: "sort-top-level-project",
       });
       const obj2 = makeObjFields({
         createdAt: now,
         updatedAt: new Date(now.getTime() + 1000),
         tag: "sort-top-level-tag",
-        appId: "sort-top-level-app",
+        projectId: "sort-top-level-project",
       });
       const obj3 = makeObjFields({
         createdAt: new Date(now.getTime() + 2000),
         updatedAt: now,
         tag: "sort-top-level-tag",
-        appId: "sort-top-level-app",
+        projectId: "sort-top-level-project",
       });
       await objModel.insertMany([obj1, obj2, obj3]);
 
       const result = await storage.read({
-        query: { appId: "sort-top-level-app" },
+        query: { metaQuery: { projectId: { eq: "sort-top-level-project" } } },
         tag: "sort-top-level-tag",
         sort: [
           { field: "createdAt", direction: "asc" },
@@ -987,22 +1039,22 @@ describe("MongoObjStorage (integration)", () => {
       const obj1 = makeObjFields({
         objRecord: { name: "Charlie", score: 300 },
         tag: "sort-skip-tag",
-        appId: "sort-skip-app",
+        projectId: "sort-skip-project",
       });
       const obj2 = makeObjFields({
         objRecord: { name: "Alice", score: 100 },
         tag: "sort-skip-tag",
-        appId: "sort-skip-app",
+        projectId: "sort-skip-project",
       });
       const obj3 = makeObjFields({
         objRecord: { name: "Bob", score: 200 },
         tag: "sort-skip-tag",
-        appId: "sort-skip-app",
+        projectId: "sort-skip-project",
       });
       await objModel.insertMany([obj1, obj2, obj3]);
 
       const result = await storage.read({
-        query: { appId: "sort-skip-app" },
+        query: { metaQuery: { projectId: { eq: "sort-skip-project" } } },
         tag: "sort-skip-tag",
         sort: [
           { field: "objRecord.name", direction: "asc" }, // Should be skipped (not in fields)
@@ -1019,7 +1071,7 @@ describe("MongoObjStorage (integration)", () => {
               isArrayCompressed: false,
               createdAt: new Date(),
               updatedAt: new Date(),
-              appId: "sort-skip-app",
+              projectId: "sort-skip-project",
               groupId: "test-group",
               tag: "sort-skip-tag",
             },
@@ -1046,7 +1098,7 @@ describe("MongoObjStorage (integration)", () => {
           },
         },
         tag: "sort-mixed-tag",
-        appId: "sort-mixed-app",
+        projectId: "sort-mixed-project",
       });
       const obj2 = makeObjFields({
         objRecord: {
@@ -1058,7 +1110,7 @@ describe("MongoObjStorage (integration)", () => {
           },
         },
         tag: "sort-mixed-tag",
-        appId: "sort-mixed-app",
+        projectId: "sort-mixed-project",
       });
       const obj3 = makeObjFields({
         objRecord: {
@@ -1070,12 +1122,12 @@ describe("MongoObjStorage (integration)", () => {
           },
         },
         tag: "sort-mixed-tag",
-        appId: "sort-mixed-app",
+        projectId: "sort-mixed-project",
       });
       await objModel.insertMany([obj1, obj2, obj3]);
 
       const result = await storage.read({
-        query: { appId: "sort-mixed-app" },
+        query: { metaQuery: { projectId: { eq: "sort-mixed-project" } } },
         tag: "sort-mixed-tag",
         sort: [
           { field: "objRecord.status", direction: "asc" },
@@ -1093,7 +1145,7 @@ describe("MongoObjStorage (integration)", () => {
               isArrayCompressed: false,
               createdAt: new Date(),
               updatedAt: new Date(),
-              appId: "sort-mixed-app",
+              projectId: "sort-mixed-project",
               groupId: "test-group",
               tag: "sort-mixed-tag",
             },
@@ -1108,7 +1160,7 @@ describe("MongoObjStorage (integration)", () => {
               isArrayCompressed: false,
               createdAt: new Date(),
               updatedAt: new Date(),
-              appId: "sort-mixed-app",
+              projectId: "sort-mixed-project",
               groupId: "test-group",
               tag: "sort-mixed-tag",
             },
@@ -1125,17 +1177,17 @@ describe("MongoObjStorage (integration)", () => {
       const obj1 = makeObjFields({
         objRecord: { name: "First" },
         tag: "sort-empty-tag",
-        appId: "sort-empty-app",
+        projectId: "sort-empty-project",
       });
       const obj2 = makeObjFields({
         objRecord: { name: "Second" },
         tag: "sort-empty-tag",
-        appId: "sort-empty-app",
+        projectId: "sort-empty-project",
       });
       await objModel.insertMany([obj1, obj2]);
 
       const result = await storage.read({
-        query: { appId: "sort-empty-app" },
+        query: { metaQuery: { projectId: { eq: "sort-empty-project" } } },
         tag: "sort-empty-tag",
         sort: [], // Empty sort array
       });
@@ -1148,12 +1200,12 @@ describe("MongoObjStorage (integration)", () => {
       const obj1 = makeObjFields({
         objRecord: { name: "Test" },
         tag: "sort-invalid-tag",
-        appId: "sort-invalid-app",
+        projectId: "sort-invalid-project",
       });
       await objModel.insertMany([obj1]);
 
       const result = await storage.read({
-        query: { appId: "sort-invalid-app" },
+        query: { metaQuery: { projectId: { eq: "sort-invalid-project" } } },
         tag: "sort-invalid-tag",
         sort: [
           { field: "objRecord.nonexistent", direction: "asc" }, // Should be skipped (not in fields)
@@ -1170,7 +1222,7 @@ describe("MongoObjStorage (integration)", () => {
               isArrayCompressed: false,
               createdAt: new Date(),
               updatedAt: new Date(),
-              appId: "sort-invalid-app",
+              projectId: "sort-invalid-project",
               groupId: "test-group",
               tag: "sort-invalid-tag",
             },
@@ -1207,7 +1259,7 @@ describe("MongoObjStorage (integration)", () => {
           type: "string" as const,
           arrayTypes: [],
           isArrayCompressed: false,
-          appId: obj.appId!,
+          projectId: obj.projectId!,
           groupId: obj.groupId!,
           tag: obj.tag!,
           createdAt: new Date(),
@@ -1218,10 +1270,8 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        appId: obj.appId,
-        partQuery: {
-          and: [{ op: "eq", field: "reportsTo.userId", value: "user1" }],
-        },
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: [{ op: "eq", field: "reportsTo.userId", value: "user1" }],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1231,10 +1281,10 @@ describe("MongoObjStorage (integration)", () => {
     expect(result.objs[0].id).toBe(obj.id);
   });
 
-  it("should handle array field queries with logsQuery.and.op", async () => {
+  it("should handle array field queries with query.and.op", async () => {
     const obj = makeObjFields({
       objRecord: {
-        logsQuery: {
+        query: {
           and: [
             { op: "eq", field: "status", value: "active" },
             { op: "in", field: "type", value: ["error", "warning"] },
@@ -1248,15 +1298,15 @@ describe("MongoObjStorage (integration)", () => {
     // Create array field metadata
     const arrayFieldsMap = new Map([
       [
-        "logsQuery.and",
+        "query.and",
         {
           id: "array-field-2",
-          field: "logsQuery.and",
-          path: "logsQuery.and",
+          field: "query.and",
+          path: "query.and",
           type: "string" as const,
           arrayTypes: [],
           isArrayCompressed: false,
-          appId: obj.appId!,
+          projectId: obj.projectId!,
           groupId: obj.groupId!,
           tag: obj.tag!,
           createdAt: new Date(),
@@ -1267,10 +1317,8 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        appId: obj.appId,
-        partQuery: {
-          and: [{ op: "eq", field: "logsQuery.and.op", value: "eq" }],
-        },
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: [{ op: "eq", field: "query.and.op", value: "eq" }],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1283,7 +1331,7 @@ describe("MongoObjStorage (integration)", () => {
   it("should handle deeply nested array field queries", async () => {
     const obj = makeObjFields({
       objRecord: {
-        logsQuery: {
+        query: {
           and: [
             {
               op: [
@@ -1301,15 +1349,15 @@ describe("MongoObjStorage (integration)", () => {
     // Create array field metadata for both levels
     const arrayFieldsMap = new Map([
       [
-        "logsQuery.and",
+        "query.and",
         {
           id: "array-field-3",
-          field: "logsQuery.and",
-          path: "logsQuery.and",
+          field: "query.and",
+          path: "query.and",
           type: "string" as const,
           arrayTypes: [],
           isArrayCompressed: false,
-          appId: obj.appId!,
+          projectId: obj.projectId!,
           groupId: obj.groupId!,
           tag: obj.tag!,
           createdAt: new Date(),
@@ -1317,15 +1365,15 @@ describe("MongoObjStorage (integration)", () => {
         },
       ],
       [
-        "logsQuery.and.op",
+        "query.and.op",
         {
           id: "array-field-4",
-          field: "logsQuery.and.op",
-          path: "logsQuery.and.op",
+          field: "query.and.op",
+          path: "query.and.op",
           type: "string" as const,
           arrayTypes: [],
           isArrayCompressed: false,
-          appId: obj.appId!,
+          projectId: obj.projectId!,
           groupId: obj.groupId!,
           tag: obj.tag!,
           createdAt: new Date(),
@@ -1336,10 +1384,8 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        appId: obj.appId,
-        partQuery: {
-          and: [{ op: "eq", field: "logsQuery.and.op.subOp", value: "eq" }],
-        },
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: [{ op: "eq", field: "query.and.op.subOp", value: "eq" }],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1372,7 +1418,7 @@ describe("MongoObjStorage (integration)", () => {
           type: "string" as const,
           arrayTypes: [],
           isArrayCompressed: false,
-          appId: obj.appId!,
+          projectId: obj.projectId!,
           groupId: obj.groupId!,
           tag: obj.tag!,
           createdAt: new Date(),
@@ -1383,12 +1429,10 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        appId: obj.appId,
-        partQuery: {
-          and: [
-            { op: "in", field: "reportsTo.userId", value: ["user1", "user3"] },
-          ],
-        },
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: [
+          { op: "in", field: "reportsTo.userId", value: ["user1", "user3"] },
+        ],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1420,7 +1464,7 @@ describe("MongoObjStorage (integration)", () => {
           type: "string" as const,
           arrayTypes: [],
           isArrayCompressed: false,
-          appId: obj.appId!,
+          projectId: obj.projectId!,
           groupId: obj.groupId!,
           tag: obj.tag!,
           createdAt: new Date(),
@@ -1431,16 +1475,14 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        appId: obj.appId,
-        partQuery: {
-          and: [
-            {
-              op: "not_in",
-              field: "reportsTo.userId",
-              value: ["user3", "user4"],
-            },
-          ],
-        },
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: [
+          {
+            op: "not_in",
+            field: "reportsTo.userId",
+            value: ["user3", "user4"],
+          },
+        ],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1473,7 +1515,7 @@ describe("MongoObjStorage (integration)", () => {
           type: "string" as const,
           arrayTypes: [],
           isArrayCompressed: false,
-          appId: obj.appId!,
+          projectId: obj.projectId!,
           groupId: obj.groupId!,
           tag: obj.tag!,
           createdAt: new Date(),
@@ -1484,10 +1526,8 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        appId: obj.appId,
-        partQuery: {
-          and: [{ op: "gte", field: "scores.value", value: 90 }],
-        },
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: [{ op: "gte", field: "scores.value", value: 90 }],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1519,7 +1559,7 @@ describe("MongoObjStorage (integration)", () => {
           type: "string" as const,
           arrayTypes: [],
           isArrayCompressed: false,
-          appId: obj.appId!,
+          projectId: obj.projectId!,
           groupId: obj.groupId!,
           tag: obj.tag!,
           createdAt: new Date(),
@@ -1530,10 +1570,10 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        appId: obj.appId,
-        partQuery: {
-          and: [{ op: "exists", field: "reportsTo.permissions", value: true }],
-        },
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: [
+          { op: "exists", field: "reportsTo.permissions", value: true },
+        ],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1565,7 +1605,7 @@ describe("MongoObjStorage (integration)", () => {
           type: "string" as const,
           arrayTypes: [],
           isArrayCompressed: false,
-          appId: obj.appId!,
+          projectId: obj.projectId!,
           groupId: obj.groupId!,
           tag: obj.tag!,
           createdAt: new Date(),
@@ -1576,12 +1616,10 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        appId: obj.appId,
-        partQuery: {
-          and: [
-            { op: "like", field: "reportsTo.email", value: ".*@example\\.com" },
-          ],
-        },
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: [
+          { op: "like", field: "reportsTo.email", value: ".*@example\\.com" },
+        ],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1614,7 +1652,7 @@ describe("MongoObjStorage (integration)", () => {
           type: "string" as const,
           arrayTypes: [],
           isArrayCompressed: false,
-          appId: obj.appId!,
+          projectId: obj.projectId!,
           groupId: obj.groupId!,
           tag: obj.tag!,
           createdAt: new Date(),
@@ -1625,13 +1663,11 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        appId: obj.appId,
-        partQuery: {
-          and: [
-            { op: "eq", field: "name", value: "Test Object" },
-            { op: "eq", field: "reportsTo.userId", value: "user1" },
-          ],
-        },
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: [
+          { op: "eq", field: "name", value: "Test Object" },
+          { op: "eq", field: "reportsTo.userId", value: "user1" },
+        ],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1660,7 +1696,7 @@ describe("MongoObjStorage (integration)", () => {
           type: "string" as const,
           arrayTypes: [],
           isArrayCompressed: false,
-          appId: obj.appId!,
+          projectId: obj.projectId!,
           groupId: obj.groupId!,
           tag: obj.tag!,
           createdAt: new Date(),
@@ -1671,10 +1707,8 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        appId: obj.appId,
-        partQuery: {
-          and: [{ op: "eq", field: "reportsTo.userId", value: "user1" }],
-        },
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: [{ op: "eq", field: "reportsTo.userId", value: "user1" }],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1706,7 +1740,7 @@ describe("MongoObjStorage (integration)", () => {
           type: "string" as const,
           arrayTypes: [],
           isArrayCompressed: false,
-          appId: obj.appId!,
+          projectId: obj.projectId!,
           groupId: obj.groupId!,
           tag: obj.tag!,
           createdAt: new Date(),
@@ -1717,10 +1751,10 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        appId: obj.appId,
-        partQuery: {
-          and: [{ op: "between", field: "scores.value", value: [80, 95] }],
-        },
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: [
+          { op: "between", field: "scores.value", value: [80, 95] },
+        ],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1750,7 +1784,7 @@ describe("MongoObjStorage (integration)", () => {
           type: "string" as const,
           arrayTypes: [],
           isArrayCompressed: false,
-          appId: obj.appId!,
+          projectId: obj.projectId!,
           groupId: obj.groupId!,
           tag: obj.tag!,
           createdAt: new Date(),
@@ -1761,10 +1795,8 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        appId: obj.appId,
-        partQuery: {
-          and: [{ op: "eq", field: "tags", value: "typescript" }],
-        },
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: [{ op: "eq", field: "tags", value: "typescript" }],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1796,7 +1828,7 @@ describe("MongoObjStorage (integration)", () => {
           type: "string" as const,
           arrayTypes: [],
           isArrayCompressed: false,
-          appId: obj.appId!,
+          projectId: obj.projectId!,
           groupId: obj.groupId!,
           tag: obj.tag!,
           createdAt: new Date(),
@@ -1807,10 +1839,8 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        appId: obj.appId,
-        partQuery: {
-          and: [{ op: "neq", field: "reportsTo.userId", value: "user3" }],
-        },
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: [{ op: "neq", field: "reportsTo.userId", value: "user3" }],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1855,7 +1885,7 @@ describe("MongoObjStorage (integration)", () => {
           type: "string" as const,
           arrayTypes: [],
           isArrayCompressed: false,
-          appId: obj.appId!,
+          projectId: obj.projectId!,
           groupId: obj.groupId!,
           tag: obj.tag!,
           createdAt: new Date(),
@@ -1871,7 +1901,7 @@ describe("MongoObjStorage (integration)", () => {
           type: "string" as const,
           arrayTypes: [],
           isArrayCompressed: false,
-          appId: obj.appId!,
+          projectId: obj.projectId!,
           groupId: obj.groupId!,
           tag: obj.tag!,
           createdAt: new Date(),
@@ -1882,12 +1912,10 @@ describe("MongoObjStorage (integration)", () => {
 
     const result = await storage.read({
       query: {
-        appId: obj.appId,
-        partQuery: {
-          and: [
-            { op: "eq", field: "workflow.steps.actions.type", value: "email" },
-          ],
-        },
+        metaQuery: { projectId: { eq: obj.projectId } },
+        recordQuery: [
+          { op: "eq", field: "workflow.steps.actions.type", value: "email" },
+        ],
       },
       tag: obj.tag,
       fields: arrayFieldsMap,
@@ -1915,7 +1943,7 @@ describe("MongoObjStorage (integration)", () => {
           type: "string" as const,
           arrayTypes: [],
           isArrayCompressed: false,
-          appId: obj1.appId!,
+          projectId: obj1.projectId!,
           groupId: obj1.groupId!,
           tag: obj1.tag!,
           createdAt: new Date(),
@@ -1926,25 +1954,860 @@ describe("MongoObjStorage (integration)", () => {
     // Should find obj1 for array, obj2 for scalar
     const result1 = await storage.read({
       query: {
-        appId: obj1.appId,
-        partQuery: {
-          and: [{ op: "eq", field: "reportsTo.userId", value: "user1" }],
-        },
+        metaQuery: { projectId: { eq: obj1.projectId } },
+        recordQuery: [{ op: "eq", field: "reportsTo.userId", value: "user1" }],
       },
       tag: obj1.tag,
       fields: arrayFieldsMap,
     });
     const result2 = await storage.read({
       query: {
-        appId: obj2.appId,
-        partQuery: {
-          and: [{ op: "eq", field: "reportsTo.userId", value: "user2" }],
-        },
+        metaQuery: { projectId: { eq: obj2.projectId } },
+        recordQuery: [{ op: "eq", field: "reportsTo.userId", value: "user2" }],
       },
       tag: obj2.tag,
       fields: new Map(),
     });
     expect(result1.objs.some((o) => o.id === obj1.id)).toBe(true);
     expect(result2.objs.some((o) => o.id === obj2.id)).toBe(true);
+  });
+
+  describe("read (pagination, includeDeleted, date)", () => {
+    it("should return page, limit, and hasMore correctly", async () => {
+      const tag = "page-tag";
+      const projectId = "page-project";
+      const objs = Array.from({ length: 5 }, (_, i) =>
+        makeObjFields({
+          objRecord: { name: `Item${i}` },
+          tag,
+          projectId,
+        })
+      );
+      await objModel.insertMany(objs);
+      const result = await storage.read({
+        query: { metaQuery: { projectId: { eq: projectId } } },
+        tag,
+        page: 0,
+        limit: 2,
+      });
+      expect(result.page).toBe(0);
+      expect(result.limit).toBe(2);
+      expect(result.objs).toHaveLength(2);
+      expect(result.hasMore).toBe(true);
+      const result2 = await storage.read({
+        query: { metaQuery: { projectId: { eq: projectId } } },
+        tag,
+        page: 2,
+        limit: 2,
+      });
+      expect(result2.page).toBe(2);
+      expect(result2.objs).toHaveLength(1);
+      expect(result2.hasMore).toBe(false);
+    });
+
+    it("should exclude deleted by default and include them when includeDeleted is true", async () => {
+      const objLive = makeObjFields({
+        tag: "del-tag",
+        projectId: "del-project",
+        deletedAt: null,
+      });
+      const objDeleted = makeObjFields({
+        tag: "del-tag",
+        projectId: "del-project",
+        deletedAt: new Date(),
+        deletedBy: "user",
+        deletedByType: "user",
+      });
+      await objModel.insertMany([objLive, objDeleted]);
+      const resultDefault = await storage.read({
+        query: { metaQuery: { projectId: { eq: "del-project" } } },
+        tag: "del-tag",
+      });
+      expect(resultDefault.objs).toHaveLength(1);
+      expect(resultDefault.objs[0].id).toBe(objLive.id);
+      const resultInclude = await storage.read({
+        query: { metaQuery: { projectId: { eq: "del-project" } } },
+        tag: "del-tag",
+        includeDeleted: true,
+      });
+      expect(resultInclude.objs).toHaveLength(2);
+    });
+
+    it("should use custom date when provided", async () => {
+      const obj = makeObjFields({
+        tag: "date-tag",
+        projectId: "date-project",
+      });
+      await objModel.create(obj);
+      const customDate = new Date("2020-06-01T00:00:00Z");
+      const result = await storage.read({
+        query: { metaQuery: { projectId: { eq: "date-project" } } },
+        tag: "date-tag",
+        date: customDate,
+      });
+      expect(result.objs.length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  describe("update (no matches, shouldIndex, fieldsToIndex)", () => {
+    it("should return updatedCount 0 and empty updatedObjs when no objects match", async () => {
+      const result = await storage.update({
+        query: { metaQuery: { projectId: { eq: "nonexistent-project" } } },
+        tag: "nonexistent-tag",
+        update: { name: "Noop" },
+        by: "user",
+        byType: "user",
+      });
+      expect(result.updatedCount).toBe(0);
+      expect(result.updatedObjs).toEqual([]);
+    });
+
+    it("should apply shouldIndex and fieldsToIndex on update", async () => {
+      const obj = makeObjFields({
+        objRecord: { name: "Original" },
+        shouldIndex: true,
+        fieldsToIndex: ["name"],
+        tag: "idx-tag",
+        projectId: "idx-project",
+      });
+      await objModel.create(obj);
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "idx-project" } } },
+        tag: "idx-tag",
+        update: { name: "Updated" },
+        by: "user",
+        byType: "user",
+        shouldIndex: false,
+        fieldsToIndex: ["name", "other"],
+      });
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      expect(updated?.shouldIndex).toBe(false);
+      expect(updated?.fieldsToIndex).toEqual(["name", "other"]);
+    });
+  });
+
+  describe("delete (no matches, date override)", () => {
+    it("should return deletedCount 0 when no objects match", async () => {
+      const result = await storage.delete({
+        query: { metaQuery: { projectId: { eq: "nonexistent" } } },
+        tag: "nonexistent-tag",
+        deletedBy: "user",
+        deletedByType: "user",
+      });
+      expect(result.deletedCount).toBe(0);
+    });
+
+    it("should use provided date for deletedAt", async () => {
+      const obj = makeObjFields({
+        tag: "deldate-tag",
+        projectId: "deldate-project",
+      });
+      await objModel.create(obj);
+      const deleteDate = new Date("2022-05-15T12:00:00Z");
+      await storage.delete({
+        query: { metaQuery: { projectId: { eq: "deldate-project" } } },
+        tag: "deldate-tag",
+        date: deleteDate,
+        deletedBy: "user",
+        deletedByType: "user",
+      });
+      const doc = await objModel.findOne({ id: obj.id }).lean();
+      expect(doc?.deletedAt).toEqual(deleteDate);
+    });
+  });
+
+  describe("bulkUpsert (edge cases)", () => {
+    it("should treat all items as new when conflictOnKeys is empty", async () => {
+      const items = [
+        makeInputObjRecord({ name: "A" }),
+        makeInputObjRecord({ name: "B" }),
+      ];
+      const result = await storage.bulkUpsert({
+        items,
+        conflictOnKeys: [],
+        tag: "empty-conflict-tag",
+        projectId: "empty-conflict-project",
+        groupId: "g",
+        createdBy: "u",
+        createdByType: "user",
+      });
+      expect(result.newObjs.length).toBe(2);
+      expect(result.updatedObjs.length).toBe(0);
+      const result2 = await storage.bulkUpsert({
+        items,
+        conflictOnKeys: [],
+        tag: "empty-conflict-tag",
+        projectId: "empty-conflict-project",
+        groupId: "g",
+        createdBy: "u",
+        createdByType: "user",
+      });
+      expect(result2.newObjs.length).toBe(2);
+    });
+
+    it("should apply fieldsToIndex and dedupe", async () => {
+      const items = [makeInputObjRecord({ name: "F1", x: 1 })];
+      const result = await storage.bulkUpsert({
+        items,
+        conflictOnKeys: ["name"],
+        onConflict: "replace",
+        tag: "fti-tag",
+        projectId: "fti-project",
+        groupId: "g",
+        createdBy: "u",
+        createdByType: "user",
+        fieldsToIndex: ["name", "x", "name"],
+      });
+      expect(result.newObjs.length).toBe(1);
+      const created = await objModel.findOne({ "objRecord.name": "F1" }).lean();
+      expect(created?.fieldsToIndex).toEqual(["name", "x"]);
+    });
+
+    it("should handle empty items array", async () => {
+      const result = await storage.bulkUpsert({
+        items: [],
+        conflictOnKeys: ["name"],
+        tag: "empty-items-tag",
+        projectId: "empty-items-project",
+        groupId: "g",
+        createdBy: "u",
+        createdByType: "user",
+      });
+      expect(result.newObjs).toHaveLength(0);
+      expect(result.updatedObjs).toHaveLength(0);
+      expect(result.totalProcessed).toBe(0);
+    });
+  });
+
+  describe("bulkUpdate (count, onProgress, no matches)", () => {
+    it("should limit updates when count is provided", async () => {
+      const objs = Array.from({ length: 5 }, (_, i) =>
+        makeObjFields({
+          objRecord: { name: `CU${i}` },
+          tag: "count-tag",
+          projectId: "count-project",
+        })
+      );
+      await objModel.insertMany(objs);
+      const result = await storage.bulkUpdate({
+        query: { metaQuery: { projectId: { eq: "count-project" } } },
+        tag: "count-tag",
+        update: { touched: true },
+        by: "u",
+        byType: "user",
+        count: 2,
+      });
+      expect(result.updatedCount).toBe(2);
+      expect(result.totalProcessed).toBe(2);
+      const touched = await objModel.countDocuments({
+        "objRecord.touched": true,
+      });
+      expect(touched).toBe(2);
+    });
+
+    it("should call onProgress with totalProcessed and total", async () => {
+      const objs = Array.from({ length: 3 }, (_, i) =>
+        makeObjFields({
+          objRecord: { name: `OP${i}` },
+          tag: "progress-tag",
+          projectId: "progress-project",
+        })
+      );
+      await objModel.insertMany(objs);
+      const progressCalls: [number, number][] = [];
+      await storage.bulkUpdate({
+        query: { metaQuery: { projectId: { eq: "progress-project" } } },
+        tag: "progress-tag",
+        update: { x: 1 },
+        by: "u",
+        byType: "user",
+        onProgress: (processed, total) =>
+          progressCalls.push([processed, total]),
+      });
+      expect(progressCalls.length).toBeGreaterThanOrEqual(1);
+      expect(progressCalls.some(([p]) => p === 3)).toBe(true);
+    });
+
+    it("should return empty when no objects match", async () => {
+      const result = await storage.bulkUpdate({
+        query: { metaQuery: { projectId: { eq: "no-match-project" } } },
+        tag: "no-match-tag",
+        update: { x: 1 },
+        by: "u",
+        byType: "user",
+      });
+      expect(result.updatedCount).toBe(0);
+      expect(result.updatedObjs).toHaveLength(0);
+      expect(result.totalProcessed).toBe(0);
+    });
+
+    it("should apply shouldIndex and fieldsToIndex in bulkUpdate", async () => {
+      const obj = makeObjFields({
+        objRecord: { name: "BU" },
+        shouldIndex: true,
+        fieldsToIndex: ["name"],
+        tag: "bu-idx-tag",
+        projectId: "bu-idx-project",
+      });
+      await objModel.create(obj);
+      await storage.bulkUpdate({
+        query: { metaQuery: { projectId: { eq: "bu-idx-project" } } },
+        tag: "bu-idx-tag",
+        update: { extra: 1 },
+        by: "u",
+        byType: "user",
+        shouldIndex: false,
+        fieldsToIndex: ["name", "extra"],
+      });
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated?.shouldIndex).toBe(false);
+      expect(updated?.fieldsToIndex).toEqual(["name", "extra"]);
+    });
+  });
+
+  describe("bulkDelete (deleteMany false, hardDelete)", () => {
+    it("should delete only one when deleteMany is false", async () => {
+      const objs = Array.from({ length: 3 }, (_, i) =>
+        makeObjFields({
+          objRecord: { type: "T" },
+          tag: "dm-false-tag",
+          projectId: "dm-false-project",
+        })
+      );
+      await objModel.insertMany(objs);
+      const result = await storage.bulkDelete({
+        query: { metaQuery: { projectId: { eq: "dm-false-project" } } },
+        tag: "dm-false-tag",
+        deletedBy: "u",
+        deletedByType: "user",
+        deleteMany: false,
+      });
+      expect(result.deletedCount).toBe(1);
+      const remaining = await objModel.find({
+        projectId: "dm-false-project",
+        tag: "dm-false-tag",
+        deletedAt: null,
+      });
+      expect(remaining).toHaveLength(2);
+    });
+
+    it("should hard delete when hardDelete is true", async () => {
+      const obj = makeObjFields({
+        tag: "hard-tag",
+        projectId: "hard-project",
+      });
+      await objModel.create(obj);
+      const result = await storage.bulkDelete({
+        query: { metaQuery: { projectId: { eq: "hard-project" } } },
+        tag: "hard-tag",
+        deletedBy: "u",
+        deletedByType: "user",
+        deleteMany: true,
+        hardDelete: true,
+      });
+      expect(result.deletedCount).toBe(1);
+      const doc = await objModel.findOne({ id: obj.id }).lean();
+      expect(doc).toBeNull();
+    });
+  });
+
+  describe("cleanupDeletedObjs", () => {
+    it("should permanently remove soft-deleted objects in batches", async () => {
+      const obj1 = makeObjFields({
+        tag: "cleanup-tag",
+        projectId: "cleanup-project",
+        deletedAt: new Date(),
+        deletedBy: "u",
+        deletedByType: "user",
+      });
+      const obj2 = makeObjFields({
+        tag: "cleanup-tag",
+        projectId: "cleanup-project",
+        deletedAt: new Date(),
+        deletedBy: "u",
+        deletedByType: "user",
+      });
+      await objModel.insertMany([obj1, obj2]);
+      const result = await storage.cleanupDeletedObjs({ batchSize: 10 });
+      expect(result.cleanedCount).toBe(2);
+      const found1 = await objModel.findOne({ id: obj1.id }).lean();
+      const found2 = await objModel.findOne({ id: obj2.id }).lean();
+      expect(found1).toBeNull();
+      expect(found2).toBeNull();
+    });
+
+    it("should call onProgress with cleaned count", async () => {
+      const obj = makeObjFields({
+        tag: "cleanup-progress-tag",
+        projectId: "cleanup-progress-project",
+        deletedAt: new Date(),
+        deletedBy: "u",
+        deletedByType: "user",
+      });
+      await objModel.insertMany([obj]);
+      const progressCalls: number[] = [];
+      await storage.cleanupDeletedObjs({
+        batchSize: 10,
+        onProgress: (count) => progressCalls.push(count),
+      });
+      expect(progressCalls).toContain(1);
+      expect(progressCalls[progressCalls.length - 1]).toBe(1);
+    });
+
+    it("should return cleanedCount 0 when no deleted objects exist", async () => {
+      const result = await storage.cleanupDeletedObjs();
+      expect(result.cleanedCount).toBe(0);
+    });
+  });
+
+  describe("shallow merge strategies", () => {
+    it("shallowMerge should merge only top-level keys", async () => {
+      const obj = makeObjFields({
+        objRecord: { a: 1, b: { x: 1, y: 2 }, c: 3 },
+        tag: "shallow-tag",
+        projectId: "shallow-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "shallow-project" } } },
+        tag: "shallow-tag",
+        update: { b: { x: 100 }, d: 4 },
+        by: "merger",
+        byType: "user",
+        updateWay: "shallowMerge",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.a).toBe(1);
+      expect(updated.objRecord.b).toEqual({ x: 100 });
+      expect(updated.objRecord.c).toBe(3);
+      expect(updated.objRecord.d).toBe(4);
+    });
+
+    it("shallowMergeButConcatArrays should concat top-level arrays", async () => {
+      const obj = makeObjFields({
+        objRecord: { arr: [1, 2], nested: { arr: [5, 6] }, x: 1 },
+        tag: "shallow-concat-tag",
+        projectId: "shallow-concat-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "shallow-concat-project" } } },
+        tag: "shallow-concat-tag",
+        update: { arr: [3, 4], nested: { arr: [7, 8] } },
+        by: "merger",
+        byType: "user",
+        updateWay: "shallowMergeButConcatArrays",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.arr).toEqual([1, 2, 3, 4]);
+      expect(updated.objRecord.nested).toEqual({ arr: [7, 8] });
+    });
+
+    it("shallowMergeButKeepArrays should keep original top-level arrays", async () => {
+      const obj = makeObjFields({
+        objRecord: { arr: [1, 2], x: 1 },
+        tag: "shallow-keep-tag",
+        projectId: "shallow-keep-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "shallow-keep-project" } } },
+        tag: "shallow-keep-tag",
+        update: { arr: [3, 4], y: 2 },
+        by: "merger",
+        byType: "user",
+        updateWay: "shallowMergeButKeepArrays",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.arr).toEqual([1, 2]);
+      expect(updated.objRecord.y).toBe(2);
+    });
+
+    it("shallowMergeButReplaceArrays should replace top-level arrays", async () => {
+      const obj = makeObjFields({
+        objRecord: { arr: [1, 2], x: 1 },
+        tag: "shallow-replace-tag",
+        projectId: "shallow-replace-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "shallow-replace-project" } } },
+        tag: "shallow-replace-tag",
+        update: { arr: [3, 4] },
+        by: "merger",
+        byType: "user",
+        updateWay: "shallowMergeButReplaceArrays",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.arr).toEqual([3, 4]);
+      expect(updated.objRecord.x).toBe(1);
+    });
+
+    it("shallowMerge should NOT merge nested objects (replaces them)", async () => {
+      const obj = makeObjFields({
+        objRecord: { nested: { a: 1, b: 2, c: 3 } },
+        tag: "shallow-nested-tag",
+        projectId: "shallow-nested-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "shallow-nested-project" } } },
+        tag: "shallow-nested-tag",
+        update: { nested: { a: 100 } },
+        by: "merger",
+        byType: "user",
+        updateWay: "shallowMerge",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.nested).toEqual({ a: 100 });
+    });
+  });
+
+  describe("deep merge strategies", () => {
+    it("deepMerge should merge nested objects recursively", async () => {
+      const obj = makeObjFields({
+        objRecord: { a: 1, nested: { x: 1, y: 2 } },
+        tag: "deep-tag",
+        projectId: "deep-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "deep-project" } } },
+        tag: "deep-tag",
+        update: { nested: { x: 100, z: 3 } },
+        by: "merger",
+        byType: "user",
+        updateWay: "deepMerge",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.a).toBe(1);
+      expect(updated.objRecord.nested).toEqual({ x: 100, y: 2, z: 3 });
+    });
+
+    it("deepMergeButConcatArrays should concat nested arrays", async () => {
+      const obj = makeObjFields({
+        objRecord: { nested: { arr: [1, 2] } },
+        tag: "deep-concat-tag",
+        projectId: "deep-concat-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "deep-concat-project" } } },
+        tag: "deep-concat-tag",
+        update: { nested: { arr: [3, 4] } },
+        by: "merger",
+        byType: "user",
+        updateWay: "deepMergeButConcatArrays",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.nested.arr).toEqual([1, 2, 3, 4]);
+    });
+
+    it("deepMergeButKeepArrays should keep original nested arrays", async () => {
+      const obj = makeObjFields({
+        objRecord: { nested: { arr: [1, 2], other: "x" } },
+        tag: "deep-keep-tag",
+        projectId: "deep-keep-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "deep-keep-project" } } },
+        tag: "deep-keep-tag",
+        update: { nested: { arr: [3, 4], other: "y" } },
+        by: "merger",
+        byType: "user",
+        updateWay: "deepMergeButKeepArrays",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.nested.arr).toEqual([1, 2]);
+      expect(updated.objRecord.nested.other).toBe("y");
+    });
+
+    it("deepMergeButReplaceArrays should replace nested arrays", async () => {
+      const obj = makeObjFields({
+        objRecord: { nested: { arr: [1, 2], other: "x" } },
+        tag: "deep-replace-tag",
+        projectId: "deep-replace-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "deep-replace-project" } } },
+        tag: "deep-replace-tag",
+        update: { nested: { arr: [3, 4] } },
+        by: "merger",
+        byType: "user",
+        updateWay: "deepMergeButReplaceArrays",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.nested.arr).toEqual([3, 4]);
+      expect(updated.objRecord.nested.other).toBe("x");
+    });
+  });
+
+  describe("granular updates", () => {
+    it("should apply root update when key is not provided", async () => {
+      const obj = makeObjFields({
+        objRecord: { a: 1, b: 2 },
+        tag: "granular-root-tag",
+        projectId: "granular-root-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "granular-root-project" } } },
+        tag: "granular-root-tag",
+        updates: [{ value: { b: 3, c: 4 } }],
+        by: "merger",
+        byType: "user",
+        updateWay: "shallowMerge",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.a).toBe(1);
+      expect(updated.objRecord.b).toBe(3);
+      expect(updated.objRecord.c).toBe(4);
+    });
+
+    it("should apply nested update using dot notation key", async () => {
+      const obj = makeObjFields({
+        objRecord: { meta: { x: 1, y: 2 }, other: "unchanged" },
+        tag: "granular-nested-tag",
+        projectId: "granular-nested-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "granular-nested-project" } } },
+        tag: "granular-nested-tag",
+        updates: [{ key: "meta", value: { x: 100, z: 3 } }],
+        by: "merger",
+        byType: "user",
+        updateWay: "shallowMerge",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.meta).toEqual({ x: 100, y: 2, z: 3 });
+      expect(updated.objRecord.other).toBe("unchanged");
+    });
+
+    it("should apply multiple updates with different updateWays", async () => {
+      const obj = makeObjFields({
+        objRecord: {
+          name: "original",
+          meta: { a: 1, b: 2 },
+          settings: { enabled: true },
+        },
+        tag: "granular-multi-tag",
+        projectId: "granular-multi-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "granular-multi-project" } } },
+        tag: "granular-multi-tag",
+        updates: [
+          { value: { name: "updated" } },
+          { key: "meta", value: { a: 100, c: 3 }, updateWay: "shallowMerge" },
+        ],
+        by: "merger",
+        byType: "user",
+        updateWay: "shallowMerge",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.name).toBe("updated");
+      expect(updated.objRecord.meta).toEqual({ a: 100, b: 2, c: 3 });
+      expect(updated.objRecord.settings).toEqual({ enabled: true });
+    });
+
+    it("should handle deeply nested key with dot notation", async () => {
+      const obj = makeObjFields({
+        objRecord: { level1: { level2: { value: "original" } } },
+        tag: "granular-deep-tag",
+        projectId: "granular-deep-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "granular-deep-project" } } },
+        tag: "granular-deep-tag",
+        updates: [{ key: "level1.level2", value: { value: "updated", extra: 1 } }],
+        by: "merger",
+        byType: "user",
+        updateWay: "shallowMerge",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.level1.level2).toEqual({
+        value: "updated",
+        extra: 1,
+      });
+    });
+
+    it("should create nested path if it does not exist", async () => {
+      const obj = makeObjFields({
+        objRecord: { existing: "value" },
+        tag: "granular-create-tag",
+        projectId: "granular-create-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "granular-create-project" } } },
+        tag: "granular-create-tag",
+        updates: [{ key: "newPath", value: { key: "value" } }],
+        by: "merger",
+        byType: "user",
+        updateWay: "shallowMerge",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.existing).toBe("value");
+      expect(updated.objRecord.newPath).toEqual({ key: "value" });
+    });
+  });
+
+  describe("backwards compatibility", () => {
+    it("should handle legacy 'merge' strategy as deepMerge", async () => {
+      const obj = makeObjFields({
+        objRecord: { a: 1, nested: { x: 1, y: 2 } },
+        tag: "compat-merge-tag",
+        projectId: "compat-merge-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "compat-merge-project" } } },
+        tag: "compat-merge-tag",
+        update: { nested: { x: 100, z: 3 } },
+        by: "merger",
+        byType: "user",
+        updateWay: "merge",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.nested).toEqual({ x: 100, y: 2, z: 3 });
+    });
+
+    it("should handle legacy mergeButConcatArrays strategy", async () => {
+      const obj = makeObjFields({
+        objRecord: { arr: [1, 2] },
+        tag: "compat-concat-tag",
+        projectId: "compat-concat-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "compat-concat-project" } } },
+        tag: "compat-concat-tag",
+        update: { arr: [3, 4] },
+        by: "merger",
+        byType: "user",
+        updateWay: "mergeButConcatArrays",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.arr).toEqual([1, 2, 3, 4]);
+    });
+
+    it("should handle legacy mergeButKeepArrays strategy", async () => {
+      const obj = makeObjFields({
+        objRecord: { arr: [1, 2] },
+        tag: "compat-keep-tag",
+        projectId: "compat-keep-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "compat-keep-project" } } },
+        tag: "compat-keep-tag",
+        update: { arr: [3, 4] },
+        by: "merger",
+        byType: "user",
+        updateWay: "mergeButKeepArrays",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.arr).toEqual([1, 2]);
+    });
+  });
+
+  describe("default updateWay", () => {
+    it("should use shallowMerge as default updateWay", async () => {
+      const obj = makeObjFields({
+        objRecord: { a: 1, b: { x: 1, y: 2 } },
+        tag: "default-tag",
+        projectId: "default-project",
+      });
+      await objModel.create(obj);
+
+      await storage.update({
+        query: { metaQuery: { projectId: { eq: "default-project" } } },
+        tag: "default-tag",
+        update: { b: { x: 100 }, c: 3 },
+        by: "merger",
+        byType: "user",
+      });
+
+      const updated = await objModel.findOne({ id: obj.id }).lean();
+      expect(updated).toBeTruthy();
+      if (!updated) throw new Error("Object not found");
+      expect(updated.objRecord.a).toBe(1);
+      expect(updated.objRecord.b).toEqual({ x: 100 });
+      expect(updated.objRecord.c).toBe(3);
+    });
   });
 });

@@ -4,7 +4,6 @@ import { useCallback } from "react";
 import { Copyable } from "../internal/copyable";
 import { ObfuscateText } from "../internal/obfuscate-text";
 import { Button } from "../ui/button";
-import { Separator } from "../ui/separator";
 import { ClientTokenItemMenu } from "./client-token-item-menu";
 import { PermissionSelector } from "./permission-selector";
 export interface IClientTokenProps {
@@ -19,8 +18,7 @@ export function ClientToken(props: IClientTokenProps) {
   const handleEncodeClientTokenJWT = useCallback(async () => {
     const projectId =
       props.clientToken.meta?.projectId ?? props.clientToken.projectId;
-    const groupId =
-      props.clientToken.meta?.orgId ?? props.clientToken.groupId;
+    const groupId = props.clientToken.meta?.orgId ?? props.clientToken.groupId;
     if (!projectId || !groupId) return;
     await encodeClientTokenJWT.trigger({
       id: props.clientToken.id,
@@ -41,6 +39,7 @@ export function ClientToken(props: IClientTokenProps) {
   const orgId = props.clientToken.meta?.orgId;
   const projectId =
     props.clientToken.meta?.projectId ?? props.clientToken.projectId;
+  const groupId = props.clientToken.meta?.groupId ?? props.clientToken.groupId;
 
   if (!orgId || !projectId) {
     return null;
@@ -67,7 +66,6 @@ export function ClientToken(props: IClientTokenProps) {
             {props.clientToken.description}
           </p>
         )}
-        <Separator />
         <div className="flex flex-col gap-2">
           <h3 className="text-sm font-medium text-muted-foreground">
             Project ID
@@ -78,7 +76,16 @@ export function ClientToken(props: IClientTokenProps) {
             </pre>
           </Copyable>
         </div>
-        <Separator />
+        <div className="flex flex-col gap-2">
+          <h3 className="text-sm font-medium text-muted-foreground">
+            Group ID
+          </h3>
+          <Copyable produceText={() => groupId}>
+            <pre className="text-sm text-muted-foreground bg-muted p-2 rounded-md whitespace-pre-wrap break-all">
+              <code>{groupId}</code>
+            </pre>
+          </Copyable>
+        </div>
         {permissions.length > 0 && (
           <>
             <PermissionSelector
@@ -86,7 +93,6 @@ export function ClientToken(props: IClientTokenProps) {
               targetId={projectId}
               readonly
             />
-            <Separator />
           </>
         )}
         <div className="flex flex-col gap-4">

@@ -1,7 +1,11 @@
 import { kOwnServerErrorCodes, OwnServerError } from "fimidx-core/common/error";
 import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { kId0 } from "fimidx-core/definitions/system";
-import { checkMemberPermissions } from "fimidx-core/serverHelpers/index";
+import {
+  checkMemberPermissions,
+  getMembers,
+} from "fimidx-core/serverHelpers/index";
+import { first } from "lodash-es";
 
 /**
  * Requires that the user (member) has either the specific action or wildcard on
@@ -17,12 +21,36 @@ export async function requirePermissionForUser(params: {
   target: string;
 }): Promise<void> {
   const { userId, orgId, action, target } = params;
+
+  // TODO: refactor to use userId directly in checkMemberPermissions when it's
+  // implemented
+  const { members } = await getMembers({
+    args: {
+      query: {
+        projectId: kId0,
+        groupId: orgId,
+        meta: [
+          {
+            op: "eq",
+            field: "userId",
+            value: userId,
+          },
+        ],
+      },
+    },
+  });
+
+  const member = first(members);
+  if (!member) {
+    throw new OwnServerError("Member not found", kOwnServerErrorCodes.NotFound);
+  }
+
   const { results } = await checkMemberPermissions({
     args: {
       query: {
         projectId: kId0,
         groupId: orgId,
-        id: userId,
+        id: member.id,
       },
       items: [
         { action, target },

@@ -49,17 +49,16 @@ const kValueTypeToAllowedOps: Record<FieldType, (keyof typeof kOps)[]> = {
 };
 
 export interface ILogsFilterItemProps {
-  orgId: string;
-  projectId: string;
   item: IWorkingLogPartFilterItem;
   fields: ILogField[];
+  fieldsMap: Map<string, ILogField>;
   onChange: (value: IWorkingLogPartFilterItem) => void;
   onRemove: () => void;
   disabled?: boolean;
 }
 
 export function LogsFilterItem(props: ILogsFilterItemProps) {
-  const { fields, item, onChange, onRemove, projectId, disabled } = props;
+  const { fields, fieldsMap, item, onChange, onRemove, disabled } = props;
 
   const field = useMemo(() => {
     return fields.find((f) => f.path === item.item.field);
@@ -74,9 +73,11 @@ export function LogsFilterItem(props: ILogsFilterItemProps) {
       <Select
         value={item.item.field}
         onValueChange={(value) => {
+          const selectedField = fieldsMap.get(value);
           onChange({
             ...item,
             item: { ...item.item, field: value },
+            field: selectedField,
           });
         }}
         disabled={disabled}

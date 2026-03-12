@@ -29,9 +29,34 @@ export interface ILogsFilterListProps {
 function validateFilter(
   filter: IWorkingLogPartFilterItem
 ): IWorkingLogPartFilterItem {
+  const isNumberField = filter.field?.type === "number";
+
   switch (filter.item.op) {
     case "eq":
-    case "neq":
+    case "neq": {
+      // Intentionally allow empty value for equality filters
+      // if (filter.item.value === "") {
+      //   return {
+      //     ...filter,
+      //     error: "Value is required",
+      //   };
+      // }
+
+      if (isNumberField) {
+        const value = Number(filter.item.value);
+        if (isNaN(value)) {
+          return {
+            ...filter,
+            error: "Invalid number value",
+          };
+        }
+      }
+
+      return {
+        ...filter,
+        error: undefined,
+      };
+    }
     case "gt":
     case "gte":
     case "lt":
@@ -69,18 +94,32 @@ function validateFilter(
         error: undefined,
       };
     case "in":
-    case "not_in":
+    case "not_in": {
       if (filter.item.value.length === 0) {
         return {
           ...filter,
           error: "At least one value is required",
         };
       }
+
+      if (isNumberField) {
+        const values = filter.item.value as string[];
+        for (const v of values) {
+          if (isNaN(Number(v))) {
+            return {
+              ...filter,
+              error: `Invalid number value: "${v}"`,
+            };
+          }
+        }
+      }
+
       return {
         ...filter,
         error: undefined,
       };
-    case "between":
+    }
+    case "between": {
       if (filter.item.value.length !== 2) {
         return {
           ...filter,
@@ -88,8 +127,8 @@ function validateFilter(
         };
       }
 
-      assert.ok(filter.item.value);
-      const value1 = Number(filter.item.value);
+      const [v1, v2] = filter.item.value as [string, string];
+      const value1 = Number(v1);
       if (isNaN(value1)) {
         return {
           ...filter,
@@ -97,7 +136,7 @@ function validateFilter(
         };
       }
 
-      const value2 = Number(filter.item.value);
+      const value2 = Number(v2);
       if (isNaN(value2)) {
         return {
           ...filter,
@@ -109,11 +148,42 @@ function validateFilter(
         ...filter,
         error: undefined,
       };
+    }
     default:
       return {
         ...filter,
         error: undefined,
       };
+  }
+}
+
+function transformFilterValue(
+  filter: IWorkingLogPartFilterItem
+): IObjRecordQueryItem["value"] {
+  const isNumberField = filter.field?.type === "number";
+
+  if (!isNumberField) {
+    return filter.item.value;
+  }
+
+  switch (filter.item.op) {
+    case "eq":
+    case "neq":
+    case "gt":
+    case "gte":
+    case "lt":
+    case "lte":
+      return Number(filter.item.value);
+    case "in":
+    case "not_in":
+      return (filter.item.value as string[]).map(Number);
+    case "between":
+      return (filter.item.value as [string, string]).map(Number) as [
+        number,
+        number
+      ];
+    default:
+      return filter.item.value;
   }
 }
 
@@ -126,8 +196,14 @@ function workingFilterToFilter(
   return {
     field: filter.item.field,
     op: filter.item.op,
-    value: filter.item.value as any,
+    value: transformFilterValue(filter) as any,
   };
+}
+
+function transformFilters(
+  filters: IWorkingLogPartFilterItem[]
+): IObjRecordQueryItem[] {
+  return filters.map(workingFilterToFilter);
 }
 
 export function LogsFilterList(props: ILogsFilterListProps) {
@@ -146,15 +222,24 @@ export function LogsFilterList(props: ILogsFilterListProps) {
     disabled,
     hijackApplyButtonOnClick,
   } = props;
-  const [filters, setFilters] = useState<IWorkingLogPartFilterItem[]>(
-    initialFilters?.map((filter) => ({
-      item: {
-        field: filter.field,
-        op: filter.op,
-        value: filter.value as any,
-      },
-    })) ?? []
-  );
+
+  const fieldsMap = useMemo(() => {
+    return new Map(fields.map((f) => [f.path, f]));
+  }, [fields]);
+
+  const [filters, setFilters] = useState<IWorkingLogPartFilterItem[]>(() => {
+    const initialFieldsMap = new Map(fields.map((f) => [f.path, f]));
+    return (
+      initialFilters?.map((filter) => ({
+        item: {
+          field: filter.field,
+          op: filter.op,
+          value: filter.value as any,
+        },
+        field: initialFieldsMap.get(filter.field),
+      })) ?? []
+    );
+  });
 
   const hasFilters = useMemo(() => {
     return filters.length > 0;
@@ -180,7 +265,7 @@ export function LogsFilterList(props: ILogsFilterListProps) {
       return;
     }
 
-    onChange(newFilters.map(workingFilterToFilter));
+    onChange(transformFilters(newFilters));
   };
 
   const itemsNode = filters.map((filter, index) => {
@@ -190,8 +275,7 @@ export function LogsFilterList(props: ILogsFilterListProps) {
         item={filter}
         onChange={(value) => handleChange(value, index)}
         onRemove={() => handleRemoveFilter(index)}
-        orgId={orgId}
-        projectId={projectId}
+        fieldsMap={fieldsMap}
         fields={fields}
         disabled={disabled}
       />

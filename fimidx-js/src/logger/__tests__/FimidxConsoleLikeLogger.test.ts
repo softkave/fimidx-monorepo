@@ -548,4 +548,80 @@ describe('FimidxConsoleLikeLogger', () => {
       expect(mockFimidxLogger.close).toHaveBeenCalled();
     });
   });
+
+  describe('logToFimidx option', () => {
+    it('should disable fimidx logging when logToFimidx is false', () => {
+      const disabledLogger = new FimidxConsoleLikeLogger({
+        fimidxLogger: new FimidxLogger({
+          projectId: 'test-project',
+          clientToken: 'test-token',
+        }),
+        logToFimidx: false,
+      });
+
+      disabledLogger.log('test message');
+
+      expect(mockFimidxLogger.log).not.toHaveBeenCalled();
+      expect(consoleSpy.log).toHaveBeenCalledWith('test message');
+    });
+
+    it('should enable fimidx logging by default', () => {
+      consoleLikeLogger.log('test message');
+
+      expect(mockFimidxLogger.log).toHaveBeenCalled();
+    });
+
+    it('should allow toggling logToFimidx with setLogToFimidx', () => {
+      consoleLikeLogger.setLogToFimidx(false);
+      consoleLikeLogger.log('disabled message');
+
+      expect(mockFimidxLogger.log).not.toHaveBeenCalled();
+
+      consoleLikeLogger.setLogToFimidx(true);
+      consoleLikeLogger.log('enabled message');
+
+      expect(mockFimidxLogger.log).toHaveBeenCalledWith(
+        expect.objectContaining({message: 'enabled message'}),
+      );
+    });
+
+    it('should return current state with isLogToFimidxEnabled', () => {
+      expect(consoleLikeLogger.isLogToFimidxEnabled()).toBe(true);
+
+      consoleLikeLogger.setLogToFimidx(false);
+      expect(consoleLikeLogger.isLogToFimidxEnabled()).toBe(false);
+
+      consoleLikeLogger.setLogToFimidx(true);
+      expect(consoleLikeLogger.isLogToFimidxEnabled()).toBe(true);
+    });
+
+    it('should not flush when logToFimidx is disabled', async () => {
+      consoleLikeLogger.setLogToFimidx(false);
+      await consoleLikeLogger.flush();
+
+      expect(mockFimidxLogger.flush).not.toHaveBeenCalled();
+    });
+
+    it('should not close when logToFimidx is disabled', async () => {
+      consoleLikeLogger.setLogToFimidx(false);
+      await consoleLikeLogger.close();
+
+      expect(mockFimidxLogger.close).not.toHaveBeenCalled();
+    });
+
+    it('should still call console fallback when logToFimidx is disabled', () => {
+      consoleLikeLogger.setLogToFimidx(false);
+
+      consoleLikeLogger.debug('debug msg');
+      consoleLikeLogger.info('info msg');
+      consoleLikeLogger.warn('warn msg');
+      consoleLikeLogger.error('error msg');
+
+      expect(mockFimidxLogger.log).not.toHaveBeenCalled();
+      expect(consoleSpy.debug).toHaveBeenCalledWith('debug msg');
+      expect(consoleSpy.info).toHaveBeenCalledWith('info msg');
+      expect(consoleSpy.warn).toHaveBeenCalledWith('warn msg');
+      expect(consoleSpy.error).toHaveBeenCalledWith('error msg');
+    });
+  });
 });

@@ -33,7 +33,7 @@ export function EmailSignInClient(props: IEmailSignInClientProps) {
   const redirectTo =
     props.redirectTo ??
     searchParams.get("redirectTo") ??
-    kClientPaths.project.index;
+    kClientPaths.app.index;
 
   const form = useForm<z.infer<typeof emailSignInFormSchema>>({
     resolver: zodResolver(emailSignInFormSchema),

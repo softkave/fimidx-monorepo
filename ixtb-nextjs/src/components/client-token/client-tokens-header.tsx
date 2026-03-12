@@ -36,7 +36,7 @@ export function ClientTokensHeader(props: {
           }
 
           router.push(
-            kClientPaths.project.org.project.clientToken.single(
+            kClientPaths.app.org.project.clientToken.single(
               orgId,
               projectId,
               clientToken.id

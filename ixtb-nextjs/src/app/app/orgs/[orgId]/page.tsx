@@ -21,6 +21,6 @@ export default async function Page(
   const { orgId } = await props.params;
 
   return redirect(
-    kClientPaths.withURL(kClientPaths.project.org.project.index(orgId))
+    kClientPaths.withURL(kClientPaths.app.org.project.index(orgId))
   );
 }

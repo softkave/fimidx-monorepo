@@ -7,46 +7,46 @@ export const kClientPaths = {
   signin: "/signin",
   signinWithRedirect: (redirectTo: string) =>
     `/signin?redirectTo=${redirectTo}`,
-  project: {
-    index: "/project",
-    profile: "/project/profile",
+  app: {
+    index: "/app",
+    profile: "/app/profile",
     org: {
-      index: "/project/orgs",
-      single: (orgId: string) => `/project/orgs/${orgId}`,
+      index: "/app/orgs",
+      single: (orgId: string) => `/app/orgs/${orgId}`,
       members: {
-        index: (orgId: string) => `/project/orgs/${orgId}/members`,
+        index: (orgId: string) => `/app/orgs/${orgId}/members`,
         single: (orgId: string, memberId: string) =>
-          `/project/orgs/${orgId}/members/${memberId}`,
+          `/app/orgs/${orgId}/members/${memberId}`,
       },
       project: {
-        index: (orgId: string) => `/project/orgs/${orgId}/projects`,
+        index: (orgId: string) => `/app/orgs/${orgId}/projects`,
         single: (orgId: string, projectId: string) =>
-          `/project/orgs/${orgId}/projects/${projectId}`,
+          `/app/orgs/${orgId}/projects/${projectId}`,
         clientToken: {
           index: (orgId: string, projectId: string) =>
-            `/project/orgs/${orgId}/projects/${projectId}/client-tokens`,
+            `/app/orgs/${orgId}/projects/${projectId}/client-tokens`,
           single: (orgId: string, projectId: string, clientTokenId: string) =>
-            `/project/orgs/${orgId}/projects/${projectId}/client-tokens/${clientTokenId}`,
+            `/app/orgs/${orgId}/projects/${projectId}/client-tokens/${clientTokenId}`,
         },
         log: {
           index: (orgId: string, projectId: string) =>
-            `/project/orgs/${orgId}/projects/${projectId}/logs`,
+            `/app/orgs/${orgId}/projects/${projectId}/logs`,
         },
         monitors: {
           index: (orgId: string, projectId: string) =>
-            `/project/orgs/${orgId}/projects/${projectId}/monitors`,
+            `/app/orgs/${orgId}/projects/${projectId}/monitors`,
           single: (orgId: string, projectId: string, monitorId: string) =>
-            `/project/orgs/${orgId}/projects/${projectId}/monitors/${monitorId}`,
+            `/app/orgs/${orgId}/projects/${projectId}/monitors/${monitorId}`,
         },
         callbacks: {
           index: (orgId: string, projectId: string) =>
-            `/project/orgs/${orgId}/projects/${projectId}/callbacks`,
+            `/app/orgs/${orgId}/projects/${projectId}/callbacks`,
           single: (orgId: string, projectId: string, callbackId: string) =>
-            `/project/orgs/${orgId}/projects/${projectId}/callbacks/${callbackId}`,
+            `/app/orgs/${orgId}/projects/${projectId}/callbacks/${callbackId}`,
         },
       },
     },
-    myRequests: "/project/my-requests",
+    myRequests: "/app/my-requests",
   },
   emailTemplates: {
     index: "/email-templates",

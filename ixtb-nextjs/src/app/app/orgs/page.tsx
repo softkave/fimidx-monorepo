@@ -15,7 +15,7 @@ export default async function Page() {
   if (!session) {
     return redirect(
       kClientPaths.withURL(
-        kClientPaths.signinWithRedirect(kClientPaths.project.org.index)
+        kClientPaths.signinWithRedirect(kClientPaths.app.org.index)
       )
     );
   }

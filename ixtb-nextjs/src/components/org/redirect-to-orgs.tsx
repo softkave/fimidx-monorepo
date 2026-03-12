@@ -8,10 +8,10 @@ export async function RedirectToOrgs(): Promise<JSX.Element> {
   if (!session) {
     return redirect(
       kClientPaths.withURL(
-        kClientPaths.signinWithRedirect(kClientPaths.project.org.index)
+        kClientPaths.signinWithRedirect(kClientPaths.app.org.index)
       )
     );
   }
 
-  return redirect(kClientPaths.withURL(kClientPaths.project.org.index));
+  return redirect(kClientPaths.withURL(kClientPaths.app.org.index));
 }

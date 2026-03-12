@@ -24,7 +24,7 @@ export function ClientTokenItem(props: IClientTokenItemProps) {
       }
     >
       <Link
-        href={kClientPaths.project.org.project.clientToken.single(
+        href={kClientPaths.app.org.project.clientToken.single(
           orgId,
           projectId,
           props.item.id

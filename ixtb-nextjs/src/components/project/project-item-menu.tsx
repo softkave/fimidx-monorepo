@@ -39,7 +39,7 @@ export function ProjectItemMenu(props: IProjectItemMenuProps) {
         router.push(
           isString(routeAfterDelete)
             ? routeAfterDelete
-            : kClientPaths.project.org.project.index(project.orgId)
+            : kClientPaths.app.org.project.index(project.orgId)
         );
       }
     },

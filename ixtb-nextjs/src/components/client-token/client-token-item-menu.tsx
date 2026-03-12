@@ -53,10 +53,7 @@ export function ClientTokenItemMenu(props: IClientTokenItemMenuProps) {
         router.push(
           isString(routeAfterDelete)
             ? routeAfterDelete
-            : kClientPaths.project.org.project.clientToken.index(
-                orgId,
-                projectId
-              )
+            : kClientPaths.app.org.project.clientToken.index(orgId, projectId)
         );
       }
     },

@@ -15,7 +15,7 @@ function getItems(orgId: string) {
   const items: ISidebarItem[] = [
     {
       title: "Projects",
-      url: kClientPaths.project.org.project.index(orgId),
+      url: kClientPaths.app.org.project.index(orgId),
       icon: AppWindowIcon,
     },
   ];

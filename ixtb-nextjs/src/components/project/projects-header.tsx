@@ -20,7 +20,7 @@ export function ProjectsHeader(props: { className?: string; orgId: string }) {
         onSubmitComplete={(project) => {
           if (project) {
             router.push(
-              kClientPaths.project.org.project.single(props.orgId, project.id)
+              kClientPaths.app.org.project.single(props.orgId, project.id)
             );
           }
         }}

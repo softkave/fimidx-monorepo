@@ -13,7 +13,7 @@ import { ISidebarItem } from "./types";
 const items: ISidebarItem[] = [
   {
     title: "Orgs",
-    url: kClientPaths.project.org.index,
+    url: kClientPaths.app.org.index,
     icon: BoxesIcon,
   },
 ];

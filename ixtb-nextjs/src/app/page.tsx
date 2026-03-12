@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default async function Page() {
   const session = await auth();
   if (session) {
-    return redirect(kClientPaths.withURL(kClientPaths.project.index));
+    return redirect(kClientPaths.withURL(kClientPaths.app.index));
   }
 
   return <WebMain />;

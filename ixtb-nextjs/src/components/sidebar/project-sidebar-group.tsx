@@ -15,12 +15,12 @@ function getItems(orgId: string, projectId: string) {
   const items: ISidebarItem[] = [
     {
       title: "Client Tokens",
-      url: kClientPaths.project.org.project.clientToken.index(orgId, projectId),
+      url: kClientPaths.app.org.project.clientToken.index(orgId, projectId),
       icon: KeyIcon,
     },
     {
       title: "Logs",
-      url: kClientPaths.project.org.project.log.index(orgId, projectId),
+      url: kClientPaths.app.org.project.log.index(orgId, projectId),
       icon: LogsIcon,
     },
   ];

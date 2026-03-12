@@ -27,7 +27,7 @@ export default async function Page(
     return redirect(
       kClientPaths.withURL(
         kClientPaths.signinWithRedirect(
-          kClientPaths.project.org.project.index(orgId)
+          kClientPaths.app.org.project.index(orgId)
         )
       )
     );

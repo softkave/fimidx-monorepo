@@ -22,9 +22,9 @@ export function ProjectHeaderTitle(props: IProjectHeaderTitleProps) {
   return (
     <div className={cn("flex-1 text-lg font-black", className)}>
       {spaceName ? (
-        <Link href={kClientPaths.project.index}>{spaceName}</Link>
+        <Link href={kClientPaths.app.index}>{spaceName}</Link>
       ) : showTitle ? (
-        <Link href={kClientPaths.project.index}>{kAppConstants.name}</Link>
+        <Link href={kClientPaths.app.index}>{kAppConstants.name}</Link>
       ) : null}
     </div>
   );

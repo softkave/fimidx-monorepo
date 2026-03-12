@@ -13,7 +13,7 @@ export function ProjectItem(props: IProjectItemProps) {
   return (
     <ComponentListItem button={<ProjectItemMenu project={props.item} />}>
       <Link
-        href={kClientPaths.project.org.project.single(
+        href={kClientPaths.app.org.project.single(
           props.item.orgId,
           props.item.id
         )}

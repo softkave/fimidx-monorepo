@@ -13,7 +13,7 @@ export function OrgItem(props: IOrgItemProps) {
   return (
     <ComponentListItem button={<OrgItemMenu org={props.item} />}>
       <Link
-        href={kClientPaths.project.org.single(props.item.id)}
+        href={kClientPaths.app.org.single(props.item.id)}
         className="flex-1"
       >
         <div>

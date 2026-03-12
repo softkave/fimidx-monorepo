@@ -172,7 +172,7 @@ export function PermissionSelector({
       <div className="text-sm font-medium text-muted-foreground">
         Permissions
       </div>
-      <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
+      <div className="flex flex-col gap-2">
         {selectablePermissions.map((action) => (
           <div
             key={action}
@@ -191,11 +191,11 @@ export function PermissionSelector({
             />
             <Label
               htmlFor={readonly ? undefined : `permission-${action}`}
-              className="text-sm font-normal cursor-pointer"
+              className="text-sm font-normal cursor-pointer flex flex-col gap-1 items-start"
               title={permissionDescription(action)}
             >
               <span>{permissionLabel(action)}</span>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-muted-foreground text-left">
                 {permissionDescription(action)}
               </span>
             </Label>

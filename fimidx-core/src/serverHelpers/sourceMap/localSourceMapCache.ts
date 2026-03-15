@@ -4,6 +4,15 @@ import { getCoreConfig } from "../../common/getCoreConfig.js";
 import { getLocalSourceMapCacheModel } from "../../db/sourceMap.mongo.js";
 import type { ILocalSourceMapCacheEntry } from "../../definitions/sourceMap.js";
 
+const kPurgeFetchBatchSize = 500;
+const kPurgeDeleteBatchSize = 1000;
+
+type CacheEntryKey = {
+  projectId: string;
+  repoIdentifier: string;
+  version: string;
+};
+
 export async function getLocalSourceMapCacheEntry(
   projectId: string,
   repoIdentifier: string,
@@ -41,64 +50,117 @@ export async function upsertLocalSourceMapCacheEntry(
   return doc as ILocalSourceMapCacheEntry;
 }
 
-/** Delete cache entries where currentCycleCount - lastUsedCycleCount >
- * maxUnusedCycles. */
-export async function deleteLocalSourceMapCacheEntriesOlderThanCycle(
-  maxUnusedCycles: number,
-  projectCycleCounts: Map<string, number>
-): Promise<number> {
+/** Fetch a batch of cache entries (for batched purge). */
+async function fetchLocalSourceMapCacheBatch(
+  skip: number,
+  limit: number
+): Promise<ILocalSourceMapCacheEntry[]> {
   const model = getLocalSourceMapCacheModel();
-  const all = await model.find({}).lean().exec();
-  const toDelete: {
-    projectId: string;
-    repoIdentifier: string;
-    version: string;
-  }[] = [];
-  for (const entry of all as ILocalSourceMapCacheEntry[]) {
+  const docs = await model
+    .find({})
+    .sort({ _id: 1 })
+    .skip(skip)
+    .limit(limit)
+    .lean()
+    .exec();
+  return docs as ILocalSourceMapCacheEntry[];
+}
+
+/** From a batch of entries, return keys and local paths that are stale. */
+function filterStaleCacheEntries(
+  entries: ILocalSourceMapCacheEntry[],
+  projectCycleCounts: Map<string, number>,
+  maxUnusedCycles: number
+): { keys: CacheEntryKey[]; localPaths: string[] } {
+  const keys: CacheEntryKey[] = [];
+  const localPaths: string[] = [];
+  for (const entry of entries) {
     const current = projectCycleCounts.get(entry.projectId) ?? 0;
     if (current - entry.lastUsedCycleCount > maxUnusedCycles) {
-      toDelete.push({
+      keys.push({
         projectId: entry.projectId,
         repoIdentifier: entry.repoIdentifier,
         version: entry.version,
       });
+      localPaths.push(entry.localPath);
     }
   }
-  if (toDelete.length === 0) return 0;
+  return { keys, localPaths };
+}
 
-  const baseDir = getCoreConfig().sourceMaps?.localDir;
-  const localPathsToRemove = (all as ILocalSourceMapCacheEntry[])
-    .filter((e) =>
-      toDelete.some(
-        (t) =>
-          t.projectId === e.projectId &&
-          t.repoIdentifier === e.repoIdentifier &&
-          t.version === e.version
-      )
-    )
-    .map((e) => e.localPath);
+/** Delete cache entries by keys in batches (avoids oversized $or). */
+async function deleteCacheEntriesByKeys(
+  keys: CacheEntryKey[]
+): Promise<number> {
+  if (keys.length === 0) return 0;
+  const model = getLocalSourceMapCacheModel();
+  let totalDeleted = 0;
+  for (let i = 0; i < keys.length; i += kPurgeDeleteBatchSize) {
+    const chunk = keys.slice(i, i + kPurgeDeleteBatchSize);
+    const result = await model
+      .deleteMany({
+        $or: chunk.map((t) => ({
+          projectId: t.projectId,
+          repoIdentifier: t.repoIdentifier,
+          version: t.version,
+        })),
+      })
+      .exec();
+    totalDeleted += result.deletedCount ?? 0;
+  }
+  return totalDeleted;
+}
 
-  const result = await model.deleteMany({
-    $or: toDelete.map((t) => ({
-      projectId: t.projectId,
-      repoIdentifier: t.repoIdentifier,
-      version: t.version,
-    })),
-  });
-
-  if (baseDir) {
-    for (const localPath of localPathsToRemove) {
-      const resolved = path.resolve(localPath);
-      const baseResolved = path.resolve(baseDir);
-      if (resolved.startsWith(baseResolved)) {
-        try {
-          await rm(resolved, { recursive: true, force: true });
-        } catch {
-          // ignore
-        }
+/** Remove local directories/files under baseDir. Paths outside baseDir are
+ * skipped. */
+async function removeLocalPathsUnderBaseDir(
+  baseDir: string,
+  localPaths: string[]
+): Promise<void> {
+  const baseResolved = path.resolve(baseDir);
+  for (const localPath of localPaths) {
+    const resolved = path.resolve(localPath);
+    if (resolved.startsWith(baseResolved)) {
+      try {
+        await rm(resolved, { recursive: true, force: true });
+      } catch {
+        // ignore
       }
     }
   }
+}
 
-  return result.deletedCount ?? 0;
+/** Delete cache entries where currentCycleCount - lastUsedCycleCount >
+ * maxUnusedCycles. Fetches and deletes in batches. */
+export async function deleteLocalSourceMapCacheEntriesOlderThanCycle(
+  maxUnusedCycles: number,
+  projectCycleCounts: Map<string, number>
+): Promise<number> {
+  const allKeys: CacheEntryKey[] = [];
+  const allLocalPaths: string[] = [];
+
+  let skip = 0;
+  let batch: ILocalSourceMapCacheEntry[];
+  do {
+    batch = await fetchLocalSourceMapCacheBatch(skip, kPurgeFetchBatchSize);
+    const { keys, localPaths } = filterStaleCacheEntries(
+      batch,
+      projectCycleCounts,
+      maxUnusedCycles
+    );
+    allKeys.push(...keys);
+    allLocalPaths.push(...localPaths);
+    skip += batch.length;
+  } while (batch.length === kPurgeFetchBatchSize);
+
+  if (allKeys.length === 0) return 0;
+
+  const deleted = await deleteCacheEntriesByKeys(allKeys);
+
+  const baseDir = getCoreConfig().sourceMaps?.localDir;
+  if (baseDir) {
+    await removeLocalPathsUnderBaseDir(baseDir, allLocalPaths);
+  }
+
+  return deleted;
 }

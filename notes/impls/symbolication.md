@@ -1,6 +1,5 @@
 - add another field that marks symbolication that can be bulk updated, used to symbolicate fields later that maybe lacked
 - or should we list source maps and use them to fetch using configured fields, logs that belong to them to symbolicate?
-- batch process in deleteLocalSourceMapCacheEntriesOlderThanCycle and make a map of toDelete
 - delete local source map entries in db after deleting locally
 - do we have statusCode on fimidara errors?
 - in ensureTokenHasAccessToFolder, do a check rather just add again

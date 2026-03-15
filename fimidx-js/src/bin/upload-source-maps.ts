@@ -1,14 +1,11 @@
 import archiver from 'archiver';
-import {
-  createWriteStream,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  statSync,
-} from 'fs';
-import { tmpdir } from 'os';
+import {FimidaraEndpoints} from 'fimidara';
+import {createReadStream, createWriteStream} from 'fs';
+import {mkdtemp, rm, stat} from 'fs/promises';
+import {tmpdir} from 'os';
 import path from 'path';
-import { FimidxEndpoints } from '../endpoints/fimidxEndpoints.js';
+import {kDefaultServerURL} from '../constants.js';
+import {FimidxEndpoints} from '../endpoints/fimidxEndpoints.js';
 
 export interface IUploadSourceMapsOptions {
   clientToken: string;
@@ -16,53 +13,50 @@ export interface IUploadSourceMapsOptions {
   repo: string;
   version: string;
   inputPath: string;
-  serverUrl: string;
-  fimidaraUrl: string;
+  serverUrl?: string;
+  fimidaraUrl?: string;
 }
 
 export async function uploadFileToFimidara(
-  baseUrl: string,
+  fimidaraUrl: string | undefined,
   authToken: string,
   filePath: string,
   localPath: string,
 ): Promise<void> {
-  const url = `${baseUrl.replace(/\/$/, '')}/v1/files/uploadFile/${encodeURIComponent(filePath)}`;
-  const buffer = readFileSync(localPath);
-  const blob = new Blob([buffer]);
-  const form = new FormData();
-  form.append('data', blob);
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${authToken}`,
-      'x-fimidara-file-size': String(buffer.length),
-    },
-    body: form,
+  const rstream = await createReadStream(localPath);
+  const size = (await stat(localPath)).size;
+  const endpoints = new FimidaraEndpoints({
+    authToken,
+    serverURL: fimidaraUrl?.replace(/\/$/, ''),
   });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Fimidara upload failed: ${res.status} ${text}`);
-  }
+  await endpoints.files.uploadFile({
+    filepath: filePath,
+    data: rstream,
+    size,
+  });
 }
 
 export async function runUploadSourceMaps(
   opts: IUploadSourceMapsOptions,
 ): Promise<void> {
+  const serverUrl = opts.serverUrl ?? kDefaultServerURL;
+  const fimidaraUrl = opts.fimidaraUrl ?? process.env.FIMIDARA_SERVER_URL;
+
   const endpoints = new FimidxEndpoints({
     authToken: opts.clientToken,
-    serverURL: opts.serverUrl,
+    serverURL: serverUrl,
   });
 
-  const { token, filePath } = await endpoints.sourceMaps.getUploadToken({
+  const {token, filePath} = await endpoints.sourceMaps.getUploadToken({
     projectId: opts.projectId,
     repoIdentifier: opts.repo,
     version: opts.version,
   });
 
   const inputPath = path.resolve(opts.inputPath);
-  let stat: ReturnType<typeof statSync>;
+  let statResult: Awaited<ReturnType<typeof stat>>;
   try {
-    stat = statSync(inputPath);
+    statResult = await stat(inputPath);
   } catch {
     throw new Error(`Path not found: ${inputPath}`);
   }
@@ -70,11 +64,11 @@ export async function runUploadSourceMaps(
   let fileToUpload: string;
   let isZip: boolean;
 
-  if (stat.isDirectory()) {
-    const tempDir = mkdtempSync(path.join(tmpdir(), 'fimidx-source-maps-'));
+  if (statResult.isDirectory()) {
+    const tempDir = await mkdtemp(path.join(tmpdir(), 'fimidx-source-maps-'));
     const zipPath = path.join(tempDir, 'source-maps.zip');
     const output = createWriteStream(zipPath);
-    const archive = archiver('zip', { zlib: { level: 9 } });
+    const archive = archiver('zip', {zlib: {level: 9}});
     archive.pipe(output);
     archive.directory(inputPath, false);
     archive.finalize();
@@ -86,24 +80,18 @@ export async function runUploadSourceMaps(
     fileToUpload = zipPath;
     isZip = true;
     try {
-      await uploadFileToFimidara(
-        opts.fimidaraUrl,
-        token,
-        filePath,
-        fileToUpload,
-      );
+      await uploadFileToFimidara(fimidaraUrl, token, filePath, fileToUpload);
     } finally {
-      rmSync(tempDir, { recursive: true, force: true });
+      await rm(tempDir, {recursive: true, force: true});
     }
   } else {
     fileToUpload = inputPath;
     isZip = path.basename(inputPath).toLowerCase().endsWith('.zip');
-    await uploadFileToFimidara(
-      opts.fimidaraUrl,
-      token,
-      filePath,
-      fileToUpload,
-    );
+    if (!isZip) {
+      throw new Error(`Only zip files are supported for now: ${inputPath}`);
+    }
+
+    await uploadFileToFimidara(fimidaraUrl, token, filePath, fileToUpload);
   }
 
   await endpoints.sourceMaps.notifyUploadComplete({

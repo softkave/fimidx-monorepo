@@ -32,16 +32,9 @@ sourceMaps
       repo: string;
       version: string;
       path: string;
-      serverUrl: string;
+      serverUrl?: string;
       fimidaraUrl?: string;
     }) => {
-      const fimidaraUrl = opts.fimidaraUrl ?? process.env.FIMIDARA_SERVER_URL;
-      if (!fimidaraUrl) {
-        console.error(
-          'Missing Fimidara URL: set --fimidara-url or FIMIDARA_SERVER_URL',
-        );
-        process.exit(1);
-      }
       try {
         await runUploadSourceMaps({
           clientToken: opts.clientToken,
@@ -50,7 +43,7 @@ sourceMaps
           version: opts.version,
           inputPath: opts.path,
           serverUrl: opts.serverUrl,
-          fimidaraUrl,
+          fimidaraUrl: opts.fimidaraUrl,
         });
         console.log('Upload complete.');
       } catch (err) {

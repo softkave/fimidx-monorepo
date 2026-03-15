@@ -33,11 +33,53 @@ export const coreConfigSchema = z.object({
   }),
   indexObjs: z.object({
     url: z.string(),
-    intervalMs: z.coerce.number(),
+    intervalMs: z.coerce
+      .number()
+      .optional()
+      .default(1000 * 60 * 10), // 10 minutes
   }),
   cleanupObjs: z.object({
     url: z.string(),
-    intervalMs: z.coerce.number(),
+    intervalMs: z.coerce
+      .number()
+      .optional()
+      .default(1000 * 60 * 60 * 24), // 1 day
+  }),
+  /** When set, used for unzip temp dir and symbolication local cache. */
+  sourceMaps: z.object({
+    localDir: z.string(),
+  }),
+  /** Fimidara service auth and rootname for source map folders. */
+  fimidara: z.object({
+    authToken: z.string(),
+    rootname: z.string(),
+  }),
+  symbolication: z.object({
+    url: z.string(),
+    intervalMs: z.coerce
+      .number()
+      .optional()
+      .default(1000 * 60 * 10), // 10 minutes
+    batchSize: z.coerce.number().optional().default(1000),
+    maxAgeMs: z.coerce
+      .number()
+      .optional()
+      .default(1000 * 60 * 60 * 24), // 1 day
+  }),
+  unzipSourceMaps: z.object({
+    url: z.string(),
+    intervalMs: z.coerce
+      .number()
+      .optional()
+      .default(1000 * 60 * 10), // 10 minutes
+  }),
+  purgeSourceMapCache: z.object({
+    url: z.string(),
+    intervalMs: z.coerce
+      .number()
+      .optional()
+      .default(1000 * 60 * 60 * 24), // 1 day
+    maxUnusedCycles: z.coerce.number().optional().default(10),
   }),
   nodeServerHttp: z.object({
     port: z.coerce.number(),

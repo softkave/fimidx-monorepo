@@ -25,6 +25,20 @@ export function getCoreConfig(): CoreConfig {
   const indexObjsIntervalMs = process.env.INDEX_OBJS_INTERVAL_MS;
   const cleanupObjsUrl = process.env.CLEANUP_OBJS_URL;
   const cleanupObjsIntervalMs = process.env.CLEANUP_OBJS_INTERVAL_MS;
+  const sourceMapsLocalDir = process.env.FIMIDX_SOURCE_MAPS_LOCAL_DIR;
+  const fimidaraAuthToken = process.env.FIMIDARA_AUTH_TOKEN;
+  const fimidaraRootname = process.env.FIMIDARA_ROOTNAME;
+  const symbolicationUrl = process.env.SYMBOLICATION_URL;
+  const symbolicationIntervalMs = process.env.SYMBOLICATION_INTERVAL_MS;
+  const symbolicationBatchSize = process.env.SYMBOLICATION_LOG_BATCH_SIZE;
+  const symbolicationMaxAgeMs = process.env.SYMBOLICATION_MAX_AGE_MS;
+  const unzipSourceMapsUrl = process.env.UNZIP_SOURCE_MAPS_URL;
+  const unzipSourceMapsIntervalMs = process.env.UNZIP_SOURCE_MAPS_INTERVAL_MS;
+  const purgeSourceMapCacheUrl = process.env.PURGE_SOURCE_MAP_CACHE_URL;
+  const purgeSourceMapCacheIntervalMs =
+    process.env.PURGE_SOURCE_MAP_CACHE_INTERVAL_MS;
+  const purgeSourceMapCacheMaxUnusedCycles =
+    process.env.SYMBOLICATION_LOCAL_CACHE_MAX_UNUSED_CYCLES;
   const nodeServerHttpPort = process.env.NODE_SERVER_HTTP_PORT;
   const fimidxLoggerProjectId =
     process.env.NEXT_PUBLIC_FIMIDX_LOGGER_PROJECT_ID;
@@ -72,6 +86,26 @@ export function getCoreConfig(): CoreConfig {
     cleanupObjs: {
       url: cleanupObjsUrl,
       intervalMs: cleanupObjsIntervalMs,
+    },
+    sourceMaps: { localDir: sourceMapsLocalDir },
+    fimidara: {
+      authToken: fimidaraAuthToken,
+      rootname: fimidaraRootname ?? "fimidx",
+    },
+    symbolication: {
+      url: symbolicationUrl,
+      intervalMs: symbolicationIntervalMs,
+      batchSize: symbolicationBatchSize,
+      maxAgeMs: symbolicationMaxAgeMs,
+    },
+    unzipSourceMaps: {
+      url: unzipSourceMapsUrl,
+      intervalMs: unzipSourceMapsIntervalMs,
+    },
+    purgeSourceMapCache: {
+      url: purgeSourceMapCacheUrl,
+      intervalMs: purgeSourceMapCacheIntervalMs,
+      maxUnusedCycles: purgeSourceMapCacheMaxUnusedCycles,
     },
     nodeServerHttp: {
       port: nodeServerHttpPort,

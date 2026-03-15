@@ -32,6 +32,14 @@ export const kClientPaths = {
           index: (orgId: string, projectId: string) =>
             `/app/orgs/${orgId}/projects/${projectId}/logs`,
         },
+        sourceMaps: {
+          index: (orgId: string, projectId: string) =>
+            `/app/orgs/${orgId}/projects/${projectId}/source-maps`,
+          config: (orgId: string, projectId: string) =>
+            `/app/orgs/${orgId}/projects/${projectId}/source-maps/config`,
+          uploads: (orgId: string, projectId: string) =>
+            `/app/orgs/${orgId}/projects/${projectId}/source-maps/uploads`,
+        },
         monitors: {
           index: (orgId: string, projectId: string) =>
             `/app/orgs/${orgId}/projects/${projectId}/monitors`,

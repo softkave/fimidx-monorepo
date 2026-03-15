@@ -12,3 +12,21 @@ export type IngestLogsArgs = {
   projectId: string;
   logs: Array<InputLogRecord>;
 };
+
+export type GetSourceMapUploadTokenArgs = {
+  projectId: string;
+  repoIdentifier: string;
+  version: string;
+};
+
+export type GetSourceMapUploadTokenResult = {
+  token: string;
+  folderPath: string;
+};
+
+export type NotifySourceMapUploadCompleteArgs = {
+  projectId: string;
+  repoIdentifier: string;
+  version: string;
+  isZip: boolean;
+};

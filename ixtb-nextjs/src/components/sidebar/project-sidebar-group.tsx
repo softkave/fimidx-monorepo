@@ -7,7 +7,7 @@ import {
   SidebarMenuItem,
 } from "@/src/components/ui/sidebar";
 import { kClientPaths } from "@/src/lib/clientHelpers/clientPaths";
-import { KeyIcon, LogsIcon } from "lucide-react";
+import { FileStackIcon, KeyIcon, LogsIcon } from "lucide-react";
 import { useMemo } from "react";
 import { ISidebarItem } from "./types";
 
@@ -22,6 +22,11 @@ function getItems(orgId: string, projectId: string) {
       title: "Logs",
       url: kClientPaths.app.org.project.log.index(orgId, projectId),
       icon: LogsIcon,
+    },
+    {
+      title: "Source Maps",
+      url: kClientPaths.app.org.project.sourceMaps.index(orgId, projectId),
+      icon: FileStackIcon,
     },
   ];
 

@@ -155,12 +155,13 @@ export async function deleteLocalSourceMapCacheEntriesOlderThanCycle(
 
   if (allKeys.length === 0) return 0;
 
-  const deleted = await deleteCacheEntriesByKeys(allKeys);
-
+  // Delete local paths first before deleting in DB to avoid orphaned files if
+  // DB deletion fails.
   const baseDir = getCoreConfig().sourceMaps?.localDir;
   if (baseDir) {
     await removeLocalPathsUnderBaseDir(baseDir, allLocalPaths);
   }
 
+  const deleted = await deleteCacheEntriesByKeys(allKeys);
   return deleted;
 }

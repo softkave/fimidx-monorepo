@@ -3,10 +3,14 @@
 import {Command} from 'commander';
 import {kDefaultServerURL} from './constants.js';
 import {uploadSourceMaps} from './node/uploadSourceMaps.js';
+import {getVersion} from './version.js';
 
 const program = new Command();
 
-program.name('fimidx').description('Fimidx CLI').version('0.6.0');
+program
+  .name('fimidx')
+  .description('Fimidx CLI')
+  .version(await getVersion('0.0.0'));
 
 const sourceMaps = program
   .command('source-maps')

@@ -4,7 +4,6 @@
 - a way to cache in symbolicateStack
 - what if the file is nested in defaultMapPathResolver
 - take a 2nd look at run runSymbolication
-- generate new js types/endpoint/mfdoc
 - auto pickup version from fimidx-js cli
 - return a full fimidara url, not just the folderpath
 - take a second look at source-maps cli

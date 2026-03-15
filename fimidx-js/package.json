@@ -64,7 +64,9 @@
   "scripts": {
     "lint": "gts lint",
     "clean": "gts clean && rm -f tsconfig.tsbuildinfo",
-    "compile": "npm run clean && tsc",
+    "write-version-file": "npx -y -- tsx src/version.ts",
+    "copy-version-file": "cp version.txt build/version.txt",
+    "compile": "npm run clean && tsc && npm run write-version-file && npm run copy-version-file",
     "fix": "gts fix",
     "pretty": "prettier --write",
     "pretest": "npm run compile",

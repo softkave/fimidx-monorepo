@@ -3,7 +3,7 @@ import { kOwnServerErrorCodes, OwnServerError } from "fimidx-core/common/error";
 import { normalizePathSegment } from "fimidx-core/definitions/sourceMap";
 import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import {
-  buildSourceMapFolderPath,
+  buildSourceMapZipFilePath,
   getProjects,
   upsertSourceMapUpload,
 } from "fimidx-core/serverHelpers/index";
@@ -54,7 +54,7 @@ export const uploadCompleteEndpoint: NextClientTokenAuthenticatedEndpointFn<void
 
     const normalizedRepo = normalizePathSegment(input.repoIdentifier);
     const normalizedVersion = normalizePathSegment(input.version);
-    const fimidaraPath = buildSourceMapFolderPath(
+    const fimidaraPath = buildSourceMapZipFilePath(
       input.projectId,
       normalizedRepo,
       normalizedVersion

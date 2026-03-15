@@ -19,6 +19,7 @@
 - take a second look at source-maps cli
 - use fimidara multipart upload
 - parse map into a db?
+- remove listFimidaraFolder
 
 other
 

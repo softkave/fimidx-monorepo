@@ -21,7 +21,7 @@ export type GetSourceMapUploadTokenArgs = {
 
 export type GetSourceMapUploadTokenResult = {
   token: string;
-  folderPath: string;
+  filePath: string;
 };
 
 export type NotifySourceMapUploadCompleteArgs = {

@@ -4,7 +4,9 @@ import { normalizePathSegment } from "../../definitions/sourceMap.js";
 
 const kDefaultRootname = "fimidx";
 const kSourceMapsFolder = "source-maps";
-const kSourceMapsStashFolder = "source-maps-stash";
+
+/** Fixed zip filename in the version folder so we can download without listing. */
+export const kSourceMapZipFileName = "source-maps.zip";
 
 function getFimidaraAuthToken(): string {
   const fimidara = getCoreConfig().fimidara;
@@ -21,7 +23,7 @@ export function getFimidaraEndpoints(authToken?: string): FimidaraEndpoints {
   });
 }
 
-/** Build path:
+/** Build folder path:
  * rootname/source-maps/<projectId>/<normalizedRepo>/<normalizedVersion> */
 export function buildSourceMapFolderPath(
   projectId: string,
@@ -35,24 +37,21 @@ export function buildSourceMapFolderPath(
   return fimidaraAddRootnameToPath(relative, [rootname]);
 }
 
-/** Folder base for a project: rootname/source-maps/<projectId> */
-export function buildSourceMapProjectFolderPath(projectId: string): string {
-  const rootname = getFimidaraRootname();
-  const relative = `${kSourceMapsFolder}/${projectId}`;
-  return fimidaraAddRootnameToPath(relative, [rootname]);
-}
-
-/** Stash path for unzipped content:
- * rootname/source-maps-stash/<projectId>/<repo>/<version> */
-export function buildSourceMapStashPath(
+/** Build full Fimidara file path for the source map zip. Returned to the client
+ * so they upload to this exact path; we store it and use it for download. */
+export function buildSourceMapZipFilePath(
   projectId: string,
   repoIdentifier: string,
   version: string
 ): string {
+  const folder = buildSourceMapFolderPath(projectId, repoIdentifier, version);
+  return `${folder}/${kSourceMapZipFileName}`;
+}
+
+/** Folder base for a project: rootname/source-maps/<projectId> */
+export function buildSourceMapProjectFolderPath(projectId: string): string {
   const rootname = getFimidaraRootname();
-  const normalizedRepo = normalizePathSegment(repoIdentifier);
-  const normalizedVersion = normalizePathSegment(version);
-  const relative = `${kSourceMapsStashFolder}/${projectId}/${normalizedRepo}/${normalizedVersion}`;
+  const relative = `${kSourceMapsFolder}/${projectId}`;
   return fimidaraAddRootnameToPath(relative, [rootname]);
 }
 

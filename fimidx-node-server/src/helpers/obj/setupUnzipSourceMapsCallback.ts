@@ -9,9 +9,10 @@ import { fimidxNodeWinstonLogger } from "../../utils/fimidxNodeloggers.js";
 export async function setupUnzipSourceMapsCallback() {
   const config = getCoreConfig().unzipSourceMaps;
   if (!config) {
-    throw new Error(
-      "Unzip source maps callback not configured: set UNZIP_SOURCE_MAPS_URL and UNZIP_SOURCE_MAPS_INTERVAL_MS"
+    fimidxNodeWinstonLogger.info(
+      "Unzip source maps callback not configured (set UNZIP_SOURCE_MAPS_URL and UNZIP_SOURCE_MAPS_INTERVAL_MS to enable)"
     );
+    return;
   }
 
   const name = "__fimidx_unzipSourceMaps_callback";

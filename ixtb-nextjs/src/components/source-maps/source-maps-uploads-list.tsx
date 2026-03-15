@@ -7,7 +7,6 @@ export interface ISourceMapUploadItem {
   version: string;
   uploadedAt: string;
   isZip: boolean;
-  unzippedFimidaraPath: string | null;
 }
 
 export interface ISourceMapsUploadsListProps {
@@ -20,9 +19,6 @@ function SourceMapUploadItem(props: { item: ISourceMapUploadItem }) {
     <li className="text-sm">
       {item.repoIdentifier} @ {item.version} —{" "}
       {new Date(item.uploadedAt).toLocaleString()}
-      {item.isZip && !item.unzippedFimidaraPath && (
-        <span className="text-amber-600 ml-1">(unzip pending)</span>
-      )}
     </li>
   );
 }

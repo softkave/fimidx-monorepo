@@ -1,3 +1,4 @@
+import { getLocalSourceMapCacheModel } from "../../db/sourceMap.mongo.js";
 import { getSourceMapUploadModel } from "../../db/sourceMap.mongo.js";
 import type { ISourceMapUpload } from "../../definitions/sourceMap.js";
 
@@ -11,6 +12,32 @@ export async function getSourceMapUploadsByProject(
     .lean()
     .exec();
   return docs as ISourceMapUpload[];
+}
+
+/** Get zip uploads that do not yet have a local cache entry (unzipped locally). */
+export async function getSourceMapUploadsPendingUnzip(): Promise<
+  ISourceMapUpload[]
+> {
+  const uploadModel = getSourceMapUploadModel();
+  const cacheModel = getLocalSourceMapCacheModel();
+  const uploads = (await uploadModel
+    .find({ isZip: true })
+    .lean()
+    .exec()) as ISourceMapUpload[];
+  if (uploads.length === 0) return [];
+  const cached = await cacheModel
+    .find({})
+    .select({ projectId: 1, repoIdentifier: 1, version: 1 })
+    .lean()
+    .exec();
+  const cacheSet = new Set(
+    (cached as { projectId: string; repoIdentifier: string; version: string }[]).map(
+      (c) => `${c.projectId}\0${c.repoIdentifier}\0${c.version}`
+    )
+  );
+  return uploads.filter(
+    (u) => !cacheSet.has(`${u.projectId}\0${u.repoIdentifier}\0${u.version}`)
+  );
 }
 
 export async function getSourceMapUpload(
@@ -39,14 +66,3 @@ export async function getHasSourceMapSet(
   return set;
 }
 
-/** Get uploads that are zip and not yet unzipped. */
-export async function getSourceMapUploadsPendingUnzip(): Promise<
-  ISourceMapUpload[]
-> {
-  const model = getSourceMapUploadModel();
-  const docs = await model
-    .find({ isZip: true, unzippedFimidaraPath: { $in: [null, ""] } })
-    .lean()
-    .exec();
-  return docs as ISourceMapUpload[];
-}

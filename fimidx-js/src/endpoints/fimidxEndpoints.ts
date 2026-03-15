@@ -1,14 +1,12 @@
 // This file is auto-generated, do not modify directly.
 // Reach out to a code owner to suggest changes.
 
-import {
-  type MfdocEndpointOpts,
-} from 'mfdoc-js-sdk-base';
+import {type MfdocEndpointOpts} from 'mfdoc-js-sdk-base';
 import {AbstractSdkEndpoints} from './AbstractSdkEndpoints.js';
 import {
-  type IngestLogsArgs,
   type GetSourceMapUploadTokenArgs,
   type GetSourceMapUploadTokenResult,
+  type IngestLogsArgs,
   type NotifySourceMapUploadCompleteArgs,
 } from './fimidxTypes.js';
 
@@ -33,7 +31,8 @@ export class LogsEndpoints extends AbstractSdkEndpoints {
 
 export class SourceMapsEndpoints extends AbstractSdkEndpoints {
   /**
-   * Get a Fimidara token and folder path for uploading source maps.
+   * Get a Fimidara token and file path for uploading source maps (upload to
+   * filePath).
    */
   getUploadToken = async (
     props: GetSourceMapUploadTokenArgs,

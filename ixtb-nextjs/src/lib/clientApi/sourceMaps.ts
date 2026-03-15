@@ -24,7 +24,6 @@ export interface ISourceMapUploadsData {
     version: string;
     uploadedAt: string;
     isZip: boolean;
-    unzippedFimidaraPath: string | null;
   }>;
 }
 

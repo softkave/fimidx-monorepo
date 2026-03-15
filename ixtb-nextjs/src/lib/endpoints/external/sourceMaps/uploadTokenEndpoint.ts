@@ -2,7 +2,7 @@ import assert from "assert";
 import { kOwnServerErrorCodes, OwnServerError } from "fimidx-core/common/error";
 import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import {
-  buildSourceMapFolderPath,
+  buildSourceMapZipFilePath,
   ensureProjectFimidaraToken,
   getProjects,
 } from "fimidx-core/serverHelpers/index";
@@ -19,7 +19,7 @@ const uploadTokenSchema = z.object({
 
 export const uploadTokenEndpoint: NextClientTokenAuthenticatedEndpointFn<{
   token: string;
-  folderPath: string;
+  filePath: string;
 }> = async (params) => {
   const {
     req,
@@ -55,7 +55,7 @@ export const uploadTokenEndpoint: NextClientTokenAuthenticatedEndpointFn<{
   const { encodedToken } =
     await ensureProjectFimidaraToken(input.projectId);
 
-  const folderPath = buildSourceMapFolderPath(
+  const filePath = buildSourceMapZipFilePath(
     input.projectId,
     input.repoIdentifier,
     input.version
@@ -63,6 +63,6 @@ export const uploadTokenEndpoint: NextClientTokenAuthenticatedEndpointFn<{
 
   return {
     token: encodedToken,
-    folderPath,
+    filePath,
   };
 };

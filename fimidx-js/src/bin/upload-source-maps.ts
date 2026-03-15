@@ -23,12 +23,10 @@ export interface IUploadSourceMapsOptions {
 export async function uploadFileToFimidara(
   baseUrl: string,
   authToken: string,
-  folderPath: string,
-  fileName: string,
+  filePath: string,
   localPath: string,
 ): Promise<void> {
-  const filepath = folderPath + '/' + fileName;
-  const url = `${baseUrl.replace(/\/$/, '')}/v1/files/uploadFile/${encodeURIComponent(filepath)}`;
+  const url = `${baseUrl.replace(/\/$/, '')}/v1/files/uploadFile/${encodeURIComponent(filePath)}`;
   const buffer = readFileSync(localPath);
   const blob = new Blob([buffer]);
   const form = new FormData();
@@ -55,7 +53,7 @@ export async function runUploadSourceMaps(
     serverURL: opts.serverUrl,
   });
 
-  const { token, folderPath } = await endpoints.sourceMaps.getUploadToken({
+  const { token, filePath } = await endpoints.sourceMaps.getUploadToken({
     projectId: opts.projectId,
     repoIdentifier: opts.repo,
     version: opts.version,
@@ -91,8 +89,7 @@ export async function runUploadSourceMaps(
       await uploadFileToFimidara(
         opts.fimidaraUrl,
         token,
-        folderPath,
-        path.basename(zipPath),
+        filePath,
         fileToUpload,
       );
     } finally {
@@ -104,8 +101,7 @@ export async function runUploadSourceMaps(
     await uploadFileToFimidara(
       opts.fimidaraUrl,
       token,
-      folderPath,
-      path.basename(inputPath),
+      filePath,
       fileToUpload,
     );
   }

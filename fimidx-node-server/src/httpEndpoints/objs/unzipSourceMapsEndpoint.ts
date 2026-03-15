@@ -11,7 +11,7 @@ export async function unzipSourceMapsEndpoint(req: Request, res: Response) {
     for (const upload of pending) {
       try {
         await unzipSourceMapUpload(upload);
-        fimidxNodeWinstonLogger.info("Unzipped source map upload", {
+        fimidxNodeWinstonLogger.info("Unzipped source map upload locally", {
           projectId: upload.projectId,
           repoIdentifier: upload.repoIdentifier,
           version: upload.version,

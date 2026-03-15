@@ -9,7 +9,6 @@ export * from "./getSymbolicationState.js";
 export * from "./localSourceMapCache.js";
 export * from "./symbolicatedLogTracking.js";
 export * from "./unzipSourceMapUpload.js";
-export * from "./updateSourceMapUploadUnzipped.js";
 export * from "./upsertProjectFimidaraToken.js";
 export * from "./upsertSymbolicationConfig.js";
 export * from "./upsertSymbolicationState.js";

@@ -17,7 +17,6 @@ export const getSourceMapUploadsEndpoint: NextUserAuthenticatedEndpointFn<{
     version: string;
     uploadedAt: string;
     isZip: boolean;
-    unzippedFimidaraPath: string | null;
   }>;
 }> = async (params) => {
   const {
@@ -50,7 +49,6 @@ export const getSourceMapUploadsEndpoint: NextUserAuthenticatedEndpointFn<{
       version: u.version,
       uploadedAt: u.uploadedAt.toISOString(),
       isZip: u.isZip,
-      unzippedFimidaraPath: u.unzippedFimidaraPath ?? null,
     })),
   };
 };

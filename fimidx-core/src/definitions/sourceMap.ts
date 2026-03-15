@@ -1,3 +1,31 @@
+import { z } from "zod";
+
+/** Zod schema for get source map upload token request body. */
+export const getSourceMapUploadTokenArgsSchema = z.object({
+  projectId: z.string().min(1),
+  repoIdentifier: z.string().min(1),
+  version: z.string().min(1),
+});
+
+/** Zod schema for notify source map upload complete request body. */
+export const notifySourceMapUploadCompleteArgsSchema = z.object({
+  projectId: z.string().min(1),
+  repoIdentifier: z.string().min(1),
+  version: z.string().min(1),
+  isZip: z.boolean(),
+});
+
+export type GetSourceMapUploadTokenArgs = z.infer<
+  typeof getSourceMapUploadTokenArgsSchema
+>;
+export type NotifySourceMapUploadCompleteArgs = z.infer<
+  typeof notifySourceMapUploadCompleteArgsSchema
+>;
+export type GetSourceMapUploadTokenResult = {
+  token: string;
+  filePath: string;
+};
+
 /**
  * Path-safe normalization for repo identifier and version used in Fimidara
  * paths. Replaces non-URI-safe characters with hyphen; no '..' or control

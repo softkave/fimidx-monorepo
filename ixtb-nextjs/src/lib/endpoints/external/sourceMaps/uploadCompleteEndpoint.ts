@@ -1,6 +1,9 @@
 import assert from "assert";
 import { kOwnServerErrorCodes, OwnServerError } from "fimidx-core/common/error";
-import { normalizePathSegment } from "fimidx-core/definitions/sourceMap";
+import {
+  normalizePathSegment,
+  notifySourceMapUploadCompleteArgsSchema,
+} from "fimidx-core/definitions/sourceMap";
 import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import {
   buildSourceMapZipFilePath,
@@ -8,16 +11,8 @@ import {
   upsertSourceMapUpload,
 } from "fimidx-core/serverHelpers/index";
 import { first } from "lodash-es";
-import { z } from "zod";
 import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
 import type { NextClientTokenAuthenticatedEndpointFn } from "../../types";
-
-const uploadCompleteSchema = z.object({
-  projectId: z.string().min(1),
-  repoIdentifier: z.string().min(1),
-  version: z.string().min(1),
-  isZip: z.boolean(),
-});
 
 export const uploadCompleteEndpoint: NextClientTokenAuthenticatedEndpointFn<void> =
   async (params) => {
@@ -26,7 +21,7 @@ export const uploadCompleteEndpoint: NextClientTokenAuthenticatedEndpointFn<void
       session: { clientToken },
     } = params;
 
-    const input = uploadCompleteSchema.parse(await req.json());
+    const input = notifySourceMapUploadCompleteArgsSchema.parse(await req.json());
 
     await checkPermissionProjectThenOrg({
       clientToken,

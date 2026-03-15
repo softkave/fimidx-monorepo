@@ -203,8 +203,8 @@ importers:
         specifier: workspace:*
         version: link:../fimidx-core
       mfdoc:
-        specifier: ^0.4.1
-        version: 0.4.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)
+        specifier: ^0.6.0
+        version: 0.6.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)
       softkave-js-utils:
         specifier: ^0.17.1
         version: 0.17.1(assert@2.1.0)(lodash-es@4.17.23)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
@@ -5368,8 +5368,8 @@ packages:
     resolution: {integrity: sha512-NChNSkLf5gMgeBle3LjANCj8cN1tqhf675/mQExIRTwEuITYK2mrSHtkC9yIAR33AGITgLZgG5iGfsCsa6mbeQ==}
     engines: {node: '>=13'}
 
-  mfdoc@0.4.1:
-    resolution: {integrity: sha512-sO4/mVdjj2kfoLdxMRMvJ8l26tcZBM8AG00X21g7KOYIKBwOn9nVtt/27hl2+pIy0LQMLxRELyowSzHo4sianQ==}
+  mfdoc@0.6.0:
+    resolution: {integrity: sha512-CECJ3jtsIMepnhuwLvCSDJ3X5mWW9zFo06ZI+5nou6F3EUJH92/oX4PQz76LILQr7qvmFLSH6rriiFDh5ETxYA==}
     engines: {node: '>=24'}
     hasBin: true
 
@@ -11577,7 +11577,7 @@ snapshots:
       - path-browserify
       - type-fest
 
-  mfdoc@0.4.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1):
+  mfdoc@0.6.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1):
     dependencies:
       case: 1.6.3
       commander: 14.0.3

@@ -1,21 +1,15 @@
 import assert from "assert";
 import { kOwnServerErrorCodes, OwnServerError } from "fimidx-core/common/error";
 import { kFimidxPermissions } from "fimidx-core/definitions/permission";
+import { getSourceMapUploadTokenArgsSchema } from "fimidx-core/definitions/sourceMap";
 import {
   buildSourceMapZipFilePath,
   ensureProjectFimidaraToken,
   getProjects,
 } from "fimidx-core/serverHelpers/index";
 import { first } from "lodash-es";
-import { z } from "zod";
 import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
 import type { NextClientTokenAuthenticatedEndpointFn } from "../../types";
-
-const uploadTokenSchema = z.object({
-  projectId: z.string().min(1),
-  repoIdentifier: z.string().min(1),
-  version: z.string().min(1),
-});
 
 export const uploadTokenEndpoint: NextClientTokenAuthenticatedEndpointFn<{
   token: string;
@@ -26,7 +20,7 @@ export const uploadTokenEndpoint: NextClientTokenAuthenticatedEndpointFn<{
     session: { clientToken },
   } = params;
 
-  const input = uploadTokenSchema.parse(await req.json());
+  const input = getSourceMapUploadTokenArgsSchema.parse(await req.json());
 
   await checkPermissionProjectThenOrg({
     clientToken,

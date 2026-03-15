@@ -18,7 +18,10 @@
     "fix": "gts fix",
     "pretest": "npm run compile",
     "posttest": "npm run lint",
-    "link:pkg": "npx yalc add"
+    "link:pkg": "npx yalc add",
+    "gen:public:setup-js-sdk": "mfdoc setup-js-sdk ../fimidx-js --name fimidx --provider pnpm",
+    "gen:public:endpoints-info": "mfdoc gen-http-api-endpoints-info ./src/index.ts --output-path ../fimidx-mfdoc-out/public-endpoints --include-tags public --ignore-tags ignoreForEndpointsInfo",
+    "gen:public:js-sdk": "mfdoc gen-js-sdk ./src/index.ts --output-path ../fimidx-js --include-tags public --ignore-tags ignoreForJsSdk --filename-prefix fimidx"
   },
   "devDependencies": {
     "@types/node": "^22.7.5",
@@ -27,7 +30,7 @@
   },
   "dependencies": {
     "fimidx-core": "workspace:*",
-    "mfdoc": "^0.4.1",
+    "mfdoc": "^0.6.0",
     "softkave-js-utils": "^0.17.1"
   }
 }

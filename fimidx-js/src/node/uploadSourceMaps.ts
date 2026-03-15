@@ -1,9 +1,10 @@
 import archiver from 'archiver';
-import {FimidaraEndpoints} from 'fimidara';
-import {createWriteStream} from 'fs';
-import {mkdtemp, readFile, rm, stat} from 'fs/promises';
+import {FimidaraEndpoints, multipartUploadNode} from 'fimidara';
+import {createReadStream, createWriteStream} from 'fs';
+import {mkdtemp, rm, stat} from 'fs/promises';
 import {tmpdir} from 'os';
 import path from 'path';
+import {getNewId} from 'softkave-js-utils';
 import {kDefaultServerURL} from '../constants.js';
 import {FimidxEndpoints} from '../endpoints/fimidxEndpoints.js';
 
@@ -23,15 +24,18 @@ export async function uploadFileToFimidara(
   filePath: string,
   localPath: string,
 ): Promise<void> {
-  const buffer = await readFile(localPath);
+  const rstream = await createReadStream(localPath);
+  const size = (await stat(localPath)).size;
   const endpoints = new FimidaraEndpoints({
     authToken,
     serverURL: fimidaraUrl?.replace(/\/$/, ''),
   });
-  await endpoints.files.uploadFile({
+  await multipartUploadNode({
+    endpoints,
+    clientMultipartId: getNewId(),
+    size,
     filepath: filePath,
-    data: buffer,
-    size: buffer.length,
+    data: rstream,
   });
 }
 
@@ -86,6 +90,10 @@ export async function uploadSourceMaps(
   } else {
     fileToUpload = inputPath;
     isZip = path.basename(inputPath).toLowerCase().endsWith('.zip');
+    if (!isZip) {
+      throw new Error(`Only zip files are supported for now: ${inputPath}`);
+    }
+
     await uploadFileToFimidara(fimidaraUrl, token, filePath, fileToUpload);
   }
 

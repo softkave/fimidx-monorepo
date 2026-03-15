@@ -1,4 +1,4 @@
-import type { AgentToken, Folder } from "fimidara";
+import type { AgentToken, FimidaraPermissionAction, Folder } from "fimidara";
 import { getProjectFimidaraToken } from "../sourceMap/getProjectFimidaraToken.js";
 import { upsertProjectFimidaraToken } from "../sourceMap/upsertProjectFimidaraToken.js";
 import {
@@ -16,16 +16,34 @@ async function ensureTokenHasAccessToFolder(
   token: AgentToken
 ): Promise<void> {
   const endpoints = getFimidaraEndpoints();
-  await endpoints.permissionItems.addItems({
+  const actions: FimidaraPermissionAction[] = [
+    "readFolder",
+    "uploadFile",
+    "readFile",
+    "deleteFile",
+  ];
+  const existing = await endpoints.permissionItems.resolveEntityPermissions({
     items: [
-      {
-        access: true,
-        action: ["readFolder", "uploadFile", "readFile", "deleteFile"],
+      ...actions.map((action) => ({
         entityId: token.resourceId,
         targetId: folder.resourceId,
-      },
+        action,
+      })),
     ],
   });
+  const missingActions = actions.filter(
+    (action) => !existing.items.some((p) => p.action === action && p.access)
+  );
+  if (missingActions.length > 0) {
+    await endpoints.permissionItems.addItems({
+      items: missingActions.map((action) => ({
+        access: true,
+        action,
+        entityId: token.resourceId,
+        targetId: folder.resourceId,
+      })),
+    });
+  }
 }
 
 async function getOrCreateAgentToken(projectId: string): Promise<AgentToken> {

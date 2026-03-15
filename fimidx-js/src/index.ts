@@ -1,2 +1,3 @@
-export * from './endpoints/index.js';
-export * from './logger/index.js';
+// Default entry: isomorphic (endpoints + logger). Use "fimidx/indexNode" for
+// Node-only APIs (e.g. runUploadSourceMaps).
+export * from './indexIsomorphic.js';

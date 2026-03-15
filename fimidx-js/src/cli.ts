@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import { Command } from 'commander';
-import { kDefaultServerURL } from './constants.js';
-import { runUploadSourceMaps } from './bin/upload-source-maps.js';
+import {Command} from 'commander';
+import {kDefaultServerURL} from './constants.js';
+import {uploadSourceMaps} from './node/uploadSourceMaps.js';
 
 const program = new Command();
 
@@ -36,7 +36,7 @@ sourceMaps
       fimidaraUrl?: string;
     }) => {
       try {
-        await runUploadSourceMaps({
+        await uploadSourceMaps({
           clientToken: opts.clientToken,
           projectId: opts.projectId,
           repo: opts.repo,

@@ -3,7 +3,7 @@ import { getCoreConfig } from "../../common/getCoreConfig.js";
 import { normalizePathSegment } from "../../definitions/sourceMap.js";
 
 const kDefaultRootname = "fimidx";
-const kSourceMapsFolder = "source-maps";
+const kDefaultSourceMapsFolderpath = "source-maps";
 
 /** Fixed zip filename in the version folder so we can download without listing. */
 export const kSourceMapZipFileName = "source-maps.zip";
@@ -13,8 +13,25 @@ function getFimidaraAuthToken(): string {
   return fimidara.authToken;
 }
 
-function getFimidaraRootname(): string {
+export function getFimidaraRootname(): string {
   return getCoreConfig().fimidara?.rootname ?? kDefaultRootname;
+}
+
+export function getFimidaraSourceMapsFolderpath(): string {
+  const sourceMapsFolderpath =
+    getCoreConfig().fimidara?.sourceMapsFolderpath ??
+    kDefaultSourceMapsFolderpath;
+
+  // Allow nested folder paths like `tests/source-maps`.
+  const normalized = sourceMapsFolderpath
+    .replace(/\\/g, "/")
+    .split("/")
+    .filter(Boolean)
+    .map((seg) => normalizePathSegment(seg));
+
+  return normalized.length > 0
+    ? normalized.join("/")
+    : kDefaultSourceMapsFolderpath;
 }
 
 export function getFimidaraEndpoints(authToken?: string): FimidaraEndpoints {
@@ -24,16 +41,17 @@ export function getFimidaraEndpoints(authToken?: string): FimidaraEndpoints {
 }
 
 /** Build folder path:
- * rootname/source-maps/<projectId>/<normalizedRepo>/<normalizedVersion> */
+ * rootname/<sourceMapsFolderpath>/<projectId>/<normalizedRepo>/<normalizedVersion> */
 export function buildSourceMapFolderPath(
   projectId: string,
   repoIdentifier: string,
   version: string
 ): string {
   const rootname = getFimidaraRootname();
+  const sourceMapsFolderpath = getFimidaraSourceMapsFolderpath();
   const normalizedRepo = normalizePathSegment(repoIdentifier);
   const normalizedVersion = normalizePathSegment(version);
-  const relative = `${kSourceMapsFolder}/${projectId}/${normalizedRepo}/${normalizedVersion}`;
+  const relative = `${sourceMapsFolderpath}/${projectId}/${normalizedRepo}/${normalizedVersion}`;
   return fimidaraAddRootnameToPath(relative, [rootname]);
 }
 
@@ -48,10 +66,11 @@ export function buildSourceMapZipFilePath(
   return `${folder}/${kSourceMapZipFileName}`;
 }
 
-/** Folder base for a project: rootname/source-maps/<projectId> */
+/** Folder base for a project: rootname/<sourceMapsFolderpath>/<projectId> */
 export function buildSourceMapProjectFolderPath(projectId: string): string {
   const rootname = getFimidaraRootname();
-  const relative = `${kSourceMapsFolder}/${projectId}`;
+  const sourceMapsFolderpath = getFimidaraSourceMapsFolderpath();
+  const relative = `${sourceMapsFolderpath}/${projectId}`;
   return fimidaraAddRootnameToPath(relative, [rootname]);
 }
 

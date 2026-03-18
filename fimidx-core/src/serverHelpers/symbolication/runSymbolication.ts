@@ -16,15 +16,17 @@ import {
 } from "../sourceMap/index.js";
 import { getFirstValueFromFields } from "./getFirstValueFromFields.js";
 import {
-  defaultMapPathResolver,
-  symbolicateStack,
-} from "./symbolicateStack.js";
+  buildLookupPositionFromMongo,
+  type MetadataCache,
+} from "./symbolicateFromMongo.js";
+import { symbolicateStack } from "./symbolicateStack.js";
 
 const kSymbolicationBy = "symbolication";
 const kSymbolicationByType = "system";
 
 const defaultBatchSize = 100;
 const defaultMaxAgeMs = 7 * 24 * 60 * 60 * 1000; // 7 days
+const defaultConcurrency = 10;
 
 export interface IReadLogsBatchResult {
   objs: IObj[];
@@ -227,8 +229,15 @@ export async function runSymbolication(params?: {
       const updates: ISymbolicationUpdate[] = [];
       const trackingEntries: ISymbolicationTrackingEntry[] = [];
       const symbolicatedAt = new Date();
+      const concurrency =
+        symbolicationConfig?.concurrency ?? defaultConcurrency;
+      const metadataCache: MetadataCache = new Map();
 
-      for (const log of logs) {
+      async function processOneLog(log: IObj): Promise<{
+        update?: ISymbolicationUpdate;
+        trackingEntry?: ISymbolicationTrackingEntry;
+        maxProcessedMs?: number;
+      } | null> {
         const repo = getFirstValueFromFields(
           (log.objRecord ?? {}) as Record<string, unknown>,
           config.repoIdFields
@@ -237,45 +246,64 @@ export async function runSymbolication(params?: {
           (log.objRecord ?? {}) as Record<string, unknown>,
           config.versionFields
         );
-        if (repo == null || version == null) continue;
+        if (repo == null || version == null) return null;
         const key = `${repo}\0${version}`;
-        if (!hasSourceMapSet.has(key)) continue;
-        const localDir = localMapByKey.get(key);
-        if (!localDir) continue;
+        if (!hasSourceMapSet.has(key)) return null;
+        if (!localMapByKey.has(key)) return null;
 
         const record = (log.objRecord ?? {}) as Record<string, unknown>;
         const fieldPath = config.fieldsToSymbolicate.find(
           (f) => get(record, f) != null && typeof get(record, f) === "string"
         );
-        if (!fieldPath) continue;
+        if (!fieldPath) return null;
 
         const stackValue = get(record, fieldPath);
-        if (typeof stackValue !== "string") continue;
+        if (typeof stackValue !== "string") return null;
 
         try {
-          const symbolicated = await symbolicateStack(stackValue, (url) =>
-            defaultMapPathResolver(localDir, url)
+          const lookupPosition = buildLookupPositionFromMongo(
+            config.projectId,
+            repo,
+            version,
+            metadataCache
           );
-          if (symbolicated === stackValue) continue;
+          const symbolicated = await symbolicateStack(
+            stackValue,
+            lookupPosition
+          );
+          if (symbolicated === stackValue) return null;
 
           const createdAtMs =
             log.createdAt instanceof Date
               ? log.createdAt.getTime()
               : Number(log.createdAt);
-          if (createdAtMs > maxProcessedMs) maxProcessedMs = createdAtMs;
-
           const updatePatch: Record<string, unknown> = {};
           set(updatePatch, fieldPath, symbolicated);
-          updates.push({ logId: log.id, updatePatch });
-          trackingEntries.push({
-            logId: log.id,
-            fieldPath,
-            fieldValue: stackValue,
-            symbolicatedAt,
-          });
+          return {
+            update: { logId: log.id, updatePatch },
+            trackingEntry: {
+              logId: log.id,
+              fieldPath,
+              fieldValue: stackValue,
+              symbolicatedAt,
+            },
+            maxProcessedMs: createdAtMs,
+          };
         } catch {
-          // log and skip
-          continue;
+          return null;
+        }
+      }
+
+      for (let i = 0; i < logs.length; i += concurrency) {
+        const chunk = logs.slice(i, i + concurrency);
+        const results = await Promise.all(chunk.map(processOneLog));
+        for (const r of results) {
+          if (!r) continue;
+          if (r.update) updates.push(r.update);
+          if (r.trackingEntry) trackingEntries.push(r.trackingEntry);
+          if (r.maxProcessedMs != null && r.maxProcessedMs > maxProcessedMs) {
+            maxProcessedMs = r.maxProcessedMs;
+          }
         }
       }
 

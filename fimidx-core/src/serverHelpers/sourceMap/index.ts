@@ -1,5 +1,6 @@
 export * from "./createSourceMapUpload.js";
 export * from "./ensureLocalSourceMap.js";
+export * from "./ingestSourceMapsToMongo.js";
 export * from "./getProjectCycleCounts.js";
 export * from "./getProjectFimidaraToken.js";
 export * from "./upsertSourceMapUpload.js";

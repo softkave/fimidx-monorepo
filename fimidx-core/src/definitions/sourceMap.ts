@@ -94,3 +94,43 @@ export interface ILocalSourceMapCacheEntry {
   localPath: string;
   lastUsedCycleCount: number;
 }
+
+/** One segment in a source map line: generated column → original position +
+ * indices. */
+export interface ISourceMapSegmentItem {
+  generatedColumn: number;
+  sourceIndex: number;
+  originalLine: number;
+  originalColumn: number;
+  nameIndex: number;
+}
+
+/** Metadata for one ingested source map (sources/names arrays for resolving
+ * indices). */
+export interface ISourceMapMetadata {
+  projectId: string;
+  repoIdentifier: string;
+  version: string;
+  /** Relative path of generated file from map root, without .map (e.g.
+   * common/logger/date.js). */
+  generatedFile: string;
+  /** Basename of generatedFile including extension (e.g. date.js). */
+  generatedFileBasename: string;
+  /** Folder segments leading to basename (e.g. ["common","logger"] for
+   * common/logger/date.js). */
+  generatedFileFolders: string[];
+  sources: string[];
+  names: string[];
+  ingestedAt: Date;
+}
+
+/** Segments for one generated line in a source map (sorted by generatedColumn
+ * ascending). */
+export interface ISourceMapSegmentDoc {
+  projectId: string;
+  repoIdentifier: string;
+  version: string;
+  generatedFile: string;
+  generatedLine: number;
+  segments: ISourceMapSegmentItem[];
+}

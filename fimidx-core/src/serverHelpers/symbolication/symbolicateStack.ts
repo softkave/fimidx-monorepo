@@ -1,33 +1,51 @@
-import { readFile } from "fs/promises";
 import path from "path";
-import type { RawSourceMap } from "source-map";
-import { SourceMapConsumer } from "source-map";
+
+export interface IParsedStackLine {
+  url: string;
+  line: number;
+  column: number;
+  name: string | null;
+}
 
 /** Parse a stack line to extract url (or file path), line (1-based), column
- * (0-based). */
-function parseStackLine(
-  line: string
-): { url: string; line: number; column: number } | null {
-  // Match "at ... (url:line:col)" or "at url:line:col"
-  const withParen = /^\s*at\s+(?:.*?\s+\()?(.+?):(\d+):(\d+)\)?\s*$/.exec(line);
+ * (0-based), and optional name (e.g. function name before "(url:line:col)"). */
+export function parseStackLine(line: string): IParsedStackLine | null {
+  // Match "at name (url:line:col)" or "at url:line:col"
+  const withParen = /^\s*at\s+(?:([^\s(]+)\s+\()?(.+?):(\d+):(\d+)\)?\s*$/.exec(
+    line
+  );
   if (withParen) {
     return {
-      url: withParen[1].trim(),
-      line: parseInt(withParen[2], 10),
-      column: parseInt(withParen[3], 10),
+      url: withParen[2].trim(),
+      line: parseInt(withParen[3], 10),
+      column: parseInt(withParen[4], 10),
+      name: withParen[1]?.trim() ?? null,
     };
   }
   return null;
 }
 
+export interface IOriginalPosition {
+  source: string | null;
+  line: number | null;
+  column: number | null;
+  name: string | null;
+}
+
+export type LookupPositionFn = (
+  url: string,
+  line: number,
+  column: number
+) => Promise<IOriginalPosition | null>;
+
 /**
- * Symbolicate a stack trace string using source maps from a local directory.
- * mapPathByUrl: resolve minified URL/path to the path of the .map file in the
- * local dir.
+ * Symbolicate a stack trace string using a lookup function (e.g.
+ * MongoDB-backed). lookupPosition: given url, line, column from a stack line,
+ * returns original position or null.
  */
 export async function symbolicateStack(
   stack: string,
-  mapPathByUrl: (url: string) => string | null
+  lookupPosition: LookupPositionFn
 ): Promise<string> {
   const lines = stack.split("\n");
   const out: string[] = [];
@@ -39,31 +57,14 @@ export async function symbolicateStack(
       continue;
     }
 
-    const mapPath = mapPathByUrl(parsed.url);
-    if (!mapPath) {
-      out.push(line);
-      continue;
-    }
-
     try {
-      const mapJson = await readFile(mapPath, "utf-8");
-      const rawMap = JSON.parse(mapJson) as RawSourceMap;
-      const consumer = await new SourceMapConsumer(rawMap);
-      try {
-        const pos = consumer.originalPositionFor({
-          line: parsed.line,
-          column: parsed.column,
-        });
-        if (pos.source != null && pos.line != null) {
-          const column = pos.column ?? 0;
-          out.push(
-            `    at ${pos.name ?? "?"} (${pos.source}:${pos.line}:${column})`
-          );
-        } else {
-          out.push(line);
-        }
-      } finally {
-        consumer.destroy();
+      const pos = await lookupPosition(parsed.url, parsed.line, parsed.column);
+      if (pos != null && pos.source != null && pos.line != null) {
+        const column = pos.column ?? 0;
+        const name = pos.name ?? parsed.name ?? "?";
+        out.push(`    at ${name} (${pos.source}:${pos.line}:${column})`);
+      } else {
+        out.push(line);
       }
     } catch {
       out.push(line);

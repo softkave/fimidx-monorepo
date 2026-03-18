@@ -6,6 +6,7 @@ import { getCoreConfig } from "../../common/getCoreConfig.js";
 import { kSourceMapZipFileName } from "../fimidara/fimidaraClient.js";
 import { downloadFimidaraFile } from "../fimidara/index.js";
 import { getSourceMapUpload } from "./getSourceMapUploads.js";
+import { ingestSourceMapsToMongo } from "./ingestSourceMapsToMongo.js";
 import {
   getLocalSourceMapCacheEntry,
   upsertLocalSourceMapCacheEntry,
@@ -68,5 +69,6 @@ export async function ensureLocalSourceMap(
     localPath,
     lastUsedCycleCount: cycleCount,
   });
+  await ingestSourceMapsToMongo(projectId, repoIdentifier, version, localPath);
   return localPath;
 }

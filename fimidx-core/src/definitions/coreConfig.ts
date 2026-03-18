@@ -65,6 +65,7 @@ export const coreConfigSchema = z.object({
       .number()
       .optional()
       .default(1000 * 60 * 60 * 24), // 1 day
+    concurrency: z.coerce.number().optional().default(10),
   }),
   unzipSourceMaps: z.object({
     url: z.string(),

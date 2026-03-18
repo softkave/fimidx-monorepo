@@ -2,6 +2,8 @@ import { Schema } from "mongoose";
 import type {
   ILocalSourceMapCacheEntry,
   IProjectFimidaraToken,
+  ISourceMapMetadata,
+  ISourceMapSegmentDoc,
   ISourceMapUpload,
   ISymbolicatedLogTracking,
   ISymbolicationConfig,
@@ -92,6 +94,69 @@ localSourceMapCacheSchema.index(
   { unique: true }
 );
 
+const sourceMapMetadataSchema = new Schema<ISourceMapMetadata>(
+  {
+    projectId: { type: String, required: true, index: true },
+    repoIdentifier: { type: String, required: true, index: true },
+    version: { type: String, required: true, index: true },
+    generatedFile: { type: String, required: true, index: true },
+    generatedFileBasename: { type: String, required: true, index: true },
+    generatedFileFolders: { type: [String], required: true, default: [] },
+    sources: { type: [String], required: true, default: [] },
+    names: { type: [String], required: true, default: [] },
+    ingestedAt: { type: Date, required: true, default: Date.now },
+  },
+  { _id: true, collection: "source_map_metadata" }
+);
+
+sourceMapMetadataSchema.index(
+  { projectId: 1, repoIdentifier: 1, version: 1, generatedFile: 1 },
+  { unique: true }
+);
+
+sourceMapMetadataSchema.index(
+  { projectId: 1, repoIdentifier: 1, version: 1, generatedFileBasename: 1 },
+  { unique: false }
+);
+
+const sourceMapSegmentItemSchema = new Schema(
+  {
+    generatedColumn: { type: Number, required: true },
+    sourceIndex: { type: Number, required: true },
+    originalLine: { type: Number, required: true },
+    originalColumn: { type: Number, required: true },
+    nameIndex: { type: Number, required: true },
+  },
+  { _id: false }
+);
+
+const sourceMapSegmentsSchema = new Schema<ISourceMapSegmentDoc>(
+  {
+    projectId: { type: String, required: true, index: true },
+    repoIdentifier: { type: String, required: true, index: true },
+    version: { type: String, required: true, index: true },
+    generatedFile: { type: String, required: true, index: true },
+    generatedLine: { type: Number, required: true, index: true },
+    segments: {
+      type: [sourceMapSegmentItemSchema],
+      required: true,
+      default: [],
+    },
+  },
+  { _id: true, collection: "source_map_segments" }
+);
+
+sourceMapSegmentsSchema.index(
+  {
+    projectId: 1,
+    repoIdentifier: 1,
+    version: 1,
+    generatedFile: 1,
+    generatedLine: 1,
+  },
+  { unique: true }
+);
+
 export function getProjectFimidaraTokenModel() {
   const { connection } = getMongoConnection();
   return connection.model<IProjectFimidaraToken>(
@@ -137,5 +202,21 @@ export function getLocalSourceMapCacheModel() {
   return connection.model<ILocalSourceMapCacheEntry>(
     "LocalSourceMapCache",
     localSourceMapCacheSchema
+  );
+}
+
+export function getSourceMapMetadataModel() {
+  const { connection } = getMongoConnection();
+  return connection.model<ISourceMapMetadata>(
+    "SourceMapMetadata",
+    sourceMapMetadataSchema
+  );
+}
+
+export function getSourceMapSegmentsModel() {
+  const { connection } = getMongoConnection();
+  return connection.model<ISourceMapSegmentDoc>(
+    "SourceMapSegments",
+    sourceMapSegmentsSchema
   );
 }

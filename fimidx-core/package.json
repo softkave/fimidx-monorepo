@@ -9,6 +9,7 @@
     "compile:dev": "tsc --watch",
     "compile": "pnpm clean && tsc",
     "type-check": "tsc --noEmit",
+    "validate:env": "npx --yes -- softkave-forerunner run-env -- tsx src/scripts/validateEnv.ts",
     "db:generate:sqlite": "env-cmd -f \".env.local\" npx drizzle-kit generate --config=fimidx.sqlite.drizzle.config.ts",
     "db:generate:postgres": "env-cmd -f \".env.local\" npx drizzle-kit generate --config=fimidx.postgres.drizzle.config.ts",
     "db:migrate:sqlite": "npx --yes -- softkave-forerunner run-env -- npx drizzle-kit migrate --config=fimidx.sqlite.drizzle.config.ts",

@@ -1,23 +1,19 @@
 // This file is auto-generated, do not modify directly.
 // Reach out to a code owner to suggest changes.
 
-import {
-  type MfdocEndpointResultWithBinaryResponse,
-  type MfdocEndpointOpts,
-  type MfdocEndpointDownloadBinaryOpts,
-  type MfdocEndpointUploadBinaryOpts,
-} from 'mfdoc-js-sdk-base';
+import {type MfdocEndpointOpts} from 'mfdoc-js-sdk-base';
 import {AbstractSdkEndpoints} from './AbstractSdkEndpoints.js';
 import {
   type GetSourceMapUploadTokenArgs,
   type GetSourceMapUploadTokenResult,
-  type NotifySourceMapUploadCompleteArgs,
   type IngestLogsArgs,
+  type NotifySourceMapUploadCompleteArgs,
 } from './fimidxTypes.js';
 
 export class SourceMapsEndpoints extends AbstractSdkEndpoints {
   /**
-   * Get a Fimidara token and file path for uploading source maps (upload to filePath).
+   * Get a fimidara token and file path for uploading source maps (upload to
+   * filePath).
    */
   getUploadToken = async (
     props: GetSourceMapUploadTokenArgs,

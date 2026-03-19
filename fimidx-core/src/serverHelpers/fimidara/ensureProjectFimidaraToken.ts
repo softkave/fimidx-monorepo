@@ -77,12 +77,12 @@ async function encodeToken(token: AgentToken): Promise<string> {
     });
     jwtToken = result.jwtToken;
   }
-  if (!jwtToken) throw new Error("Failed to encode Fimidara token");
+  if (!jwtToken) throw new Error("Failed to encode fimidara token");
   return jwtToken;
 }
 
 /**
- * Ensure project has a Fimidara token for uploading source maps. Returns
+ * Ensure project has a fimidara token for uploading source maps. Returns
  * existing token from DB or creates one, ensures folder exists, grants
  * permission, encodes, and stores.
  */

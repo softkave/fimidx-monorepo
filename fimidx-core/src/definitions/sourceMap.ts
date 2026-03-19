@@ -27,7 +27,7 @@ export type GetSourceMapUploadTokenResult = {
 };
 
 /**
- * Path-safe normalization for repo identifier and version used in Fimidara
+ * Path-safe normalization for repo identifier and version used in fimidara
  * paths. Replaces non-URI-safe characters with hyphen; no '..' or control
  * chars.
  */

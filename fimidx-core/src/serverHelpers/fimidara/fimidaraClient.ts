@@ -55,7 +55,7 @@ export function buildSourceMapFolderPath(
   return fimidaraAddRootnameToPath(relative, [rootname]);
 }
 
-/** Build full Fimidara file path for the source map zip. Returned to the client
+/** Build full fimidara file path for the source map zip. Returned to the client
  * so they upload to this exact path; we store it and use it for download. */
 export function buildSourceMapZipFilePath(
   projectId: string,

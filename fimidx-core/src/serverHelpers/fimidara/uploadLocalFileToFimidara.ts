@@ -2,7 +2,7 @@ import { readFile, stat } from "fs/promises";
 import { getFimidaraEndpoints } from "./fimidaraClient.js";
 
 /**
- * Upload a local file to Fimidara at the given filepath.
+ * Upload a local file to fimidara at the given filepath.
  */
 export async function uploadLocalFileToFimidara(
   localPath: string,

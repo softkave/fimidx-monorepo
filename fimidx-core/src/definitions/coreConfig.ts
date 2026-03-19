@@ -119,7 +119,7 @@ export const coreConfigSchema = z.object({
       message: `${envVars.FIMIDX_SOURCE_MAPS_LOCAL_DIR} is not set`,
     }),
   }),
-  /** Fimidara service auth and rootname for source map folders. */
+  /** fimidara service auth and rootname for source map folders. */
   fimidara: z.object({
     authToken: z.string({
       message: `${envVars.FIMIDARA_AUTH_TOKEN} is not set`,
@@ -128,7 +128,7 @@ export const coreConfigSchema = z.object({
     /**
      * Nested folder path under `rootname` that should contain all source map
      * folders (e.g. `tests/source-maps`). Allows isolating and cleaning up test
-     * uploads within a shared Fimidara workspace.
+     * uploads within a shared fimidara workspace.
      */
     sourceMapsFolderpath: z.string().optional().default("source-maps"),
   }),

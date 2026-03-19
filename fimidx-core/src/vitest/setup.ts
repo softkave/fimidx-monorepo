@@ -69,11 +69,11 @@ export async function cleanupFimidaraSourceMapsFolder() {
   try {
     await endpoints.folders.deleteFolder({ folderpath });
     console.log(
-      `Successfully cleaned up Fimidara source maps folderpath ${folderpath}`
+      `Successfully cleaned up fimidara source maps folderpath ${folderpath}`
     );
   } catch (error: unknown) {
     console.error(
-      `Failed to clean up Fimidara source maps folderpath ${folderpath}`,
+      `Failed to clean up fimidara source maps folderpath ${folderpath}`,
       error
     );
   }

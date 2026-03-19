@@ -5,8 +5,8 @@ import { pipeline } from "stream/promises";
 import { getFimidaraEndpoints } from "./fimidaraClient.js";
 
 /**
- * Download a file from Fimidara to a local path.
- * Creates parent directories if needed.
+ * Download a file from fimidara to a local path. Creates parent directories if
+ * needed.
  */
 export async function downloadFimidaraFile(
   filepath: string,

@@ -15,8 +15,8 @@ function getSourceMapsLocalDir(): string {
 }
 
 /**
- * Unzip a source map upload locally: download zip from Fimidara, extract to
- * local cache dir, and upsert local_source_map_cache. No re-upload to Fimidara.
+ * Unzip a source map upload locally: download zip from fimidara, extract to
+ * local cache dir, and upsert local_source_map_cache. No re-upload to fimidara.
  * Symbolication will use this cache when ensuring a local source map.
  */
 export async function unzipSourceMapUpload(

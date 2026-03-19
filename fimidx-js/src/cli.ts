@@ -27,7 +27,7 @@ sourceMaps
   .option('--server-url <url>', 'Fimidx API base URL', kDefaultServerURL)
   .option(
     '--fimidara-url <url>',
-    'Fimidara API base URL (e.g. https://api.fimidara.com)',
+    'fimidara API base URL (e.g. https://api.fimidara.com)',
   )
   .action(
     async (opts: {

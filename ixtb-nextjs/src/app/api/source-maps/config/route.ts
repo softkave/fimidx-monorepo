@@ -7,8 +7,7 @@ import { AnyFn } from "softkave-js-utils";
 
 const getEndpointFn = wrapUserAuthenticated(
   async (req: NextRequest, ctx: IRouteContext, session) => {
-    const result = await getSymbolicationConfigEndpoint({ req, ctx, session });
-    return Response.json(result);
+    return getSymbolicationConfigEndpoint({ req, ctx, session });
   }
 );
 
@@ -19,8 +18,7 @@ export const GET = getEndpointFn as unknown as AnyFn<
 
 const patchEndpointFn = wrapUserAuthenticated(
   async (req: NextRequest, ctx: IRouteContext, session) => {
-    await updateSymbolicationConfigEndpoint({ req, ctx, session });
-    return new Response(null, { status: 204 });
+    return updateSymbolicationConfigEndpoint({ req, ctx, session });
   }
 );
 

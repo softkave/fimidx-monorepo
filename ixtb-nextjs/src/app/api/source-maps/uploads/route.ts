@@ -6,8 +6,7 @@ import { AnyFn } from "softkave-js-utils";
 
 const getEndpointFn = wrapUserAuthenticated(
   async (req: NextRequest, ctx: IRouteContext, session) => {
-    const result = await getSourceMapUploadsEndpoint({ req, ctx, session });
-    return Response.json(result);
+    return getSourceMapUploadsEndpoint({ req, ctx, session });
   }
 );
 

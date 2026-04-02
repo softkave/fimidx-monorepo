@@ -6,8 +6,7 @@ import { AnyFn } from "softkave-js-utils";
 
 const postEndpointFn = wrapClientTokenAuthenticated(
   async (req: NextRequest, ctx: IRouteContext, session) => {
-    await uploadCompleteEndpoint({ req, ctx, session });
-    return new Response(null, { status: 204 });
+    return uploadCompleteEndpoint({ req, ctx, session });
   }
 );
 

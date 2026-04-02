@@ -16,7 +16,8 @@
     "email:dev": "email dev",
     "email:export": "email export",
     "test": "env-cmd -f \".env.test\" vitest run --config ./vitest.config.ts",
-    "test:e2e": "env-cmd -f \".env.test\" vitest run --config ./vitest.e2e.config.ts"
+    "test:e2e": "env-cmd -f \".env.test\" vitest run --config ./vitest.e2e.config.ts",
+    "seed:fimidx-js-env:test": "env-cmd -f \".env.test\" tsx ./scripts/seedFimidxJsEnvTest.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.8.0",
@@ -85,6 +86,7 @@
     "eslint-config-next": "15.4.0-canary.51",
     "react-email": "4.0.1",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5",
     "vitest": "^3.1.3"
   }

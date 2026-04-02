@@ -94,7 +94,7 @@ describe("runSymbolication", () => {
     await segmentsModel.insertMany([segDoc]);
 
     // Seed a log that should be symbolicated.
-    const createdAt = new Date();
+    const createdAt = new Date(Date.now() - 1000 * 60 * 60 * 24 * 7); // 7 days ago
     const logId = uuidv7();
     const stack = [
       "Error: boom",

@@ -71,4 +71,3 @@ describe("uploadTokenEndpoint (source maps)", () => {
     expect(data.filePath).toContain(projectId);
   });
 });
-

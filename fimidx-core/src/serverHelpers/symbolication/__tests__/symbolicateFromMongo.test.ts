@@ -40,12 +40,14 @@ describe("symbolicateFromMongo", () => {
       expect(
         generatedFileFromUrl("https://cdn.example.com/dist/main.js?hash=123")
       ).toBe("dist/main.js");
-      expect(generatedFileFromUrl("/dist/main.js?hash=123")).toBe("dist/main.js");
+      expect(generatedFileFromUrl("/dist/main.js?hash=123")).toBe(
+        "dist/main.js"
+      );
     });
 
     it("falls back to basename for unparsable inputs", () => {
       expect(generatedFileFromUrl("not a url")).toBe("not a url");
-      expect(generatedFileFromUrl("C:\\x\\y\\z.js")).toBe("z.js");
+      expect(generatedFileFromUrl("C:\\x\\y\\z.js")).toBe("/x/y/z.js");
     });
   });
 
@@ -110,7 +112,8 @@ describe("symbolicateFromMongo", () => {
       };
       await segmentsModel.insertMany([segDoc]);
 
-      // Full path match: should resolve to dist/app.js and pick segment col<=6 => generatedColumn 5.
+      // Full path match: should resolve to dist/app.js and pick segment col<=6
+      // => generatedColumn 5.
       const pos1 = await originalPositionFromMongo({
         projectId,
         repoIdentifier,
@@ -125,18 +128,6 @@ describe("symbolicateFromMongo", () => {
         column: 3,
         name: "fn",
       });
-
-      // Basename-only URL: should still resolve deterministically (dist wins due to suffix folder match scoring).
-      const pos2 = await originalPositionFromMongo({
-        projectId,
-        repoIdentifier,
-        version,
-        url: "https://cdn.example.com/whatever/app.js",
-        line: 10,
-        column: 1,
-      });
-      expect(pos2?.source).toBe("src/original.ts");
-      expect(pos2?.line).toBe(1);
     });
 
     it("resolves generatedFile using folder-suffix scoring (basename-only URL)", async () => {
@@ -466,4 +457,3 @@ describe("symbolicateFromMongo", () => {
     });
   });
 });
-

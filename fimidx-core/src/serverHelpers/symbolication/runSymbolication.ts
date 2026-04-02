@@ -49,7 +49,10 @@ export async function readLogsBatchMongo(params: {
     projectId,
     tag: kObjTags.log,
     deletedAt: null,
-    createdAt: { $gte: new Date(fromMs), $lte: new Date(toMs) },
+    createdAt: {
+      $gte: new Date(fromMs),
+      $lte: new Date(toMs),
+    },
   };
   const objs = await model
     .find(filter)

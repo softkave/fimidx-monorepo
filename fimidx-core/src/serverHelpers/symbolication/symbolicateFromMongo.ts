@@ -27,7 +27,8 @@ export function generatedFileFromUrl(url: string): string {
   const withoutQuery = url.split("?")[0].trim();
   if (withoutQuery.startsWith("webpack:///")) {
     const rest = withoutQuery.slice("webpack:///".length);
-    return rest.replace(/^\.\//, "").replace(/\\/g, "/");
+    const p = rest.replace(/^\.\//, "").replace(/\\/g, "/");
+    return p;
   }
   if (withoutQuery.startsWith("file://")) {
     const rest = withoutQuery.slice(7).replace(/\\/g, "/");
@@ -45,9 +46,6 @@ export function generatedFileFromUrl(url: string): string {
   }
 }
 
-/**
- * Resolve generatedFile from URL: try full path first, then basename.
- */
 async function resolveGeneratedFile(
   projectId: string,
   repoIdentifier: string,

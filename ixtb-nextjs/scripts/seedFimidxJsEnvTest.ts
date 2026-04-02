@@ -12,6 +12,8 @@ import {
 
 type DotenvMap = Record<string, string>;
 
+type SeedTarget = "fimidx-js" | "symbolication-sample-app" | "fimidx-symbolication-e2e";
+
 function getEnvOrThrow(name: string): string {
   const v = process.env[name];
   if (!v) throw new Error(`Missing required env var ${name}`);
@@ -74,9 +76,25 @@ function mergeDotenv(original: string, updates: DotenvMap): string {
   );
 }
 
+function parseTargetFromArgs(): SeedTarget {
+  const raw = process.argv[2]?.trim();
+  if (!raw) return "fimidx-js";
+  if (
+    raw === "fimidx-js" ||
+    raw === "symbolication-sample-app" ||
+    raw === "fimidx-symbolication-e2e"
+  ) {
+    return raw;
+  }
+  throw new Error(
+    `Unknown target "${raw}". Expected one of: fimidx-js, symbolication-sample-app, fimidx-symbolication-e2e`
+  );
+}
+
 async function main() {
   // Same env contract as api-e2e (and NextAuth `credentials-e2e` authorize).
   // Seeding uses fimidx-core DB helpers only — no NextAuth session / HTTP sign-in.
+  const target = parseTargetFromArgs();
   const email = getEnvOrThrow("E2E_TEST_USER_EMAIL");
   getEnvOrThrow("E2E_TEST_USER_PASSWORD");
 
@@ -101,13 +119,20 @@ async function main() {
 
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
-  const fimidxJsEnvTestPath = path.resolve(
-    __dirname,
-    "../../fimidx-js/.env.test"
-  );
+  const envTestPath =
+    target === "fimidx-js"
+      ? path.resolve(__dirname, "../../fimidx-js/.env.test")
+      : target === "symbolication-sample-app"
+      ? path.resolve(__dirname, "../../symbolication-sample-app/.env.test")
+      : path.resolve(__dirname, "../../fimidx-symbolication-e2e/.env.test");
 
-  const existing = await fs.readFile(fimidxJsEnvTestPath, "utf8");
+  const existing = await fs.readFile(envTestPath, "utf8");
   const existingMap = parseDotenv(existing);
+
+  const symRepo =
+    process.env.SYM_REPO ?? `sym_repo_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const symVersion =
+    process.env.SYM_VERSION ?? `sym_ver_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
   const next = mergeDotenv(existing, {
     // Existing JS SDK config keys in fimidx-js/.env.test
@@ -116,6 +141,12 @@ async function main() {
     FIMIDX_AUTH_TOKEN: bearerToken,
     // Additional helpful keys for tests/debugging
     FIMIDX_GROUP_ID: orgId,
+    ...(target === "symbolication-sample-app" || target === "fimidx-symbolication-e2e"
+      ? {
+          SYM_REPO: symRepo,
+          SYM_VERSION: symVersion,
+        }
+      : {}),
     ...(existingMap.NEXT_PUBLIC_FIMIDX_LOGGER_PROJECT_ID !== undefined
       ? { NEXT_PUBLIC_FIMIDX_LOGGER_PROJECT_ID: projectId }
       : {}),
@@ -127,16 +158,20 @@ async function main() {
       : {}),
   });
 
-  await fs.writeFile(fimidxJsEnvTestPath, next, "utf8");
+  await fs.writeFile(envTestPath, next, "utf8");
 
   // eslint-disable-next-line no-console
   console.log(
     JSON.stringify(
       {
-        wrote: "fimidx-js/.env.test",
+        wrote: path.relative(path.resolve(__dirname, "../.."), envTestPath),
+        target,
         groupId: orgId,
         projectId,
         serverUrl,
+        ...(target === "symbolication-sample-app" || target === "fimidx-symbolication-e2e"
+          ? { symRepo, symVersion }
+          : {}),
       },
       null,
       2

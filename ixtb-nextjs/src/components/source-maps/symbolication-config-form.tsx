@@ -1,8 +1,8 @@
 "use client";
 
 import { useUpdateSymbolicationConfig } from "@/src/lib/clientApi/sourceMaps";
-import { ILogField } from "fimidx-core/definitions/log";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ILogField } from "fimidx-core/definitions/log";
 import { useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -45,10 +45,12 @@ export function SymbolicationConfigForm(props: ISymbolicationConfigFormProps) {
   const form = useForm<SymbolicationConfigFormValues>({
     resolver: zodResolver(symbolicationConfigFormSchema),
     defaultValues: {
-      fieldsToSymbolicate:
-        config?.fieldsToSymbolicate ?? ["stack", "stackTrace"],
-      repoIdFields: config?.repoIdFields ?? ["metadata.repo", "repo"],
-      versionFields: config?.versionFields ?? ["metadata.version", "version"],
+      fieldsToSymbolicate: config?.fieldsToSymbolicate ?? [],
+      // config?.fieldsToSymbolicate ?? ["stack", "stackTrace"],
+      repoIdFields: config?.repoIdFields ?? [],
+      // repoIdFields: config?.repoIdFields ?? ["metadata.repo", "repo"],
+      versionFields: config?.versionFields ?? [],
+      // versionFields: config?.versionFields ?? ["metadata.version", "version"],
     },
   });
 

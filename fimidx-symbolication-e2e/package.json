@@ -1,0 +1,20 @@
+{
+  "name": "fimidx-symbolication-e2e",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "compile": "pnpm clean && tsc",
+    "test": "env-cmd -f \"../fimidx-node-server/.env.test\" -f \".env.test\" vitest run --config ./vitest.config.ts"
+  },
+  "dependencies": {
+    "fimidx-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.1.0",
+    "env-cmd": "^11.0.0",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  }
+}

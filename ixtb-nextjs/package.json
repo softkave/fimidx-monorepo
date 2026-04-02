@@ -17,7 +17,9 @@
     "email:export": "email export",
     "test": "env-cmd -f \".env.test\" vitest run --config ./vitest.config.ts",
     "test:e2e": "env-cmd -f \".env.test\" vitest run --config ./vitest.e2e.config.ts",
-    "seed:fimidx-js-env:test": "env-cmd -f \".env.test\" tsx ./scripts/seedFimidxJsEnvTest.ts"
+    "seed:fimidx-js-env:test": "env-cmd -f \".env.test\" tsx ./scripts/seedFimidxJsEnvTest.ts fimidx-js",
+    "seed:symbolication-sample-app-env:test": "env-cmd -f \".env.test\" tsx ./scripts/seedFimidxJsEnvTest.ts symbolication-sample-app",
+    "seed:fimidx-symbolication-e2e-env:test": "env-cmd -f \".env.test\" tsx ./scripts/seedFimidxJsEnvTest.ts fimidx-symbolication-e2e"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.8.0",

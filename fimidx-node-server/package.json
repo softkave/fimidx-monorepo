@@ -19,7 +19,8 @@
     "pretest": "npm run compile",
     "posttest": "npm run lint",
     "start": "env-cmd -f \".env.local\" node build/src/index.js",
-    "dev": "npm run compile && npm run start"
+    "dev": "npm run compile && npm run start",
+    "dev:test": "env-cmd -f \".env.test\" npm run compile && npm run start"
   },
   "devDependencies": {
     "@faker-js/faker": "^9.5.0",

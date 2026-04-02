@@ -10,7 +10,14 @@ const program = new Command();
 program
   .name('fimidx')
   .description('Fimidx CLI')
-  .version(await getVersion('0.0.0'));
+  // Do not use `--version` here: `source-maps upload` needs `--version
+  // <release>` for the bundle/release id; Commander would treat it as the root
+  // version flag and exit early.
+  .version(
+    await getVersion('0.0.0'),
+    '-V, --cli-version',
+    'output the CLI version',
+  );
 
 const sourceMaps = program
   .command('source-maps')

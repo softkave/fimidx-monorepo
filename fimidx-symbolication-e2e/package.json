@@ -6,7 +6,7 @@
   "scripts": {
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "compile": "pnpm clean && tsc",
-    "test": "env-cmd -f \"../fimidx-node-server/.env.test\" -f \".env.test\" vitest run --config ./vitest.config.ts"
+    "test": "env-cmd -f \"../fimidx-node-server/.env.test\" vitest run --config ./vitest.config.ts"
   },
   "dependencies": {
     "fimidx-core": "workspace:*"
@@ -15,6 +15,7 @@
     "@types/node": "^24.1.0",
     "env-cmd": "^11.0.0",
     "typescript": "^6.0.2",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.2",
+    "dotenv": "^17.4.0"
   }
 }

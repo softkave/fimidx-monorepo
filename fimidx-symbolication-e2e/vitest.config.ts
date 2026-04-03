@@ -6,5 +6,6 @@ export default defineConfig({
     hookTimeout: 120_000,
     include: ["src/**/*.e2e.test.ts"],
     globalSetup: ["./vitest.setup.ts"],
+    setupFiles: ["./vitest.inject-seed-env.ts"],
   },
 });

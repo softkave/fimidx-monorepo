@@ -10,8 +10,8 @@ import { describe, expect, it } from "vitest";
 import {
   getEnvOrThrow,
   pExecFile,
-  postInternalCallback,
   poll,
+  postInternalCallback,
 } from "./testHelpers.js";
 
 describe("symbolication (e2e)", () => {
@@ -120,10 +120,7 @@ describe("symbolication (e2e)", () => {
     ).toBe(true);
 
     const stateModel = getSymbolicationStateModel();
-    const baselineState = await stateModel
-      .findOne({ projectId })
-      .lean()
-      .exec();
+    const baselineState = await stateModel.findOne({ projectId }).lean().exec();
     const baselineCycleCount = baselineState?.cycleCount ?? 0;
     const baselineLastCycleAtMs = baselineState?.lastCycleAt
       ? new Date(baselineState.lastCycleAt).getTime()

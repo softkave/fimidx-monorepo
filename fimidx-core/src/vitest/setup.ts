@@ -1,4 +1,5 @@
 import { exec } from "child_process";
+import { fimidaraAddRootnameToPath } from "fimidara";
 import { promisify } from "util";
 import { getMongoConnection } from "../db/fimidx.mongo.js";
 import {
@@ -7,6 +8,11 @@ import {
   emailRecords,
   objFields,
 } from "../db/fimidx.sqlite.js";
+import {
+  getFimidaraEndpoints,
+  getFimidaraRootname,
+  getFimidaraSourceMapsFolderpath,
+} from "../serverHelpers/index.js";
 
 /**
  * Deletes all rows from all tables in the correct order to respect foreign key
@@ -50,5 +56,25 @@ export async function runMigrationsForSQLDbsUsingShell() {
 
     console.log(result.stdout);
     console.log(`Done running ${command}`);
+  }
+}
+
+export async function cleanupFimidaraSourceMapsFolder() {
+  const rootname = getFimidaraRootname();
+  const sourceMapsFolderpath = getFimidaraSourceMapsFolderpath();
+  const endpoints = getFimidaraEndpoints();
+  const folderpath = fimidaraAddRootnameToPath(sourceMapsFolderpath, [
+    rootname,
+  ]);
+  try {
+    await endpoints.folders.deleteFolder({ folderpath });
+    console.log(
+      `Successfully cleaned up fimidara source maps folderpath ${folderpath}`
+    );
+  } catch (error: unknown) {
+    console.error(
+      `Failed to clean up fimidara source maps folderpath ${folderpath}`,
+      error
+    );
   }
 }

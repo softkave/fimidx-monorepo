@@ -63,3 +63,11 @@ export const kApiCallbackKeys = {
   deleteCallback: () => `/api/callbacks`,
   updateCallback: (callbackId: string) => `/api/callbacks/${callbackId}`,
 };
+
+export const kApiSourceMapKeys = {
+  getConfig: (projectId: string) =>
+    `/api/source-maps/config?projectId=${encodeURIComponent(projectId)}`,
+  updateConfig: () => `/api/source-maps/config`,
+  getUploads: (projectId: string) =>
+    `/api/source-maps/uploads?projectId=${encodeURIComponent(projectId)}`,
+};

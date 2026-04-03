@@ -46,6 +46,10 @@ export const kFimidxPermissions = {
     mutate: "callback:mutate",
     delete: "callback:delete",
   },
+  sourceMap: {
+    upload: "sourceMap:upload",
+    read: "sourceMap:read",
+  },
   obj: {
     read: "obj:read",
     mutate: "obj:mutate",
@@ -82,6 +86,8 @@ export const kFimidxPermissionsList = [
   kFimidxPermissions.callback.read,
   kFimidxPermissions.callback.mutate,
   kFimidxPermissions.callback.delete,
+  kFimidxPermissions.sourceMap.upload,
+  kFimidxPermissions.sourceMap.read,
   kFimidxPermissions.obj.read,
   kFimidxPermissions.obj.mutate,
   kFimidxPermissions.obj.delete,

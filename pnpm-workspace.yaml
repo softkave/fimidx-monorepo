@@ -6,6 +6,8 @@ packages:
   - fimidx-node-server
   - fimidx-winston-transport
   - ixtb-nextjs
+  - symbolication-sample-app
+  - fimidx-symbolication-e2e
 
 onlyBuiltDependencies:
   - '@tailwindcss/oxide'

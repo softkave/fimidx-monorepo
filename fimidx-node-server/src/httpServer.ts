@@ -3,6 +3,9 @@ import {addCallbackEndpoint} from './httpEndpoints/cbs/addCallbackEndpoint.js';
 import {deleteCallbacksEndpoint} from './httpEndpoints/cbs/deleteCallbacksEndpoint.js';
 import {cleanupDeletedObjsEndpoint} from './httpEndpoints/objs/cleanupDeletedObjsEndpoint.js';
 import {indexObjsEndpoint} from './httpEndpoints/objs/indexObjsEndpoint.js';
+import {purgeSourceMapCacheEndpoint} from './httpEndpoints/objs/purgeSourceMapCacheEndpoint.js';
+import {symbolicateLogsEndpoint} from './httpEndpoints/objs/symbolicateLogsEndpoint.js';
+import {unzipSourceMapsEndpoint} from './httpEndpoints/objs/unzipSourceMapsEndpoint.js';
 import {fimidxNodeWinstonLogger} from './utils/fimidxNodeloggers.js';
 
 export const kInternalAccessKeyHeader = 'x-internal-access-key';
@@ -37,6 +40,15 @@ export function startHttpServer(params: {
   });
   app.post('/objs/cleanupDeletedObjs', (req, res) => {
     cleanupDeletedObjsEndpoint(req, res);
+  });
+  app.post('/objs/unzipSourceMaps', (req, res) => {
+    unzipSourceMapsEndpoint(req, res);
+  });
+  app.post('/objs/symbolicateLogs', (req, res) => {
+    symbolicateLogsEndpoint(req, res);
+  });
+  app.post('/objs/purgeSourceMapCache', (req, res) => {
+    purgeSourceMapCacheEndpoint(req, res);
   });
 
   app.listen(port, () => {

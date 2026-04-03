@@ -1,7 +1,7 @@
 import { FimidxLogger } from "fimidx";
 import { getClientConfig } from "../getClientConfig.js";
 
-const { fimidxProjectId, fimidxClientToken, nodeEnv, fimidxServerUrl } =
+const { fimidxProjectId, fimidxClientToken, fimidxServerUrl } =
   getClientConfig();
 
 export const fimidxLogger = new FimidxLogger({
@@ -9,5 +9,5 @@ export const fimidxLogger = new FimidxLogger({
   clientToken: fimidxClientToken,
   consoleLogOnError: true,
   logRemoteErrors: true,
-  ...(nodeEnv === "development" ? { serverURL: fimidxServerUrl } : {}),
+  ...(fimidxServerUrl ? { serverURL: fimidxServerUrl } : {}),
 });

@@ -14,12 +14,12 @@ export const ingestLogsSchema = mfdocConstruct.constructHttpEndpointDefinition<
 >({
   method: MfdocHttpEndpointMethod.Post,
   name: 'fimidx/logs/ingestLogs',
-  description: 'Ingest logs',
+  description: 'Ingest logs.',
   tags: [kTags.public],
   path: '/logs',
   requestBody: mfdocConstruct.constructObject<IngestLogsEndpointArgs>({
     name: 'IngestLogsArgs',
-    description: 'The schema for ingesting logs',
+    description: 'The schema for ingesting logs.',
     fields: {
       projectId: mfdocConstruct.constructObjectField({
         required: true,

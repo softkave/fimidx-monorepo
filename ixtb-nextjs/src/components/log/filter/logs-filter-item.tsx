@@ -4,16 +4,11 @@ import { objRecordQueryItemOpSchema } from "fimidx-core/definitions/obj";
 import { XIcon } from "lucide-react";
 import { useMemo } from "react";
 import { Button } from "../../ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
 import { Textarea } from "../../ui/textarea";
 import { BetweenNumberOrDateInput } from "./between-number-or-date-input";
 import { InInput } from "./in-input";
+import { LogFieldCombobox } from "./log-field-combobox";
 import { NumberOrDateInput } from "./number-or-date-input";
 import { IWorkingLogPartFilterItem } from "./types";
 
@@ -70,9 +65,9 @@ export function LogsFilterItem(props: ILogsFilterItemProps) {
 
   const renderSelectName = () => {
     return (
-      <Select
+      <LogFieldCombobox
         value={item.item.field}
-        onValueChange={(value) => {
+        onChange={(value) => {
           const selectedField = fieldsMap.get(value);
           onChange({
             ...item,
@@ -80,21 +75,11 @@ export function LogsFilterItem(props: ILogsFilterItemProps) {
             field: selectedField,
           });
         }}
+        fields={fields}
         disabled={disabled}
-      >
-        <SelectTrigger className="w-[180px] w-full">
-          <SelectValue placeholder="Field" />
-        </SelectTrigger>
-        <SelectContent>
-          {fields?.map((field) => (
-            <SelectItem key={field.id} value={field.path}>
-              <pre>
-                <code>{field.path}</code>
-              </pre>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        placeholder="Field"
+        allowCustomValue
+      />
     );
   };
 

@@ -25,6 +25,12 @@
     "rootDir": ".",
     "allowImportingTsExtensions": true
   },
-  "include": ["**/*.ts", "**/*.tsx", "next-env.d.ts", ".next/types/**/*.ts"],
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "next-env.d.ts",
+    ".next/types/**/*.ts",
+    "../../adhoc-scripts/generateNodejsSlides.ts"
+  ],
   "exclude": ["node_modules"]
 }

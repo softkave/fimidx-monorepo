@@ -1,0 +1,20 @@
+{
+  "name": "symbolication-sample-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "compile": "pnpm clean && tsc",
+    "start": "env-cmd -f \".env.test\" node dist/index.js",
+    "upload-source-maps": "pnpm --filter fimidx compile && pnpm compile && node ../fimidx-js/build/cli.js source-maps upload --client-token \"$FIMIDX_AUTH_TOKEN\" --project-id \"$FIMIDX_PROJECT_ID\" --repo \"$SYM_REPO\" --version \"$SYM_VERSION\" --path dist --server-url \"$FIMIDX_SERVER_URL\""
+  },
+  "dependencies": {
+    "fimidx": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.1.0",
+    "env-cmd": "^11.0.0",
+    "typescript": "^6.0.2"
+  }
+}

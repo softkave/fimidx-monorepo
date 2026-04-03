@@ -11,4 +11,5 @@ export async function setup() {
 
 export async function teardown() {
   await closeMongoConnection();
+  // await cleanupFimidaraSourceMapsFolder();
 }

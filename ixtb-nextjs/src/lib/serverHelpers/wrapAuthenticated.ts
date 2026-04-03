@@ -7,12 +7,12 @@ import {
   getJWTSecret,
   IEncodeClientTokenJWTContent,
 } from "fimidx-core/serverHelpers/clientToken/encodeClientTokenJWT";
+import { getClientTokenById } from "fimidx-core/serverHelpers/index";
 import jwt from "jsonwebtoken";
 import { isString } from "lodash-es";
 import { Session } from "next-auth";
 import { NextRequest } from "next/server";
 import { AnyFn, AnyObject } from "softkave-js-utils";
-import { getClientTokenById } from "fimidx-core/serverHelpers/index";
 import { IRouteContext, wrapRoute } from "./wrapRoute";
 
 export interface IUserAuthenticatedRequest {

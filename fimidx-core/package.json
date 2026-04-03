@@ -9,6 +9,7 @@
     "compile:dev": "tsc --watch",
     "compile": "pnpm clean && tsc",
     "type-check": "tsc --noEmit",
+    "validate:env": "npx --yes -- softkave-forerunner run-env -- tsx src/scripts/validateEnv.ts",
     "db:generate:sqlite": "env-cmd -f \".env.local\" npx drizzle-kit generate --config=fimidx.sqlite.drizzle.config.ts",
     "db:generate:postgres": "env-cmd -f \".env.local\" npx drizzle-kit generate --config=fimidx.postgres.drizzle.config.ts",
     "db:migrate:sqlite": "npx --yes -- softkave-forerunner run-env -- npx drizzle-kit migrate --config=fimidx.sqlite.drizzle.config.ts",
@@ -50,6 +51,7 @@
     }
   },
   "dependencies": {
+    "adm-zip": "^0.5.16",
     "@auth/drizzle-adapter": "^1.8.0",
     "@libsql/client": "^0.14.0",
     "@types/split2": "^4.2.3",
@@ -67,6 +69,7 @@
     "next-themes": "^0.4.4",
     "pg": "^8.16.3",
     "redlock-universal": "^0.7.6",
+    "source-map": "^0.7.4",
     "softkave-js-utils": "0.17.1",
     "split2": "^4.2.0",
     "type-fest": "^4.37.0",
@@ -84,6 +87,8 @@
     "env-cmd": "^10.1.0",
     "eslint": "^9",
     "typescript": "^5",
-    "vitest": "^3.1.3"
+    "vitest": "^3.1.3",
+    "@types/source-map": "^0.5.7",
+    "@types/adm-zip": "^0.5.7"
   }
 }

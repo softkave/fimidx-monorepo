@@ -38,6 +38,8 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# generated d.ts file for next.js
 next-env.d.ts
 
 # yalc
@@ -47,6 +49,7 @@ yalc.lock
 # dist
 dist
 
+# env files
 .env*
 
 # local mongo
@@ -55,3 +58,10 @@ local-mongo/
 # config
 local.json
 local-*.json
+
+# local-only directories
+local-dev-dir/
+local-test-dir/
+
+# local mutex for ixtb-nextjs seed script (proper-lockfile)
+ixtb-nextjs/.seed-fimidx-js-env-test.lock

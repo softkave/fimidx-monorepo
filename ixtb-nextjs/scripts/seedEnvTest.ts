@@ -170,6 +170,12 @@ function seedLockPath(): string {
   return path.resolve(__dirname, "../.seed-fimidx-js-env-test.lock");
 }
 
+/** `proper-lockfile` requires the lock path to exist (it calls `lstat` before acquiring). */
+async function ensureSeedLockFileExists(lockPath: string): Promise<void> {
+  const fh = await fs.open(lockPath, "a+");
+  await fh.close();
+}
+
 function clientTokenPermissions(projectId: string) {
   return [
     { action: kFimidxPermissions.log.read, target: projectId },
@@ -524,7 +530,9 @@ async function run(): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  const release = await lockfile.lock(seedLockPath(), {
+  const lockPath = seedLockPath();
+  await ensureSeedLockFileExists(lockPath);
+  const release = await lockfile.lock(lockPath, {
     stale: 120_000,
     retries: {
       retries: 120,

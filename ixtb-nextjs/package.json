@@ -17,9 +17,9 @@
     "email:export": "email export",
     "test": "env-cmd -f \".env.test\" vitest run --config ./vitest.config.ts",
     "test:e2e": "env-cmd -f \".env.test\" vitest run --config ./vitest.e2e.config.ts",
-    "seed:fimidx-js-env:test": "env-cmd -f \".env.test\" tsx ./scripts/seedFimidxJsEnvTest.ts fimidx-js",
-    "seed:symbolication-sample-app-env:test": "env-cmd -f \".env.test\" tsx ./scripts/seedFimidxJsEnvTest.ts symbolication-sample-app",
-    "seed:fimidx-symbolication-e2e-env:test": "env-cmd -f \".env.test\" tsx ./scripts/seedFimidxJsEnvTest.ts fimidx-symbolication-e2e"
+    "seed:fimidx-js-env:test": "env-cmd -f \".env.test\" tsx ./scripts/seedEnvTest.ts fimidx-js",
+    "seed:symbolication-sample-app-env:test": "env-cmd -f \".env.test\" tsx ./scripts/seedEnvTest.ts symbolication-sample-app",
+    "seed:fimidx-symbolication-e2e-env:test": "env-cmd -f \".env.test\" tsx ./scripts/seedEnvTest.ts fimidx-symbolication-e2e"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.8.0",
@@ -80,12 +80,15 @@
     "@types/jsonwebtoken": "^9.0.9",
     "@types/lodash-es": "^4.17.12",
     "@types/node": "^20",
+    "@types/proper-lockfile": "^4.1.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "commander": "^12.1.0",
     "drizzle-kit": "^0.30.5",
     "env-cmd": "^10.1.0",
     "eslint": "9.27.0",
     "eslint-config-next": "15.4.0-canary.51",
+    "proper-lockfile": "^4.1.2",
     "react-email": "4.0.1",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",

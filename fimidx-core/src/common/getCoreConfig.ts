@@ -1,11 +1,8 @@
 import { isString } from "lodash-es";
-import {
-  coreConfigSchema,
-  envVars,
-  type CoreConfig,
-} from "../definitions/coreConfig.js";
+import type { z } from "zod";
+import { coreConfigSchema, envVars } from "../definitions/coreConfig.js";
 
-export function getCoreConfig(): CoreConfig {
+export function getCoreConfig(): z.infer<typeof coreConfigSchema> {
   const fimidxPostgresUrl = process.env[envVars.FIMIDX_POSTGRES_URL];
   const fimidxTursoUrl = process.env[envVars.FIMIDX_TURSO_URL];
   const fimidxTursoAuthToken = process.env[envVars.FIMIDX_TURSO_AUTH_TOKEN];

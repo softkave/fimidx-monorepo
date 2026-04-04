@@ -2,9 +2,13 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { boolean, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { getCoreConfig } from "../common/getCoreConfig.js";
 
-const { postgres } = getCoreConfig();
+const { postgres, storage } = getCoreConfig();
 
-export const fimidxPostgresDb = drizzle(postgres.url);
+if (storage.type === "postgres" && !postgres.url) {
+  throw new Error("Storage type is postgres but postgres.url is not set");
+}
+
+export const fimidxPostgresDb = drizzle(postgres.url as string);
 
 // IObj schema
 export const objs = pgTable("objs", {

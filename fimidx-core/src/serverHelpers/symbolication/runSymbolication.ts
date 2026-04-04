@@ -24,9 +24,9 @@ import { symbolicateStack } from "./symbolicateStack.js";
 const kSymbolicationBy = "symbolication";
 const kSymbolicationByType = "system";
 
-const defaultBatchSize = 100;
-const defaultMaxAgeMs = 7 * 24 * 60 * 60 * 1000; // 7 days
-const defaultConcurrency = 10;
+const defaultBatchSize = 1000;
+const defaultMaxAgeMs = 10 * 60 * 1000; // 10 minutes
+const defaultConcurrency = 50;
 
 export interface IReadLogsBatchResult {
   objs: IObj[];

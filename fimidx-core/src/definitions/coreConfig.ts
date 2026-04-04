@@ -144,8 +144,8 @@ export const coreConfigSchema = z.object({
     maxAgeMs: z.coerce
       .number()
       .optional()
-      .default(1000 * 60 * 60 * 24), // 1 day
-    concurrency: z.coerce.number().optional().default(10),
+      .default(10 * 60 * 1000), // 10 minutes
+    concurrency: z.coerce.number().optional().default(50),
   }),
   unzipSourceMaps: z.object({
     url: z

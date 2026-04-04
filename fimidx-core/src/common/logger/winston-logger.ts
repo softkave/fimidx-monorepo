@@ -12,8 +12,6 @@ export const fimidxWinstonLogger = winston.createLogger({
   transports: compact([
     fimidxLoggerEnabled
       ? new FimidxWinstonTransport({
-          // @ts-expect-error - fimidxLogger is not typed correctly. remove when
-          // we publish fimidx and fimidx-winston-transport.
           fimidxLogger: fimidxLogger,
         })
       : null,

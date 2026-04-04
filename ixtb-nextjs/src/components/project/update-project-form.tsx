@@ -69,7 +69,7 @@ export function UpdateProjectForm(props: IUpdateProjectFormProps) {
         },
       });
     },
-    [updateProjectHook, project.id]
+    [updateProjectHook, project.id, project.orgId]
   );
 
   return (

@@ -32,11 +32,11 @@ importers:
         specifier: ^1.39.0
         version: 1.39.0(nanoid@3.3.11)
       fimidx:
-        specifier: workspace:*
-        version: link:../fimidx-js
+        specifier: ^0.7.0
+        version: 0.7.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
       fimidx-winston-transport:
-        specifier: workspace:*
-        version: link:../fimidx-winston-transport
+        specifier: ^0.5.0
+        version: 0.5.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
       ioredis:
         specifier: ^5.4.2
         version: 5.9.3
@@ -240,8 +240,8 @@ importers:
         specifier: workspace:*
         version: link:../fimidx-core
       fimidx-winston-transport:
-        specifier: workspace:*
-        version: link:../fimidx-winston-transport
+        specifier: ^0.5.0
+        version: 0.5.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
       path-to-regexp:
         specifier: ^8.2.0
         version: 8.3.0
@@ -317,8 +317,8 @@ importers:
   fimidx-winston-transport:
     dependencies:
       fimidx:
-        specifier: 0.6.0
-        version: 0.6.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+        specifier: 0.7.0
+        version: 0.7.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
       winston-transport:
         specifier: ^4.9.0
         version: 4.9.0
@@ -550,8 +550,8 @@ importers:
   symbolication-sample-app:
     dependencies:
       fimidx:
-        specifier: workspace:*
-        version: link:../fimidx-js
+        specifier: ^0.7.0
+        version: 0.7.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
     devDependencies:
       '@types/node':
         specifier: ^24.1.0
@@ -4716,13 +4716,18 @@ packages:
     engines: {node: '>=13'}
     hasBin: true
 
+  fimidx-winston-transport@0.5.0:
+    resolution: {integrity: sha512-xQedZ/bZ/Zl6h5rydcp0LDMdIYkhEKqT5Gbv2Bi+4MqaWkVWl8YGIcrQSKZIURY+N7Vso973r49qQ+P/uxvIhQ==}
+    engines: {node: '>=13'}
+
   fimidx@0.4.1:
     resolution: {integrity: sha512-GzH9iUFCViWl0UOgQd23WxUQOIAAGwNOr/tnCC5R6h/EgNrAWMgMrVpKHvHPgeGI08XmUjuXMj7gNg8vzBmg3w==}
     engines: {node: '>=13'}
 
-  fimidx@0.6.0:
-    resolution: {integrity: sha512-xpTRroEDDmGIAy3qL1IMOvVmtoVHVUYrG3bVPFjP7Xnccee2kfp6+UwlEhWCl6wJiKH31XLgvt9rRnJhGAvP1Q==}
+  fimidx@0.7.0:
+    resolution: {integrity: sha512-2yAy77LqGdhvwNIuyJpnJj0W8Cpg6bQ11xJCzvksONrsIeRo6BXMO1QHpyH1u9ZBYNRWI5TsslfV0nW1qgqCyA==}
     engines: {node: '>=13'}
+    hasBin: true
 
   finalhandler@2.1.1:
     resolution: {integrity: sha512-S8KoZgRZN+a5rNwqTxlZZePjT/4cnm0ROV70LedRHZ0p8u9fRID0hJUZQpkKLzro8LfmC8sx23bY6tVNxv8pQA==}
@@ -11006,6 +11011,20 @@ snapshots:
       - debug
       - nanoid
 
+  fimidx-winston-transport@0.5.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
+    dependencies:
+      fimidx: 0.7.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+      winston-transport: 4.9.0
+    transitivePeerDependencies:
+      - assert
+      - bare-abort-controller
+      - bare-buffer
+      - debug
+      - nanoid
+      - path-browserify
+      - react-native-b4a
+      - type-fest
+
   fimidx@0.4.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
     dependencies:
       lodash-es: 4.17.23
@@ -11018,16 +11037,22 @@ snapshots:
       - path-browserify
       - type-fest
 
-  fimidx@0.6.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
+  fimidx@0.7.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
     dependencies:
+      archiver: 7.0.1
+      commander: 12.1.0
+      fimidara: 1.39.0(nanoid@3.3.11)
       lodash-es: 4.17.23
       mfdoc-js-sdk-base: 0.3.3(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
       softkave-js-utils: 0.17.1(assert@2.1.0)(lodash-es@4.17.23)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
     transitivePeerDependencies:
       - assert
+      - bare-abort-controller
+      - bare-buffer
       - debug
       - nanoid
       - path-browserify
+      - react-native-b4a
       - type-fest
 
   finalhandler@2.1.1:

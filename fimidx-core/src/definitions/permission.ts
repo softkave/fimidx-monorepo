@@ -1,3 +1,4 @@
+import type { ValueOf } from "type-fest";
 import { z } from "zod";
 import {
   inputObjRecordSchema,
@@ -8,57 +9,93 @@ import {
   stringMetaQuerySchema,
 } from "./obj.js";
 
-export const kFimidxPermissions = {
+export const kFimidxPermissionStrings = {
   wildcard: "*",
+  groupRead: "group:read",
+  groupMutate: "group:mutate",
+  groupDelete: "group:delete",
+  projectRead: "project:read",
+  projectMutate: "project:mutate",
+  projectDelete: "project:delete",
+  memberRead: "member:read",
+  memberReadPermissions: "member:readPermissions",
+  memberMutate: "member:mutate",
+  memberRemove: "member:remove",
+  logRead: "log:read",
+  logIngest: "log:ingest",
+  clientTokenRead: "clientToken:read",
+  clientTokenReadPermissions: "clientToken:readPermissions",
+  clientTokenMutate: "clientToken:mutate",
+  clientTokenDelete: "clientToken:delete",
+  monitorRead: "monitor:read",
+  monitorMutate: "monitor:mutate",
+  monitorDelete: "monitor:delete",
+  callbackRead: "callback:read",
+  callbackMutate: "callback:mutate",
+  callbackDelete: "callback:delete",
+  sourceMapUpload: "sourceMap:upload",
+  sourceMapRead: "sourceMap:read",
+  objRead: "obj:read",
+  objMutate: "obj:mutate",
+  objDelete: "obj:delete",
+  permissionRead: "permission:read",
+  permissionMutate: "permission:mutate",
+  permissionDelete: "permission:delete",
+} as const;
+
+export type TFimidxPermissionString = ValueOf<typeof kFimidxPermissionStrings>;
+
+export const kFimidxPermissions = {
+  wildcard: kFimidxPermissionStrings.wildcard,
   group: {
-    read: "group:read",
-    mutate: "group:mutate",
-    delete: "group:delete",
+    read: kFimidxPermissionStrings.groupRead,
+    mutate: kFimidxPermissionStrings.groupMutate,
+    delete: kFimidxPermissionStrings.groupDelete,
   },
   project: {
-    read: "project:read",
-    mutate: "project:mutate",
-    delete: "project:delete",
+    read: kFimidxPermissionStrings.projectRead,
+    mutate: kFimidxPermissionStrings.projectMutate,
+    delete: kFimidxPermissionStrings.projectDelete,
   },
   member: {
-    read: "member:read",
-    readPermissions: "member:readPermissions",
-    mutate: "member:mutate",
-    remove: "member:remove",
+    read: kFimidxPermissionStrings.memberRead,
+    readPermissions: kFimidxPermissionStrings.memberReadPermissions,
+    mutate: kFimidxPermissionStrings.memberMutate,
+    remove: kFimidxPermissionStrings.memberRemove,
   },
   log: {
-    read: "log:read",
-    ingest: "log:ingest",
+    read: kFimidxPermissionStrings.logRead,
+    ingest: kFimidxPermissionStrings.logIngest,
   },
   clientToken: {
-    read: "clientToken:read",
-    readPermissions: "clientToken:readPermissions",
-    mutate: "clientToken:mutate",
-    delete: "clientToken:delete",
+    read: kFimidxPermissionStrings.clientTokenRead,
+    readPermissions: kFimidxPermissionStrings.clientTokenReadPermissions,
+    mutate: kFimidxPermissionStrings.clientTokenMutate,
+    delete: kFimidxPermissionStrings.clientTokenDelete,
   },
   monitor: {
-    read: "monitor:read",
-    mutate: "monitor:mutate",
-    delete: "monitor:delete",
+    read: kFimidxPermissionStrings.monitorRead,
+    mutate: kFimidxPermissionStrings.monitorMutate,
+    delete: kFimidxPermissionStrings.monitorDelete,
   },
   callback: {
-    read: "callback:read",
-    mutate: "callback:mutate",
-    delete: "callback:delete",
+    read: kFimidxPermissionStrings.callbackRead,
+    mutate: kFimidxPermissionStrings.callbackMutate,
+    delete: kFimidxPermissionStrings.callbackDelete,
   },
   sourceMap: {
-    upload: "sourceMap:upload",
-    read: "sourceMap:read",
+    upload: kFimidxPermissionStrings.sourceMapUpload,
+    read: kFimidxPermissionStrings.sourceMapRead,
   },
   obj: {
-    read: "obj:read",
-    mutate: "obj:mutate",
-    delete: "obj:delete",
+    read: kFimidxPermissionStrings.objRead,
+    mutate: kFimidxPermissionStrings.objMutate,
+    delete: kFimidxPermissionStrings.objDelete,
   },
   permission: {
-    read: "permission:read",
-    mutate: "permission:mutate",
-    delete: "permission:delete",
+    read: kFimidxPermissionStrings.permissionRead,
+    mutate: kFimidxPermissionStrings.permissionMutate,
+    delete: kFimidxPermissionStrings.permissionDelete,
   },
 };
 

@@ -1,7 +1,10 @@
 "use client";
 
 import { cn } from "@/src/lib/utils";
-import type { IPermissionAtom } from "fimidx-core/definitions/permission";
+import type {
+  IPermissionAtom,
+  TFimidxPermissionString,
+} from "fimidx-core/definitions/permission";
 import {
   kFimidxPermissions,
   kFimidxPermissionsList,
@@ -16,9 +19,13 @@ const selectablePermissions = kFimidxPermissionsList.filter(
 
 /** Labels and descriptions for each permission. Add an entry when a new permission is added to kFimidxPermissionsList. */
 export const kPermissionLabels: Record<
-  string,
+  TFimidxPermissionString,
   { label: string; description: string }
 > = {
+  [kFimidxPermissions.wildcard]: {
+    label: "Wildcard",
+    description: "All permissions",
+  },
   [kFimidxPermissions.group.read]: {
     label: "Group – read",
     description: "View organization details",
@@ -119,13 +126,33 @@ export const kPermissionLabels: Record<
     label: "Obj – delete",
     description: "Delete objects",
   },
+  [kFimidxPermissions.permission.read]: {
+    label: "Permission – read",
+    description: "Read permissions",
+  },
+  [kFimidxPermissions.permission.mutate]: {
+    label: "Permission – mutate",
+    description: "Create or update permissions",
+  },
+  [kFimidxPermissions.permission.delete]: {
+    label: "Permission – delete",
+    description: "Delete permissions",
+  },
+  [kFimidxPermissions.sourceMap.upload]: {
+    label: "Source map – upload",
+    description: "Upload source maps",
+  },
+  [kFimidxPermissions.sourceMap.read]: {
+    label: "Source map – read",
+    description: "Read source maps",
+  },
 };
 
-function permissionLabel(action: string): string {
+function permissionLabel(action: TFimidxPermissionString): string {
   return kPermissionLabels[action]?.label ?? action.replace(":", " – ");
 }
 
-function permissionDescription(action: string): string {
+function permissionDescription(action: TFimidxPermissionString): string {
   return (
     kPermissionLabels[action]?.description ??
     `Permission: ${action.replace(":", " – ")}`

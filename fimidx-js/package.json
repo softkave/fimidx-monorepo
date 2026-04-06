@@ -1,6 +1,6 @@
 {
   "name": "fimidx",
-  "version": "0.7.0",
+  "version": "0.7.3",
   "description": "fimidx js sdk",
   "author": {
     "email": "ywordk@gmail.com",
@@ -54,7 +54,8 @@
     "build/{*.d.ts,**/*.d.ts}",
     "build/{*.d.ts.map,**/*.d.ts.map}",
     "!build/**/__tests__/**/*",
-    "!build/**/testUtils/**/*"
+    "!build/**/testUtils/**/*",
+    "build/version.txt"
   ],
   "license": "MIT",
   "keywords": [

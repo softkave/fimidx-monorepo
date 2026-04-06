@@ -3,7 +3,8 @@ import path from 'path';
 import {fileURLToPath} from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const versionTxtPath = path.join(__dirname, '..', 'version.txt');
+const writeVersionTxtPath = path.join(__dirname, '..', 'version.txt');
+const readVersionTxtPath = path.join(__dirname, 'version.txt');
 
 async function getVersionFromPackageJson(
   defaultVersion: string,
@@ -19,12 +20,12 @@ async function getVersionFromPackageJson(
 
 async function writeVersionFile(): Promise<void> {
   const version = await getVersionFromPackageJson('unknown');
-  await writeFile(versionTxtPath, version);
+  await writeFile(writeVersionTxtPath, version);
 }
 
 export async function getVersion(defaultVersion: string): Promise<string> {
   try {
-    const version = await readFile(versionTxtPath);
+    const version = await readFile(readVersionTxtPath);
     return version.toString() || defaultVersion;
   } catch (error) {
     const version = await getVersionFromPackageJson(defaultVersion);

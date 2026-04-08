@@ -73,7 +73,7 @@ export async function uploadSourceMaps(
     const output = createWriteStream(zipPath);
     const archive = archiver('zip', {zlib: {level: 9}});
     archive.pipe(output);
-    archive.directory(inputPath, false);
+    archive.glob('**/*.map', {cwd: inputPath});
     archive.finalize();
     await new Promise<void>((resolve, reject) => {
       output.on('finish', resolve);

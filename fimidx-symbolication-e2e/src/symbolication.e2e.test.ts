@@ -169,10 +169,15 @@ describe("symbolication (e2e)", () => {
     );
 
     // And should be symbolicated to original sources.
-    expect(symbolicated.join("\n")).toContain("src/pkgA/shared/errorSite.ts");
-    expect(symbolicated.join("\n")).toContain("src/pkgB/shared/errorSite.ts");
-    expect(symbolicated.join("\n")).toContain("src/rootError.ts");
-    expect(symbolicated.join("\n")).toContain("src/extraError.ts");
+    // Preserve original URL scheme/host for those frames.
+    expect(symbolicated.join("\n")).toContain(
+      "http://localhost:9999/src/pkgA/shared/errorSite.ts"
+    );
+    expect(symbolicated.join("\n")).toContain(
+      "file:///src/pkgB/shared/errorSite.ts"
+    );
+    expect(symbolicated.join("\n")).toContain("webpack:///src/rootError.ts");
+    expect(symbolicated.join("\n")).toContain("webpack:///src/extraError.ts");
 
     // Extra: ensure we aren't accidentally pointing at the API server URL by mistake.
     expect(serverUrl).toMatch(/^https?:\/\//);

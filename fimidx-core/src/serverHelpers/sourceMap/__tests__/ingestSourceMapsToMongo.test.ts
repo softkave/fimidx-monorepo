@@ -31,10 +31,13 @@ describe("ingestSourceMapsToMongo (integration)", () => {
       gen.addMapping({
         generated: { line: 1, column: 0 },
         original: { line: 10, column: 2 },
-        source: "src/original.ts",
+        source: "../../../src/original.ts",
         name: "myFn",
       });
-      gen.setSourceContent("src/original.ts", "export function myFn() {}");
+      gen.setSourceContent(
+        "../../../src/original.ts",
+        "export function myFn() {}"
+      );
 
       await writeFile(mapPath, gen.toString(), "utf-8");
 
@@ -54,7 +57,11 @@ describe("ingestSourceMapsToMongo (integration)", () => {
       expect(meta?.generatedFileBasename).toBe("bundle.js");
       expect(meta?.generatedFileFolders).toEqual(["dist"]);
       expect(Array.isArray(meta?.sources)).toBe(true);
-      expect(meta?.sources).toContain("src/original.ts");
+      // Raw sourcemap sources are preserved.
+      expect(meta?.sources).toContain("../../../src/original.ts");
+      expect(Array.isArray((meta as any)?.sourcesNormalized)).toBe(true);
+      // Normalized sources are root-anchored and strip parent traversal.
+      expect((meta as any)?.sourcesNormalized).toContain("src/original.ts");
 
       const segmentsModel = getSourceMapSegmentsModel();
       const seg = await segmentsModel

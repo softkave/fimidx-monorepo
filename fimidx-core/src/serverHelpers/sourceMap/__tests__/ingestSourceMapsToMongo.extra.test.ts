@@ -43,14 +43,14 @@ describe("ingestSourceMapsToMongo (integration - extra cases)", () => {
       gen.addMapping({
         generated: { line: 1, column: 0 },
         original: { line: 10, column: 2 },
-        source: "src/original.ts",
+        source: "../src/original.ts",
       });
       gen.addMapping({
         generated: { line: 2, column: 0 },
         original: { line: 20, column: 3 },
-        source: "src/original.ts",
+        source: "./src\\original.ts",
       });
-      gen.setSourceContent("src/original.ts", "export {}");
+      gen.setSourceContent("../src/original.ts", "export {}");
 
       await writeFile(mapPath, gen.toString(), "utf-8");
 
@@ -71,7 +71,13 @@ describe("ingestSourceMapsToMongo (integration - extra cases)", () => {
       expect(meta).toBeTruthy();
       expect(meta?.generatedFileBasename).toBe("bundle.js");
       expect(meta?.generatedFileFolders).toEqual(["dist", "sub"]);
-      expect(meta?.sources).toContain("src/original.ts");
+      // Raw sources are preserved exactly as emitted by the sourcemap.
+      expect(meta?.sources).toContain("../src/original.ts");
+      expect(meta?.sources).toContain("./src\\original.ts");
+      // Normalized sources are root-anchored, strip "../" and "./", and use forward slashes.
+      expect((meta as any)?.sourcesNormalized).toContain("src/original.ts");
+      // Both entries should normalize to the same canonical path.
+      expect((meta as any)?.sourcesNormalized.filter((s: string) => s === "src/original.ts").length).toBe(2);
 
       const segmentsModel = getSourceMapSegmentsModel();
       const seg1 = await segmentsModel
@@ -193,10 +199,12 @@ describe("ingestSourceMapsToMongo (integration - extra cases)", () => {
       expect(meta1?.generatedFileBasename).toBe("bundle1.js");
       expect(meta1?.generatedFileFolders).toEqual(["dist", "a"]);
       expect(meta1?.sources).toContain("src/original1.ts");
+      expect((meta1 as any)?.sourcesNormalized).toContain("src/original1.ts");
 
       expect(meta2?.generatedFileBasename).toBe("bundle2.js");
       expect(meta2?.generatedFileFolders).toEqual(["dist", "b"]);
       expect(meta2?.sources).toContain("src/original2.ts");
+      expect((meta2 as any)?.sourcesNormalized).toContain("src/original2.ts");
   });
 });
 

@@ -103,6 +103,7 @@ const sourceMapMetadataSchema = new Schema<ISourceMapMetadata>(
     generatedFileBasename: { type: String, required: true, index: true },
     generatedFileFolders: { type: [String], required: true, default: [] },
     sources: { type: [String], required: true, default: [] },
+    sourcesNormalized: { type: [String], required: true, default: [] },
     names: { type: [String], required: true, default: [] },
     ingestedAt: { type: Date, required: true, default: Date.now },
   },

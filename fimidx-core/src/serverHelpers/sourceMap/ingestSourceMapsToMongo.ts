@@ -11,6 +11,7 @@ import type {
   ISourceMapSegmentDoc,
   ISourceMapSegmentItem,
 } from "../../definitions/sourceMap.js";
+import { normalizeSourcePath } from "./normalizeSourcePath.js";
 
 /**
  * Recursively collect all .map file paths under dir, with paths relative to
@@ -62,6 +63,7 @@ export async function ingestSourceMapsToMongo(
     const rawMap = JSON.parse(mapJson) as RawSourceMap;
 
     const sources = rawMap.sources ?? [];
+    const sourcesNormalized = sources.map(normalizeSourcePath);
     const names = rawMap.names ?? [];
     const sourceToIndex = new Map<string, number>();
     const nameToIndex = new Map<string, number>();
@@ -127,6 +129,7 @@ export async function ingestSourceMapsToMongo(
         {
           $set: {
             sources,
+            sourcesNormalized,
             names,
             generatedFileBasename,
             generatedFileFolders,

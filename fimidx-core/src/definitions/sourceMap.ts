@@ -119,7 +119,10 @@ export interface ISourceMapMetadata {
   /** Folder segments leading to basename (e.g. ["common","logger"] for
    * common/logger/date.js). */
   generatedFileFolders: string[];
+  /** Raw `sources` as provided by the ingested sourcemap. */
   sources: string[];
+  /** Normalized sources for stable, root-anchored display/lookup. */
+  sourcesNormalized: string[];
   names: string[];
   ingestedAt: Date;
 }

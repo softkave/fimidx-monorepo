@@ -6,11 +6,8 @@ dotenv.config({
   path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".env.test"),
 });
 
-// import { closeMongoConnection } from "fimidx-core/db/fimidx.mongo";
-// import {
-//   clearAllMongoCollections,
-//   clearAllSQLiteTables,
-// } from "fimidx-core/vitest/setup";
+import { closeMongoConnection, getObjModel } from "fimidx-core/db/fimidx.mongo";
+import { kObjTags } from "fimidx-core/definitions/obj";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
@@ -52,14 +49,21 @@ async function runSeedScriptsFromIxtb(): Promise<void> {
   }
 }
 
+async function clearLogsObjs() {
+  const model = getObjModel();
+  const query = {
+    tag: kObjTags.log,
+  };
+  await model.deleteMany(query).exec();
+}
+
 export async function setup() {
   // TODO: look into why clearing the db leads to client token not found when
   // generated again.
-  // await clearAllSQLiteTables();
-  // await clearAllMongoCollections();
   // await runSeedScriptsFromIxtb();
+  await clearLogsObjs();
 }
 
 export async function teardown() {
-  // await closeMongoConnection();
+  await closeMongoConnection();
 }

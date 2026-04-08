@@ -1,12 +1,12 @@
 import { closeMongoConnection } from "./src/db/fimidx.mongo.js";
 import {
-  clearAllMongoCollections,
-  clearAllSQLiteTables,
+  clearMongoCollections,
+  clearSQLiteTables,
 } from "./src/vitest/setup.js";
 
 export async function setup() {
-  await clearAllSQLiteTables();
-  await clearAllMongoCollections();
+  await clearSQLiteTables();
+  await clearMongoCollections();
 }
 
 export async function teardown() {

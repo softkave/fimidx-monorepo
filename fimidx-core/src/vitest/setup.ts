@@ -3,12 +3,6 @@ import { fimidaraAddRootnameToPath } from "fimidara";
 import { promisify } from "util";
 import { getMongoConnection } from "../db/fimidx.mongo.js";
 import {
-  db,
-  emailBlockLists,
-  emailRecords,
-  objFields,
-} from "../db/fimidx.sqlite.js";
-import {
   getFimidaraEndpoints,
   getFimidaraRootname,
   getFimidaraSourceMapsFolderpath,
@@ -19,13 +13,24 @@ import {
  * constraints. emailBlockLists references emailRecords, so it must be deleted
  * first.
  */
-export async function clearAllSQLiteTables() {
-  await db.delete(emailBlockLists);
-  await db.delete(emailRecords);
-  await db.delete(objFields);
+export async function clearSQLiteTables() {
+  // Avoid eagerly initializing the SQLite/Turso client for test runs that
+  // don't require it (most symbolication tests use Mongo only).
+  try {
+    const { db, emailBlockLists, emailRecords, objFields } = await import(
+      "../db/fimidx.sqlite.js"
+    );
+    await db.delete(emailBlockLists);
+    await db.delete(emailRecords);
+    await db.delete(objFields);
+  } catch (err) {
+    // If Turso isn't reachable/configured in this environment, skip SQLite
+    // cleanup so Mongo-based tests can still run.
+    console.warn("Skipping SQLite table cleanup (not available)", err);
+  }
 }
 
-export async function clearAllMongoCollections() {
+export async function clearMongoCollections() {
   console.log("Clearing all Mongo collections");
   const { connection, promise } = await getMongoConnection();
   await promise;

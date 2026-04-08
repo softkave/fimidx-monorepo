@@ -4,6 +4,7 @@ import {
   getSourceMapSegmentsModel,
 } from "../../db/sourceMap.mongo.js";
 import type { ISourceMapSegmentItem } from "../../definitions/sourceMap.js";
+import { normalizeSourcePath } from "../sourceMap/normalizeSourcePath.js";
 
 export interface IOriginalPositionResult {
   source: string | null;
@@ -226,7 +227,14 @@ export async function originalPositionFromMongo(
       .lean()
       .exec();
     if (!doc) return null;
-    meta = { sources: doc.sources ?? [], names: doc.names ?? [] };
+    const rawSources = (doc as any).sources ?? [];
+    const normalizedFromDoc = (doc as any).sourcesNormalized;
+    const sources =
+      Array.isArray(normalizedFromDoc) &&
+      normalizedFromDoc.length === rawSources.length
+        ? (normalizedFromDoc as string[])
+        : (rawSources as string[]).map((s: string) => normalizeSourcePath(s));
+    meta = { sources, names: (doc as any).names ?? [] };
     metadataCache?.set(key, meta);
   }
 
@@ -259,6 +267,7 @@ export async function originalPositionFromMongo(
       : null;
 
   return {
+    // source: source ? normalizeSourcePath(source) : null,
     source,
     line: segment.originalLine,
     column: segment.originalColumn,

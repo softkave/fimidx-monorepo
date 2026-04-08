@@ -70,6 +70,7 @@ describe("runSymbolication", () => {
         generatedFileBasename: "bundle.js",
         generatedFileFolders: ["dist"],
         sources: ["src/original.ts"],
+        sourcesNormalized: ["src/original.ts"],
         names: ["origFn"],
         ingestedAt: new Date(),
       },
@@ -157,7 +158,9 @@ describe("runSymbolication", () => {
 
     const updated1 = await objModel.findOne({ id: logId }).lean().exec();
     const updatedStack1 = (updated1 as any)?.objRecord?.stack;
-    expect(updatedStack1).toContain("src/original.ts:42:7");
+    expect(updatedStack1).toContain(
+      "https://cdn.example.com/src/original.ts:42:7"
+    );
 
     const updated2 = await objModel.findOne({ id: log2Id }).lean().exec();
     const updatedStack2 = (updated2 as any)?.objRecord?.stack;

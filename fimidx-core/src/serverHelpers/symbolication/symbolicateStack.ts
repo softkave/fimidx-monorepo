@@ -7,6 +7,32 @@ export interface IParsedStackLine {
   name: string | null;
 }
 
+function formatSymbolicatedUrl(originalUrl: string, source: string): string {
+  // const normalizedSource = normalizeSourcePath(source);
+  // Expecting normalized source paths from the database.
+  const normalizedSource = source;
+  const original = originalUrl.trim();
+
+  if (original.startsWith("webpack:///")) {
+    return `webpack:///${normalizedSource}`;
+  }
+
+  if (original.startsWith("file://")) {
+    // Preserve file:// scheme; keep it as file:/// for consistency.
+    return `file:///${normalizedSource}`;
+  }
+
+  try {
+    const u = new URL(original);
+    u.pathname = `/${normalizedSource}`;
+    // Keep query/hash if present (rare but possible in stack frames).
+    return u.toString();
+  } catch {
+    // If we can't parse, fall back to the normalized source path.
+    return normalizedSource;
+  }
+}
+
 /** Parse a stack line to extract url (or file path), line (1-based), column
  * (0-based), and optional name (e.g. function name before "(url:line:col)"). */
 export function parseStackLine(line: string): IParsedStackLine | null {
@@ -62,7 +88,8 @@ export async function symbolicateStack(
       if (pos != null && pos.source != null && pos.line != null) {
         const column = pos.column ?? 0;
         const name = pos.name ?? parsed.name ?? "?";
-        out.push(`    at ${name} (${pos.source}:${pos.line}:${column})`);
+        const displayUrl = formatSymbolicatedUrl(parsed.url, pos.source);
+        out.push(`    at ${name} (${displayUrl}:${pos.line}:${column})`);
       } else {
         out.push(line);
       }

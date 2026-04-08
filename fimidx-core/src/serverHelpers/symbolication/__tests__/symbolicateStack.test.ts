@@ -22,7 +22,9 @@ describe("symbolicateStack", () => {
     ].join("\n");
 
     const out = await symbolicateStack(input, lookupPosition);
-    expect(out).toContain("at origFn (src/original.ts:42:7)");
+    expect(out).toContain(
+      "at origFn (https://cdn.example.com/src/original.ts:42:7)"
+    );
     // Non-parsable error line should remain untouched.
     expect(out).toContain("Error: boom");
   });
@@ -53,7 +55,9 @@ describe("symbolicateStack", () => {
 
     const input = "    at https://cdn.example.com/dist/bundle.js:1:7";
     const out = await symbolicateStack(input, lookupPosition);
-    expect(out).toContain("at ? (src/original.ts:10:3)");
+    expect(out).toContain(
+      "at ? (https://cdn.example.com/src/original.ts:10:3)"
+    );
   });
 });
 

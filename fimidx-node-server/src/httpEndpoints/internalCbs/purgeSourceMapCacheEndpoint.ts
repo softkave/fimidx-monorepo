@@ -6,7 +6,7 @@ import {
 } from 'fimidx-core/serverHelpers/index';
 import {AnyFn} from 'softkave-js-utils';
 import {internalCallbackGuard} from '../../helpers/cb/internalCallbackGuard.js';
-import {kInternalCallbackNames} from '../../helpers/setupCb/constants.js';
+import {kInternalCallbackNames} from '../../helpers/setupCbs/constants.js';
 import {fimidxNodeWinstonLogger} from '../../utils/fimidxNodeloggers.js';
 
 const defaultMaxUnusedCycles = 5;

@@ -5,7 +5,7 @@ import {
 } from 'fimidx-core/serverHelpers/index';
 import {AnyFn} from 'softkave-js-utils';
 import {internalCallbackGuard} from '../../helpers/cb/internalCallbackGuard.js';
-import {kInternalCallbackNames} from '../../helpers/setupCb/constants.js';
+import {kInternalCallbackNames} from '../../helpers/setupCbs/constants.js';
 import {fimidxNodeWinstonLogger} from '../../utils/fimidxNodeloggers.js';
 
 /** Max pending rows loaded per DB round-trip; not exposed on the HTTP API. */

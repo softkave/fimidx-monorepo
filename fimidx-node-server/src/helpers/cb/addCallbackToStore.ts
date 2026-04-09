@@ -12,7 +12,9 @@ export function addCallbackToStore(params: {
   // TODO: implement timeout packing
 
   if (kCallbackStore[params.id]) {
-    fimidxNodeWinstonLogger.info('Callback already exists', {id: params.id});
+    fimidxNodeWinstonLogger.info('Callback already exists', {
+      callbackId: params.id,
+    });
     return;
   }
 
@@ -40,7 +42,7 @@ export function addCallbackToStore(params: {
     };
 
     fimidxNodeWinstonLogger.info('Adding callback to store', {
-      id: params.id,
+      callbackId: params.id,
     });
 
     if (params.intervalFrom > now) {

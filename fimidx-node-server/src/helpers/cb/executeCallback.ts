@@ -28,7 +28,9 @@ export async function executeCallback(params: {callbackId: string}) {
   }
 
   const callback = objToCallback(obj);
-  fimidxNodeWinstonLogger.info('Executing callback', {id: callback.id});
+  fimidxNodeWinstonLogger.info('Executing callback', {
+    callbackId: callback.id,
+  });
 
   try {
     const response = await axios({

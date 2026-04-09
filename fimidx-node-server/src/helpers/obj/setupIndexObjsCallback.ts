@@ -24,7 +24,8 @@ export async function setupIndexObjsCallback() {
 
   if (callback) {
     fimidxNodeWinstonLogger.info('Index objs callback already setup', {
-      id: callback.id,
+      callbackId: callback.id,
+      callbackName: callback.name,
     });
     return;
   }

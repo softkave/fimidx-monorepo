@@ -24,7 +24,8 @@ export async function setupCleanupObjsCallback() {
 
   if (callback) {
     fimidxNodeWinstonLogger.info('Cleanup objs callback already setup', {
-      id: callback.id,
+      callbackId: callback.id,
+      callbackName: callback.name,
     });
     return;
   }

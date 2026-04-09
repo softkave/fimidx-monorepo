@@ -30,7 +30,7 @@ export async function setupPurgeSourceMapCacheCallback() {
   if (callback) {
     fimidxNodeWinstonLogger.info(
       'Purge source map cache callback already setup',
-      {id: callback.id},
+      {callbackId: callback.id, callbackName: callback.name},
     );
     return;
   }

@@ -29,6 +29,7 @@ const sourceMapUploadSchema = new Schema<ISourceMapUpload>(
     version: { type: String, required: true, index: true },
     fimidaraPath: { type: String, required: true },
     isZip: { type: Boolean, required: true },
+    localZipIngested: { type: Boolean, required: false },
     unzippedFimidaraPath: { type: String, required: false },
     uploadedAt: { type: Date, required: true, default: Date.now },
     createdBy: { type: String, required: true, index: true },
@@ -41,6 +42,17 @@ const sourceMapUploadSchema = new Schema<ISourceMapUpload>(
 sourceMapUploadSchema.index(
   { projectId: 1, repoIdentifier: 1, version: 1 },
   { unique: true }
+);
+
+sourceMapUploadSchema.index(
+  { uploadedAt: 1 },
+  {
+    name: "source_map_uploads_pending_local_zip",
+    partialFilterExpression: {
+      isZip: true,
+      localZipIngested: { $ne: true },
+    },
+  }
 );
 
 const symbolicationConfigSchema = new Schema<ISymbolicationConfig>(

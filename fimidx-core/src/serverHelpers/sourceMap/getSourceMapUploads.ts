@@ -1,4 +1,3 @@
-import { getLocalSourceMapCacheModel } from "../../db/sourceMap.mongo.js";
 import { getSourceMapUploadModel } from "../../db/sourceMap.mongo.js";
 import type { ISourceMapUpload } from "../../definitions/sourceMap.js";
 
@@ -14,29 +13,46 @@ export async function getSourceMapUploadsByProject(
   return docs as ISourceMapUpload[];
 }
 
-/** Get zip uploads that do not yet have a local cache entry (unzipped locally). */
-export async function getSourceMapUploadsPendingUnzip(): Promise<
-  ISourceMapUpload[]
-> {
+export type GetSourceMapUploadsPendingUnzipPageParams = {
+  page: number;
+  pageSize: number;
+};
+
+export type GetSourceMapUploadsPendingUnzipPageResult = {
+  items: ISourceMapUpload[];
+  hasMore: boolean;
+};
+
+/**
+ * Zip uploads not yet marked as locally ingested (see `localZipIngested`).
+ * Paginated; use page=1 repeatedly after processing — completed rows drop out.
+ */
+export async function getSourceMapUploadsPendingUnzipPage(
+  params: GetSourceMapUploadsPendingUnzipPageParams
+): Promise<GetSourceMapUploadsPendingUnzipPageResult> {
+  const page = Math.max(1, Math.floor(params.page));
+  const pageSize = Math.max(1, Math.floor(params.pageSize));
+  const skip = (page - 1) * pageSize;
   const uploadModel = getSourceMapUploadModel();
-  const cacheModel = getLocalSourceMapCacheModel();
-  const uploads = (await uploadModel
-    .find({ isZip: true })
+  const raw = (await uploadModel
+    .find({ isZip: true, localZipIngested: { $ne: true } })
+    .sort({ uploadedAt: 1 })
+    .skip(skip)
+    .limit(pageSize + 1)
     .lean()
     .exec()) as ISourceMapUpload[];
-  if (uploads.length === 0) return [];
-  const cached = await cacheModel
-    .find({})
-    .select({ projectId: 1, repoIdentifier: 1, version: 1 })
-    .lean()
-    .exec();
-  const cacheSet = new Set(
-    (cached as { projectId: string; repoIdentifier: string; version: string }[]).map(
-      (c) => `${c.projectId}\0${c.repoIdentifier}\0${c.version}`
-    )
-  );
-  return uploads.filter(
-    (u) => !cacheSet.has(`${u.projectId}\0${u.repoIdentifier}\0${u.version}`)
+  const hasMore = raw.length > pageSize;
+  return { items: raw.slice(0, pageSize), hasMore };
+}
+
+export async function markSourceMapUploadLocalZipIngested(
+  projectId: string,
+  repoIdentifier: string,
+  version: string
+): Promise<void> {
+  await getSourceMapUploadModel().updateOne(
+    { projectId, repoIdentifier, version },
+    { $set: { localZipIngested: true } }
   );
 }
 

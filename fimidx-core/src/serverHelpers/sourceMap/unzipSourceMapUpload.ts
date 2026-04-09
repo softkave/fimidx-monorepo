@@ -6,6 +6,7 @@ import type { ISourceMapUpload } from "../../definitions/sourceMap.js";
 import { kSourceMapZipFileName } from "../fimidara/fimidaraClient.js";
 import { downloadFimidaraFile } from "../fimidara/index.js";
 import { getProjectCycleCounts } from "./getProjectCycleCounts.js";
+import { markSourceMapUploadLocalZipIngested } from "./getSourceMapUploads.js";
 import { ingestSourceMapsToMongo } from "./ingestSourceMapsToMongo.js";
 import { upsertLocalSourceMapCacheEntry } from "./localSourceMapCache.js";
 
@@ -53,5 +54,10 @@ export async function unzipSourceMapUpload(
     upload.repoIdentifier,
     upload.version,
     localPath
+  );
+  await markSourceMapUploadLocalZipIngested(
+    upload.projectId,
+    upload.repoIdentifier,
+    upload.version
   );
 }

@@ -58,6 +58,8 @@ export interface ISourceMapUpload {
   version: string; // normalized
   fimidaraPath: string;
   isZip: boolean;
+  /** After local unzip + Mongo ingestion (background job or on-demand ensure). */
+  localZipIngested?: boolean;
   unzippedFimidaraPath?: string | null;
   uploadedAt: Date;
   createdBy: string;

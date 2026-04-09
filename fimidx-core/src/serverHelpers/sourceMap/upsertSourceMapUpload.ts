@@ -16,6 +16,7 @@ export async function upsertSourceMapUpload(
         $set: {
           fimidaraPath: params.fimidaraPath,
           isZip: params.isZip,
+          localZipIngested: false,
           uploadedAt: params.uploadedAt,
           createdBy: params.createdBy,
           ...(params.unzippedFimidaraPath != null && {

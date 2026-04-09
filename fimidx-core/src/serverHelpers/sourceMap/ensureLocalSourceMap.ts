@@ -5,7 +5,10 @@ import path from "path";
 import { getCoreConfig } from "../../common/getCoreConfig.js";
 import { kSourceMapZipFileName } from "../fimidara/fimidaraClient.js";
 import { downloadFimidaraFile } from "../fimidara/index.js";
-import { getSourceMapUpload } from "./getSourceMapUploads.js";
+import {
+  getSourceMapUpload,
+  markSourceMapUploadLocalZipIngested,
+} from "./getSourceMapUploads.js";
 import { ingestSourceMapsToMongo } from "./ingestSourceMapsToMongo.js";
 import {
   getLocalSourceMapCacheEntry,
@@ -40,6 +43,11 @@ export async function ensureLocalSourceMap(
       ...cached,
       lastUsedCycleCount: cycleCount,
     });
+    await markSourceMapUploadLocalZipIngested(
+      projectId,
+      repoIdentifier,
+      version
+    );
     return cached.localPath;
   }
 
@@ -70,5 +78,10 @@ export async function ensureLocalSourceMap(
     lastUsedCycleCount: cycleCount,
   });
   await ingestSourceMapsToMongo(projectId, repoIdentifier, version, localPath);
+  await markSourceMapUploadLocalZipIngested(
+    projectId,
+    repoIdentifier,
+    version
+  );
   return localPath;
 }

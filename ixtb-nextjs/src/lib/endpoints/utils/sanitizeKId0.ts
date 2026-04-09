@@ -24,6 +24,11 @@ import type {
   AddProjectEndpointArgs,
 } from "fimidx-core/definitions/index";
 import type {
+  GetLogFieldsEndpointArgs,
+  GetLogsEndpointArgs,
+  IngestLogsEndpointArgs,
+} from "fimidx-core/definitions/log";
+import type {
   AddMemberEndpointArgs,
   DeleteMembersEndpointArgs,
   GetMembersEndpointArgs,
@@ -53,11 +58,6 @@ import {
   type IUpdateManyObjsExternalApiArgs,
 } from "fimidx-core/definitions/obj";
 import type {
-  GetLogFieldsEndpointArgs,
-  GetLogsEndpointArgs,
-  IngestLogsEndpointArgs,
-} from "fimidx-core/definitions/log";
-import type {
   DeleteProjectsEndpointArgs,
   GetProjectsEndpointArgs,
   UpdateProjectsEndpointArgs,
@@ -73,13 +73,13 @@ function rejectIfKId0(
   if (value === undefined) return;
   if (typeof value === "string") {
     if (value === kId0) {
-      throw new OwnServerError(kMessage, kOwnServerErrorCodes.InvalidRequest);
+      throw new OwnServerError(kMessage, kOwnServerErrorCodes.BadRequest);
     }
     return;
   }
   for (const v of value) {
     if (v === kId0) {
-      throw new OwnServerError(kMessage, kOwnServerErrorCodes.InvalidRequest);
+      throw new OwnServerError(kMessage, kOwnServerErrorCodes.BadRequest);
     }
   }
 }

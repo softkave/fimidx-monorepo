@@ -5,9 +5,10 @@ import {first} from 'lodash-es';
 import {addCallbackEndpointImpl} from '../../httpEndpoints/cbs/addCallbackEndpoint.js';
 import {kInternalAccessKeyHeader} from '../../httpServer.js';
 import {fimidxNodeWinstonLogger} from '../../utils/fimidxNodeloggers.js';
+import {kInternalCallbackNames} from './constants.js';
 
 export async function setupCleanupObjsCallback() {
-  const name = '__fimidx_cleanupObjs_callback';
+  const name = kInternalCallbackNames.cleanupObjs;
   const {callbacks} = await getCallbacks({
     args: {
       query: {

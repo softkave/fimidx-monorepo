@@ -5,6 +5,7 @@ import {first} from 'lodash-es';
 import {addCallbackEndpointImpl} from '../../httpEndpoints/cbs/addCallbackEndpoint.js';
 import {kInternalAccessKeyHeader} from '../../httpServer.js';
 import {fimidxNodeWinstonLogger} from '../../utils/fimidxNodeloggers.js';
+import {kInternalCallbackNames} from './constants.js';
 
 export async function setupUnzipSourceMapsCallback() {
   const config = getCoreConfig().unzipSourceMaps;
@@ -15,7 +16,7 @@ export async function setupUnzipSourceMapsCallback() {
     return;
   }
 
-  const name = '__fimidx_unzipSourceMaps_callback';
+  const name = kInternalCallbackNames.unzipSourceMaps;
   const {callbacks} = await getCallbacks({
     args: {
       query: {

@@ -5,6 +5,7 @@ import {first} from 'lodash-es';
 import {addCallbackEndpointImpl} from '../../httpEndpoints/cbs/addCallbackEndpoint.js';
 import {kInternalAccessKeyHeader} from '../../httpServer.js';
 import {fimidxNodeWinstonLogger} from '../../utils/fimidxNodeloggers.js';
+import {kInternalCallbackNames} from './constants.js';
 
 export async function setupSymbolicationCallback() {
   const config = getCoreConfig().symbolication;
@@ -15,7 +16,7 @@ export async function setupSymbolicationCallback() {
     return;
   }
 
-  const name = '__fimidx_symbolication_callback';
+  const name = kInternalCallbackNames.symbolication;
   const {callbacks} = await getCallbacks({
     args: {
       query: {

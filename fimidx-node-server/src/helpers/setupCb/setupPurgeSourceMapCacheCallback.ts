@@ -5,6 +5,7 @@ import {first} from 'lodash-es';
 import {addCallbackEndpointImpl} from '../../httpEndpoints/cbs/addCallbackEndpoint.js';
 import {kInternalAccessKeyHeader} from '../../httpServer.js';
 import {fimidxNodeWinstonLogger} from '../../utils/fimidxNodeloggers.js';
+import {kInternalCallbackNames} from './constants.js';
 
 export async function setupPurgeSourceMapCacheCallback() {
   const config = getCoreConfig().purgeSourceMapCache;
@@ -15,7 +16,7 @@ export async function setupPurgeSourceMapCacheCallback() {
     return;
   }
 
-  const name = '__fimidx_purgeSourceMapCache_callback';
+  const name = kInternalCallbackNames.purgeSourceMapCache;
   const {callbacks} = await getCallbacks({
     args: {
       query: {

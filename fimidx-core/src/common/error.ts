@@ -10,9 +10,11 @@ export class OwnError extends Error {
   }
 
   [kOwnError]: true = true as const;
+  meta?: AnyObject;
 
-  constructor(message: string) {
+  constructor(message: string, meta?: AnyObject) {
     super(message);
+    this.meta = meta;
   }
 }
 
@@ -27,17 +29,18 @@ export class OwnServerError extends OwnError {
   [kOwnServerError]: true = true as const;
   statusCode: number;
 
-  constructor(message: string, statusCode: number) {
-    super(message);
+  constructor(message: string, statusCode: number, meta?: AnyObject) {
+    super(message, meta);
     this.statusCode = statusCode;
   }
 }
 
 export const kOwnServerErrorCodes = {
-  InvalidRequest: 400,
+  BadRequest: 400,
   Unauthorized: 401,
   Forbidden: 403,
   NotFound: 404,
   MethodNotAllowed: 405,
+  Conflict: 409,
   InternalServerError: 500,
 } as const;

@@ -1,3 +1,4 @@
+import { OwnServerError, kOwnServerErrorCodes } from "fimidx-core/common/error";
 import {
   GetProjectsEndpointResponse,
   getProjectsSchema,
@@ -59,6 +60,13 @@ export const getProjectsEndpoint: NextUserAuthenticatedEndpointFn<
     } catch {
       // skip
     }
+  }
+
+  if (filtered.length === 0 && projects.length > 0) {
+    throw new OwnServerError(
+      "No projects found with permission to read",
+      kOwnServerErrorCodes.Forbidden
+    );
   }
 
   return {

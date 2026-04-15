@@ -1,4 +1,5 @@
 import { kOwnServerErrorCodes, OwnServerError } from "fimidx-core/common/error";
+import { fimidxConsoleLogger } from "fimidx-core/common/logger/fimidx-console-logger";
 import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { kId0 } from "fimidx-core/definitions/system";
 import {
@@ -55,12 +56,31 @@ export async function requirePermissionForUser(params: {
       items: [
         { action, target },
         { action: kFimidxPermissions.wildcard, target },
+        ...(target !== orgId
+          ? [
+              { action, target: orgId },
+              { action: kFimidxPermissions.wildcard, target: orgId },
+            ]
+          : []),
       ],
     },
   });
-  const hasAction = results[0]?.isPermitted ?? false;
-  const hasWildcard = results[1]?.isPermitted ?? false;
-  if (!hasAction && !hasWildcard) {
+  const hasTargetAction = results[0]?.isPermitted ?? false;
+  const hasTargetWildcard = results[1]?.isPermitted ?? false;
+  const hasOrgAction = results[2]?.isPermitted ?? false;
+  const hasOrgWildcard = results[3]?.isPermitted ?? false;
+  if (
+    !hasTargetAction &&
+    !hasTargetWildcard &&
+    !hasOrgAction &&
+    !hasOrgWildcard
+  ) {
+    fimidxConsoleLogger.error("User does not have permission", {
+      userId,
+      orgId,
+      action,
+      target,
+    });
     throw new OwnServerError("Forbidden", kOwnServerErrorCodes.Forbidden);
   }
 }

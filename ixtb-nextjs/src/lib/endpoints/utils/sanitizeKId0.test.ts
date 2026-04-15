@@ -99,7 +99,7 @@ describe("sanitizeKId0", () => {
         sanitizeAddMonitorInput({
           projectId: kId0,
           name: "m",
-          logsQuery: {},
+          query: {},
           status: "enabled",
           reportsTo: [],
           interval: { days: 1 },
@@ -111,7 +111,7 @@ describe("sanitizeKId0", () => {
         sanitizeAddMonitorInput({
           projectId: "p1",
           name: "m",
-          logsQuery: {},
+          query: {},
           status: "enabled",
           reportsTo: [kId0],
           interval: { days: 1 },
@@ -133,7 +133,6 @@ describe("sanitizeKId0", () => {
         sanitizeAddMemberInput({
           groupId: kId0,
           projectId: "p1",
-          memberId: "m1",
           permissions: [],
         })
       );
@@ -143,17 +142,6 @@ describe("sanitizeKId0", () => {
         sanitizeAddMemberInput({
           groupId: "g1",
           projectId: kId0,
-          memberId: "m1",
-          permissions: [],
-        })
-      );
-    });
-    it("sanitizeAddMemberInput throws when memberId is kId0", () => {
-      expectKId0Error(() =>
-        sanitizeAddMemberInput({
-          groupId: "g1",
-          projectId: "p1",
-          memberId: kId0,
           permissions: [],
         })
       );
@@ -205,7 +193,7 @@ describe("sanitizeKId0", () => {
     it("sanitizeGetManyObjsInput throws when query.projectId is kId0", () => {
       expectKId0Error(() =>
         sanitizeGetManyObjsInput({
-          query: { projectId: kId0 },
+          query: { metaQuery: { projectId: { eq: kId0 } } },
         })
       );
     });
@@ -213,10 +201,8 @@ describe("sanitizeKId0", () => {
       expect(() =>
         sanitizeGetManyObjsInput({
           query: {
-            projectId: "p1",
-            recordQuery: {
-              and: [{ op: "eq" as const, field: "foo", value: kId0 }],
-            },
+            metaQuery: { projectId: { eq: "p1" } },
+            recordQuery: [{ op: "eq" as const, field: "foo", value: kId0 }],
           },
         })
       ).not.toThrow();
@@ -252,7 +238,7 @@ describe("sanitizeKId0", () => {
     it("sanitizeGetLogsInput throws when query.metaQuery.id.eq is kId0", () => {
       expectKId0Error(() =>
         sanitizeGetLogsInput({
-          query: { projectId: "p1", metaQuery: { id: { eq: kId0 } } },
+          query: { projectId: "p1", id: { eq: kId0 } },
         })
       );
     });
@@ -261,9 +247,7 @@ describe("sanitizeKId0", () => {
         sanitizeGetLogsInput({
           query: {
             projectId: "p1",
-            logsQuery: {
-              and: [{ op: "eq" as const, field: "msg", value: kId0 }],
-            },
+            logsQuery: [{ op: "eq" as const, field: "msg", value: kId0 }],
           },
         })
       ).not.toThrow();

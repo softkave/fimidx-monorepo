@@ -7,9 +7,10 @@ import {
   getClientTokens,
   updateClientTokens,
 } from "fimidx-core/serverHelpers/index";
-import { checkPermissionGroupThenProjectThenOrg } from "../../../serverHelpers/permissions";
+import { checkPermissionForClientTokenOrUser } from "../../../serverHelpers/permissions";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
 import { sanitizeUpdateClientTokensInput } from "../../utils/sanitizeKId0";
+import { OwnServerError, kOwnServerErrorCodes } from "fimidx-core/common/error";
 
 export const updateClientTokensEndpoint: NextMaybeAuthenticatedEndpointFn<
   UpdateClientTokensEndpointResponse
@@ -26,21 +27,13 @@ export const updateClientTokensEndpoint: NextMaybeAuthenticatedEndpointFn<
 
   let allowed = false;
   try {
-    if (sessionClientToken) {
-      await checkPermissionGroupThenProjectThenOrg({
-        clientToken: sessionClientToken,
-        groupId,
-        projectId,
-        action: kFimidxPermissions.clientToken.mutate,
-      });
-    } else if (userId) {
-      await checkPermissionGroupThenProjectThenOrg({
-        userId,
-        groupId,
-        projectId,
-        action: kFimidxPermissions.clientToken.mutate,
-      });
-    }
+    await checkPermissionForClientTokenOrUser({
+      userId,
+      clientToken: sessionClientToken,
+      groupId,
+      projectId,
+      action: kFimidxPermissions.clientToken.mutate,
+    });
     allowed = true;
   } catch {
     // fall through to per-token filter
@@ -61,21 +54,13 @@ export const updateClientTokensEndpoint: NextMaybeAuthenticatedEndpointFn<
   const results = await Promise.all(
     clientTokens.map(async (token) => {
       try {
-        if (sessionClientToken) {
-          await checkPermissionGroupThenProjectThenOrg({
-            clientToken: sessionClientToken,
-            groupId: token.groupId,
-            projectId: token.projectId,
-            action: kFimidxPermissions.clientToken.mutate,
-          });
-        } else if (userId) {
-          await checkPermissionGroupThenProjectThenOrg({
-            userId,
-            groupId: token.groupId,
-            projectId: token.projectId,
-            action: kFimidxPermissions.clientToken.mutate,
-          });
-        }
+        await checkPermissionForClientTokenOrUser({
+          userId,
+          clientToken: sessionClientToken,
+          groupId: token.groupId,
+          projectId: token.projectId,
+          action: kFimidxPermissions.clientToken.mutate,
+        });
         return token.id;
       } catch {
         return null;
@@ -93,6 +78,11 @@ export const updateClientTokensEndpoint: NextMaybeAuthenticatedEndpointFn<
       by: getBy().by,
       byType: getBy().byType,
     });
+  } else if (allowedIds.length === 0 && clientTokens.length > 0) {
+    throw new OwnServerError(
+      "No client tokens found with permission to update",
+      kOwnServerErrorCodes.Forbidden
+    );
   }
 
   return { success: true };

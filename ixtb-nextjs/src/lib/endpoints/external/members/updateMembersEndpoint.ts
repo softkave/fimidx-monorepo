@@ -3,11 +3,11 @@ import {
   updateMembersSchema,
 } from "fimidx-core/definitions/member";
 import { kByTypes } from "fimidx-core/definitions/other";
+import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { updateMembers } from "fimidx-core/serverHelpers/index";
-import { checkPermissionGroupThenProjectThenOrg } from "../../../serverHelpers/permissions";
+import { checkPermissionForClientTokenOrUser } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
 import { sanitizeUpdateMembersInput } from "../../utils/sanitizeKId0";
-import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 
 export const updateMembersEndpoint: NextClientTokenAuthenticatedEndpointFn<
   IUpdateMembersEndpointResponse
@@ -20,7 +20,7 @@ export const updateMembersEndpoint: NextClientTokenAuthenticatedEndpointFn<
   const input = updateMembersSchema.parse(await req.json());
   sanitizeUpdateMembersInput(input);
 
-  await checkPermissionGroupThenProjectThenOrg({
+  await checkPermissionForClientTokenOrUser({
     clientToken,
     groupId: input.query.groupId,
     projectId: input.query.projectId,

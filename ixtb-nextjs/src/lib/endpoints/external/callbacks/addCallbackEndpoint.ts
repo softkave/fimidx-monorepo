@@ -11,7 +11,7 @@ import {
   getNodeServerInternalAccessKey,
   getNodeServerURL,
 } from "../../../serverHelpers/nodeServer";
-import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
+import { checkPermissionForClientTokenOrUser } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
 import { sanitizeAddCallbackInput } from "../../utils/sanitizeKId0";
 
@@ -58,7 +58,7 @@ export const addCallbackEndpoint: NextClientTokenAuthenticatedEndpointFn<
   const input = addCallbackSchema.parse(await req.json());
   sanitizeAddCallbackInput(input);
 
-  await checkPermissionProjectThenOrg({
+  await checkPermissionForClientTokenOrUser({
     clientToken,
     projectId: input.projectId,
     action: kFimidxPermissions.callback.mutate,

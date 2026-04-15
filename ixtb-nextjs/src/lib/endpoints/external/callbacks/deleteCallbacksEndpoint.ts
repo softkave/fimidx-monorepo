@@ -8,7 +8,7 @@ import {
   getNodeServerInternalAccessKey,
   getNodeServerURL,
 } from "../../../serverHelpers/nodeServer";
-import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
+import { checkPermissionForClientTokenOrUser } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
 import { sanitizeDeleteCallbacksInput } from "../../utils/sanitizeKId0";
 
@@ -43,7 +43,7 @@ export const deleteCallbacksEndpoint: NextClientTokenAuthenticatedEndpointFn<
   const input = deleteCallbacksSchema.parse(await req.json());
   sanitizeDeleteCallbacksInput(input);
 
-  await checkPermissionProjectThenOrg({
+  await checkPermissionForClientTokenOrUser({
     clientToken,
     projectId: input.query.projectId,
     action: kFimidxPermissions.callback.delete,

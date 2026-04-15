@@ -1,7 +1,8 @@
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { v7 as uuidv7 } from "uuid";
 
-/** Inlined from common/indexer to avoid module resolution issues when loaded by drizzle-kit */
+/** Inlined from common/indexer to avoid module resolution issues when loaded by
+ * drizzle-kit */
 type FieldType = "string" | "number" | "boolean" | "null" | "undefined";
 
 export const emailRecords = sqliteTable("emailRecord", {

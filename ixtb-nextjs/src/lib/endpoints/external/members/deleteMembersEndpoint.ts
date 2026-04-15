@@ -4,7 +4,7 @@ import {
   kFimidxPermissions,
 } from "fimidx-core/definitions/index";
 import { deleteMembers } from "fimidx-core/serverHelpers/index";
-import { checkPermissionGroupThenProjectThenOrg } from "../../../serverHelpers/permissions";
+import { checkPermissionForClientTokenOrUser } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
 import { sanitizeDeleteMembersInput } from "../../utils/sanitizeKId0";
 
@@ -19,7 +19,7 @@ export const deleteMemberEndpoint: NextClientTokenAuthenticatedEndpointFn<
   const input = deleteMembersSchema.parse(await req.json());
   sanitizeDeleteMembersInput(input);
 
-  await checkPermissionGroupThenProjectThenOrg({
+  await checkPermissionForClientTokenOrUser({
     clientToken,
     groupId: input.query.groupId,
     projectId: input.query.projectId,

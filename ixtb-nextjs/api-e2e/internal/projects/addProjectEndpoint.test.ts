@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { apiFetch } from "../../helpers/http.js";
 import { createTestUserSession } from "../../helpers/auth.js";
+import { apiFetch } from "../../helpers/http.js";
 import { createTestOrg } from "../../helpers/setup.js";
+import { kId0 } from "fimidx-core/definitions/system";
+import { addMember } from "fimidx-core/serverHelpers/index";
 
 const ADD_PROJECT_PATH = "/api/projects";
 
@@ -32,6 +34,17 @@ describe("addProjectEndpoint", () => {
       userId: "other-user-no-access",
       userEmail: "other@example.com",
     });
+    await addMember({
+      by: "other-user-no-access",
+      byType: "user",
+      args: {
+        groupId: orgOther.orgId,
+        projectId: kId0,
+        meta: {
+          userId: process.env.E2E_TEST_USER_EMAIL,
+        },
+      },
+    });
     const res = await apiFetch(ADD_PROJECT_PATH, {
       method: "POST",
       body: {
@@ -58,7 +71,9 @@ describe("addProjectEndpoint", () => {
       cookie,
     });
     expect(res.status).toBe(200);
-    const data = (await res.json()) as { project: { id: string; name: string } };
+    const data = (await res.json()) as {
+      project: { id: string; name: string };
+    };
     expect(data.project).toBeDefined();
     expect(data.project.name).toBe(name);
     expect(data.project.id).toBeDefined();

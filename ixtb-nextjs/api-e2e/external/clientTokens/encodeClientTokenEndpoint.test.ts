@@ -1,13 +1,15 @@
-import { describe, expect, it } from "vitest";
-import { apiFetch } from "../../helpers/http.js";
-import { createTestUserSession, bearerHeaders } from "../../helpers/auth.js";
-import {
-  createTestOrg,
-  createTestProject,
-  createTestClientToken,
-} from "../../helpers/setup.js";
 import { kByTypes } from "fimidx-core/definitions/other";
 import { kFimidxPermissions } from "fimidx-core/definitions/permission";
+import { describe, expect, it } from "vitest";
+import { bearerHeaders, createTestUserSession } from "../../helpers/auth.js";
+import { apiFetch } from "../../helpers/http.js";
+import {
+  createTestClientToken,
+  createTestOrg,
+  createTestProject,
+} from "../../helpers/setup.js";
+import { kId0 } from "fimidx-core/definitions/system";
+import { addMember } from "fimidx-core/serverHelpers/index";
 
 describe("encodeClientTokenEndpoint", () => {
   it("returns 401 when no auth", async () => {
@@ -35,14 +37,22 @@ describe("encodeClientTokenEndpoint", () => {
       by: "other-user-no-access",
       byType: kByTypes.user,
     });
-    const res = await apiFetch(
-      `/api/client-tokens/${clientToken.id}/encode`,
-      {
-        method: "POST",
-        body: { id: clientToken.id, projectId },
-        cookie,
-      }
-    );
+    await addMember({
+      by: "other-user-no-access",
+      byType: "user",
+      args: {
+        groupId: orgOther.orgId,
+        projectId: kId0,
+        meta: {
+          userId: process.env.E2E_TEST_USER_EMAIL,
+        },
+      },
+    });
+    const res = await apiFetch(`/api/client-tokens/${clientToken.id}/encode`, {
+      method: "POST",
+      body: { id: clientToken.id, projectId },
+      cookie,
+    });
     expect(res.status).toBe(403);
   });
 
@@ -60,14 +70,11 @@ describe("encodeClientTokenEndpoint", () => {
       by: userId,
       byType: kByTypes.user,
     });
-    const res = await apiFetch(
-      `/api/client-tokens/${clientToken.id}/encode`,
-      {
-        method: "POST",
-        body: { id: clientToken.id, projectId },
-        cookie,
-      }
-    );
+    const res = await apiFetch(`/api/client-tokens/${clientToken.id}/encode`, {
+      method: "POST",
+      body: { id: clientToken.id, projectId },
+      cookie,
+    });
     expect(res.status).toBe(200);
     const data = (await res.json()) as { token: string; refreshToken?: string };
     expect(data.token).toBeDefined();
@@ -92,14 +99,11 @@ describe("encodeClientTokenEndpoint", () => {
         },
       ],
     });
-    const res = await apiFetch(
-      `/api/client-tokens/${clientToken.id}/encode`,
-      {
-        method: "POST",
-        body: { id: clientToken.id, projectId },
-        headers: bearerHeaders(bearerToken),
-      }
-    );
+    const res = await apiFetch(`/api/client-tokens/${clientToken.id}/encode`, {
+      method: "POST",
+      body: { id: clientToken.id, projectId },
+      headers: bearerHeaders(bearerToken),
+    });
     expect(res.status).toBe(200);
     const data = (await res.json()) as { token: string };
     expect(data.token).toBeDefined();

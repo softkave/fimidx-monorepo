@@ -1,6 +1,6 @@
 import { auth, NextAuthRequest } from "@/auth";
 import assert from "assert";
-import { OwnServerError } from "fimidx-core/common/error";
+import { kOwnServerErrorCodes, OwnServerError } from "fimidx-core/common/error";
 import { IClientToken } from "fimidx-core/definitions/clientToken";
 import { kByTypes } from "fimidx-core/definitions/other";
 import {
@@ -43,10 +43,13 @@ type RouteFn = AnyFn<[NextAuthRequest, IRouteContext], Promise<Response>>;
 
 const authFn = auth as unknown as AnyFn<[RouteFn], RouteFn>;
 
-function tryGetUserAuthenticatedRequest(
+async function tryGetUserAuthenticatedRequest(
   req: NextAuthRequest
-): IUserAuthenticatedRequest | null {
-  const session = req.auth;
+): Promise<IUserAuthenticatedRequest | null> {
+  const session =
+    // (await (auth as unknown as AnyFn<[], Promise<Session | null>>)()) ??
+    req.auth;
+
   if (!session) {
     return null;
   }
@@ -117,10 +120,10 @@ async function tryGetClientTokenAuthenticatedRequest(
   }
 }
 
-function getUserAuthenticatedRequest(
+async function getUserAuthenticatedRequest(
   req: NextAuthRequest
-): IUserAuthenticatedRequest {
-  const userAuthenticatedRequest = tryGetUserAuthenticatedRequest(req);
+): Promise<IUserAuthenticatedRequest> {
+  const userAuthenticatedRequest = await tryGetUserAuthenticatedRequest(req);
   assert.ok(userAuthenticatedRequest, new OwnServerError("Unauthorized", 401));
   return userAuthenticatedRequest;
 }
@@ -145,7 +148,7 @@ export const wrapUserAuthenticated = (
 ) =>
   authFn(
     wrapRoute(async (req: NextAuthRequest, ctx: IRouteContext) => {
-      const userAuthenticatedRequest = getUserAuthenticatedRequest(req);
+      const userAuthenticatedRequest = await getUserAuthenticatedRequest(req);
       return routeFn(req, ctx, userAuthenticatedRequest);
     })
   );
@@ -163,7 +166,7 @@ export const wrapClientTokenAuthenticated = (
   });
 };
 
-export const wrapMaybeAuthenticated = (
+export const wrapUserOrClientTokenAuthenticated = (
   routeFn: AnyFn<
     [NextAuthRequest, IRouteContext, IMaybeAuthenticatedRequest],
     Promise<void | AnyObject>
@@ -171,9 +174,19 @@ export const wrapMaybeAuthenticated = (
 ) =>
   authFn(
     wrapRoute(async (req: NextAuthRequest, ctx: IRouteContext) => {
-      const userAuthenticatedRequest = tryGetUserAuthenticatedRequest(req);
+      const userAuthenticatedRequest = await tryGetUserAuthenticatedRequest(
+        req
+      );
       const clientTokenAuthenticatedRequest =
         await tryGetClientTokenAuthenticatedRequest(req);
+
+      if (!userAuthenticatedRequest && !clientTokenAuthenticatedRequest) {
+        throw new OwnServerError(
+          "Unauthorized",
+          kOwnServerErrorCodes.Unauthorized
+        );
+      }
+
       return routeFn(req, ctx, {
         ...userAuthenticatedRequest,
         ...clientTokenAuthenticatedRequest,

@@ -5,7 +5,7 @@ import {
   kFimidxPermissions,
 } from "fimidx-core/definitions/index";
 import { addMember } from "fimidx-core/serverHelpers/index";
-import { checkPermissionGroupThenProjectThenOrg } from "../../../serverHelpers/permissions";
+import { checkPermissionForClientTokenOrUser } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
 import { sanitizeAddMemberInput } from "../../utils/sanitizeKId0";
 
@@ -20,7 +20,7 @@ export const addMemberEndpoint: NextClientTokenAuthenticatedEndpointFn<
   const input = addMemberSchema.parse(await req.json());
   sanitizeAddMemberInput(input);
 
-  await checkPermissionGroupThenProjectThenOrg({
+  await checkPermissionForClientTokenOrUser({
     clientToken,
     groupId: input.groupId,
     projectId: input.projectId,

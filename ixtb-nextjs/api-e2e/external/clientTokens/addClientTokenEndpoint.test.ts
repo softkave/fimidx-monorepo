@@ -1,6 +1,8 @@
+import { kId0 } from "fimidx-core/definitions/system";
+import { addMember } from "fimidx-core/serverHelpers/index";
 import { describe, expect, it } from "vitest";
-import { apiFetch } from "../../helpers/http.js";
 import { createTestUserSession } from "../../helpers/auth.js";
+import { apiFetch } from "../../helpers/http.js";
 import { createTestOrg, createTestProject } from "../../helpers/setup.js";
 
 const ADD_CLIENT_TOKEN_PATH = "/api/client-tokens";
@@ -40,6 +42,17 @@ describe("addClientTokenEndpoint", () => {
       orgId: orgOther.orgId,
       by: "other-user-no-access",
     });
+    await addMember({
+      by: "other-user-no-access",
+      byType: "user",
+      args: {
+        groupId: orgOther.orgId,
+        projectId: kId0,
+        meta: {
+          userId: process.env.E2E_TEST_USER_EMAIL,
+        },
+      },
+    });
     const res = await apiFetch(ADD_CLIENT_TOKEN_PATH, {
       method: "POST",
       body: {
@@ -72,7 +85,9 @@ describe("addClientTokenEndpoint", () => {
       cookie,
     });
     expect(res.status).toBe(200);
-    const data = (await res.json()) as { clientToken: { id: string; name: string } };
+    const data = (await res.json()) as {
+      clientToken: { id: string; name: string };
+    };
     expect(data.clientToken).toBeDefined();
     expect(data.clientToken.name).toBe(name);
     expect(data.clientToken.id).toBeDefined();

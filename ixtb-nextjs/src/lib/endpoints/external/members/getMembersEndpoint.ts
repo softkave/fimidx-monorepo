@@ -2,11 +2,11 @@ import {
   IGetMembersEndpointResponse,
   getMembersSchema,
 } from "fimidx-core/definitions/member";
+import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { getMembers } from "fimidx-core/serverHelpers/index";
-import { checkPermissionGroupThenProjectThenOrg } from "../../../serverHelpers/permissions";
+import { checkPermissionForClientTokenOrUser } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
 import { sanitizeGetMembersInput } from "../../utils/sanitizeKId0";
-import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 
 export const getMembersEndpoint: NextClientTokenAuthenticatedEndpointFn<
   IGetMembersEndpointResponse
@@ -19,7 +19,7 @@ export const getMembersEndpoint: NextClientTokenAuthenticatedEndpointFn<
   const input = getMembersSchema.parse(await req.json());
   sanitizeGetMembersInput(input);
 
-  await checkPermissionGroupThenProjectThenOrg({
+  await checkPermissionForClientTokenOrUser({
     clientToken,
     groupId: input.query.groupId,
     projectId: input.query.projectId,
@@ -27,7 +27,7 @@ export const getMembersEndpoint: NextClientTokenAuthenticatedEndpointFn<
   });
 
   if (input.includePermissions) {
-    await checkPermissionGroupThenProjectThenOrg({
+    await checkPermissionForClientTokenOrUser({
       clientToken,
       groupId: input.query.groupId,
       projectId: input.query.projectId,

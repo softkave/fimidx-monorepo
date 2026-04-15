@@ -5,7 +5,7 @@ import { kByTypes } from "fimidx-core/definitions/other";
 import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { getProjects, ingestLogs } from "fimidx-core/serverHelpers/index";
 import { first } from "lodash-es";
-import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
+import { checkPermissionForClientTokenOrUser } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
 import { sanitizeIngestLogsInput } from "../../utils/sanitizeKId0";
 
@@ -20,7 +20,7 @@ export const ingestLogsEndpoint: NextClientTokenAuthenticatedEndpointFn<
   const input = ingestLogsSchema.parse(await req.json());
   sanitizeIngestLogsInput(input);
 
-  await checkPermissionProjectThenOrg({
+  await checkPermissionForClientTokenOrUser({
     clientToken,
     projectId: input.projectId,
     action: kFimidxPermissions.log.ingest,

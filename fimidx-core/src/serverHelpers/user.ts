@@ -1,7 +1,8 @@
 import assert from "assert";
 import { eq, inArray } from "drizzle-orm";
 import { OwnServerError } from "../common/error.js";
-import { authDb, users as usersTable } from "../db/auth-schema.js";
+import { authDb } from "../db/auth.sqlite.js";
+import { users as usersTable } from "../db/auth.sqlite.schema.js";
 
 export async function getUserByUsername(username: string) {
   const user = await authDb

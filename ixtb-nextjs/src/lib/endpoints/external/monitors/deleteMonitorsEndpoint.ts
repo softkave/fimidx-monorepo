@@ -1,7 +1,7 @@
 import { deleteMonitorsSchema } from "fimidx-core/definitions/monitor";
 import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { deleteMonitors } from "fimidx-core/serverHelpers/index";
-import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
+import { checkPermissionForClientTokenOrUser } from "../../../serverHelpers/permissions";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
 import { sanitizeDeleteMonitorsInput } from "../../utils/sanitizeKId0";
 
@@ -17,19 +17,12 @@ export const deleteMonitorsEndpoint: NextMaybeAuthenticatedEndpointFn<
   sanitizeDeleteMonitorsInput(input);
   const projectId = input.query.projectId;
 
-  if (clientToken) {
-    await checkPermissionProjectThenOrg({
-      clientToken,
-      projectId,
-      action: kFimidxPermissions.monitor.delete,
-    });
-  } else if (userId) {
-    await checkPermissionProjectThenOrg({
-      userId,
-      projectId,
-      action: kFimidxPermissions.monitor.delete,
-    });
-  }
+  await checkPermissionForClientTokenOrUser({
+    userId,
+    clientToken,
+    projectId,
+    action: kFimidxPermissions.monitor.delete,
+  });
 
   await deleteMonitors({
     ...input,

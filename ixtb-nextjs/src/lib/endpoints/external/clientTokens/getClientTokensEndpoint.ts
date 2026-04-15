@@ -2,11 +2,10 @@ import {
   GetClientTokensEndpointResponse,
   getClientTokensSchema,
 } from "fimidx-core/definitions/clientToken";
-import { kOwnServerErrorCodes, OwnServerError } from "fimidx-core/common/error";
 import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { getClientTokens } from "fimidx-core/serverHelpers/index";
 import {
-  checkPermissionGroupThenProjectThenOrg,
+  checkPermissionForClientTokenOrUser,
   getOrgIdFromProjectId,
 } from "../../../serverHelpers/permissions";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
@@ -30,38 +29,21 @@ export const getClientTokensEndpoint: NextMaybeAuthenticatedEndpointFn<
 
   const query = input.query as { projectId: string; groupId: string };
   const { groupId, projectId } = query;
-  if (clientToken) {
-    await checkPermissionGroupThenProjectThenOrg({
+  await checkPermissionForClientTokenOrUser({
+    clientToken,
+    userId,
+    groupId,
+    projectId,
+    action: kFimidxPermissions.clientToken.read,
+  });
+  if (input.includePermissions) {
+    await checkPermissionForClientTokenOrUser({
       clientToken,
-      groupId,
-      projectId,
-      action: kFimidxPermissions.clientToken.read,
-    });
-    if (input.includePermissions) {
-      await checkPermissionGroupThenProjectThenOrg({
-        clientToken,
-        groupId,
-        projectId,
-        action: kFimidxPermissions.clientToken.readPermissions,
-      });
-    }
-  } else if (userId) {
-    await checkPermissionGroupThenProjectThenOrg({
       userId,
       groupId,
       projectId,
-      action: kFimidxPermissions.clientToken.read,
+      action: kFimidxPermissions.clientToken.readPermissions,
     });
-    if (input.includePermissions) {
-      await checkPermissionGroupThenProjectThenOrg({
-        userId,
-        groupId,
-        projectId,
-        action: kFimidxPermissions.clientToken.readPermissions,
-      });
-    }
-  } else {
-    throw new OwnServerError("Unauthorized", kOwnServerErrorCodes.Unauthorized);
   }
 
   const { clientTokens, page, limit, hasMore } = await getClientTokens({

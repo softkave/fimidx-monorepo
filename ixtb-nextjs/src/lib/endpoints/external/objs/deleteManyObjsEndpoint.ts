@@ -6,7 +6,7 @@ import {
 import { kByTypes } from "fimidx-core/definitions/other";
 import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { deleteManyObjs } from "fimidx-core/serverHelpers/index";
-import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
+import { checkPermissionForClientTokenOrUser } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
 import { sanitizeDeleteManyObjsExternalApiInput } from "../../utils/sanitizeKId0";
 
@@ -21,7 +21,7 @@ export const deleteManyObjsEndpoint: NextClientTokenAuthenticatedEndpointFn<
   const input = deleteManyObjsExternalApiSchema.parse(await req.json());
   sanitizeDeleteManyObjsExternalApiInput(input);
 
-  await checkPermissionProjectThenOrg({
+  await checkPermissionForClientTokenOrUser({
     clientToken,
     projectId: input.projectId,
     action: kFimidxPermissions.obj.delete,

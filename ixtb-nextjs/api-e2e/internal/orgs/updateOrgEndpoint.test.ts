@@ -1,6 +1,8 @@
+import { kId0 } from "fimidx-core/definitions/system";
+import { addMember } from "fimidx-core/serverHelpers/index";
 import { describe, expect, it } from "vitest";
-import { apiFetch } from "../../helpers/http.js";
 import { createTestUserSession } from "../../helpers/auth.js";
+import { apiFetch } from "../../helpers/http.js";
 import { createTestOrg } from "../../helpers/setup.js";
 
 describe("updateOrgEndpoint", () => {
@@ -33,6 +35,17 @@ describe("updateOrgEndpoint", () => {
     const orgOther = await createTestOrg({
       userId: "other-user-no-access",
       userEmail: "other@example.com",
+    });
+    await addMember({
+      by: "other-user-no-access",
+      byType: "user",
+      args: {
+        groupId: orgOther.orgId,
+        projectId: kId0,
+        meta: {
+          userId: process.env.E2E_TEST_USER_EMAIL,
+        },
+      },
     });
     const res = await apiFetch(`/api/orgs/${orgOther.orgId}`, {
       method: "PATCH",

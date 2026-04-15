@@ -1,6 +1,6 @@
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { getCoreConfig } from "fimidx-core/common/getCoreConfig";
-import { authDb } from "fimidx-core/db/auth-schema";
+import { authDb } from "fimidx-core/db/auth.sqlite";
 import { checkIsAdminEmail } from "fimidx-core/serverHelpers/isAdmin";
 import NextAuth, { Session } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
@@ -33,7 +33,12 @@ const e2eCredentialsProvider = Credentials({
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   logger: ixtbNextAuthLogger,
-  // debug: true,
+  // debug: true, E2E runs with `.env.test` and a Turso-backed adapter may be
+  // unavailable in CI/dev DNS environments. Using JWT sessions keeps auth
+  // working without relying on the adapter for session persistence.
+  session: {
+    strategy: process.env.E2E_TEST_USER_EMAIL ? "jwt" : "database",
+  },
   providers: [
     Google,
     e2eCredentialsProvider,
@@ -49,16 +54,28 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   adapter: DrizzleAdapter(authDb),
   callbacks: {
-    session: async ({ session, user }) => {
-      const isAdmin = checkIsAdminEmail(user.email);
+    jwt: async ({ token, user }) => {
+      // Persist id/email into the token for JWT sessions.
+      if (user) {
+        token.id = (user as any).id;
+        token.email = user.email;
+      }
+      return token;
+    },
+    session: async ({ session, user, token }) => {
+      const email = user?.email ?? token?.email ?? session.user?.email;
+      const id =
+        (user as any)?.id ?? (token as any)?.id ?? (session.user as any)?.id;
+      if (!email || !id) return session;
+      const isAdmin = checkIsAdminEmail(email);
       return {
         expires: session.expires,
         user: {
           isAdmin,
-          email: session.user.email,
+          email,
+          id,
           name: session.user.name,
           image: session.user.image,
-          id: session.user.id,
         },
       };
     },

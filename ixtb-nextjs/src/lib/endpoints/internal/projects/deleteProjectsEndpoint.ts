@@ -5,6 +5,7 @@ import { deleteProjects, getProjects } from "fimidx-core/serverHelpers/index";
 import { requirePermissionForUser } from "../../../serverHelpers/permissions";
 import { NextUserAuthenticatedEndpointFn } from "../../types.js";
 import { sanitizeDeleteProjectsInput } from "../../utils/sanitizeKId0";
+import { OwnServerError, kOwnServerErrorCodes } from "fimidx-core/common/error";
 
 export const deleteProjectsEndpoint: NextUserAuthenticatedEndpointFn<
   void
@@ -62,7 +63,11 @@ export const deleteProjectsEndpoint: NextUserAuthenticatedEndpointFn<
     })
   );
   const allowedIds = results.filter((id): id is string => id != null);
-  if (allowedIds.length === 0) {
+  if (allowedIds.length === 0 && projects.length > 0) {
+    throw new OwnServerError(
+      "No projects found with permission to delete",
+      kOwnServerErrorCodes.Forbidden
+    );
     return;
   }
   await deleteProjects({

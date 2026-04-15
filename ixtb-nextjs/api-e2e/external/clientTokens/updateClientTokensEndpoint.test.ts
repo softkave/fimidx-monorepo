@@ -1,12 +1,14 @@
+import { kByTypes } from "fimidx-core/definitions/other";
+import { kId0 } from "fimidx-core/definitions/system";
+import { addMember } from "fimidx-core/serverHelpers/index";
 import { describe, expect, it } from "vitest";
-import { apiFetch } from "../../helpers/http.js";
 import { createTestUserSession } from "../../helpers/auth.js";
+import { apiFetch } from "../../helpers/http.js";
 import {
+  createTestClientToken,
   createTestOrg,
   createTestProject,
-  createTestClientToken,
 } from "../../helpers/setup.js";
-import { kByTypes } from "fimidx-core/definitions/other";
 
 const UPDATE_CLIENT_TOKENS_PATH = "/api/client-tokens";
 
@@ -38,6 +40,17 @@ describe("updateClientTokensEndpoint", () => {
       groupId: orgOther.orgId,
       by: "other-user-no-access",
       byType: kByTypes.user,
+    });
+    await addMember({
+      by: "other-user-no-access",
+      byType: "user",
+      args: {
+        groupId: orgOther.orgId,
+        projectId: kId0,
+        meta: {
+          userId: process.env.E2E_TEST_USER_EMAIL,
+        },
+      },
     });
     const res = await apiFetch(UPDATE_CLIENT_TOKENS_PATH, {
       method: "PATCH",

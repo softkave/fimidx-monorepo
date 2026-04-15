@@ -8,7 +8,7 @@ import {
   getProjects,
 } from "fimidx-core/serverHelpers/index";
 import { first } from "lodash-es";
-import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
+import { checkPermissionForClientTokenOrUser } from "../../../serverHelpers/permissions";
 import type { NextClientTokenAuthenticatedEndpointFn } from "../../types";
 
 export const uploadTokenEndpoint: NextClientTokenAuthenticatedEndpointFn<{
@@ -22,7 +22,7 @@ export const uploadTokenEndpoint: NextClientTokenAuthenticatedEndpointFn<{
 
   const input = getSourceMapUploadTokenArgsSchema.parse(await req.json());
 
-  await checkPermissionProjectThenOrg({
+  await checkPermissionForClientTokenOrUser({
     clientToken,
     projectId: input.projectId,
     action: kFimidxPermissions.sourceMap.upload,
@@ -46,8 +46,7 @@ export const uploadTokenEndpoint: NextClientTokenAuthenticatedEndpointFn<{
     new OwnServerError("Permission denied", kOwnServerErrorCodes.Unauthorized)
   );
 
-  const { encodedToken } =
-    await ensureProjectFimidaraToken(input.projectId);
+  const { encodedToken } = await ensureProjectFimidaraToken(input.projectId);
 
   const filePath = buildSourceMapZipFilePath(
     input.projectId,

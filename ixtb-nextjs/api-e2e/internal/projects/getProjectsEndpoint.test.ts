@@ -1,7 +1,9 @@
+import { kId0 } from "fimidx-core/definitions/system";
+import { addMember } from "fimidx-core/serverHelpers/index";
 import { describe, expect, it } from "vitest";
-import { apiFetch } from "../../helpers/http.js";
 import { createTestUserSession } from "../../helpers/auth.js";
-import { createTestOrg } from "../../helpers/setup.js";
+import { apiFetch } from "../../helpers/http.js";
+import { createTestOrg, createTestProject } from "../../helpers/setup.js";
 
 const GET_PROJECTS_PATH = "/api/projects/fetch";
 
@@ -21,6 +23,21 @@ describe("getProjectsEndpoint", () => {
       userId: "other-user-no-access",
       userEmail: "other@example.com",
     });
+    await createTestProject({
+      orgId: orgOther.orgId,
+      by: "other-user-no-access",
+    });
+    await addMember({
+      by: "other-user-no-access",
+      byType: "user",
+      args: {
+        groupId: orgOther.orgId,
+        projectId: kId0,
+        meta: {
+          userId: process.env.E2E_TEST_USER_EMAIL,
+        },
+      },
+    });
     const res = await apiFetch(GET_PROJECTS_PATH, {
       method: "POST",
       body: { query: { orgId: orgOther.orgId }, page: 1, limit: 10 },
@@ -36,14 +53,18 @@ describe("getProjectsEndpoint", () => {
     const userId = process.env.E2E_TEST_USER_ID ?? email;
     if (!userId || !email) return;
     const { orgId } = await createTestOrg({ userId, userEmail: email });
+    const { projectId } = await createTestProject({
+      orgId,
+      by: userId,
+    });
     const res = await apiFetch(GET_PROJECTS_PATH, {
       method: "POST",
-      body: { query: { orgId }, page: 1, limit: 10 },
+      body: { query: { orgId, id: { eq: projectId } }, page: 1, limit: 10 },
       cookie,
     });
     expect(res.status).toBe(200);
     const data = (await res.json()) as {
-      projects: unknown[];
+      projects: { id: string; name: string }[];
       page: number;
       limit: number;
       hasMore: boolean;
@@ -52,5 +73,7 @@ describe("getProjectsEndpoint", () => {
     expect(typeof data.page).toBe("number");
     expect(typeof data.limit).toBe("number");
     expect(typeof data.hasMore).toBe("boolean");
+    expect(data.projects.length).toBe(1);
+    expect(data.projects[0].id).toBe(projectId);
   });
 });

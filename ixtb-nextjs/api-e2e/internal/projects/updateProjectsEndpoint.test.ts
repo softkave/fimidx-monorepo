@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { apiFetch } from "../../helpers/http.js";
 import { createTestUserSession } from "../../helpers/auth.js";
+import { apiFetch } from "../../helpers/http.js";
 import { createTestOrg, createTestProject } from "../../helpers/setup.js";
+import { kId0 } from "fimidx-core/definitions/system";
+import { addMember } from "fimidx-core/serverHelpers/index";
 
 const UPDATE_PROJECTS_PATH = "/api/projects";
 
@@ -27,6 +29,17 @@ describe("updateProjectsEndpoint", () => {
     const { projectId } = await createTestProject({
       orgId: orgOther.orgId,
       by: "other-user-no-access",
+    });
+    await addMember({
+      by: "other-user-no-access",
+      byType: "user",
+      args: {
+        groupId: orgOther.orgId,
+        projectId: kId0,
+        meta: {
+          userId: process.env.E2E_TEST_USER_EMAIL,
+        },
+      },
     });
     const res = await apiFetch(UPDATE_PROJECTS_PATH, {
       method: "PATCH",

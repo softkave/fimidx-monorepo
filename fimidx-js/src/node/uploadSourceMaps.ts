@@ -82,6 +82,7 @@ export async function uploadSourceMaps(
     });
     fileToUpload = zipPath;
     isZip = true;
+
     try {
       await uploadFileToFimidara(fimidaraUrl, token, filePath, fileToUpload);
     } finally {

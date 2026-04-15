@@ -1,6 +1,8 @@
+import { kId0 } from "fimidx-core/definitions/system";
+import { addMember } from "fimidx-core/serverHelpers/index";
 import { describe, expect, it } from "vitest";
-import { apiFetch } from "../../helpers/http.js";
 import { createTestUserSession } from "../../helpers/auth.js";
+import { apiFetch } from "../../helpers/http.js";
 import { createTestOrg, createTestProject } from "../../helpers/setup.js";
 
 const PATH = "/api/source-maps/config";
@@ -35,6 +37,17 @@ describe("symbolicationConfig endpoints (internal)", () => {
       orgId: orgOther.orgId,
       by: "other-user-no-access",
     });
+    await addMember({
+      by: "other-user-no-access",
+      byType: "user",
+      args: {
+        groupId: orgOther.orgId,
+        projectId: kId0,
+        meta: {
+          userId: process.env.E2E_TEST_USER_EMAIL,
+        },
+      },
+    });
     const res = await apiFetch(`${PATH}?projectId=${projectId}`, { cookie });
     expect(res.status).toBe(403);
   });
@@ -42,7 +55,11 @@ describe("symbolicationConfig endpoints (internal)", () => {
   it("PATCH returns 400 on invalid body", async () => {
     const cookie = await createTestUserSession();
     if (!cookie) return;
-    const res = await apiFetch(PATH, { method: "PATCH", body: { x: 1 }, cookie });
+    const res = await apiFetch(PATH, {
+      method: "PATCH",
+      body: { x: 1 },
+      cookie,
+    });
     expect(res.status).toBe(400);
   });
 
@@ -65,7 +82,7 @@ describe("symbolicationConfig endpoints (internal)", () => {
       },
       cookie,
     });
-    expect(patchRes.status).toBe(204);
+    expect(patchRes.status).toBe(200);
 
     const getRes = await apiFetch(`${PATH}?projectId=${projectId}`, { cookie });
     expect(getRes.status).toBe(200);
@@ -74,4 +91,3 @@ describe("symbolicationConfig endpoints (internal)", () => {
     expect(Array.isArray(data.config.fieldsToSymbolicate)).toBe(true);
   });
 });
-

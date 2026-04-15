@@ -4,7 +4,7 @@ import {
   updateMonitorsSchema,
 } from "fimidx-core/definitions/index";
 import { updateMonitors } from "fimidx-core/serverHelpers/index";
-import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
+import { checkPermissionForClientTokenOrUser } from "../../../serverHelpers/permissions";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
 import { sanitizeUpdateMonitorsInput } from "../../utils/sanitizeKId0";
 
@@ -20,19 +20,12 @@ export const updateMonitorsEndpoint: NextMaybeAuthenticatedEndpointFn<
   sanitizeUpdateMonitorsInput(input);
   const projectId = input.query.projectId;
 
-  if (clientToken) {
-    await checkPermissionProjectThenOrg({
-      clientToken,
-      projectId,
-      action: kFimidxPermissions.monitor.mutate,
-    });
-  } else if (userId) {
-    await checkPermissionProjectThenOrg({
-      userId,
-      projectId,
-      action: kFimidxPermissions.monitor.mutate,
-    });
-  }
+  await checkPermissionForClientTokenOrUser({
+    userId,
+    clientToken,
+    projectId,
+    action: kFimidxPermissions.monitor.mutate,
+  });
 
   await updateMonitors({
     args: input,

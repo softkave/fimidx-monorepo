@@ -6,7 +6,7 @@ import {
 } from "fimidx-core/definitions/monitor";
 import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { addMonitor, getProjectById } from "fimidx-core/serverHelpers/index";
-import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
+import { checkPermissionForClientTokenOrUser } from "../../../serverHelpers/permissions";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
 import { sanitizeAddMonitorInput } from "../../utils/sanitizeKId0";
 
@@ -21,19 +21,12 @@ export const addMonitorEndpoint: NextMaybeAuthenticatedEndpointFn<
   const input = addMonitorSchema.parse(await req.json());
   sanitizeAddMonitorInput(input);
 
-  if (clientToken) {
-    await checkPermissionProjectThenOrg({
-      clientToken,
-      projectId: input.projectId,
-      action: kFimidxPermissions.monitor.mutate,
-    });
-  } else if (userId) {
-    await checkPermissionProjectThenOrg({
-      userId,
-      projectId: input.projectId,
-      action: kFimidxPermissions.monitor.mutate,
-    });
-  }
+  await checkPermissionForClientTokenOrUser({
+    userId,
+    clientToken,
+    projectId: input.projectId,
+    action: kFimidxPermissions.monitor.mutate,
+  });
 
   const project = await getProjectById({ id: input.projectId });
   assert.ok(

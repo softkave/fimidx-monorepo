@@ -1,3 +1,5 @@
+import assert from "assert";
+import { OwnServerError, kOwnServerErrorCodes } from "fimidx-core/common/error";
 import {
   ISetManyObjsEndpointResponse,
   kObjTags,
@@ -6,11 +8,9 @@ import {
 import { kByTypes } from "fimidx-core/definitions/other";
 import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { getProjectById, setManyObjs } from "fimidx-core/serverHelpers/index";
-import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
+import { checkPermissionForClientTokenOrUser } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
 import { sanitizeSetManyObjsInput } from "../../utils/sanitizeKId0";
-import assert from "assert";
-import { OwnServerError, kOwnServerErrorCodes } from "fimidx-core/common/error";
 
 export const setManyObjsEndpoint: NextClientTokenAuthenticatedEndpointFn<
   ISetManyObjsEndpointResponse
@@ -23,7 +23,7 @@ export const setManyObjsEndpoint: NextClientTokenAuthenticatedEndpointFn<
   const input = setManyObjsSchema.parse(await req.json());
   sanitizeSetManyObjsInput(input);
 
-  await checkPermissionProjectThenOrg({
+  await checkPermissionForClientTokenOrUser({
     clientToken,
     projectId: input.projectId,
     action: kFimidxPermissions.obj.mutate,

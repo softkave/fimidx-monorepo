@@ -5,7 +5,7 @@ import {
 } from "fimidx-core/definitions/obj";
 import { kFimidxPermissions } from "fimidx-core/definitions/permission";
 import { getObjFields } from "fimidx-core/serverHelpers/index";
-import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
+import { checkPermissionForClientTokenOrUser } from "../../../serverHelpers/permissions";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
 import { sanitizeGetObjFieldsInput } from "../../utils/sanitizeKId0";
 
@@ -22,19 +22,12 @@ export const getObjFieldsEndpoint: NextMaybeAuthenticatedEndpointFn<
   const input = getObjFieldsSchema.parse(await req.json());
   sanitizeGetObjFieldsInput(input);
 
-  if (clientToken) {
-    await checkPermissionProjectThenOrg({
-      clientToken,
-      projectId: input.projectId,
-      action: kFimidxPermissions.obj.read,
-    });
-  } else if (userId) {
-    await checkPermissionProjectThenOrg({
-      userId,
-      projectId: input.projectId,
-      action: kFimidxPermissions.obj.read,
-    });
-  }
+  await checkPermissionForClientTokenOrUser({
+    userId,
+    clientToken,
+    projectId: input.projectId,
+    action: kFimidxPermissions.obj.read,
+  });
 
   const response = await getObjFields({
     projectId: input.projectId,

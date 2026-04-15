@@ -4,7 +4,7 @@ import {
   kFimidxPermissions,
 } from "fimidx-core/definitions/index";
 import { getMonitors } from "fimidx-core/serverHelpers/index";
-import { checkPermissionProjectThenOrg } from "../../../serverHelpers/permissions";
+import { checkPermissionForClientTokenOrUser } from "../../../serverHelpers/permissions";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
 import { sanitizeGetMonitorsInput } from "../../utils/sanitizeKId0";
 
@@ -20,19 +20,12 @@ export const getMonitorsEndpoint: NextMaybeAuthenticatedEndpointFn<
   sanitizeGetMonitorsInput(input);
   const projectId = input.query.projectId;
 
-  if (clientToken) {
-    await checkPermissionProjectThenOrg({
-      clientToken,
-      projectId,
-      action: kFimidxPermissions.monitor.read,
-    });
-  } else if (userId) {
-    await checkPermissionProjectThenOrg({
-      userId,
-      projectId,
-      action: kFimidxPermissions.monitor.read,
-    });
-  }
+  await checkPermissionForClientTokenOrUser({
+    userId,
+    clientToken,
+    projectId,
+    action: kFimidxPermissions.monitor.read,
+  });
 
   const { monitors, page, limit, hasMore } = await getMonitors({
     args: input,

@@ -8,6 +8,7 @@ import { getProjects, updateProjects } from "fimidx-core/serverHelpers/index";
 import { requirePermissionForUser } from "../../../serverHelpers/permissions";
 import { NextUserAuthenticatedEndpointFn } from "../../types.js";
 import { sanitizeUpdateProjectsInput } from "../../utils/sanitizeKId0";
+import { OwnServerError, kOwnServerErrorCodes } from "fimidx-core/common/error";
 
 export const updateProjectsEndpoint: NextUserAuthenticatedEndpointFn<
   UpdateProjectEndpointResponse
@@ -73,6 +74,11 @@ export const updateProjectsEndpoint: NextUserAuthenticatedEndpointFn<
       by: userId,
       byType: kByTypes.user,
     });
+  } else if (allowedIds.length === 0 && projects.length > 0) {
+    throw new OwnServerError(
+      "No projects found with permission to update",
+      kOwnServerErrorCodes.Forbidden
+    );
   }
 
   return { success: true };

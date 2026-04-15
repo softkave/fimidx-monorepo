@@ -8,10 +8,7 @@ packages:
   - ixtb-nextjs
   - symbolication-sample-app
   - fimidx-symbolication-e2e
-
-onlyBuiltDependencies:
-  - '@tailwindcss/oxide'
-  - esbuild
-  - sharp
-  - sqlite3
-  - unrs-resolver
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: true

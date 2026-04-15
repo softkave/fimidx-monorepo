@@ -1,5 +1,3 @@
-import { createClient } from "@libsql/client";
-import { drizzle } from "drizzle-orm/libsql";
 import {
   integer,
   primaryKey,
@@ -8,16 +6,6 @@ import {
 } from "drizzle-orm/sqlite-core";
 import type { AdapterAccountType } from "next-auth/adapters";
 import { v7 as uuidv7 } from "uuid";
-import { getCoreConfig } from "../common/getCoreConfig.js";
-
-const { auth } = getCoreConfig();
-
-const authClient = createClient({
-  authToken: auth.turso.authToken,
-  url: auth.turso.url,
-});
-
-export const authDb = drizzle(authClient);
 
 export const users = sqliteTable("user", {
   id: text("id")
@@ -46,11 +34,11 @@ export const accounts = sqliteTable(
     id_token: text("id_token"),
     session_state: text("session_state"),
   },
-  (account) => ({
-    compoundKey: primaryKey({
+  (account) => [
+    primaryKey({
       columns: [account.provider, account.providerAccountId],
     }),
-  })
+  ]
 );
 
 export const sessions = sqliteTable("session", {
@@ -68,11 +56,11 @@ export const verificationTokens = sqliteTable(
     token: text("token").notNull(),
     expires: integer("expires", { mode: "timestamp_ms" }).notNull(),
   },
-  (verificationToken) => ({
-    compositePk: primaryKey({
+  (verificationToken) => [
+    primaryKey({
       columns: [verificationToken.identifier, verificationToken.token],
     }),
-  })
+  ]
 );
 
 export const authenticators = sqliteTable(
@@ -91,9 +79,9 @@ export const authenticators = sqliteTable(
     }).notNull(),
     transports: text("transports"),
   },
-  (authenticator) => ({
-    compositePK: primaryKey({
+  (authenticator) => [
+    primaryKey({
       columns: [authenticator.userId, authenticator.credentialID],
     }),
-  })
+  ]
 );

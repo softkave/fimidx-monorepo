@@ -20,7 +20,9 @@
     "posttest": "npm run lint",
     "start": "env-cmd -f \".env.local\" node build/src/index.js",
     "dev": "npm run compile && npm run start",
-    "dev:test": "npm run compile && env-cmd -f \".env.test\" node build/src/index.js"
+    "dev:test": "npm run compile && env-cmd -f \".env.test\" node build/src/index.js",
+    "upload-source-maps": "npx --yes -- fimidx@latest source-maps upload --client-token \"$FIMIDX_SYMBOLICATION_AUTH_TOKEN\" --project-id \"$NEXT_PUBLIC_FIMIDX_LOGGER_PROJECT_ID\" --repo \"$NEXT_PUBLIC_FIMIDX_SYMBOLICATION_REPO\" --version \"$NEXT_PUBLIC_FIMIDX_SYMBOLICATION_VERSION\" --path build/src",
+    "delete-source-maps": "find build/src -name '*.map' -type f -delete"
   },
   "devDependencies": {
     "@faker-js/faker": "^9.5.0",

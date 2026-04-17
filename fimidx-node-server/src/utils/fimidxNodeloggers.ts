@@ -1,13 +1,8 @@
 import {
   fimidxConsoleLogger,
-  fimidxLogger,
   fimidxNextAuthLogger,
 } from 'fimidx-core/common/logger/index';
 import {fimidxWinstonLogger} from 'fimidx-core/common/logger/winston-logger';
-
-fimidxLogger.mergeMetadata({
-  project: 'fimidx-node-server',
-});
 
 export const fimidxNodeConsoleLogger: typeof fimidxConsoleLogger =
   fimidxConsoleLogger;

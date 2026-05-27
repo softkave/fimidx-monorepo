@@ -1,6 +1,13 @@
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { getCoreConfig } from "fimidx-core/common/getCoreConfig";
-import { authDb } from "fimidx-core/db/auth.sqlite";
+import { authDb } from "fimidx-core/db/auth.postgres";
+import {
+  accounts,
+  authenticators,
+  sessions,
+  users,
+  verificationTokens,
+} from "fimidx-core/db/auth.postgres.schema";
 import { checkIsAdminEmail } from "fimidx-core/serverHelpers/isAdmin";
 import NextAuth, { Session } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
@@ -33,8 +40,7 @@ const e2eCredentialsProvider = Credentials({
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   logger: ixtbNextAuthLogger,
-  // debug: true, E2E runs with `.env.test` and a Turso-backed adapter may be
-  // unavailable in CI/dev DNS environments. Using JWT sessions keeps auth
+  // debug: true, E2E runs with `.env.test`. Using JWT sessions keeps auth
   // working without relying on the adapter for session persistence.
   session: {
     strategy: process.env.E2E_TEST_USER_EMAIL ? "jwt" : "database",
@@ -52,7 +58,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
-  adapter: DrizzleAdapter(authDb),
+  adapter: DrizzleAdapter(authDb, {
+    usersTable: users,
+    accountsTable: accounts,
+    sessionsTable: sessions,
+    verificationTokensTable: verificationTokens,
+    authenticatorsTable: authenticators,
+  }),
   callbacks: {
     jwt: async ({ token, user }) => {
       // Persist id/email into the token for JWT sessions.

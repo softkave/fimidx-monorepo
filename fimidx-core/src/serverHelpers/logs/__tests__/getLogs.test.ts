@@ -9,7 +9,7 @@ import {
   expect,
   it,
 } from "vitest";
-import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
+import { db, objFields as objFieldsTable } from "../../../db/fimidx.postgres.js";
 import type { GetLogsEndpointArgs } from "../../../definitions/log.js";
 import type { IObjField } from "../../../definitions/obj.js";
 import { kObjTags } from "../../../definitions/obj.js";

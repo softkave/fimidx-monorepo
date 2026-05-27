@@ -2,10 +2,7 @@ import { z } from "zod";
 
 export const envVars = {
   FIMIDX_POSTGRES_URL: "FIMIDX_POSTGRES_URL",
-  FIMIDX_TURSO_URL: "FIMIDX_TURSO_URL",
-  FIMIDX_TURSO_AUTH_TOKEN: "FIMIDX_TURSO_AUTH_TOKEN",
-  AUTH_TURSO_URL: "AUTH_TURSO_URL",
-  AUTH_TURSO_AUTH_TOKEN: "AUTH_TURSO_AUTH_TOKEN",
+  AUTH_POSTGRES_URL: "AUTH_POSTGRES_URL",
   MONGO_URI: "MONGO_URI",
   MONGO_DB_NAME: "MONGO_DB_NAME",
   ADMIN_EMAILS: "ADMIN_EMAILS",
@@ -46,24 +43,13 @@ export const coreConfigSchema = z
     postgres: z.object({
       url: z
         .string({ message: `${envVars.FIMIDX_POSTGRES_URL} is not set` })
-        .optional(),
-    }),
-    turso: z.object({
-      url: z
-        .string({ message: `${envVars.FIMIDX_TURSO_URL} is not set` })
-        .url({ message: `${envVars.FIMIDX_TURSO_URL} is not a valid URL` }),
-      authToken: z.string({
-        message: `${envVars.FIMIDX_TURSO_AUTH_TOKEN} is not set`,
-      }),
+        .url({ message: `${envVars.FIMIDX_POSTGRES_URL} is not a valid URL` }),
     }),
     auth: z.object({
-      turso: z.object({
+      postgres: z.object({
         url: z
-          .string({ message: `${envVars.AUTH_TURSO_URL} is not set` })
-          .url({ message: `${envVars.AUTH_TURSO_URL} is not a valid URL` }),
-        authToken: z.string({
-          message: `${envVars.AUTH_TURSO_AUTH_TOKEN} is not set`,
-        }),
+          .string({ message: `${envVars.AUTH_POSTGRES_URL} is not set` })
+          .url({ message: `${envVars.AUTH_POSTGRES_URL} is not a valid URL` }),
       }),
     }),
     mongo: z.object({

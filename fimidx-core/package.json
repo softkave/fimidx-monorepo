@@ -10,12 +10,12 @@
     "compile": "pnpm clean && tsc",
     "type-check": "tsc --noEmit",
     "validate:env": "npx --yes -- softkave-forerunner@latest run-env --cmd \"tsx src/scripts/validateEnv.ts\"",
-    "db:generate:sqlite": "env-cmd -f \".env.local\" npx drizzle-kit generate --config=fimidx.sqlite.drizzle.config.ts",
-    "db:generate:auth": "env-cmd -f \".env.local\" npx drizzle-kit generate --config=auth.sqlite.drizzle.config.ts",
+    "db:generate:auth": "env-cmd -f \".env.local\" npx drizzle-kit generate --config=auth.postgres.drizzle.config.ts",
     "db:generate:postgres": "env-cmd -f \".env.local\" npx drizzle-kit generate --config=fimidx.postgres.drizzle.config.ts",
-    "db:migrate:sqlite": "npx --yes -- softkave-forerunner@latest run-env --cmd \"npx drizzle-kit migrate --config=fimidx.sqlite.drizzle.config.ts\"",
-    "db:migrate:auth": "npx --yes -- softkave-forerunner@latest run-env --cmd \"npx drizzle-kit migrate --config=auth.sqlite.drizzle.config.ts\"",
+    "db:migrate:auth": "npx --yes -- softkave-forerunner@latest run-env --cmd \"npx drizzle-kit migrate --config=auth.postgres.drizzle.config.ts\"",
+    "db:migrate:auth:data": "env-cmd -f \".env.local\" npx tsx src/scripts/migrateAuthTursoToPostgres.ts",
     "db:migrate:postgres": "npx --yes -- softkave-forerunner@latest run-env --cmd \"npx drizzle-kit migrate --config=fimidx.postgres.drizzle.config.ts\"",
+    "db:migrate:postgres:data": "env-cmd -f \".env.local\" npx tsx src/scripts/migrateFimidxTursoToPostgres.ts",
     "mongo:dev": "npx run-rs --host localhost --portStart 27010 --dbpath ./local-mongo/dev --keep -v 8.2.3",
     "mongo:test": "npx run-rs --host localhost --portStart 27015 --dbpath ./local-mongo/test -v 8.2.3"
   },
@@ -55,7 +55,6 @@
   "dependencies": {
     "adm-zip": "^0.5.16",
     "@auth/drizzle-adapter": "1.11.2",
-    "@libsql/client": "0.17.2",
     "@types/split2": "^4.2.3",
     "date-fns": "^4.1.0",
     "drizzle-orm": "0.45.2",
@@ -88,9 +87,11 @@
     "drizzle-kit": "0.31.10",
     "env-cmd": "^10.1.0",
     "eslint": "^9",
+    "tsx": "^4.21.0",
     "typescript": "^5",
     "vitest": "^3.1.3",
     "@types/source-map": "^0.5.7",
-    "@types/adm-zip": "^0.5.7"
+    "@types/adm-zip": "^0.5.7",
+    "@libsql/client": "0.17.2"
   }
 }

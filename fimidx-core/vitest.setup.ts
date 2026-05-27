@@ -1,11 +1,11 @@
 import { closeMongoConnection } from "./src/db/fimidx.mongo.js";
 import {
   clearMongoCollections,
-  clearSQLiteTables,
+  clearPostgresTables,
 } from "./src/vitest/setup.js";
 
 export async function setup() {
-  await clearSQLiteTables();
+  await clearPostgresTables();
   await clearMongoCollections();
 }
 

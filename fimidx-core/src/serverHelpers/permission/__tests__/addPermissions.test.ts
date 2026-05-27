@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
+import { db, objFields as objFieldsTable } from "../../../db/fimidx.postgres.js";
 import { kObjTags } from "../../../definitions/obj.js";
 import type { AddPermissionsEndpointArgs } from "../../../definitions/permission.js";
 import { createDefaultStorage } from "../../../storage/config.js";

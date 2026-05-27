@@ -11,7 +11,7 @@ End-to-end symbolication test runner for the local fimidx stack.
 
 ## Seeding env
 
-`vitest` **globalSetup** runs the same commands as these `ixtb-nextjs` scripts (after clearing SQLite + Mongo test data):
+`vitest` **globalSetup** runs the same commands as these `ixtb-nextjs` scripts (after clearing Postgres + Mongo test data):
 
 - `pnpm seed:symbolication-sample-app-env:test`
 - `pnpm seed:fimidx-symbolication-e2e-env:test`

@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
+import { db, objFields as objFieldsTable } from "../../../db/fimidx.postgres.js";
 import {
   kMemberStatus,
   type AddMemberEndpointArgs,

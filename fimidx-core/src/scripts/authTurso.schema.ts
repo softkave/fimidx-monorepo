@@ -1,3 +1,7 @@
+/**
+ * Turso/SQLite auth schema used only by migrateAuthTursoToPostgres.ts.
+ * Remove this file after all environments have been migrated.
+ */
 import {
   integer,
   primaryKey,
@@ -5,12 +9,9 @@ import {
   text,
 } from "drizzle-orm/sqlite-core";
 import type { AdapterAccountType } from "next-auth/adapters";
-import { v7 as uuidv7 } from "uuid";
 
 export const users = sqliteTable("user", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => uuidv7()),
+  id: text("id").primaryKey(),
   name: text("name"),
   email: text("email").unique(),
   emailVerified: integer("emailVerified", { mode: "timestamp_ms" }),
@@ -20,9 +21,7 @@ export const users = sqliteTable("user", {
 export const accounts = sqliteTable(
   "account",
   {
-    userId: text("userId")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+    userId: text("userId").notNull(),
     type: text("type").$type<AdapterAccountType>().notNull(),
     provider: text("provider").notNull(),
     providerAccountId: text("providerAccountId").notNull(),
@@ -43,9 +42,7 @@ export const accounts = sqliteTable(
 
 export const sessions = sqliteTable("session", {
   sessionToken: text("sessionToken").primaryKey(),
-  userId: text("userId")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
+  userId: text("userId").notNull(),
   expires: integer("expires", { mode: "timestamp_ms" }).notNull(),
 });
 
@@ -67,9 +64,7 @@ export const authenticators = sqliteTable(
   "authenticator",
   {
     credentialID: text("credentialID").notNull().unique(),
-    userId: text("userId")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+    userId: text("userId").notNull(),
     providerAccountId: text("providerAccountId").notNull(),
     credentialPublicKey: text("credentialPublicKey").notNull(),
     counter: integer("counter").notNull(),

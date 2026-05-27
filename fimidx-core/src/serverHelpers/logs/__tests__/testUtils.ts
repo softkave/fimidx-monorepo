@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
+import { db, objFields as objFieldsTable } from "../../../db/fimidx.postgres.js";
 import { kObjTags } from "../../../definitions/obj.js";
 import { createDefaultStorage } from "../../../storage/config.js";
 import type { IObjStorage } from "../../../storage/types.js";

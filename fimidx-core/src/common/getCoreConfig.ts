@@ -4,10 +4,7 @@ import { coreConfigSchema, envVars } from "../definitions/coreConfig.js";
 
 export function getCoreConfig(): z.infer<typeof coreConfigSchema> {
   const fimidxPostgresUrl = process.env[envVars.FIMIDX_POSTGRES_URL];
-  const fimidxTursoUrl = process.env[envVars.FIMIDX_TURSO_URL];
-  const fimidxTursoAuthToken = process.env[envVars.FIMIDX_TURSO_AUTH_TOKEN];
-  const authTursoUrl = process.env[envVars.AUTH_TURSO_URL];
-  const authTursoAuthToken = process.env[envVars.AUTH_TURSO_AUTH_TOKEN];
+  const authPostgresUrl = process.env[envVars.AUTH_POSTGRES_URL];
   const mongoUri = process.env[envVars.MONGO_URI];
   const mongoDbName = process.env[envVars.MONGO_DB_NAME];
   const adminEmails = process.env[envVars.ADMIN_EMAILS];
@@ -56,14 +53,9 @@ export function getCoreConfig(): z.infer<typeof coreConfigSchema> {
     postgres: {
       url: fimidxPostgresUrl,
     },
-    turso: {
-      url: fimidxTursoUrl,
-      authToken: fimidxTursoAuthToken,
-    },
     auth: {
-      turso: {
-        url: authTursoUrl,
-        authToken: authTursoAuthToken,
+      postgres: {
+        url: authPostgresUrl,
       },
     },
     mongo: {

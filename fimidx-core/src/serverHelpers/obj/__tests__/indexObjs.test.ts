@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { getObjModel } from "../../../db/fimidx.mongo.js";
-import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
+import { db, objFields as objFieldsTable } from "../../../db/fimidx.postgres.js";
 import type { IInputObjRecord, IObj } from "../../../definitions/obj.js";
 import type { IProjectObjRecord } from "../../../definitions/project.js";
 import { createStorage } from "../../../storage/config.js";
@@ -113,7 +113,7 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
         );
     }
 
-    // Clean up SQLite tables
+    // Clean up Postgres objField rows
     await db
       .delete(objFieldsTable)
       .where(

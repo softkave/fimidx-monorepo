@@ -1,5 +1,5 @@
 import { and, desc, eq } from "drizzle-orm";
-import { db, objFields as objFieldsTable } from "../../db/fimidx.sqlite.js";
+import { db, objFields as objFieldsTable } from "../../db/fimidx.postgres.js";
 import type {
   IGetObjFieldsEndpointResponse,
   IObjField,

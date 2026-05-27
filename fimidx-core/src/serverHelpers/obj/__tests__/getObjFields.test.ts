@@ -1,7 +1,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
+import { db, objFields as objFieldsTable } from "../../../db/fimidx.postgres.js";
 import type { IObjField } from "../../../definitions/obj.js";
 import { getObjFields } from "../getObjFields.js";
 

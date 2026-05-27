@@ -1,14 +1,12 @@
+/**
+ * Turso/SQLite fimidx schema used only by migrateFimidxTursoToPostgres.ts.
+ */
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { v7 as uuidv7 } from "uuid";
 
-/** Inlined from common/indexer to avoid module resolution issues when loaded by
- * drizzle-kit */
 type FieldType = "string" | "number" | "boolean" | "null" | "undefined";
 
 export const emailRecords = sqliteTable("emailRecord", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => uuidv7()),
+  id: text("id").primaryKey().notNull(),
   createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
   updatedAt: integer("updatedAt", { mode: "timestamp_ms" }).notNull(),
   from: text("from").notNull(),
@@ -25,23 +23,16 @@ export const emailRecords = sqliteTable("emailRecord", {
 });
 
 export const emailBlockLists = sqliteTable("emailBlockList", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => uuidv7()),
+  id: text("id").primaryKey().notNull(),
   createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
   updatedAt: integer("updatedAt", { mode: "timestamp_ms" }).notNull(),
   email: text("email").notNull(),
-  justifyingEmailRecordId: text("justifyingEmailRecordId").references(
-    () => emailRecords.id,
-    { onDelete: "cascade" }
-  ),
+  justifyingEmailRecordId: text("justifyingEmailRecordId"),
   reason: text("reason"),
 });
 
 export const objFields = sqliteTable("objField", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => uuidv7()),
+  id: text("id").primaryKey().notNull(),
   createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
   updatedAt: integer("updatedAt", { mode: "timestamp_ms" }).notNull(),
   projectId: text("projectId").notNull(),

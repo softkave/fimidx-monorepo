@@ -7,7 +7,7 @@ import {
   type FieldType,
   type IndexedJson,
 } from "../../common/indexer.js";
-import { db, objFields as objFieldsTable } from "../../db/fimidx.sqlite.js";
+import { db, objFields as objFieldsTable } from "../../db/fimidx.postgres.js";
 import type { IObj, IObjField } from "../../definitions/obj.js";
 import type { IProject } from "../../definitions/project.js";
 import { createStorage, getDefaultStorageType } from "../../storage/config.js";
@@ -107,25 +107,18 @@ async function indexObjFields(params: {
       }
     });
 
-    // @ts-expect-error
-    const batchParams: Parameters<typeof db.batch> = [];
-
-    if (newFields.length > 0) {
-      // @ts-expect-error
-      batchParams.push(db.insert(objFieldsTable).values(newFields));
-    }
-    if (existingFieldsToUpdate.length > 0) {
-      batchParams.push(
-        // @ts-expect-error
-        ...existingFieldsToUpdate.map(({ id, obj }) =>
-          db.update(objFieldsTable).set(obj).where(eq(objFieldsTable.id, id))
-        )
-      );
-    }
-
-    if (batchParams.length > 0) {
-      // @ts-expect-error
-      await db.batch(batchParams);
+    if (newFields.length > 0 || existingFieldsToUpdate.length > 0) {
+      await db.transaction(async (tx) => {
+        if (newFields.length > 0) {
+          await tx.insert(objFieldsTable).values(newFields);
+        }
+        for (const { id, obj } of existingFieldsToUpdate) {
+          await tx
+            .update(objFieldsTable)
+            .set(obj)
+            .where(eq(objFieldsTable.id, id));
+        }
+      });
     }
     batchIndex += batchSize;
   }

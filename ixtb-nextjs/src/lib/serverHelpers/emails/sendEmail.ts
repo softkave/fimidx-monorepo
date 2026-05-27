@@ -4,7 +4,7 @@ import {
   db,
   emailBlockLists as emailBlockListTable,
   emailRecords as emailRecordTable,
-} from "fimidx-core/db/fimidx.sqlite";
+} from "fimidx-core/db/fimidx.postgres";
 import {
   EmailRecordReason,
   EmailRecordStatus,

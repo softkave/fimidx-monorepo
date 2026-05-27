@@ -1,14 +1,17 @@
 import { defineConfig } from "drizzle-kit";
-import { getCoreConfig } from "./src/common/getCoreConfig.js";
 
-const { postgres } = getCoreConfig();
+const fimidxPostgresUrl = process.env.FIMIDX_POSTGRES_URL;
+
+if (!fimidxPostgresUrl) {
+  throw new Error("FIMIDX_POSTGRES_URL is not set");
+}
 
 export default defineConfig({
   out: "./drizzle/fimidx/postgres",
-  schema: "./src/db/fimidx.postgres.ts",
+  schema: "./src/db/fimidx.postgres.schema.ts",
   dialect: "postgresql",
   dbCredentials: {
-    url: postgres.url,
+    url: fimidxPostgresUrl,
   },
   migrations: {
     table: "__drizzle_migrations", // `__drizzle_migrations` by default

@@ -1,7 +1,6 @@
-import { and, eq } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
+import { getMongoConnection } from "../../../db/fimidx.mongo.js";
 import type { GetCallbacksEndpointArgs } from "../../../definitions/callback.js";
 import { kObjTags } from "../../../definitions/obj.js";
 import { createDefaultStorage } from "../../../storage/config.js";
@@ -17,8 +16,20 @@ const defaultByType = "user";
 // Test counter to ensure unique names
 let testCounter = 0;
 
+async function getObjFieldsCollection() {
+  const { promise } = getMongoConnection();
+  await promise;
+  const { connection } = getMongoConnection();
+  const db = connection?.db;
+  if (!db) {
+    throw new Error("Mongo connection is not available");
+  }
+
+  return db.collection("objField");
+}
+
 function makeGetCallbacksArgs(
-  overrides: Partial<GetCallbacksEndpointArgs> = {}
+  overrides: Partial<GetCallbacksEndpointArgs> = {},
 ): GetCallbacksEndpointArgs {
   return {
     query: {
@@ -89,7 +100,7 @@ async function insertNameFieldForSorting(params: {
   };
 
   // Insert the field definition
-  await db.insert(objFieldsTable).values(nameField);
+  await (await getObjFieldsCollection()).insertOne(nameField);
 
   return nameField;
 }
@@ -124,15 +135,13 @@ describe("getCallbacks integration", () => {
 
       // Clean up objFields for test groups
       for (const projectId of testProjectIds) {
-        await db
-          .delete(objFieldsTable)
-          .where(
-            and(
-              eq(objFieldsTable.projectId, projectId),
-              eq(objFieldsTable.groupId, defaultGroupId),
-              eq(objFieldsTable.tag, kObjTags.callback)
-            )
-          );
+        await (
+          await getObjFieldsCollection()
+        ).deleteMany({
+          projectId,
+          groupId: defaultGroupId,
+          tag: kObjTags.callback,
+        });
       }
     } catch (error) {
       // Ignore errors in cleanup
@@ -161,15 +170,13 @@ describe("getCallbacks integration", () => {
 
       // Clean up objFields for test groups
       for (const projectId of testProjectIds) {
-        await db
-          .delete(objFieldsTable)
-          .where(
-            and(
-              eq(objFieldsTable.projectId, projectId),
-              eq(objFieldsTable.groupId, defaultGroupId),
-              eq(objFieldsTable.tag, kObjTags.callback)
-            )
-          );
+        await (
+          await getObjFieldsCollection()
+        ).deleteMany({
+          projectId,
+          groupId: defaultGroupId,
+          tag: kObjTags.callback,
+        });
       }
     } catch (error) {
       // Ignore errors in cleanup

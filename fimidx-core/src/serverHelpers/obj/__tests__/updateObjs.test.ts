@@ -1,4 +1,3 @@
-import { and, eq } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { getObjModel } from "../../../db/fimidx.mongo.js";
@@ -13,7 +12,7 @@ const backends: { type: "mongo" | "postgres"; name: string }[] = [
 ];
 
 function makeInputObjRecord(
-  overrides: Partial<IInputObjRecord> = {}
+  overrides: Partial<IInputObjRecord> = {},
 ): IInputObjRecord {
   return {
     name: "Test Object",
@@ -74,15 +73,6 @@ describe.each(backends)("updateManyObjs integration (%s)", (backend) => {
     if (backend.type === "mongo") {
       const model = getObjModel();
       await model.deleteMany({ projectId: defaultProjectId, tag: defaultTag });
-    } else if (backend.type === "postgres") {
-      const { fimidxPostgresDb, objs } = await import(
-        "../../../db/fimidx.postgres.js"
-      );
-      await fimidxPostgresDb
-        .delete(objs)
-        .where(
-          and(eq(objs.projectId, defaultProjectId), eq(objs.tag, defaultTag))
-        );
     }
   });
 

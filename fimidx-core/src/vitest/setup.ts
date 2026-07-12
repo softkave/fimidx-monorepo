@@ -8,28 +8,6 @@ import {
   getFimidaraSourceMapsFolderpath,
 } from "../serverHelpers/index.js";
 
-/**
- * Deletes all rows from all tables in the correct order to respect foreign key
- * constraints. emailBlockLists references emailRecords, so it must be deleted
- * first.
- */
-export async function clearSQLiteTables() {
-  // Avoid eagerly initializing the SQLite/Turso client for test runs that
-  // don't require it (most symbolication tests use Mongo only).
-  try {
-    const { db, emailBlockLists, emailRecords, objFields } = await import(
-      "../db/fimidx.sqlite.js"
-    );
-    await db.delete(emailBlockLists);
-    await db.delete(emailRecords);
-    await db.delete(objFields);
-  } catch (err) {
-    // If Turso isn't reachable/configured in this environment, skip SQLite
-    // cleanup so Mongo-based tests can still run.
-    console.warn("Skipping SQLite table cleanup (not available)", err);
-  }
-}
-
 export async function clearMongoCollections() {
   console.log("Clearing all Mongo collections");
   const { connection, promise } = await getMongoConnection();
@@ -49,9 +27,7 @@ export async function clearMongoCollections() {
 
 const promisifiedExec = promisify(exec);
 export async function runMigrationsForSQLDbsUsingShell() {
-  const sqliteMigrationCommand =
-    'env-cmd -f ".env.test" npx drizzle-kit migrate --config=fimidx.sqlite.drizzle.config.ts';
-  const commands = [sqliteMigrationCommand];
+  const commands: string[] = [];
   for (const command of commands) {
     console.log(`Running ${command}`);
     const result = await promisifiedExec(command);
@@ -74,12 +50,12 @@ export async function cleanupFimidaraSourceMapsFolder() {
   try {
     await endpoints.folders.deleteFolder({ folderpath });
     console.log(
-      `Successfully cleaned up fimidara source maps folderpath ${folderpath}`
+      `Successfully cleaned up fimidara source maps folderpath ${folderpath}`,
     );
   } catch (error: unknown) {
     console.error(
       `Failed to clean up fimidara source maps folderpath ${folderpath}`,
-      error
+      error,
     );
   }
 }

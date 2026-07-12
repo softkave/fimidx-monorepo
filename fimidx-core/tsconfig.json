@@ -22,8 +22,6 @@
     "vitest.config.ts",
     "vitest.config.unit.ts",
     "vitest.setup.ts",
-    "fimidx.sqlite.drizzle.config.ts",
-    "auth.sqlite.drizzle.config.ts",
     "fimidx.postgres.drizzle.config.ts",
     "dist"
   ]

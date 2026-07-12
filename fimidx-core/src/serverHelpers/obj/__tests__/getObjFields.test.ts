@@ -1,13 +1,24 @@
-import { and, eq, inArray } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
+import { getMongoConnection } from "../../../db/fimidx.mongo.js";
 import type { IObjField } from "../../../definitions/obj.js";
 import { getObjFields } from "../getObjFields.js";
 
 const TEST_PROJECT_ID = "test-project-id-getObjFields";
 const TEST_GROUP_ID = "test-group-id-getObjFields";
 const TEST_TAG = "test-tag-getObjFields";
+
+async function getObjFieldsCollection() {
+  const { promise } = getMongoConnection();
+  await promise;
+  const { connection } = getMongoConnection();
+  const db = connection?.db;
+  if (!db) {
+    throw new Error("Mongo connection is not available");
+  }
+
+  return db.collection("objField");
+}
 
 function makeObjField(overrides: Partial<IObjField> = {}): IObjField {
   const now = new Date();
@@ -31,36 +42,34 @@ describe("getObjFields integration", () => {
 
   beforeAll(async () => {
     // Clean up any old test data
-    await db
-      .delete(objFieldsTable)
-      .where(
-        and(
-          eq(objFieldsTable.projectId, TEST_PROJECT_ID),
-          eq(objFieldsTable.tag, TEST_TAG)
-        )
-      );
+    await (
+      await getObjFieldsCollection()
+    ).deleteMany({
+      projectId: TEST_PROJECT_ID,
+      tag: TEST_TAG,
+    });
   }, 20_000);
 
   afterEach(async () => {
     // Clean up after each test
     if (insertedIds.length > 0) {
-      await db
-        .delete(objFieldsTable)
-        .where(inArray(objFieldsTable.id, insertedIds));
+      await (
+        await getObjFieldsCollection()
+      ).deleteMany({
+        id: { $in: insertedIds },
+      });
       insertedIds = [];
     }
   });
 
   afterAll(async () => {
     // Final cleanup
-    await db
-      .delete(objFieldsTable)
-      .where(
-        and(
-          eq(objFieldsTable.projectId, TEST_PROJECT_ID),
-          eq(objFieldsTable.tag, TEST_TAG)
-        )
-      );
+    await (
+      await getObjFieldsCollection()
+    ).deleteMany({
+      projectId: TEST_PROJECT_ID,
+      tag: TEST_TAG,
+    });
   });
 
   it("returns empty result when no fields exist", async () => {
@@ -77,7 +86,7 @@ describe("getObjFields integration", () => {
   it("returns inserted fields and supports pagination", async () => {
     // Insert 3 fields
     const fields = [makeObjField(), makeObjField(), makeObjField()];
-    await db.insert(objFieldsTable).values(fields);
+    await (await getObjFieldsCollection()).insertMany(fields);
     insertedIds = fields.map((f) => f.id);
 
     // Page 0, limit 2
@@ -111,11 +120,11 @@ describe("getObjFields integration", () => {
       projectId: "other-project",
       tag: "other-tag",
     });
-    await db.insert(objFieldsTable).values(otherField);
+    await (await getObjFieldsCollection()).insertOne(otherField);
     insertedIds.push(otherField.id);
     // Insert a field for the test project/tag
     const testField = makeObjField();
-    await db.insert(objFieldsTable).values(testField);
+    await (await getObjFieldsCollection()).insertOne(testField);
     insertedIds.push(testField.id);
     // Should only return the test project/tag field
     const result = await getObjFields({

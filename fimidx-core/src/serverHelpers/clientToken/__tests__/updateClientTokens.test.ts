@@ -495,6 +495,7 @@ describe("updateClientTokens integration", () => {
         String(a.action).localeCompare(String(a.action)) ||
         String(a.target).localeCompare(String(b.target))
     );
+    result.clientTokens[0].permissions!.sort((a, b) => String(a.action).localeCompare(String(b.action)));
     expect(result.clientTokens[0].permissions![0].entity).toBe(
       result.clientTokens[0].id
     );

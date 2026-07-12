@@ -1,9 +1,9 @@
 "use client";
 
+import { authClient } from "@/src/lib/auth-client";
 import { kClientPaths } from "@/src/lib/clientHelpers/clientPaths.ts";
 import { useProjectSession } from "@/src/lib/clientHooks/userHooks.ts";
 import { UserIcon } from "lucide-react";
-import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button.tsx";
 import {
@@ -38,7 +38,7 @@ export function UserMenu() {
         </DropdownMenuItem> */}
         <DropdownMenuItem
           onSelect={() => {
-            signOut();
+            authClient.signOut();
             router.push(kClientPaths.index);
           }}
         >

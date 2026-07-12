@@ -1,4 +1,4 @@
-import { auth, NextAuthRequest } from "@/auth";
+import { authApi } from "@/auth";
 import assert from "assert";
 import { kOwnServerErrorCodes, OwnServerError } from "fimidx-core/common/error";
 import { IClientToken } from "fimidx-core/definitions/clientToken";
@@ -10,16 +10,19 @@ import {
 import { getClientTokenById } from "fimidx-core/serverHelpers/index";
 import jwt from "jsonwebtoken";
 import { isString } from "lodash-es";
-import { Session } from "next-auth";
 import { NextRequest } from "next/server";
 import { AnyFn, AnyObject } from "softkave-js-utils";
 import { IRouteContext, wrapRoute } from "./wrapRoute";
 
+type BetterAuthSession = NonNullable<
+  Awaited<ReturnType<typeof authApi.api.getSession>>
+>;
+
 export interface IUserAuthenticatedRequest {
-  session: Session;
+  session: BetterAuthSession;
   userId: string;
   email: string;
-  user: Session["user"];
+  user: BetterAuthSession["user"];
 }
 
 export interface IClientTokenAuthenticatedRequest {
@@ -39,16 +42,10 @@ export type IMaybeAuthenticatedRequest = Partial<
   };
 };
 
-type RouteFn = AnyFn<[NextAuthRequest, IRouteContext], Promise<Response>>;
-
-const authFn = auth as unknown as AnyFn<[RouteFn], RouteFn>;
-
 async function tryGetUserAuthenticatedRequest(
-  req: NextAuthRequest
+  req: NextRequest,
 ): Promise<IUserAuthenticatedRequest | null> {
-  const session =
-    // (await (auth as unknown as AnyFn<[], Promise<Session | null>>)()) ??
-    req.auth;
+  const session = await authApi.api.getSession({ headers: req.headers });
 
   if (!session) {
     return null;
@@ -67,7 +64,7 @@ async function tryGetUserAuthenticatedRequest(
 }
 
 async function tryGetClientTokenAuthenticatedRequest(
-  req: NextRequest
+  req: NextRequest,
 ): Promise<IClientTokenAuthenticatedRequest | null> {
   const rawToken = req.headers.get("authorization");
   if (!rawToken) {
@@ -83,7 +80,7 @@ async function tryGetClientTokenAuthenticatedRequest(
   try {
     const decodedToken = jwt.verify(
       inputToken,
-      getJWTSecret()
+      getJWTSecret(),
     ) as IEncodeClientTokenJWTContent;
 
     const clientToken = await getClientTokenById({
@@ -94,11 +91,11 @@ async function tryGetClientTokenAuthenticatedRequest(
 
     assert.ok(
       clientToken.projectId === decodedToken.projectId,
-      new OwnServerError("Unauthorized", 401)
+      new OwnServerError("Unauthorized", 401),
     );
     assert.ok(
       clientToken.groupId === decodedToken.groupId,
-      new OwnServerError("Unauthorized", 401)
+      new OwnServerError("Unauthorized", 401),
     );
 
     return {
@@ -107,7 +104,7 @@ async function tryGetClientTokenAuthenticatedRequest(
       checkOrgId: (orgId: string) => {
         assert.ok(
           orgId === clientToken.groupId,
-          new OwnServerError("Unauthorized", 401)
+          new OwnServerError("Unauthorized", 401),
         );
       },
     };
@@ -121,7 +118,7 @@ async function tryGetClientTokenAuthenticatedRequest(
 }
 
 async function getUserAuthenticatedRequest(
-  req: NextAuthRequest
+  req: NextRequest,
 ): Promise<IUserAuthenticatedRequest> {
   const userAuthenticatedRequest = await tryGetUserAuthenticatedRequest(req);
   assert.ok(userAuthenticatedRequest, new OwnServerError("Unauthorized", 401));
@@ -129,35 +126,33 @@ async function getUserAuthenticatedRequest(
 }
 
 async function getClientTokenAuthenticatedRequest(
-  req: NextRequest
+  req: NextRequest,
 ): Promise<IClientTokenAuthenticatedRequest> {
   const clientTokenAuthenticatedRequest =
     await tryGetClientTokenAuthenticatedRequest(req);
   assert.ok(
     clientTokenAuthenticatedRequest,
-    new OwnServerError("Unauthorized", 401)
+    new OwnServerError("Unauthorized", 401),
   );
   return clientTokenAuthenticatedRequest;
 }
 
 export const wrapUserAuthenticated = (
   routeFn: AnyFn<
-    [NextAuthRequest, IRouteContext, IUserAuthenticatedRequest],
+    [NextRequest, IRouteContext, IUserAuthenticatedRequest],
     Promise<void | AnyObject>
-  >
+  >,
 ) =>
-  authFn(
-    wrapRoute(async (req: NextAuthRequest, ctx: IRouteContext) => {
-      const userAuthenticatedRequest = await getUserAuthenticatedRequest(req);
-      return routeFn(req, ctx, userAuthenticatedRequest);
-    })
-  );
+  wrapRoute(async (req: NextRequest, ctx: IRouteContext) => {
+    const userAuthenticatedRequest = await getUserAuthenticatedRequest(req);
+    return routeFn(req, ctx, userAuthenticatedRequest);
+  });
 
 export const wrapClientTokenAuthenticated = (
   routeFn: AnyFn<
     [NextRequest, IRouteContext, IClientTokenAuthenticatedRequest],
     Promise<void | AnyObject>
-  >
+  >,
 ) => {
   return wrapRoute(async (req: NextRequest, ctx: IRouteContext) => {
     const clientTokenAuthenticatedRequest =
@@ -168,43 +163,39 @@ export const wrapClientTokenAuthenticated = (
 
 export const wrapUserOrClientTokenAuthenticated = (
   routeFn: AnyFn<
-    [NextAuthRequest, IRouteContext, IMaybeAuthenticatedRequest],
+    [NextRequest, IRouteContext, IMaybeAuthenticatedRequest],
     Promise<void | AnyObject>
-  >
+  >,
 ) =>
-  authFn(
-    wrapRoute(async (req: NextAuthRequest, ctx: IRouteContext) => {
-      const userAuthenticatedRequest = await tryGetUserAuthenticatedRequest(
-        req
+  wrapRoute(async (req: NextRequest, ctx: IRouteContext) => {
+    const userAuthenticatedRequest = await tryGetUserAuthenticatedRequest(req);
+    const clientTokenAuthenticatedRequest =
+      await tryGetClientTokenAuthenticatedRequest(req);
+
+    if (!userAuthenticatedRequest && !clientTokenAuthenticatedRequest) {
+      throw new OwnServerError(
+        "Unauthorized",
+        kOwnServerErrorCodes.Unauthorized,
       );
-      const clientTokenAuthenticatedRequest =
-        await tryGetClientTokenAuthenticatedRequest(req);
+    }
 
-      if (!userAuthenticatedRequest && !clientTokenAuthenticatedRequest) {
-        throw new OwnServerError(
-          "Unauthorized",
-          kOwnServerErrorCodes.Unauthorized
-        );
-      }
-
-      return routeFn(req, ctx, {
-        ...userAuthenticatedRequest,
-        ...clientTokenAuthenticatedRequest,
-        getBy: () => {
-          if (userAuthenticatedRequest) {
-            return {
-              by: userAuthenticatedRequest.userId,
-              byType: kByTypes.user,
-            };
-          }
-          if (clientTokenAuthenticatedRequest) {
-            return {
-              by: clientTokenAuthenticatedRequest.clientToken.groupId,
-              byType: kByTypes.clientToken,
-            };
-          }
-          throw new OwnServerError("Unauthorized", 401);
-        },
-      });
-    })
-  );
+    return routeFn(req, ctx, {
+      ...userAuthenticatedRequest,
+      ...clientTokenAuthenticatedRequest,
+      getBy: () => {
+        if (userAuthenticatedRequest) {
+          return {
+            by: userAuthenticatedRequest.userId,
+            byType: kByTypes.user,
+          };
+        }
+        if (clientTokenAuthenticatedRequest) {
+          return {
+            by: clientTokenAuthenticatedRequest.clientToken.groupId,
+            byType: kByTypes.clientToken,
+          };
+        }
+        throw new OwnServerError("Unauthorized", 401);
+      },
+    });
+  });

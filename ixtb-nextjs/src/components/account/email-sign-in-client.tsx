@@ -1,9 +1,9 @@
 "use client";
 
+import { authClient } from "@/src/lib/auth-client";
 import { kClientPaths } from "@/src/lib/clientHelpers/clientPaths";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { MailIcon } from "lucide-react";
-import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 import { useForm } from "react-hook-form";
@@ -44,12 +44,12 @@ export function EmailSignInClient(props: IEmailSignInClientProps) {
 
   const onSubmit = useCallback(
     async (values: z.infer<typeof emailSignInFormSchema>) => {
-      await signIn("resend", {
+      await authClient.signIn.magicLink({
         email: values.email,
-        redirectTo: kClientPaths.withURL(redirectTo),
+        callbackURL: kClientPaths.withURL(redirectTo),
       });
     },
-    [redirectTo]
+    [redirectTo],
   );
 
   return (
@@ -70,7 +70,7 @@ export function EmailSignInClient(props: IEmailSignInClientProps) {
               <FormControl>
                 <Input
                   placeholder="Email"
-                  id="email-resend"
+                  id="email-magic-link"
                   type="email"
                   {...field}
                 />

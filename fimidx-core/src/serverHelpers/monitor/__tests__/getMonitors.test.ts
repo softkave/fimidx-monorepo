@@ -1,7 +1,6 @@
-import { and, eq } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
+import { getMongoConnection } from "../../../db/fimidx.mongo.js";
 import type {
   AddMonitorEndpointArgs,
   GetMonitorsEndpointArgs,
@@ -20,8 +19,20 @@ const defaultByType = "user";
 // Test counter to ensure unique names
 let testCounter = 0;
 
+async function getObjFieldsCollection() {
+  const { promise } = getMongoConnection();
+  await promise;
+  const { connection } = getMongoConnection();
+  const db = connection?.db;
+  if (!db) {
+    throw new Error("Mongo connection is not available");
+  }
+
+  return db.collection("objField");
+}
+
 function makeGetMonitorsArgs(
-  overrides: Partial<GetMonitorsEndpointArgs> = {}
+  overrides: Partial<GetMonitorsEndpointArgs> = {},
 ): GetMonitorsEndpointArgs {
   return {
     query: {
@@ -35,7 +46,7 @@ function makeGetMonitorsArgs(
 }
 
 function makeAddMonitorArgs(
-  overrides: Partial<AddMonitorEndpointArgs> = {}
+  overrides: Partial<AddMonitorEndpointArgs> = {},
 ): AddMonitorEndpointArgs {
   testCounter++;
   const uniqueId = `${testCounter}_${Date.now()}_${Math.random()
@@ -79,7 +90,7 @@ async function insertNameFieldForSorting(params: {
   };
 
   // Insert the field definition
-  await db.insert(objFieldsTable).values(nameField);
+  await (await getObjFieldsCollection()).insertOne(nameField);
 
   return nameField;
 }
@@ -110,7 +121,7 @@ async function insertStatusFieldForSorting(params: {
   };
 
   // Insert the field definition
-  await db.insert(objFieldsTable).values(statusField);
+  await (await getObjFieldsCollection()).insertOne(statusField);
 
   return statusField;
 }
@@ -145,15 +156,13 @@ describe("getMonitors integration", () => {
 
       // Clean up objFields for test groups
       for (const groupId of testGroupIds) {
-        await db
-          .delete(objFieldsTable)
-          .where(
-            and(
-              eq(objFieldsTable.projectId, defaultProjectId),
-              eq(objFieldsTable.groupId, groupId),
-              eq(objFieldsTable.tag, kObjTags.monitor)
-            )
-          );
+        await (
+          await getObjFieldsCollection()
+        ).deleteMany({
+          projectId: defaultProjectId,
+          groupId,
+          tag: kObjTags.monitor,
+        });
       }
     } catch (error) {
       // Ignore errors in cleanup
@@ -182,15 +191,13 @@ describe("getMonitors integration", () => {
 
       // Clean up objFields for test groups
       for (const groupId of testGroupIds) {
-        await db
-          .delete(objFieldsTable)
-          .where(
-            and(
-              eq(objFieldsTable.projectId, defaultProjectId),
-              eq(objFieldsTable.groupId, groupId),
-              eq(objFieldsTable.tag, kObjTags.monitor)
-            )
-          );
+        await (
+          await getObjFieldsCollection()
+        ).deleteMany({
+          projectId: defaultProjectId,
+          groupId,
+          tag: kObjTags.monitor,
+        });
       }
     } catch (error) {
       // Ignore errors in cleanup

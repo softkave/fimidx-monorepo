@@ -1,14 +1,19 @@
 "use client";
 
+import { authClient } from "@/src/lib/auth-client";
 import { IUser } from "fimidx-core/definitions/user";
-import { useSession } from "next-auth/react";
 
 export function useProjectSession() {
-  const data = useSession();
+  const { data, error, isPending } = authClient.useSession();
 
-  const user = data.data?.user as IUser | null;
+  const user = data?.user as unknown as IUser | null;
   const userId = user?.id;
-  const expires = data.data?.expires;
+  const expires = data?.session?.expiresAt;
+  const status = isPending
+    ? "loading"
+    : data && !error
+      ? "authenticated"
+      : "unauthenticated";
 
-  return { userId, expires, user, status: data.status };
+  return { userId, expires, user, status };
 }

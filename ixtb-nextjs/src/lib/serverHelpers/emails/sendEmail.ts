@@ -1,10 +1,5 @@
-import { eq } from "drizzle-orm";
 import { getCoreConfig } from "fimidx-core/common/getCoreConfig";
-import {
-  db,
-  emailBlockLists as emailBlockListTable,
-  emailRecords as emailRecordTable,
-} from "fimidx-core/db/fimidx.sqlite";
+import { getMongoConnection } from "fimidx-core/db/fimidx.mongo";
 import {
   EmailRecordReason,
   EmailRecordStatus,
@@ -18,6 +13,16 @@ import { ixtbConsoleLogger } from "../../common/ixtb-loggers";
 const { resend: resendConfig } = getCoreConfig();
 
 const resend = new Resend(resendConfig.apiKey);
+const { connection, promise } = getMongoConnection();
+
+function getDb() {
+  const db = connection?.db;
+  if (!db) {
+    throw new Error("Mongo connection is not available");
+  }
+
+  return db;
+}
 
 type SendEmailParams = OmitFrom<
   Parameters<typeof resend.emails.send>[0],
@@ -29,11 +34,10 @@ type SendEmailParams = OmitFrom<
 };
 
 export async function isEmailBlocked(email: string) {
-  const emailRecord = await db
-    .select()
-    .from(emailBlockListTable)
-    .where(eq(emailBlockListTable.email, email.toLowerCase()))
-    .then(([emailRecord]) => emailRecord);
+  await promise;
+  const emailRecord = await getDb()
+    .collection("emailBlockList")
+    .findOne({ email: email.toLowerCase() });
 
   return emailRecord;
 }
@@ -46,7 +50,9 @@ export async function createEmailRecord(params: {
   reason: EmailRecordReason;
   callerId: string | null;
 }) {
+  await promise;
   const newEmailRecord = {
+    id: crypto.randomUUID(),
     from: params.from,
     to: params.to,
     subject: params.subject,
@@ -57,17 +63,15 @@ export async function createEmailRecord(params: {
     provider: kEmailRecordProvider.resend,
     reason: params.reason,
     callerId: params.callerId,
-  } satisfies OmitFrom<typeof emailRecordTable.$inferInsert, "id">;
+  };
 
-  const emailRecord = await db
-    .insert(emailRecordTable)
-    .values(newEmailRecord)
-    .returning()
-    .then(([emailRecord]) => emailRecord);
+  await getDb().collection("emailRecord").insertOne(newEmailRecord);
+  const emailRecord = {
+    ...newEmailRecord,
+  };
 
   return emailRecord;
 }
-
 export async function updateEmailRecord(params: {
   emailRecordId: string;
   status: EmailRecordStatus;
@@ -75,24 +79,32 @@ export async function updateEmailRecord(params: {
   senderError?: string;
   serverError?: string;
 }) {
-  const emailRecord = await db
-    .update(emailRecordTable)
-    .set({
-      status: params.status,
-      updatedAt: new Date(),
-      response: params.response,
-      senderError: params.senderError,
-      serverError: params.serverError,
-    })
-    .where(eq(emailRecordTable.id, params.emailRecordId))
-    .returning()
-    .then(([emailRecord]) => emailRecord);
+  await promise;
+  await getDb()
+    .collection("emailRecord")
+    .updateOne(
+      { id: params.emailRecordId },
+      {
+        $set: {
+          status: params.status,
+          updatedAt: new Date(),
+          response: params.response,
+          senderError: params.senderError,
+          serverError: params.serverError,
+        },
+      },
+    );
+
+  const emailRecord = {
+    id: params.emailRecordId,
+    status: params.status,
+  };
 
   return emailRecord;
 }
 
 export const sendEmail = async (
-  params: SendEmailParams
+  params: SendEmailParams,
 ): Promise<{
   success: boolean;
   emailRecords: Array<{
@@ -115,7 +127,7 @@ export const sendEmail = async (
         });
 
         return emailRecord;
-      })
+      }),
     );
 
     try {
@@ -136,7 +148,7 @@ export const sendEmail = async (
             response: responseString,
             senderError: senderErrorString,
           });
-        })
+        }),
       );
 
       const emailRecordsResult = emailRecords.map((emailRecord) => ({
@@ -155,7 +167,7 @@ export const sendEmail = async (
             status: kEmailRecordStatus.failed,
             serverError: serverErrorString,
           });
-        })
+        }),
       );
 
       const emailRecordsResult = emailRecords.map((emailRecord) => ({

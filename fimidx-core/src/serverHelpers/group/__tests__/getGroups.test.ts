@@ -1,7 +1,6 @@
-import { and, eq } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
+import { getMongoConnection } from "../../../db/fimidx.mongo.js";
 import type { GetGroupsEndpointArgs } from "../../../definitions/group.js";
 import { kObjTags } from "../../../definitions/obj.js";
 import { createDefaultStorage } from "../../../storage/config.js";
@@ -17,8 +16,20 @@ const defaultByType = "user";
 // Test counter to ensure unique names
 let testCounter = 0;
 
+async function getObjFieldsCollection() {
+  const { promise } = getMongoConnection();
+  await promise;
+  const { connection } = getMongoConnection();
+  const db = connection?.db;
+  if (!db) {
+    throw new Error("Mongo connection is not available");
+  }
+
+  return db.collection("objField");
+}
+
 function makeGetGroupsArgs(
-  overrides: Partial<GetGroupsEndpointArgs> = {}
+  overrides: Partial<GetGroupsEndpointArgs> = {},
 ): GetGroupsEndpointArgs {
   return {
     query: {
@@ -85,7 +96,7 @@ async function insertNameFieldForSorting(params: {
   };
 
   // Insert the field definition
-  await db.insert(objFieldsTable).values(nameField);
+  await (await getObjFieldsCollection()).insertOne(nameField);
 
   return nameField;
 }
@@ -120,14 +131,12 @@ describe("getGroups integration", () => {
 
       // Clean up objFields for test projects
       for (const projectId of testProjectIds) {
-        await db
-          .delete(objFieldsTable)
-          .where(
-            and(
-              eq(objFieldsTable.projectId, projectId),
-              eq(objFieldsTable.tag, kObjTags.group)
-            )
-          );
+        await (
+          await getObjFieldsCollection()
+        ).deleteMany({
+          projectId,
+          tag: kObjTags.group,
+        });
       }
     } catch (error) {
       // Ignore errors in cleanup
@@ -157,14 +166,12 @@ describe("getGroups integration", () => {
 
       // Clean up objFields for test projects
       for (const projectId of testProjectIds) {
-        await db
-          .delete(objFieldsTable)
-          .where(
-            and(
-              eq(objFieldsTable.projectId, projectId),
-              eq(objFieldsTable.tag, kObjTags.group)
-            )
-          );
+        await (
+          await getObjFieldsCollection()
+        ).deleteMany({
+          projectId,
+          tag: kObjTags.group,
+        });
       }
     } catch {
       // Ignore errors in cleanup
@@ -332,7 +339,7 @@ describe("getGroups integration", () => {
     expect(result.groups).toHaveLength(2);
     const groupNames = result.groups.map((g) => g.name).sort();
     expect(groupNames).toEqual(
-      [alphaGroupArgs.name, betaGroupArgs.name].sort()
+      [alphaGroupArgs.name, betaGroupArgs.name].sort(),
     );
   });
 
@@ -427,7 +434,7 @@ describe("getGroups integration", () => {
 
     expect(result.groups).toHaveLength(2);
     expect(result.groups.every((g) => g.meta?.category === "important")).toBe(
-      true
+      true,
     );
   });
 
@@ -920,11 +927,11 @@ describe("getGroups integration", () => {
 
     expect(result.groups).toHaveLength(2);
     expect(
-      result.groups.find((g) => g.name === groupWithDescArgs.name)?.description
+      result.groups.find((g) => g.name === groupWithDescArgs.name)?.description,
     ).toBe("Some description");
     expect(
       result.groups.find((g) => g.name === groupWithoutDescArgs.name)
-        ?.description
+        ?.description,
     ).toBeUndefined();
   });
 

@@ -2,10 +2,6 @@ import { z } from "zod";
 
 export const envVars = {
   FIMIDX_POSTGRES_URL: "FIMIDX_POSTGRES_URL",
-  FIMIDX_TURSO_URL: "FIMIDX_TURSO_URL",
-  FIMIDX_TURSO_AUTH_TOKEN: "FIMIDX_TURSO_AUTH_TOKEN",
-  AUTH_TURSO_URL: "AUTH_TURSO_URL",
-  AUTH_TURSO_AUTH_TOKEN: "AUTH_TURSO_AUTH_TOKEN",
   MONGO_URI: "MONGO_URI",
   MONGO_DB_NAME: "MONGO_DB_NAME",
   ADMIN_EMAILS: "ADMIN_EMAILS",
@@ -39,6 +35,9 @@ export const envVars = {
     "NEXT_PUBLIC_FIMIDX_LOGGER_CLIENT_TOKEN",
   NEXT_PUBLIC_FIMIDX_LOGGER_SERVER_URL: "NEXT_PUBLIC_FIMIDX_LOGGER_SERVER_URL",
   WS_HOST: "WS_HOST",
+  BETTER_AUTH_URL: "BETTER_AUTH_URL",
+  BETTER_AUTH_SECRET: "BETTER_AUTH_SECRET",
+  NEXT_PUBLIC_BETTER_AUTH_URL: "NEXT_PUBLIC_BETTER_AUTH_URL",
 } as const;
 
 export const coreConfigSchema = z
@@ -47,24 +46,6 @@ export const coreConfigSchema = z
       url: z
         .string({ message: `${envVars.FIMIDX_POSTGRES_URL} is not set` })
         .optional(),
-    }),
-    turso: z.object({
-      url: z
-        .string({ message: `${envVars.FIMIDX_TURSO_URL} is not set` })
-        .url({ message: `${envVars.FIMIDX_TURSO_URL} is not a valid URL` }),
-      authToken: z.string({
-        message: `${envVars.FIMIDX_TURSO_AUTH_TOKEN} is not set`,
-      }),
-    }),
-    auth: z.object({
-      turso: z.object({
-        url: z
-          .string({ message: `${envVars.AUTH_TURSO_URL} is not set` })
-          .url({ message: `${envVars.AUTH_TURSO_URL} is not a valid URL` }),
-        authToken: z.string({
-          message: `${envVars.AUTH_TURSO_AUTH_TOKEN} is not set`,
-        }),
-      }),
     }),
     mongo: z.object({
       uri: z.string({ message: `${envVars.MONGO_URI} is not set` }),
@@ -77,7 +58,7 @@ export const coreConfigSchema = z
       })
       .optional(),
     storage: z.object({
-      type: z.enum(["postgres", "mongo"], {
+      type: z.enum(["mongo"], {
         message: `${envVars.STORAGE_TYPE} is not set`,
       }),
     }),
@@ -204,21 +185,32 @@ export const coreConfigSchema = z
         .url({ message: `${envVars.WS_HOST} is not a valid URL` })
         .optional(),
     }),
+    betterAuth: z.object({
+      url: z.string({ message: `${envVars.BETTER_AUTH_URL} is not set` }).url({
+        message: `${envVars.BETTER_AUTH_URL} is not a valid URL`,
+      }),
+      secret: z
+        .string({ message: `${envVars.BETTER_AUTH_SECRET} is not set` })
+        .min(32, {
+          message: `${envVars.BETTER_AUTH_SECRET} must be at least 32 characters long`,
+        }),
+      nextPublicUrl: z
+        .string({
+          message: `${envVars.NEXT_PUBLIC_BETTER_AUTH_URL} is not set`,
+        })
+        .url({
+          message: `${envVars.NEXT_PUBLIC_BETTER_AUTH_URL} is not a valid URL`,
+        }),
+    }),
   })
   .refine(
     (config) => {
-      if (config.storage.type === "postgres") {
-        return config.postgres.url !== undefined;
-      } else if (config.storage.type === "mongo") {
-        return (
-          config.mongo.uri !== undefined && config.mongo.dbName !== undefined
-        );
-      }
-      return false;
+      return (
+        config.mongo.uri !== undefined && config.mongo.dbName !== undefined
+      );
     },
     {
-      message:
-        "Provide postgres.url (if using postgres) or mongo.uri and mongo.dbName (if using mongo)",
+      message: `Both ${envVars.MONGO_URI} and ${envVars.MONGO_DB_NAME} must be set`,
       path: ["storage.type"],
     }
   );

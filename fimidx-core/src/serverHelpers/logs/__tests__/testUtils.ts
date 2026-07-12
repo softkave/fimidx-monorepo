@@ -1,8 +1,19 @@
-import { and, eq } from "drizzle-orm";
-import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
+import { getMongoConnection } from "../../../db/fimidx.mongo.js";
 import { kObjTags } from "../../../definitions/obj.js";
 import { createDefaultStorage } from "../../../storage/config.js";
 import type { IObjStorage } from "../../../storage/types.js";
+
+async function getObjFieldsCollection() {
+  const { promise } = getMongoConnection();
+  await promise;
+  const { connection } = getMongoConnection();
+  const db = connection?.db;
+  if (!db) {
+    throw new Error("Mongo connection is not available");
+  }
+
+  return db.collection("objField");
+}
 
 // Global test counter to ensure uniqueness across all test files
 let globalTestCounter = 0;
@@ -40,15 +51,12 @@ export async function cleanupTestData(params: {
       });
       // Clean up objFields for this projectId/tag
       try {
-        await db
-          .delete(objFieldsTable)
-          .where(
-            and(
-              eq(objFieldsTable.projectId, projectId),
-              eq(objFieldsTable.tag, kObjTags.log)
-            )
-          )
-          .execute();
+        await (
+          await getObjFieldsCollection()
+        ).deleteMany({
+          projectId,
+          tag: kObjTags.log,
+        });
       } catch (error) {
         // Ignore errors in cleanup
       }

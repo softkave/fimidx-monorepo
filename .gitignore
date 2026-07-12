@@ -65,3 +65,5 @@ local-test-dir/
 
 # local mutex for ixtb-nextjs seed script (proper-lockfile)
 ixtb-nextjs/.seed-fimidx-js-env-test.lock
+
+.forerunner-mongo/

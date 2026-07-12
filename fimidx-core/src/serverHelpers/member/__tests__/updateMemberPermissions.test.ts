@@ -107,16 +107,17 @@ describe("updateMemberPermissions integration", () => {
     expect(updated!.permissions).toHaveLength(2);
 
     // Verify the permissions are properly managed
+    updated!.permissions!.sort((a, b) => String(a.action).localeCompare(String(b.action)));
     const permission1 = updated!.permissions![0];
     const permission2 = updated!.permissions![1];
 
     expect(permission1.entity).toBe(member.member.id);
-    expect(permission1.action).toBe("write");
-    expect(permission1.target).toBe("settings");
+    expect(permission1.action).toBe("read");
+    expect(permission1.target).toBe("document");
 
     expect(permission2.entity).toBe(member.member.id);
-    expect(permission2.action).toBe("read");
-    expect(permission2.target).toBe("document");
+    expect(permission2.action).toBe("write");
+    expect(permission2.target).toBe("settings");
   });
 
   it("updates member permissions with complex entity, action, and target objects", async () => {

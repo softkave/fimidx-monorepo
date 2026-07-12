@@ -1,7 +1,6 @@
-import { and, eq } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
+import { getMongoConnection } from "../../../db/fimidx.mongo.js";
 import { kObjTags } from "../../../definitions/obj.js";
 import type {
   AddProjectEndpointArgs,
@@ -20,10 +19,22 @@ const defaultByType = "user";
 // Test counter to ensure unique names
 let testCounter = 0;
 
+async function getObjFieldsCollection() {
+  const { promise } = getMongoConnection();
+  await promise;
+  const { connection } = getMongoConnection();
+  const db = connection?.db;
+  if (!db) {
+    throw new Error("Mongo connection is not available");
+  }
+
+  return db.collection("objField");
+}
+
 function makeGetProjectsArgs(
   overrides: Omit<Partial<GetProjectsEndpointArgs>, "query"> & {
     query?: Partial<GetProjectsEndpointArgs["query"]>;
-  } = {}
+  } = {},
 ): GetProjectsEndpointArgs {
   return {
     query: {
@@ -37,7 +48,7 @@ function makeGetProjectsArgs(
 }
 
 function makeAddProjectArgs(
-  overrides: Partial<AddProjectEndpointArgs> = {}
+  overrides: Partial<AddProjectEndpointArgs> = {},
 ): AddProjectEndpointArgs {
   testCounter++;
   const uniqueId = `${testCounter}_${Date.now()}_${Math.random()
@@ -55,7 +66,7 @@ function makeAddProjectArgs(
 // Helper function to create projects with specific names for testing
 function makeTestProjectArgs(
   name: string,
-  overrides: Partial<AddProjectEndpointArgs> = {}
+  overrides: Partial<AddProjectEndpointArgs> = {},
 ): AddProjectEndpointArgs {
   testCounter++;
   const uniqueId = `${testCounter}_${Date.now()}_${Math.random()
@@ -96,7 +107,7 @@ async function insertNameFieldForSorting(params: {
   };
 
   // Insert the field definition
-  await db.insert(objFieldsTable).values(nameField);
+  await (await getObjFieldsCollection()).insertOne(nameField);
 
   return nameField;
 }
@@ -131,15 +142,13 @@ describe("getProjects integration", () => {
 
       // Clean up objFields for test groups
       for (const groupId of testGroupIds) {
-        await db
-          .delete(objFieldsTable)
-          .where(
-            and(
-              eq(objFieldsTable.projectId, kId0),
-              eq(objFieldsTable.groupId, groupId),
-              eq(objFieldsTable.tag, kObjTags.project)
-            )
-          );
+        await (
+          await getObjFieldsCollection()
+        ).deleteMany({
+          projectId: kId0,
+          groupId,
+          tag: kObjTags.project,
+        });
       }
     } catch (error) {
       // Ignore errors in cleanup
@@ -168,15 +177,13 @@ describe("getProjects integration", () => {
 
       // Clean up objFields for test groups
       for (const groupId of testGroupIds) {
-        await db
-          .delete(objFieldsTable)
-          .where(
-            and(
-              eq(objFieldsTable.projectId, kId0),
-              eq(objFieldsTable.groupId, groupId),
-              eq(objFieldsTable.tag, kObjTags.project)
-            )
-          );
+        await (
+          await getObjFieldsCollection()
+        ).deleteMany({
+          projectId: kId0,
+          groupId,
+          tag: kObjTags.project,
+        });
       }
     } catch (error) {
       // Ignore errors in cleanup
@@ -298,7 +305,7 @@ describe("getProjects integration", () => {
 
     expect(result.projects).toHaveLength(2);
     expect(
-      result.projects.every((project) => project.orgId === "group-1")
+      result.projects.every((project) => project.orgId === "group-1"),
     ).toBe(true);
   });
 
@@ -387,10 +394,10 @@ describe("getProjects integration", () => {
     expect(result.projects.length).toBeGreaterThan(0);
     result.projects.forEach((project) => {
       expect(project.createdAt.getTime()).toBeGreaterThanOrEqual(
-        beforeDate.getTime()
+        beforeDate.getTime(),
       );
       expect(project.createdAt.getTime()).toBeLessThanOrEqual(
-        afterDate.getTime()
+        afterDate.getTime(),
       );
     });
   });
@@ -756,7 +763,7 @@ describe("getProjects integration", () => {
 
     expect(result.projects).toHaveLength(2);
     expect(
-      result.projects.every((project) => project.name.includes("My"))
+      result.projects.every((project) => project.name.includes("My")),
     ).toBe(true);
   });
 
@@ -864,7 +871,7 @@ describe("getProjects integration", () => {
         by: defaultBy,
         byType: defaultByType,
         storage,
-      })
+      }),
     );
 
     await Promise.all(promises);
@@ -876,8 +883,8 @@ describe("getProjects integration", () => {
     expect(result.projects).toHaveLength(10);
     expect(
       result.projects.every((project) =>
-        project.name.startsWith("Concurrent Project")
-      )
+        project.name.startsWith("Concurrent Project"),
+      ),
     ).toBe(true);
   });
 
@@ -905,10 +912,10 @@ describe("getProjects integration", () => {
 
     expect(result.projects).toHaveLength(2);
     const user1Project = result.projects.find(
-      (project) => project.name === "User 1 Project"
+      (project) => project.name === "User 1 Project",
     );
     const user2Project = result.projects.find(
-      (project) => project.name === "User 2 Project"
+      (project) => project.name === "User 2 Project",
     );
 
     expect(user1Project?.createdBy).toBe("user1");
@@ -939,10 +946,10 @@ describe("getProjects integration", () => {
 
     expect(result.projects).toHaveLength(2);
     const userProject = result.projects.find(
-      (project) => project.name === "User Project"
+      (project) => project.name === "User Project",
     );
     const systemProject = result.projects.find(
-      (project) => project.name === "System Project"
+      (project) => project.name === "System Project",
     );
 
     expect(userProject?.createdByType).toBe("user");

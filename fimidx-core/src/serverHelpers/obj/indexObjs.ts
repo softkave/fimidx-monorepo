@@ -1,4 +1,3 @@
-import { and, eq, inArray } from "drizzle-orm";
 import { forEach, groupBy, uniq } from "lodash-es";
 import { LRUCache } from "lru-cache";
 import { v7 as uuidv7 } from "uuid";
@@ -7,7 +6,7 @@ import {
   type FieldType,
   type IndexedJson,
 } from "../../common/indexer.js";
-import { db, objFields as objFieldsTable } from "../../db/fimidx.sqlite.js";
+import { getMongoConnection } from "../../db/fimidx.mongo.js";
 import type { IObj, IObjField } from "../../definitions/obj.js";
 import type { IProject } from "../../definitions/project.js";
 import { createStorage, getDefaultStorageType } from "../../storage/config.js";
@@ -21,6 +20,14 @@ async function indexObjFields(params: {
   indexList: IndexedJson[];
 }) {
   const { objs, indexList } = params;
+  const { connection, promise } = getMongoConnection();
+  await promise;
+  const db = connection?.db;
+  if (!db) {
+    throw new Error("Mongo connection is not available");
+  }
+
+  const collection = db.collection<IObjField>("objField");
 
   const fieldsSet = new Map<string, IObjField>();
 
@@ -50,7 +57,7 @@ async function indexObjFields(params: {
         if (indexedField.arrayTypes) {
           const existingArrayTypes = new Set(field.arrayTypes);
           indexedField.arrayTypes.forEach((type) =>
-            existingArrayTypes.add(type)
+            existingArrayTypes.add(type),
           );
           field.arrayTypes = Array.from(existingArrayTypes);
         }
@@ -65,19 +72,13 @@ async function indexObjFields(params: {
   let batchIndex = 0;
   while (batchIndex < fields.length) {
     const batch = fields.slice(batchIndex, batchIndex + batchSize);
-    const existingFields = await db
-      .select()
-      .from(objFieldsTable)
-      .where(
-        and(
-          inArray(
-            objFieldsTable.path,
-            batch.map((field) => field.path)
-          ),
-          eq(objFieldsTable.projectId, batch[0].projectId)
-        )
-      )
-      .limit(batchSize);
+    const existingFields = await collection
+      .find({
+        projectId: batch[0].projectId,
+        path: { $in: batch.map((field) => field.path) },
+      })
+      .limit(batchSize)
+      .toArray();
     const existingFieldsMap = new Map<string, IObjField>(
       existingFields.map((field) => [
         field.path,
@@ -85,7 +86,7 @@ async function indexObjFields(params: {
           ...field,
           type: field.type as FieldType,
         },
-      ])
+      ]),
     );
     const newFields: IObjField[] = [];
     const existingFieldsToUpdate: Array<{
@@ -107,25 +108,22 @@ async function indexObjFields(params: {
       }
     });
 
-    // @ts-expect-error
-    const batchParams: Parameters<typeof db.batch> = [];
+    const bulkWriteOps = [
+      ...newFields.map((doc) => ({
+        insertOne: {
+          document: doc,
+        },
+      })),
+      ...existingFieldsToUpdate.map(({ id, obj }) => ({
+        updateOne: {
+          filter: { id },
+          update: { $set: obj },
+        },
+      })),
+    ];
 
-    if (newFields.length > 0) {
-      // @ts-expect-error
-      batchParams.push(db.insert(objFieldsTable).values(newFields));
-    }
-    if (existingFieldsToUpdate.length > 0) {
-      batchParams.push(
-        // @ts-expect-error
-        ...existingFieldsToUpdate.map(({ id, obj }) =>
-          db.update(objFieldsTable).set(obj).where(eq(objFieldsTable.id, id))
-        )
-      );
-    }
-
-    if (batchParams.length > 0) {
-      // @ts-expect-error
-      await db.batch(batchParams);
+    if (bulkWriteOps.length > 0) {
+      await collection.bulkWrite(bulkWriteOps, { ordered: false });
     }
     batchIndex += batchSize;
   }
@@ -143,7 +141,7 @@ function initProjectGetter() {
       projects[projectId] = cache.get(projectId) ?? null;
     });
     const projectsToFetch = projectIds.filter(
-      (projectId) => !projects[projectId]
+      (projectId) => !projects[projectId],
     );
 
     if (projectsToFetch.length === 0) {

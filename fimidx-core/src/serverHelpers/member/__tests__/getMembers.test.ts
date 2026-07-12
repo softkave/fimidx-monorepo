@@ -1,7 +1,6 @@
-import { and, eq } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
+import { getMongoConnection } from "../../../db/fimidx.mongo.js";
 import {
   kMemberStatus,
   type AddMemberEndpointArgs,
@@ -21,8 +20,20 @@ const defaultByType = "user";
 // Test counter to ensure unique names
 let testCounter = 0;
 
+async function getObjFieldsCollection() {
+  const { promise } = getMongoConnection();
+  await promise;
+  const { connection } = getMongoConnection();
+  const db = connection?.db;
+  if (!db) {
+    throw new Error("Mongo connection is not available");
+  }
+
+  return db.collection("objField");
+}
+
 function makeGetMembersArgs(
-  overrides: Partial<GetMembersEndpointArgs> = {}
+  overrides: Partial<GetMembersEndpointArgs> = {},
 ): GetMembersEndpointArgs {
   return {
     query: {
@@ -38,7 +49,7 @@ function makeGetMembersArgs(
 }
 
 function makeAddMemberArgs(
-  overrides: Partial<AddMemberEndpointArgs> = {}
+  overrides: Partial<AddMemberEndpointArgs> = {},
 ): AddMemberEndpointArgs {
   testCounter++;
   const uniqueId = `${testCounter}_${Date.now()}_${Math.random()
@@ -84,7 +95,7 @@ async function insertNameFieldForSorting(params: {
   };
 
   // Insert the field definition
-  await db.insert(objFieldsTable).values(nameField);
+  await (await getObjFieldsCollection()).insertOne(nameField);
 
   return nameField;
 }
@@ -119,14 +130,12 @@ describe("getMembers integration", () => {
 
       // Clean up objFields for test projects
       for (const projectId of testProjectIds) {
-        await db
-          .delete(objFieldsTable)
-          .where(
-            and(
-              eq(objFieldsTable.projectId, projectId),
-              eq(objFieldsTable.tag, kObjTags.member)
-            )
-          );
+        await (
+          await getObjFieldsCollection()
+        ).deleteMany({
+          projectId,
+          tag: kObjTags.member,
+        });
       }
     } catch (error) {
       // Ignore errors in cleanup
@@ -155,14 +164,12 @@ describe("getMembers integration", () => {
 
       // Clean up objFields for test projects
       for (const projectId of testProjectIds) {
-        await db
-          .delete(objFieldsTable)
-          .where(
-            and(
-              eq(objFieldsTable.projectId, projectId),
-              eq(objFieldsTable.tag, kObjTags.member)
-            )
-          );
+        await (
+          await getObjFieldsCollection()
+        ).deleteMany({
+          projectId,
+          tag: kObjTags.member,
+        });
       }
     } catch (error) {
       // Ignore errors in cleanup

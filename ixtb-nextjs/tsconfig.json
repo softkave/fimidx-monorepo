@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -19,7 +23,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./*"
+      ]
     },
     "baseUrl": ".",
     "rootDir": ".",
@@ -28,9 +34,16 @@
   "include": [
     "**/*.ts",
     "**/*.tsx",
+    "**/*.d.ts",
+    "../../adhoc-scripts/generateNodejsSlides.ts",
     "next-env.d.ts",
-    ".next/types/**/*.ts",
-    "../../adhoc-scripts/generateNodejsSlides.ts"
+    ".next/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    ".next",
+    "vitest.config.ts",
+    "vitest.e2e.config.ts",
+    "vitest.e2e.setup.ts"
+  ]
 }

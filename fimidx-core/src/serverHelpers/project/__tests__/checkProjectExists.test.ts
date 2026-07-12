@@ -77,6 +77,7 @@ describe("checkProjectExists integration", () => {
     const result = await checkProjectExists({
       name: "Non-existent Project",
       groupId: defaultGroupId,
+      storage,
     });
 
     expect(result.exists).toBe(false);
@@ -96,6 +97,7 @@ describe("checkProjectExists integration", () => {
     const result = await checkProjectExists({
       name: projectArgs.name,
       groupId: defaultGroupId,
+      storage,
     });
 
     expect(result.exists).toBe(true);
@@ -118,6 +120,7 @@ describe("checkProjectExists integration", () => {
       name: projectArgs.name,
       isId: createdProject.project.id,
       groupId: defaultGroupId,
+      storage,
     });
 
     expect(checkResult.exists).toBe(true);
@@ -138,6 +141,7 @@ describe("checkProjectExists integration", () => {
       name: projectArgs.name,
       isId: "different-id",
       groupId: defaultGroupId,
+      storage,
     });
 
     expect(checkResult.exists).toBe(true);
@@ -161,6 +165,7 @@ describe("checkProjectExists integration", () => {
     const result = await checkProjectExists({
       name: projectArgs.name,
       groupId: "group-2",
+      storage,
     });
 
     expect(result.exists).toBe(false);
@@ -184,6 +189,7 @@ describe("checkProjectExists integration", () => {
     const result = await checkProjectExists({
       name: projectArgs.name,
       groupId: "group-1",
+      storage,
     });
 
     expect(result.exists).toBe(true);
@@ -204,6 +210,7 @@ describe("checkProjectExists integration", () => {
     const result = await checkProjectExists({
       name: projectArgs.name,
       groupId: defaultGroupId,
+      storage,
     });
 
     expect(result.exists).toBe(true);
@@ -226,6 +233,7 @@ describe("checkProjectExists integration", () => {
     const result = await checkProjectExists({
       name: projectArgs.name,
       groupId: defaultGroupId,
+      storage,
     });
 
     expect(result.exists).toBe(true);
@@ -248,6 +256,7 @@ describe("checkProjectExists integration", () => {
     const result = await checkProjectExists({
       name: projectArgs.name,
       groupId: defaultGroupId,
+      storage,
     });
 
     expect(result.exists).toBe(true);
@@ -268,6 +277,7 @@ describe("checkProjectExists integration", () => {
     const result = await checkProjectExists({
       name: projectArgs.name,
       groupId: defaultGroupId,
+      storage,
     });
 
     expect(result.exists).toBe(true);
@@ -303,6 +313,7 @@ describe("checkProjectExists integration", () => {
     const result1 = await checkProjectExists({
       name: project1Args.name,
       groupId: "group-1",
+      storage,
     });
 
     expect(result1.exists).toBe(true);
@@ -312,6 +323,7 @@ describe("checkProjectExists integration", () => {
     const result2 = await checkProjectExists({
       name: project2Args.name,
       groupId: "group-2",
+      storage,
     });
 
     expect(result2.exists).toBe(true);
@@ -332,6 +344,7 @@ describe("checkProjectExists integration", () => {
     const result = await checkProjectExists({
       name: "User Project",
       groupId: defaultGroupId,
+      storage,
     });
 
     expect(result.exists).toBe(true);
@@ -356,6 +369,7 @@ describe("checkProjectExists integration", () => {
       checkProjectExists({
         name: `Concurrent Project ${i}`,
         groupId: defaultGroupId,
+        storage,
       })
     );
 
@@ -412,6 +426,7 @@ describe("checkProjectAvailable integration", () => {
     const result = await checkProjectAvailable({
       name: "Non-existent Project",
       groupId: defaultGroupId,
+      storage,
     });
 
     expect(result.available).toBe(true);
@@ -432,6 +447,7 @@ describe("checkProjectAvailable integration", () => {
       checkProjectAvailable({
         name: projectArgs.name,
         groupId: defaultGroupId,
+        storage,
       })
     ).rejects.toThrow("Project already exists");
   });
@@ -440,6 +456,7 @@ describe("checkProjectAvailable integration", () => {
     const result = await checkProjectAvailable({
       name: "Available Project",
       groupId: defaultGroupId,
+      storage,
     });
 
     expect(result.available).toBe(true);
@@ -462,6 +479,7 @@ describe("checkProjectAvailable integration", () => {
     const result = await checkProjectAvailable({
       name: projectArgs.name,
       groupId: "group-2",
+      storage,
     });
 
     expect(result.available).toBe(true);
@@ -485,6 +503,7 @@ describe("checkProjectAvailable integration", () => {
       checkProjectAvailable({
         name: projectArgs.name,
         groupId: "group-1",
+        storage,
       })
     ).rejects.toThrow("Project already exists");
   });
@@ -504,6 +523,7 @@ describe("checkProjectAvailable integration", () => {
       checkProjectAvailable({
         name: projectArgs.name,
         groupId: defaultGroupId,
+        storage,
       })
     ).rejects.toThrow("Project already exists");
   });
@@ -525,6 +545,7 @@ describe("checkProjectAvailable integration", () => {
       checkProjectAvailable({
         name: projectArgs.name,
         groupId: defaultGroupId,
+        storage,
       })
     ).rejects.toThrow("Project already exists");
   });
@@ -546,6 +567,7 @@ describe("checkProjectAvailable integration", () => {
       checkProjectAvailable({
         name: projectArgs.name,
         groupId: defaultGroupId,
+        storage,
       })
     ).rejects.toThrow("Project already exists");
   });
@@ -565,6 +587,7 @@ describe("checkProjectAvailable integration", () => {
       checkProjectAvailable({
         name: projectArgs.name,
         groupId: defaultGroupId,
+        storage,
       })
     ).rejects.toThrow("Project already exists");
   });

@@ -12,8 +12,9 @@ import type { AnyObject } from "softkave-js-utils";
  *   {string, number, ...} and another set for a.arr.[*] (when at least one
  *   element is primitive) {string, ...}).
  * - it handles nested objects and arrays.
- * - primitive leaf-granular fields include nested array elements (e.g. a.0 if
- *   a.0 is primitive), and object content (e.g. a.1.b if a.1.b is primitive).
+ * - array elements are indexed with [*] wildcards (e.g. a.arr.[*].b), not
+ *   numeric indices (e.g. a.arr.0.b), to avoid littering the DB with per-index
+ *   field paths.
  * - reiterating the examples above, leaf-array-compressed fields include the
  *   array itself if at least one element is primitive (e.g. a.arr.[*] if
  *   a.arr[1] or a.arr[2] is a primitive), and object content if at least one
@@ -81,55 +82,51 @@ function indexObject(
   return indexed;
 }
 
+function setArrayCompressedField(
+  indexed: IndexedJson,
+  path: string,
+  types: Set<FieldType>
+): void {
+  const existing = indexed[path];
+  if (existing?.arrayTypes) {
+    types.forEach((type) => existing.arrayTypes!.add(type));
+    existing.type =
+      existing.arrayTypes.size === 1
+        ? Array.from(existing.arrayTypes)[0]
+        : "string";
+    return;
+  }
+
+  indexed[path] = {
+    path,
+    type: types.size === 1 ? Array.from(types)[0] : "string",
+    arrayTypes: types,
+    isArrayCompressed: true,
+  };
+}
+
 function indexArray(
   arr: unknown[],
   currentPath: string,
   indexed: IndexedJson
 ): void {
   if (arr.length === 0) {
-    // Don't create a field for empty arrays
     return;
   }
 
-  // First, extract individual array elements as leaf-granular fields
-  arr.forEach((item, index) => {
-    const elementPath = `${currentPath}.${index}`;
+  const wildcardPath = `${currentPath}.[*]`;
 
-    if (isPrimitive(item)) {
-      // Leaf-granular field for individual array element
-      indexed[elementPath] = {
-        path: elementPath,
-        type: getValueType(item),
-        isArrayCompressed: false,
-      };
-    } else if (Array.isArray(item)) {
-      // Recursively index nested arrays
-      indexArray(item, elementPath, indexed);
-    } else if (typeof item === "object" && item !== null) {
-      // Recursively index nested objects
-      indexObject(item, elementPath, indexed);
-    }
-  });
-
-  // Then, create array-compressed fields for primitive values
   const primitiveItems = arr.filter(isPrimitive);
   if (primitiveItems.length > 0) {
     const types = new Set<FieldType>();
     primitiveItems.forEach((item) => types.add(getValueType(item)));
-    indexed[`${currentPath}.[*]`] = {
-      path: `${currentPath}.[*]`,
-      type: types.size === 1 ? Array.from(types)[0] : "string", // Default to string for mixed types
-      arrayTypes: types,
-      isArrayCompressed: true,
-    };
+    setArrayCompressedField(indexed, wildcardPath, types);
   }
 
-  // Handle arrays of objects
   const objectItems = arr.filter(
     (item) => typeof item === "object" && item !== null && !Array.isArray(item)
   );
   if (objectItems.length > 0) {
-    // For each key in the objects, create array-compressed fields for primitive values
     const objectKeys = new Set<string>();
     objectItems.forEach((item) => {
       Object.keys(item as AnyObject).forEach((k) => objectKeys.add(k));
@@ -144,15 +141,28 @@ function indexArray(
       if (primitiveValues.length > 0) {
         const types = new Set<FieldType>();
         primitiveValues.forEach((v) => types.add(getValueType(v)));
-        indexed[`${currentPath}.[*].${key}`] = {
-          path: `${currentPath}.[*].${key}`,
-          type: types.size === 1 ? Array.from(types)[0] : "string", // Default to string for mixed types
-          arrayTypes: types,
-          isArrayCompressed: true,
-        };
+        setArrayCompressedField(indexed, `${wildcardPath}.${key}`, types);
       }
+
+      values
+        .filter(Array.isArray)
+        .forEach((nestedArr) =>
+          indexArray(nestedArr, `${wildcardPath}.${key}`, indexed)
+        );
+
+      values
+        .filter(
+          (v) => typeof v === "object" && v !== null && !Array.isArray(v)
+        )
+        .forEach((nestedObj) =>
+          indexObject(nestedObj as AnyObject, `${wildcardPath}.${key}`, indexed)
+        );
     });
   }
+
+  arr.filter(Array.isArray).forEach((nestedArr) => {
+    indexArray(nestedArr, wildcardPath, indexed);
+  });
 }
 
 export function indexJson(json: AnyObject): IndexedJson {

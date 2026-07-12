@@ -66,46 +66,6 @@ describe("indexJson", () => {
     const result = indexJson(input);
 
     expect(result).toEqual({
-      // Individual array elements as leaf-granular fields
-      "numbers.0": {
-        path: "numbers.0",
-        type: "number",
-        isArrayCompressed: false,
-      },
-      "numbers.1": {
-        path: "numbers.1",
-        type: "number",
-        isArrayCompressed: false,
-      },
-      "numbers.2": {
-        path: "numbers.2",
-        type: "number",
-        isArrayCompressed: false,
-      },
-      "numbers.3": {
-        path: "numbers.3",
-        type: "number",
-        isArrayCompressed: false,
-      },
-      "strings.0": {
-        path: "strings.0",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      "strings.1": {
-        path: "strings.1",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      "strings.2": {
-        path: "strings.2",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      "mixed.0": { path: "mixed.0", type: "number", isArrayCompressed: false },
-      "mixed.1": { path: "mixed.1", type: "string", isArrayCompressed: false },
-      "mixed.2": { path: "mixed.2", type: "boolean", isArrayCompressed: false },
-      // Array-compressed fields
       "numbers.[*]": {
         path: "numbers.[*]",
         type: "number",
@@ -120,7 +80,7 @@ describe("indexJson", () => {
       },
       "mixed.[*]": {
         path: "mixed.[*]",
-        type: "string", // Default type for mixed primitive types
+        type: "string",
         arrayTypes: new Set(["number", "string", "boolean"]),
         isArrayCompressed: true,
       },
@@ -139,38 +99,6 @@ describe("indexJson", () => {
     const result = indexJson(input);
 
     expect(result).toEqual({
-      // Individual array elements with their nested fields
-      "users.0.name": {
-        path: "users.0.name",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      "users.0.age": {
-        path: "users.0.age",
-        type: "number",
-        isArrayCompressed: false,
-      },
-      "users.1.name": {
-        path: "users.1.name",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      "users.1.age": {
-        path: "users.1.age",
-        type: "number",
-        isArrayCompressed: false,
-      },
-      "users.2.name": {
-        path: "users.2.name",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      "users.2.age": {
-        path: "users.2.age",
-        type: "number",
-        isArrayCompressed: false,
-      },
-      // Array-compressed fields
       "users.[*].name": {
         path: "users.[*].name",
         type: "string",
@@ -198,38 +126,6 @@ describe("indexJson", () => {
     const result = indexJson(input);
 
     expect(result).toEqual({
-      // Individual array elements with their nested fields
-      "items.0.name": {
-        path: "items.0.name",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      "items.0.value": {
-        path: "items.0.value",
-        type: "number",
-        isArrayCompressed: false,
-      },
-      "items.1.name": {
-        path: "items.1.name",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      "items.1.value": {
-        path: "items.1.value",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      "items.2.name": {
-        path: "items.2.name",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      "items.2.value": {
-        path: "items.2.value",
-        type: "boolean",
-        isArrayCompressed: false,
-      },
-      // Array-compressed fields
       "items.[*].name": {
         path: "items.[*].name",
         type: "string",
@@ -238,7 +134,7 @@ describe("indexJson", () => {
       },
       "items.[*].value": {
         path: "items.[*].value",
-        type: "string", // Default type for mixed primitive types
+        type: "string",
         arrayTypes: new Set(["number", "string", "boolean"]),
         isArrayCompressed: true,
       },
@@ -257,67 +153,8 @@ describe("indexJson", () => {
     const result = indexJson(input);
 
     expect(result).toEqual({
-      // Individual array elements (nested arrays)
-      "matrix.0.0": {
-        path: "matrix.0.0",
-        type: "number",
-        isArrayCompressed: false,
-      },
-      "matrix.0.1": {
-        path: "matrix.0.1",
-        type: "number",
-        isArrayCompressed: false,
-      },
-      "matrix.0.2": {
-        path: "matrix.0.2",
-        type: "number",
-        isArrayCompressed: false,
-      },
-      "matrix.1.0": {
-        path: "matrix.1.0",
-        type: "number",
-        isArrayCompressed: false,
-      },
-      "matrix.1.1": {
-        path: "matrix.1.1",
-        type: "number",
-        isArrayCompressed: false,
-      },
-      "matrix.1.2": {
-        path: "matrix.1.2",
-        type: "number",
-        isArrayCompressed: false,
-      },
-      "matrix.2.0": {
-        path: "matrix.2.0",
-        type: "number",
-        isArrayCompressed: false,
-      },
-      "matrix.2.1": {
-        path: "matrix.2.1",
-        type: "number",
-        isArrayCompressed: false,
-      },
-      "matrix.2.2": {
-        path: "matrix.2.2",
-        type: "number",
-        isArrayCompressed: false,
-      },
-      // Array-compressed fields for primitive values
-      "matrix.0.[*]": {
-        path: "matrix.0.[*]",
-        type: "number",
-        arrayTypes: new Set(["number"]),
-        isArrayCompressed: true,
-      },
-      "matrix.1.[*]": {
-        path: "matrix.1.[*]",
-        type: "number",
-        arrayTypes: new Set(["number"]),
-        isArrayCompressed: true,
-      },
-      "matrix.2.[*]": {
-        path: "matrix.2.[*]",
+      "matrix.[*].[*]": {
+        path: "matrix.[*].[*]",
         type: "number",
         arrayTypes: new Set(["number"]),
         isArrayCompressed: true,
@@ -357,74 +194,20 @@ describe("indexJson", () => {
     const result = indexJson(input);
 
     expect(result).toEqual({
-      // Individual array elements with their nested fields
-      "company.departments.0.name": {
-        path: "company.departments.0.name",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      "company.departments.0.employees.0.name": {
-        path: "company.departments.0.employees.0.name",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      "company.departments.0.employees.0.role": {
-        path: "company.departments.0.employees.0.role",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      "company.departments.0.employees.1.name": {
-        path: "company.departments.0.employees.1.name",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      "company.departments.0.employees.1.role": {
-        path: "company.departments.0.employees.1.role",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      "company.departments.0.employees.[*].name": {
-        path: "company.departments.0.employees.[*].name",
-        type: "string",
-        arrayTypes: new Set(["string"]),
-        isArrayCompressed: true,
-      },
-      "company.departments.0.employees.[*].role": {
-        path: "company.departments.0.employees.[*].role",
-        type: "string",
-        arrayTypes: new Set(["string"]),
-        isArrayCompressed: true,
-      },
-      "company.departments.1.name": {
-        path: "company.departments.1.name",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      "company.departments.1.employees.0.name": {
-        path: "company.departments.1.employees.0.name",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      "company.departments.1.employees.0.role": {
-        path: "company.departments.1.employees.0.role",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      "company.departments.1.employees.[*].name": {
-        path: "company.departments.1.employees.[*].name",
-        type: "string",
-        arrayTypes: new Set(["string"]),
-        isArrayCompressed: true,
-      },
-      "company.departments.1.employees.[*].role": {
-        path: "company.departments.1.employees.[*].role",
-        type: "string",
-        arrayTypes: new Set(["string"]),
-        isArrayCompressed: true,
-      },
-      // Array-compressed fields
       "company.departments.[*].name": {
         path: "company.departments.[*].name",
+        type: "string",
+        arrayTypes: new Set(["string"]),
+        isArrayCompressed: true,
+      },
+      "company.departments.[*].employees.[*].name": {
+        path: "company.departments.[*].employees.[*].name",
+        type: "string",
+        arrayTypes: new Set(["string"]),
+        isArrayCompressed: true,
+      },
+      "company.departments.[*].employees.[*].role": {
+        path: "company.departments.[*].employees.[*].role",
         type: "string",
         arrayTypes: new Set(["string"]),
         isArrayCompressed: true,
@@ -444,51 +227,24 @@ describe("indexJson", () => {
     const result = indexJson(input);
 
     expect(result).toEqual({
-      // Individual array elements with their nested fields
-      "mixed.0.type": {
-        path: "mixed.0.type",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      "mixed.0.data.name": {
-        path: "mixed.0.data.name",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      "mixed.1.type": {
-        path: "mixed.1.type",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      "mixed.1.data.price": {
-        path: "mixed.1.data.price",
-        type: "number",
-        isArrayCompressed: false,
-      },
-      "mixed.2.type": {
-        path: "mixed.2.type",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      "mixed.2.data.items.0": {
-        path: "mixed.2.data.items.0",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      "mixed.2.data.items.1": {
-        path: "mixed.2.data.items.1",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      // Array-compressed fields for primitive values
       "mixed.[*].type": {
         path: "mixed.[*].type",
         type: "string",
         arrayTypes: new Set(["string"]),
         isArrayCompressed: true,
       },
-      "mixed.2.data.items.[*]": {
-        path: "mixed.2.data.items.[*]",
+      "mixed.[*].data.name": {
+        path: "mixed.[*].data.name",
+        type: "string",
+        isArrayCompressed: false,
+      },
+      "mixed.[*].data.price": {
+        path: "mixed.[*].data.price",
+        type: "number",
+        isArrayCompressed: false,
+      },
+      "mixed.[*].data.items.[*]": {
+        path: "mixed.[*].data.items.[*]",
         type: "string",
         arrayTypes: new Set(["string"]),
         isArrayCompressed: true,
@@ -496,15 +252,15 @@ describe("indexJson", () => {
     });
   });
 
-  it("should extract leaf-granular fields for nested array elements and object content as specified", () => {
+  it("should keep numeric object keys but use [*] for array elements", () => {
     const input = {
       a: {
-        0: "primitive_value", // a.0 is primitive
-        1: { b: "nested_primitive" }, // a.1.b is primitive
+        0: "primitive_value",
+        1: { b: "nested_primitive" },
         arr: [
-          "primitive1", // a.arr[0] is primitive
-          "primitive2", // a.arr[1] is primitive
-          { c: "object_primitive" }, // a.arr[2].c is primitive
+          "primitive1",
+          "primitive2",
+          { c: "object_primitive" },
         ],
       },
     };
@@ -512,22 +268,11 @@ describe("indexJson", () => {
     const result = indexJson(input);
 
     expect(result).toEqual({
-      // Leaf-granular fields for nested array elements (a.0)
       "a.0": { path: "a.0", type: "string", isArrayCompressed: false },
-      // Leaf-granular fields for object content (a.1.b)
       "a.1.b": { path: "a.1.b", type: "string", isArrayCompressed: false },
-      // Individual array elements
-      "a.arr.0": { path: "a.arr.0", type: "string", isArrayCompressed: false },
-      "a.arr.1": { path: "a.arr.1", type: "string", isArrayCompressed: false },
-      "a.arr.2.c": {
-        path: "a.arr.2.c",
-        type: "string",
-        isArrayCompressed: false,
-      },
-      // Array-compressed fields
       "a.arr.[*]": {
         path: "a.arr.[*]",
-        type: "string", // Default type for mixed primitive types
+        type: "string",
         arrayTypes: new Set(["string"]),
         isArrayCompressed: true,
       },

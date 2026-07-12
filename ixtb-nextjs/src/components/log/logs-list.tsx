@@ -16,6 +16,7 @@ export interface ILogsProps {
   filters?: IObjRecordQueryList;
   onFiltersChange?: (filters: IObjRecordQueryList) => void;
   showFiltersAndSort?: boolean;
+  onShowFilters?: () => void;
   orgId: string;
   projectId: string;
 }
@@ -50,7 +51,7 @@ export function Logs(props: ILogsProps) {
       <Accordion type="single" collapsible defaultValue={"filters"}>
         <AccordionItem value="filters">
           <AccordionTrigger>Filters</AccordionTrigger>
-          <AccordionContent>
+          <AccordionContent className="w-full">
             <LogsFilterListContainer
               onChange={props.onFiltersChange}
               filters={props.filters}
@@ -62,13 +63,15 @@ export function Logs(props: ILogsProps) {
       </Accordion>
     );
   } else if (hasFilters) {
-    const filtersNode = hasFilters ? (
-      <span className="text-sm text-muted-foreground">
+    beforeNode = (
+      <button
+        type="button"
+        onClick={props.onShowFilters}
+        className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+      >
         {filtersCount} filter{filtersCount === 1 ? "" : "s"} applied
-      </span>
-    ) : null;
-
-    beforeNode = <p className="text-sm text-muted-foreground">{filtersNode}</p>;
+      </button>
+    );
   }
 
   if (props.logs.length === 0) {
@@ -86,9 +89,7 @@ export function Logs(props: ILogsProps) {
   }
 
   if (beforeNode) {
-    beforeNode = (
-      <div className="w-full max-w-lg mx-auto px-4">{beforeNode}</div>
-    );
+    beforeNode = <div className="w-full px-4">{beforeNode}</div>;
   }
 
   return (

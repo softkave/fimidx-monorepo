@@ -1,6 +1,5 @@
-import { and, eq } from "drizzle-orm";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
+import { getMongoConnection } from "../../../db/fimidx.mongo.js";
 import { kObjTags } from "../../../definitions/obj.js";
 import type {
   AddPermissionsEndpointArgs,
@@ -19,8 +18,20 @@ const defaultByType = "user";
 // Test counter to ensure unique permissions
 let testCounter = 0;
 
+async function getObjFieldsCollection() {
+  const { promise } = getMongoConnection();
+  await promise;
+  const { connection } = getMongoConnection();
+  const db = connection?.db;
+  if (!db) {
+    throw new Error("Mongo connection is not available");
+  }
+
+  return db.collection("objField");
+}
+
 function makeAddPermissionsArgs(
-  overrides: Partial<AddPermissionsEndpointArgs> = {}
+  overrides: Partial<AddPermissionsEndpointArgs> = {},
 ): AddPermissionsEndpointArgs {
   testCounter++;
   const uniqueId = `${testCounter}_${Date.now()}_${Math.random()
@@ -42,7 +53,7 @@ function makeAddPermissionsArgs(
 }
 
 function makeCheckPermissionsArgs(
-  overrides: Partial<CheckPermissionsEndpointArgs> = {}
+  overrides: Partial<CheckPermissionsEndpointArgs> = {},
 ): CheckPermissionsEndpointArgs {
   return {
     projectId: defaultProjectId,
@@ -76,15 +87,13 @@ describe("checkPermissions integration", () => {
       });
 
       // Clean up objFields for test group
-      await db
-        .delete(objFieldsTable)
-        .where(
-          and(
-            eq(objFieldsTable.projectId, defaultProjectId),
-            eq(objFieldsTable.groupId, defaultGroupId),
-            eq(objFieldsTable.tag, kObjTags.permission)
-          )
-        );
+      await (
+        await getObjFieldsCollection()
+      ).deleteMany({
+        projectId: defaultProjectId,
+        groupId: defaultGroupId,
+        tag: kObjTags.permission,
+      });
     } catch (error) {
       // Ignore errors in cleanup
     }
@@ -102,15 +111,13 @@ describe("checkPermissions integration", () => {
       });
 
       // Clean up objFields for test group
-      await db
-        .delete(objFieldsTable)
-        .where(
-          and(
-            eq(objFieldsTable.projectId, defaultProjectId),
-            eq(objFieldsTable.groupId, defaultGroupId),
-            eq(objFieldsTable.tag, kObjTags.permission)
-          )
-        );
+      await (
+        await getObjFieldsCollection()
+      ).deleteMany({
+        projectId: defaultProjectId,
+        groupId: defaultGroupId,
+        tag: kObjTags.permission,
+      });
     } catch (error) {
       // Ignore errors in cleanup
     }

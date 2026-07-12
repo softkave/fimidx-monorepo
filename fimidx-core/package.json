@@ -10,14 +10,7 @@
     "compile": "pnpm clean && tsc",
     "type-check": "tsc --noEmit",
     "validate:env": "npx --yes -- softkave-forerunner@latest run-env --cmd \"tsx src/scripts/validateEnv.ts\"",
-    "db:generate:sqlite": "env-cmd -f \".env.local\" npx drizzle-kit generate --config=fimidx.sqlite.drizzle.config.ts",
-    "db:generate:auth": "env-cmd -f \".env.local\" npx drizzle-kit generate --config=auth.sqlite.drizzle.config.ts",
-    "db:generate:postgres": "env-cmd -f \".env.local\" npx drizzle-kit generate --config=fimidx.postgres.drizzle.config.ts",
-    "db:migrate:sqlite": "npx --yes -- softkave-forerunner@latest run-env --cmd \"npx drizzle-kit migrate --config=fimidx.sqlite.drizzle.config.ts\"",
-    "db:migrate:auth": "npx --yes -- softkave-forerunner@latest run-env --cmd \"npx drizzle-kit migrate --config=auth.sqlite.drizzle.config.ts\"",
-    "db:migrate:postgres": "npx --yes -- softkave-forerunner@latest run-env --cmd \"npx drizzle-kit migrate --config=fimidx.postgres.drizzle.config.ts\"",
-    "mongo:dev": "npx run-rs --host localhost --portStart 27010 --dbpath ./local-mongo/dev --keep -v 8.2.3",
-    "mongo:test": "npx run-rs --host localhost --portStart 27015 --dbpath ./local-mongo/test -v 8.2.3"
+    "mongo:local": "npx --yes -- softkave-forerunner@latest run-env --cmd 'softkave-forerunner mongo start --port $MONGO_PORT --container-name $MONGO_CONTAINER_NAME --user $MONGO_USER --password $MONGO_PASSWORD'"
   },
   "type": "module",
   "exports": {
@@ -54,8 +47,6 @@
   },
   "dependencies": {
     "adm-zip": "^0.5.16",
-    "@auth/drizzle-adapter": "1.11.2",
-    "@libsql/client": "0.17.2",
     "@types/split2": "^4.2.3",
     "date-fns": "^4.1.0",
     "drizzle-orm": "0.45.2",
@@ -67,7 +58,6 @@
     "lodash-es": "^4.17.21",
     "lru-cache": "^11.1.0",
     "mongoose": "^8.15.1",
-    "next-auth": "5.0.0-beta.25",
     "next-themes": "^0.4.4",
     "pg": "^8.16.3",
     "redlock-universal": "^0.7.6",

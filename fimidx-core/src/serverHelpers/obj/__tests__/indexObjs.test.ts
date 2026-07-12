@@ -1,8 +1,6 @@
-import { and, eq } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { getObjModel } from "../../../db/fimidx.mongo.js";
-import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
+import { getMongoConnection, getObjModel } from "../../../db/fimidx.mongo.js";
 import type { IInputObjRecord, IObj } from "../../../definitions/obj.js";
 import type { IProjectObjRecord } from "../../../definitions/project.js";
 import { createStorage } from "../../../storage/config.js";
@@ -18,8 +16,20 @@ const TEST_PROJECT_ID = "test-project-indexObjs";
 const TEST_GROUP_ID = "test-group-indexObjs";
 const TEST_TAG = "test-tag-indexObjs";
 
+async function getObjFieldsCollection() {
+  const { promise } = getMongoConnection();
+  await promise;
+  const { connection } = getMongoConnection();
+  const db = connection?.db;
+  if (!db) {
+    throw new Error("Mongo connection is not available");
+  }
+
+  return db.collection("objField");
+}
+
 function makeInputObjRecord(
-  overrides: Partial<IInputObjRecord> = {}
+  overrides: Partial<IInputObjRecord> = {},
 ): IInputObjRecord {
   return {
     name: "Test Object",
@@ -60,7 +70,7 @@ function makeObj(overrides: Partial<IObj> = {}): IObj {
 }
 
 function makeProject(
-  overrides: Partial<IProjectObjRecord> = {}
+  overrides: Partial<IProjectObjRecord> = {},
 ): IProjectObjRecord {
   return {
     name: "Test Project " + uuidv7(),
@@ -102,27 +112,14 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
         projectId: TEST_PROJECT_ID,
         tag: TEST_TAG,
       });
-    } else if (backend.type === "postgres") {
-      const { fimidxPostgresDb, objs } = await import(
-        "../../../db/fimidx.postgres.js"
-      );
-      await fimidxPostgresDb
-        .delete(objs)
-        .where(
-          and(eq(objs.projectId, TEST_PROJECT_ID), eq(objs.tag, TEST_TAG))
-        );
     }
 
-    // Clean up SQLite tables
-    await db
-      .delete(objFieldsTable)
-      .where(
-        and(
-          eq(objFieldsTable.projectId, TEST_PROJECT_ID),
-          eq(objFieldsTable.tag, TEST_TAG)
-        )
-      )
-      .execute();
+    await (
+      await getObjFieldsCollection()
+    ).deleteMany({
+      projectId: TEST_PROJECT_ID,
+      tag: TEST_TAG,
+    });
   });
 
   describe("indexObjs function", () => {
@@ -143,15 +140,9 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
       await indexObjs({ lastSuccessAt: null, storageType: backend.type });
 
       // Check that objFields were created for indexed objects
-      const fields = await db
-        .select()
-        .from(objFieldsTable)
-        .where(
-          and(
-            eq(objFieldsTable.projectId, TEST_PROJECT_ID),
-            eq(objFieldsTable.tag, TEST_TAG)
-          )
-        );
+      const fields = await (await getObjFieldsCollection())
+        .find({ projectId: TEST_PROJECT_ID, tag: TEST_TAG })
+        .toArray();
 
       expect(fields.length).toBeGreaterThan(0);
 
@@ -183,15 +174,9 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
       await indexObjs({ lastSuccessAt, storageType: backend.type });
 
       // Should only index the recent object
-      const fields = await db
-        .select()
-        .from(objFieldsTable)
-        .where(
-          and(
-            eq(objFieldsTable.projectId, TEST_PROJECT_ID),
-            eq(objFieldsTable.tag, TEST_TAG)
-          )
-        );
+      const fields = await (await getObjFieldsCollection())
+        .find({ projectId: TEST_PROJECT_ID, tag: TEST_TAG })
+        .toArray();
 
       // The fields should exist for the recent object's data
       const fieldNames = fields.map((f) => f.path);
@@ -235,15 +220,9 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
       await indexObjs({ lastSuccessAt: null, storageType: backend.type });
 
       // Check that only the specified fields were indexed
-      const fields = await db
-        .select()
-        .from(objFieldsTable)
-        .where(
-          and(
-            eq(objFieldsTable.projectId, project.id),
-            eq(objFieldsTable.tag, TEST_TAG)
-          )
-        );
+      const fields = await (await getObjFieldsCollection())
+        .find({ projectId: project.id, tag: TEST_TAG })
+        .toArray();
 
       const fieldPaths = fields.map((f) => f.path);
       expect(fieldPaths).toContain("name");
@@ -271,15 +250,9 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
       await indexObjs({ lastSuccessAt: null, storageType: backend.type });
 
       // Check that only the object-specific fields were indexed
-      const fields = await db
-        .select()
-        .from(objFieldsTable)
-        .where(
-          and(
-            eq(objFieldsTable.projectId, TEST_PROJECT_ID),
-            eq(objFieldsTable.tag, TEST_TAG)
-          )
-        );
+      const fields = await (await getObjFieldsCollection())
+        .find({ projectId: TEST_PROJECT_ID, tag: TEST_TAG })
+        .toArray();
 
       const fieldPaths = fields.map((f) => f.path);
       expect(fieldPaths).toContain("name");
@@ -307,15 +280,9 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
       await indexObjs({ lastSuccessAt: null, storageType: backend.type });
 
       // Check that different types are handled correctly
-      const fields = await db
-        .select()
-        .from(objFieldsTable)
-        .where(
-          and(
-            eq(objFieldsTable.projectId, TEST_PROJECT_ID),
-            eq(objFieldsTable.tag, TEST_TAG)
-          )
-        );
+      const fields = await (await getObjFieldsCollection())
+        .find({ projectId: TEST_PROJECT_ID, tag: TEST_TAG })
+        .toArray();
 
       const stringField = fields.find((f) => f.path === "stringField");
       const numberField = fields.find((f) => f.path === "numberField");
@@ -354,7 +321,7 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
         makeObj({
           shouldIndex: true,
           objRecord: { name: `obj-${i}`, value: i },
-        })
+        }),
       );
 
       await storage.create({ objs });
@@ -362,15 +329,9 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
       await indexObjs({ lastSuccessAt: null, storageType: backend.type });
 
       // Check that all objects were indexed
-      const fields = await db
-        .select()
-        .from(objFieldsTable)
-        .where(
-          and(
-            eq(objFieldsTable.projectId, TEST_PROJECT_ID),
-            eq(objFieldsTable.tag, TEST_TAG)
-          )
-        );
+      const fields = await (await getObjFieldsCollection())
+        .find({ projectId: TEST_PROJECT_ID, tag: TEST_TAG })
+        .toArray();
 
       // Should have fields for "name" and "value"
       const fieldPaths = fields.map((f) => f.path);
@@ -413,15 +374,9 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
       await indexObjs({ lastSuccessAt: null, storageType: backend.type });
 
       // Check that fields were updated
-      const fields = await db
-        .select()
-        .from(objFieldsTable)
-        .where(
-          and(
-            eq(objFieldsTable.projectId, TEST_PROJECT_ID),
-            eq(objFieldsTable.tag, TEST_TAG)
-          )
-        );
+      const fields = await (await getObjFieldsCollection())
+        .find({ projectId: TEST_PROJECT_ID, tag: TEST_TAG })
+        .toArray();
 
       const fieldPaths = fields.map((f) => f.path);
       expect(fieldPaths).toContain("name");
@@ -441,15 +396,9 @@ describe.each(backends)("indexObjs integration (%s)", (backend) => {
 
       await indexObjsBatch({ objs, getProject: mockGetProject });
 
-      const fields = await db
-        .select()
-        .from(objFieldsTable)
-        .where(
-          and(
-            eq(objFieldsTable.projectId, TEST_PROJECT_ID),
-            eq(objFieldsTable.tag, TEST_TAG)
-          )
-        );
+      const fields = await (await getObjFieldsCollection())
+        .find({ projectId: TEST_PROJECT_ID, tag: TEST_TAG })
+        .toArray();
 
       const fieldPaths = fields.map((f) => f.path);
       expect(fieldPaths).toContain("name");

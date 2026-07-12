@@ -1,6 +1,5 @@
-import { and, eq } from "drizzle-orm";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
+import { getMongoConnection } from "../../../db/fimidx.mongo.js";
 import { kObjTags } from "../../../definitions/obj.js";
 import type {
   AddPermissionsEndpointArgs,
@@ -19,8 +18,20 @@ const defaultByType = "user";
 
 let testCounter = 0;
 
+async function getObjFieldsCollection() {
+  const { promise } = getMongoConnection();
+  await promise;
+  const { connection } = getMongoConnection();
+  const db = connection?.db;
+  if (!db) {
+    throw new Error("Mongo connection is not available");
+  }
+
+  return db.collection("objField");
+}
+
 function makeAddPermissionsArgs(
-  overrides: Partial<AddPermissionsEndpointArgs> = {}
+  overrides: Partial<AddPermissionsEndpointArgs> = {},
 ): AddPermissionsEndpointArgs {
   testCounter++;
   return {
@@ -39,7 +50,7 @@ function makeAddPermissionsArgs(
 }
 
 function makeUpdatePermissionsArgs(
-  overrides: Partial<UpdatePermissionsEndpointArgs> = {}
+  overrides: Partial<UpdatePermissionsEndpointArgs> = {},
 ): UpdatePermissionsEndpointArgs {
   return {
     query: {
@@ -71,15 +82,13 @@ describe("updatePermissions integration", () => {
         hardDelete: true,
       });
 
-      await db
-        .delete(objFieldsTable)
-        .where(
-          and(
-            eq(objFieldsTable.projectId, defaultProjectId),
-            eq(objFieldsTable.groupId, defaultGroupId),
-            eq(objFieldsTable.tag, kObjTags.permission)
-          )
-        );
+      await (
+        await getObjFieldsCollection()
+      ).deleteMany({
+        projectId: defaultProjectId,
+        groupId: defaultGroupId,
+        tag: kObjTags.permission,
+      });
     } catch {
       // Ignore errors in cleanup
     }
@@ -96,15 +105,13 @@ describe("updatePermissions integration", () => {
         hardDelete: true,
       });
 
-      await db
-        .delete(objFieldsTable)
-        .where(
-          and(
-            eq(objFieldsTable.projectId, defaultProjectId),
-            eq(objFieldsTable.groupId, defaultGroupId),
-            eq(objFieldsTable.tag, kObjTags.permission)
-          )
-        );
+      await (
+        await getObjFieldsCollection()
+      ).deleteMany({
+        projectId: defaultProjectId,
+        groupId: defaultGroupId,
+        tag: kObjTags.permission,
+      });
     } catch {
       // Ignore errors in cleanup
     }
@@ -177,7 +184,7 @@ describe("updatePermissions integration", () => {
     });
     expect(result.permissions).toHaveLength(2);
     const writeDoc = result.permissions.find(
-      (p) => p.action === "write" && p.target === "document"
+      (p) => p.action === "write" && p.target === "document",
     );
     expect(writeDoc).toBeUndefined();
   });
@@ -185,9 +192,7 @@ describe("updatePermissions integration", () => {
   it("addPermissions adds new permissions when groupId provided", async () => {
     await addPermissions({
       args: makeAddPermissionsArgs({
-        permissions: [
-          { entity: "user", action: "read", target: "document" },
-        ],
+        permissions: [{ entity: "user", action: "read", target: "document" }],
       }),
       groupId: defaultGroupId,
       by: defaultBy,
@@ -220,7 +225,7 @@ describe("updatePermissions integration", () => {
     });
     expect(result.permissions).toHaveLength(2);
     const adminPerm = result.permissions.find(
-      (p) => p.entity === "admin" && p.action === "write"
+      (p) => p.entity === "admin" && p.action === "write",
     );
     expect(adminPerm).toBeDefined();
     expect(adminPerm!.target).toBe("settings");
@@ -240,7 +245,7 @@ describe("updatePermissions integration", () => {
         by: defaultBy,
         byType: defaultByType,
         storage,
-      })
+      }),
     ).rejects.toThrow("groupId is required");
   });
 
@@ -263,9 +268,7 @@ describe("updatePermissions integration", () => {
         query: { projectId: defaultProjectId, entity: { eq: "user" } },
         update: {
           removeAllPermissions: true,
-          addPermissions: [
-            { entity: "user", action: "admin", target: "all" },
-          ],
+          addPermissions: [{ entity: "user", action: "admin", target: "all" }],
         },
       }),
       by: defaultBy,

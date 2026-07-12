@@ -32,7 +32,12 @@ export function Log(props: ILogProps) {
       </div>
       <div className="flex flex-col gap-1">
         <h3 className="text-sm text-muted-foreground">Raw Data</h3>
-        <JsonView value={props.log.data} />
+        <JsonView
+          value={props.log.data}
+          style={{
+            fontFamily: "var(--font-mono)",
+          }}
+        />
       </div>
     </div>
   );

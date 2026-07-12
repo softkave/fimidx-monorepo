@@ -1,8 +1,6 @@
-import { and, eq } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { getObjModel } from "../../../db/fimidx.mongo.js";
-import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
+import { getMongoConnection, getObjModel } from "../../../db/fimidx.mongo.js";
 import type {
   IInputObjRecord,
   IObj,
@@ -17,8 +15,20 @@ const backends: { type: "mongo" | "postgres"; name: string }[] = [
   // { type: "postgres", name: "Postgres" },
 ];
 
+async function getObjFieldsCollection() {
+  const { promise } = getMongoConnection();
+  await promise;
+  const { connection } = getMongoConnection();
+  const db = connection?.db;
+  if (!db) {
+    throw new Error("Mongo connection is not available");
+  }
+
+  return db.collection("objField");
+}
+
 function makeInputObjRecord(
-  overrides: Partial<IInputObjRecord> = {}
+  overrides: Partial<IInputObjRecord> = {},
 ): IInputObjRecord {
   return {
     name: "Test Object",
@@ -70,20 +80,17 @@ function makeObjField(overrides: Partial<IObjField> = {}): IObjField {
 async function setupObjFields(fields: IObjField[]) {
   // Clean up existing fields first
   if (fields.length > 0) {
-    await db
-      .delete(objFieldsTable)
-      .where(
-        and(
-          eq(objFieldsTable.projectId, fields[0].projectId),
-          eq(objFieldsTable.tag, fields[0].tag)
-        )
-      )
-      .execute();
+    await (
+      await getObjFieldsCollection()
+    ).deleteMany({
+      projectId: fields[0].projectId,
+      tag: fields[0].tag,
+    });
   }
 
   // Insert new fields
   if (fields.length > 0) {
-    await db.insert(objFieldsTable).values(fields);
+    await (await getObjFieldsCollection()).insertMany(fields);
   }
 }
 
@@ -161,27 +168,15 @@ describe.each(backends)("getManyObjs integration (%s)", (backend) => {
     if (backend.type === "mongo") {
       const model = getObjModel();
       await model.deleteMany({ projectId: defaultProjectId, tag: defaultTag });
-    } else if (backend.type === "postgres") {
-      const { fimidxPostgresDb, objs } = await import(
-        "../../../db/fimidx.postgres.js"
-      );
-      await fimidxPostgresDb
-        .delete(objs)
-        .where(
-          and(eq(objs.projectId, defaultProjectId), eq(objs.tag, defaultTag))
-        );
     }
 
     // Clean up obj fields for all backends
-    await db
-      .delete(objFieldsTable)
-      .where(
-        and(
-          eq(objFieldsTable.projectId, defaultProjectId),
-          eq(objFieldsTable.tag, defaultTag)
-        )
-      )
-      .execute();
+    await (
+      await getObjFieldsCollection()
+    ).deleteMany({
+      projectId: defaultProjectId,
+      tag: defaultTag,
+    });
   });
 
   it("returns objects by projectId and tag", async () => {

@@ -127,6 +127,7 @@ describe("updateClientTokenPermissions integration", () => {
     expect(updated!.permissions).toHaveLength(2);
 
     // Verify the updated permissions
+    updated!.permissions!.sort((a, b) => String(a.action).localeCompare(String(b.action)));
     const permission1 = updated!.permissions![0];
     const permission2 = updated!.permissions![1];
 

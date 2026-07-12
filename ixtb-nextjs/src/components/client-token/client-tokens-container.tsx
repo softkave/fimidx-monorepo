@@ -43,6 +43,7 @@ export function ClientTokenListContainer({
   const clientTokenHooks = useGetClientTokens({
     page,
     limit: pageSize,
+    includePermissions: true,
     query: {
       projectId,
       groupId,

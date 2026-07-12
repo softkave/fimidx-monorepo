@@ -1,11 +1,13 @@
 import { first } from "lodash-es";
 import { OwnServerError } from "../../common/error.js";
+import type { IObjStorage } from "../../storage/types.js";
 import { getProjects } from "./getProjects.js";
 
 export async function checkProjectExists(params: {
   name: string;
   isId?: string;
   groupId: string;
+  storage?: IObjStorage;
 }) {
   const { projects } = await getProjects({
     args: {
@@ -17,6 +19,7 @@ export async function checkProjectExists(params: {
       },
       limit: 1,
     },
+    storage: params.storage,
   });
 
   const project = first(projects);
@@ -32,6 +35,7 @@ export async function checkProjectAvailable(params: {
   name: string;
   isId?: string;
   groupId: string;
+  storage?: IObjStorage;
 }) {
   const { exists, isId } = await checkProjectExists(params);
 

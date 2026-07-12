@@ -4,10 +4,6 @@ import { coreConfigSchema, envVars } from "../definitions/coreConfig.js";
 
 export function getCoreConfig(): z.infer<typeof coreConfigSchema> {
   const fimidxPostgresUrl = process.env[envVars.FIMIDX_POSTGRES_URL];
-  const fimidxTursoUrl = process.env[envVars.FIMIDX_TURSO_URL];
-  const fimidxTursoAuthToken = process.env[envVars.FIMIDX_TURSO_AUTH_TOKEN];
-  const authTursoUrl = process.env[envVars.AUTH_TURSO_URL];
-  const authTursoAuthToken = process.env[envVars.AUTH_TURSO_AUTH_TOKEN];
   const mongoUri = process.env[envVars.MONGO_URI];
   const mongoDbName = process.env[envVars.MONGO_DB_NAME];
   const adminEmails = process.env[envVars.ADMIN_EMAILS];
@@ -51,20 +47,15 @@ export function getCoreConfig(): z.infer<typeof coreConfigSchema> {
   const fimidxLoggerServerUrl =
     process.env[envVars.NEXT_PUBLIC_FIMIDX_LOGGER_SERVER_URL];
   const wsHost = process.env[envVars.WS_HOST];
+  const betterAuthUrl =
+    process.env[envVars.BETTER_AUTH_URL] ?? process.env.NEXT_PUBLIC_URL;
+  const betterAuthSecret = process.env[envVars.BETTER_AUTH_SECRET];
+  const nextPublicBetterAuthUrl =
+    process.env[envVars.NEXT_PUBLIC_BETTER_AUTH_URL];
 
   return coreConfigSchema.parse({
     postgres: {
       url: fimidxPostgresUrl,
-    },
-    turso: {
-      url: fimidxTursoUrl,
-      authToken: fimidxTursoAuthToken,
-    },
-    auth: {
-      turso: {
-        url: authTursoUrl,
-        authToken: authTursoAuthToken,
-      },
     },
     mongo: {
       uri: mongoUri,
@@ -122,6 +113,11 @@ export function getCoreConfig(): z.infer<typeof coreConfigSchema> {
     },
     ws: {
       host: wsHost,
+    },
+    betterAuth: {
+      url: betterAuthUrl,
+      secret: betterAuthSecret,
+      nextPublicUrl: nextPublicBetterAuthUrl,
     },
   });
 }

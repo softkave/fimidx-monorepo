@@ -1,9 +1,12 @@
-import { and, desc, eq } from "drizzle-orm";
-import { db, objFields as objFieldsTable } from "../../db/fimidx.sqlite.js";
+import { getMongoConnection } from "../../db/fimidx.mongo.js";
 import type {
   IGetObjFieldsEndpointResponse,
   IObjField,
 } from "../../definitions/obj.js";
+
+type ObjFieldDocument = IObjField & {
+  _id?: unknown;
+};
 
 async function getFromDb(params: {
   projectId: string;
@@ -12,15 +15,26 @@ async function getFromDb(params: {
   tag: string;
 }) {
   const { projectId, page, limit, tag } = params;
-  return await db
-    .select()
-    .from(objFieldsTable)
-    .where(
-      and(eq(objFieldsTable.projectId, projectId), eq(objFieldsTable.tag, tag))
-    )
-    .orderBy(desc(objFieldsTable.createdAt))
+  const { connection, promise } = getMongoConnection();
+  await promise;
+  const db = connection?.db;
+  if (!db) {
+    throw new Error("Mongo connection is not available");
+  }
+
+  const collection = db.collection<ObjFieldDocument>("objField");
+  return await collection
+    .find({ projectId, tag })
+    .sort({ createdAt: -1 })
+    .skip(page * limit)
     .limit(limit)
-    .offset(page * limit);
+    .toArray()
+    .then((fields) =>
+      fields.map(({ _id, ...field }) => ({
+        ...field,
+        id: field.id ?? String(_id),
+      })),
+    );
 }
 
 export async function getObjFields(params: {
@@ -42,7 +56,7 @@ export async function getObjFields(params: {
     hasMore = nextPage.length > 0;
   }
   return {
-    fields: fields as IObjField[],
+    fields,
     page,
     limit,
     hasMore,

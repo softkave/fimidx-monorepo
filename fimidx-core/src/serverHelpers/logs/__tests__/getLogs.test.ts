@@ -1,4 +1,3 @@
-import { and, eq } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import {
   afterAll,
@@ -9,7 +8,7 @@ import {
   expect,
   it,
 } from "vitest";
-import { db, objFields as objFieldsTable } from "../../../db/fimidx.sqlite.js";
+import { getMongoConnection } from "../../../db/fimidx.mongo.js";
 import type { GetLogsEndpointArgs } from "../../../definitions/log.js";
 import type { IObjField } from "../../../definitions/obj.js";
 import { kObjTags } from "../../../definitions/obj.js";
@@ -23,6 +22,18 @@ const { projectId, by, byType } = testData;
 
 // Test counter to ensure unique names
 let testCounter = 0;
+
+async function getObjFieldsCollection() {
+  const { promise } = getMongoConnection();
+  await promise;
+  const { connection } = getMongoConnection();
+  const db = connection?.db;
+  if (!db) {
+    throw new Error("Mongo connection is not available");
+  }
+
+  return db.collection("objField");
+}
 
 function makeObjField(overrides: Partial<IObjField> = {}): IObjField {
   const now = new Date();
@@ -44,25 +55,22 @@ function makeObjField(overrides: Partial<IObjField> = {}): IObjField {
 async function setupObjFields(fields: IObjField[]) {
   // Clean up existing fields first
   if (fields.length > 0) {
-    await db
-      .delete(objFieldsTable)
-      .where(
-        and(
-          eq(objFieldsTable.projectId, fields[0].projectId),
-          eq(objFieldsTable.tag, fields[0].tag)
-        )
-      )
-      .execute();
+    await (
+      await getObjFieldsCollection()
+    ).deleteMany({
+      projectId: fields[0].projectId,
+      tag: fields[0].tag,
+    });
   }
 
   // Insert new fields
   if (fields.length > 0) {
-    await db.insert(objFieldsTable).values(fields);
+    await (await getObjFieldsCollection()).insertMany(fields);
   }
 }
 
 function makeGetLogsArgs(
-  overrides: Partial<GetLogsEndpointArgs> = {}
+  overrides: Partial<GetLogsEndpointArgs> = {},
 ): GetLogsEndpointArgs {
   testCounter++;
   return {

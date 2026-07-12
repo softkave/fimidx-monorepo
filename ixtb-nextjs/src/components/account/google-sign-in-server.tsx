@@ -1,4 +1,6 @@
-import { signIn } from "@/auth.ts";
+"use client";
+
+import { authClient } from "@/src/lib/auth-client";
 import { kClientPaths } from "@/src/lib/clientHelpers/clientPaths.ts";
 import { cn } from "@/src/lib/utils.ts";
 import { Button } from "../ui/button.tsx";
@@ -17,10 +19,10 @@ export default function GoogleSignInServer({
   return (
     <form
       action={async () => {
-        "use server";
-        await signIn("google", {
-          redirectTo: kClientPaths.withURL(
-            redirectTo ?? kClientPaths.app.index
+        await authClient.signIn.social({
+          provider: "google",
+          callbackURL: kClientPaths.withURL(
+            redirectTo ?? kClientPaths.app.index,
           ),
         });
       }}

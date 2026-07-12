@@ -1,4 +1,6 @@
-import { signIn } from "@/auth";
+"use client";
+
+import { authClient } from "@/src/lib/auth-client";
 import { kClientPaths } from "@/src/lib/clientHelpers/clientPaths";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -11,11 +13,10 @@ export function EmailSignInServer(props: IEmailSignInServerProps) {
   return (
     <form
       action={async (formData) => {
-        "use server";
-        await signIn("resend", {
-          email: formData.get("email"),
-          redirectTo: kClientPaths.withURL(
-            props.redirectTo ?? kClientPaths.app.index
+        await authClient.signIn.magicLink({
+          email: String(formData.get("email") ?? ""),
+          callbackURL: kClientPaths.withURL(
+            props.redirectTo ?? kClientPaths.app.index,
           ),
         });
       }}

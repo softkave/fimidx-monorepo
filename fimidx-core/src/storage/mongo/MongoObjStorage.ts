@@ -261,6 +261,7 @@ export class MongoObjStorage implements IObjStorage {
         conflictOnKeys,
         projectId,
         tag,
+        groupId,
         date,
         session,
       });
@@ -635,10 +636,12 @@ export class MongoObjStorage implements IObjStorage {
     conflictOnKeys: string[];
     projectId: string;
     tag: string;
+    groupId: string;
     date: Date;
     session?: any;
   }): Promise<(IObj | undefined)[]> {
-    const { items, conflictOnKeys, projectId, tag, date, session } = params;
+    const { items, conflictOnKeys, projectId, tag, groupId, date, session } =
+      params;
 
     if (!conflictOnKeys.length) {
       return new Array(items.length).fill(undefined);
@@ -652,6 +655,7 @@ export class MongoObjStorage implements IObjStorage {
         conflictOnKeys,
         projectId,
         tag,
+        groupId,
       });
 
       if (Object.keys(conflictFilter).length === 0) {
@@ -675,11 +679,13 @@ export class MongoObjStorage implements IObjStorage {
     conflictOnKeys: string[];
     projectId: string;
     tag: string;
+    groupId: string;
   }): any {
-    const { item, conflictOnKeys, projectId, tag } = params;
+    const { item, conflictOnKeys, projectId, tag, groupId } = params;
     const filter: any = {
       projectId,
       tag,
+      groupId,
       deletedAt: null,
     };
 

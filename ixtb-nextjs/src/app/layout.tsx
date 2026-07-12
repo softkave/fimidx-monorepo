@@ -1,19 +1,28 @@
 import { Toaster } from "@/src/components/ui/sonner.tsx";
 import { kAppConstants } from "fimidx-core/definitions/appConstants";
 import type { Metadata } from "next";
-import { SessionProvider } from "next-auth/react";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, DM_Sans, Source_Code_Pro } from "next/font/google";
+import { GlobalStateProvider } from "../components/contexts/global-state-context";
 import { SidebarProvider } from "../components/ui/sidebar";
 import "./globals.css";
-import { GlobalStateProvider } from "../components/contexts/global-state-context";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// const geistSans = Geist({
+//   variable: "--font-geist-sans",
+//   subsets: ["latin"],
+// });
+
+// const geistMono = Geist_Mono({
+//   variable: "--font-geist-mono",
+//   subsets: ["latin"],
+// });
+
+const sans = DM_Sans({
+  variable: "--font-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const mono = Source_Code_Pro({
+  variable: "--font-mono",
   subsets: ["latin"],
 });
 
@@ -30,13 +39,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${sans.variable} ${mono.variable} antialiased`}
       >
-        <SessionProvider>
-          <GlobalStateProvider>
-            <SidebarProvider>{children}</SidebarProvider>
-          </GlobalStateProvider>
-        </SessionProvider>
+        <GlobalStateProvider>
+          <SidebarProvider>{children}</SidebarProvider>
+        </GlobalStateProvider>
         <Toaster />
       </body>
     </html>

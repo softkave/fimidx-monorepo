@@ -1,6 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { kObjTags } from "../../../definitions/obj.js";
 import type { AddProjectEndpointArgs } from "../../../definitions/project.js";
+import { kId0 } from "../../../definitions/system.js";
 import { createDefaultStorage } from "../../../storage/config.js";
 import type { IObjStorage } from "../../../storage/types.js";
 import { addProject } from "../addProject.js";
@@ -40,7 +41,7 @@ describe("addProject integration", () => {
     // Clean up test data before each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { metaQuery: { projectId: { eq: "0" } } },
+        query: { metaQuery: { projectId: { eq: kId0 } } },
         tag: kObjTags.project,
         deletedBy: defaultBy,
         deletedByType: defaultByType,
@@ -56,7 +57,7 @@ describe("addProject integration", () => {
     // Clean up after each test using hard deletes for complete isolation
     try {
       await storage.bulkDelete({
-        query: { metaQuery: { projectId: { eq: "0" } } },
+        query: { metaQuery: { projectId: { eq: kId0 } } },
         tag: kObjTags.project,
         deletedBy: defaultBy,
         deletedByType: defaultByType,

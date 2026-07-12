@@ -5,6 +5,7 @@ import {
   GetLogsEndpointResponse,
 } from "fimidx-core/definitions/log";
 import useSWR from "swr";
+import useSWRInfinite from "swr/infinite";
 import { kLogSWRKeys } from "./swrkeys";
 import { handleResponse } from "./utils";
 
@@ -28,6 +29,50 @@ export function useGetLogs(opts: GetLogsEndpointArgs) {
   );
 
   return { data, error, isLoading, isValidating, mutate };
+}
+
+export type IGetLogsInfiniteQuery = GetLogsEndpointArgs["query"];
+
+export function useGetLogsInfinite(params: {
+  query: IGetLogsInfiniteQuery;
+  limit?: number;
+}) {
+  const { query, limit = 100 } = params;
+
+  const getKey = (
+    pageIndex: number,
+    previousPageData: GetLogsEndpointResponse | null
+  ) => {
+    if (previousPageData && !previousPageData.hasMore) {
+      return null;
+    }
+
+    return kLogSWRKeys.retrieve({
+      page: pageIndex + 1,
+      limit,
+      query,
+    });
+  };
+
+  const { data, error, isLoading, isValidating, setSize, mutate } =
+    useSWRInfinite(getKey, getLogs, {
+      keepPreviousData: true,
+    });
+
+  const logs = data?.flatMap((page) => page?.logs ?? []) ?? [];
+  const hasMore = data?.length
+    ? (data[data.length - 1]?.hasMore ?? false)
+    : false;
+
+  return {
+    logs,
+    error,
+    isLoading: isLoading && logs.length === 0,
+    isLoadingMore: isValidating && logs.length > 0,
+    hasMore,
+    setSize,
+    mutate,
+  };
 }
 
 export async function getLogFields(

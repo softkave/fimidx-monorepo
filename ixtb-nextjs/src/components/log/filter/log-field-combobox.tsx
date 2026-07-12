@@ -76,10 +76,26 @@ export function LogFieldCombobox(props: LogFieldComboboxProps) {
   const place =
     placeholder ?? defaultPlaceholder[isMultiple ? "multiple" : "single"];
 
+  const renderItem = (path: string) => (
+    <ComboboxItem key={path} value={path}>
+      <pre className="overflow-hidden text-ellipsis">
+        <code className="text-sm">{path}</code>
+      </pre>
+    </ComboboxItem>
+  );
+
+  const renderList = () => (
+    <>
+      <ComboboxEmpty>No fields</ComboboxEmpty>
+      <ComboboxList>{renderItem}</ComboboxList>
+    </>
+  );
+
   if (isMultiple) {
     const { value, onChange } = props;
     return (
       <Combobox
+        items={options}
         multiple
         value={value}
         onValueChange={(v) => onChange(v ?? [])}
@@ -102,53 +118,44 @@ export function LogFieldCombobox(props: LogFieldComboboxProps) {
             <ComboboxChipsInput placeholder={place} />
           </ComboboxChips>
         </div>
-        <ComboboxContent anchor={anchorRef}>
-          <ComboboxList>
-            {options.map((path) => (
-              <ComboboxItem key={path} value={path}>
-                <pre className="overflow-hidden text-ellipsis">
-                  <code className="text-sm">{path}</code>
-                </pre>
-              </ComboboxItem>
-            ))}
-            <ComboboxEmpty>No fields</ComboboxEmpty>
-          </ComboboxList>
-        </ComboboxContent>
+        <ComboboxContent anchor={anchorRef}>{renderList()}</ComboboxContent>
       </Combobox>
     );
   }
 
   const { value, onChange } = props;
+
+  const commitCustomValue = (raw: string) => {
+    const trimmed = raw.trim();
+    if (!allowCustomValue || !trimmed || trimmed === value) {
+      return;
+    }
+    onChange(trimmed);
+  };
+
   return (
     <Combobox
+      items={options}
       value={value}
       onValueChange={(v) => onChange(v ?? "")}
       onInputValueChange={(v) => setInputValue(v)}
       disabled={disabled}
     >
-      <div
-        ref={anchorRef}
-        className={cn("w-[180px] min-w-0 flex-1", className)}
-      >
+      <div ref={anchorRef} className={cn("w-full min-w-0 flex-1", className)}>
         <ComboboxInput
           placeholder={place}
           showTrigger
           showClear={!!value}
           className="w-full"
+          onBlur={() => commitCustomValue(inputValue)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              commitCustomValue(inputValue);
+            }
+          }}
         />
       </div>
-      <ComboboxContent anchor={anchorRef}>
-        <ComboboxList>
-          {options.map((path) => (
-            <ComboboxItem key={path} value={path}>
-              <pre className="overflow-hidden text-ellipsis">
-                <code className="text-sm">{path}</code>
-              </pre>
-            </ComboboxItem>
-          ))}
-          <ComboboxEmpty>No fields</ComboboxEmpty>
-        </ComboboxList>
-      </ComboboxContent>
+      <ComboboxContent anchor={anchorRef}>{renderList()}</ComboboxContent>
     </Combobox>
   );
 }

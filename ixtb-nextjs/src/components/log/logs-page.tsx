@@ -28,6 +28,7 @@ export function LogsPage(props: {
         projectId={props.projectId}
         showNoLogsMessage={false}
         showFiltersAndSort={showFiltersAndSort}
+        onShowFilters={() => setShowFiltersAndSort(true)}
       />
     </div>
   );

@@ -25,6 +25,7 @@ export interface ILogListContainerProps {
   orgId: string;
   projectId: string;
   showFiltersAndSort?: boolean;
+  onShowFilters?: () => void;
 }
 
 export function LogListContainer({
@@ -35,6 +36,7 @@ export function LogListContainer({
   orgId,
   projectId,
   showFiltersAndSort,
+  onShowFilters,
 }: ILogListContainerProps) {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [filters, setFilters] = useState<IObjRecordQueryList>([]);
@@ -84,6 +86,7 @@ export function LogListContainer({
         filters={filters}
         onFiltersChange={setFilters}
         showFiltersAndSort={showFiltersAndSort}
+        onShowFilters={onShowFilters}
       />
     );
   };

@@ -16,6 +16,7 @@ export interface ILogsProps {
   filters?: IObjRecordQueryList;
   onFiltersChange?: (filters: IObjRecordQueryList) => void;
   showFiltersAndSort?: boolean;
+  onShowFilters?: () => void;
   orgId: string;
   projectId: string;
 }
@@ -62,13 +63,15 @@ export function Logs(props: ILogsProps) {
       </Accordion>
     );
   } else if (hasFilters) {
-    const filtersNode = hasFilters ? (
-      <span className="text-sm text-muted-foreground">
+    beforeNode = (
+      <button
+        type="button"
+        onClick={props.onShowFilters}
+        className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+      >
         {filtersCount} filter{filtersCount === 1 ? "" : "s"} applied
-      </span>
-    ) : null;
-
-    beforeNode = <p className="text-sm text-muted-foreground">{filtersNode}</p>;
+      </button>
+    );
   }
 
   if (props.logs.length === 0) {

@@ -18,7 +18,6 @@ export function LogsPage(props: {
   const contentNode = (
     <div className={cn("flex flex-col", props.className)}>
       <LogsHeader
-        className="max-w-lg mx-auto"
         orgId={props.orgId}
         projectId={props.projectId}
         onShowFiltersAndSort={setShowFiltersAndSort}

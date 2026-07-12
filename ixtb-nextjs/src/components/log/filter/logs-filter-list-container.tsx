@@ -37,7 +37,7 @@ export function LogsFilterListContainer({
 }: ILogsFilterListContainerProps) {
   return (
     <div className={cn("flex flex-col items-center w-full", className)}>
-      <LogFieldsListContainer projectId={projectId}>
+      <LogFieldsListContainer projectId={projectId} className="w-full">
         {({ fields }) => (
           <LogsFilterList
             fields={fields}

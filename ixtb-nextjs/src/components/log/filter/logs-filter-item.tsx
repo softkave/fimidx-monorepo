@@ -4,15 +4,27 @@ import { objRecordQueryItemOpSchema } from "fimidx-core/definitions/obj";
 import { XIcon } from "lucide-react";
 import { useMemo } from "react";
 import { Button } from "../../ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../ui/select";
 import { Textarea } from "../../ui/textarea";
 import { BetweenNumberOrDateInput } from "./between-number-or-date-input";
-import { InInput } from "./in-input";
+import {
+  getDefaultOpForField,
+  getDefaultValueForOp,
+  normalizeStringArrayValue,
+} from "./filter-value-utils";
+import { InInput, InValueChips } from "./in-input";
 import { LogFieldCombobox } from "./log-field-combobox";
 import { NumberOrDateInput } from "./number-or-date-input";
 import { IWorkingLogPartFilterItem } from "./types";
 
 const kOps = objRecordQueryItemOpSchema.Values;
+const kAllOps = objRecordQueryItemOpSchema.options;
 const kOpLabels: Record<keyof typeof kOps, string> = {
   [kOps.eq]: "Equal to",
   [kOps.neq]: "Not equal to",
@@ -55,13 +67,17 @@ export interface ILogsFilterItemProps {
 export function LogsFilterItem(props: ILogsFilterItemProps) {
   const { fields, fieldsMap, item, onChange, onRemove, disabled } = props;
 
-  const field = useMemo(() => {
-    return fields.find((f) => f.path === item.item.field);
-  }, [fields, item.item.field]);
+  const knownField = item.field ?? fieldsMap.get(item.item.field);
 
   const ops = useMemo(() => {
-    return field ? kValueTypeToAllowedOps[field.type] : [];
-  }, [field]);
+    if (knownField) {
+      return kValueTypeToAllowedOps[knownField.type];
+    }
+    if (item.item.field) {
+      return kAllOps;
+    }
+    return [];
+  }, [knownField, item.item.field]);
 
   const renderSelectName = () => {
     return (
@@ -69,9 +85,33 @@ export function LogsFilterItem(props: ILogsFilterItemProps) {
         value={item.item.field}
         onChange={(value) => {
           const selectedField = fieldsMap.get(value);
+          const fieldChanged = value !== item.item.field;
+          const allowedOps = selectedField
+            ? kValueTypeToAllowedOps[selectedField.type]
+            : kAllOps;
+          const defaultOp = getDefaultOpForField(selectedField);
+
+          let nextOp = item.item.op;
+          let nextValue = item.item.value;
+
+          if (fieldChanged) {
+            if (!allowedOps.includes(item.item.op)) {
+              nextOp = defaultOp;
+              nextValue = getDefaultValueForOp(defaultOp) as never;
+            } else if (item.item.op === kOps.eq && defaultOp === kOps.like) {
+              nextOp = kOps.like;
+              nextValue = getDefaultValueForOp(kOps.like) as never;
+            }
+          }
+
           onChange({
             ...item,
-            item: { ...item.item, field: value },
+            item: {
+              ...item.item,
+              field: value,
+              op: nextOp,
+              value: nextValue as never,
+            },
             field: selectedField,
           });
         }}
@@ -94,12 +134,15 @@ export function LogsFilterItem(props: ILogsFilterItemProps) {
               ...item.item,
               // @ts-expect-error
               op: value,
+              value: getDefaultValueForOp(
+                value as (typeof kOps)[keyof typeof kOps]
+              ) as never,
             },
           });
         }}
-        disabled={!field || disabled}
+        disabled={!item.item.field || disabled}
       >
-        <SelectTrigger className="w-[180px] w-full">
+        <SelectTrigger className="w-full">
           <SelectValue placeholder="Operator" />
         </SelectTrigger>
         <SelectContent>
@@ -113,6 +156,48 @@ export function LogsFilterItem(props: ILogsFilterItemProps) {
     );
   };
 
+  const renderInNotInValue = () => {
+    const values = normalizeStringArrayValue(item.item.value);
+
+    const handleValuesChange = (value: string[]) => {
+      onChange({
+        ...item,
+        item: {
+          ...item.item,
+          value: value as never,
+        },
+      });
+    };
+
+    return (
+      <InInput
+        value={values}
+        onChange={handleValuesChange}
+        disabled={disabled}
+      />
+    );
+  };
+
+  const renderInNotInValueChips = () => {
+    const values = normalizeStringArrayValue(item.item.value);
+
+    return (
+      <InValueChips
+        value={values}
+        onChange={(value) =>
+          onChange({
+            ...item,
+            item: {
+              ...item.item,
+              value: value as never,
+            },
+          })
+        }
+        disabled={disabled}
+      />
+    );
+  };
+
   const renderSelectValue = () => {
     if (!item.item.field) {
       return null;
@@ -121,21 +206,7 @@ export function LogsFilterItem(props: ILogsFilterItemProps) {
     switch (item.item.op) {
       case kOps.in:
       case kOps.not_in:
-        return (
-          <InInput
-            value={item.item.value as string[]}
-            onChange={(value) =>
-              onChange({
-                ...item,
-                item: {
-                  ...item.item,
-                  value: value as any,
-                },
-              })
-            }
-            disabled={disabled}
-          />
-        );
+        return renderInNotInValue();
       case kOps.between:
         return (
           <BetweenNumberOrDateInput
@@ -220,8 +291,8 @@ export function LogsFilterItem(props: ILogsFilterItemProps) {
       case kOps.lte:
         return (
           <div className="flex flex-col gap-2">
-            <div className="grid grid-cols-[1fr_auto_auto] gap-2 overflow-hidden">
-              <div>{renderSelectName()}</div>
+            <div className="grid grid-cols-[1fr_auto_auto] gap-2">
+              <div className="min-w-0">{renderSelectName()}</div>
               <div>{renderSelectOp()}</div>
               <div>{renderDeleteButton()}</div>
             </div>
@@ -234,12 +305,13 @@ export function LogsFilterItem(props: ILogsFilterItemProps) {
       default:
         return (
           <div className="flex flex-col gap-2">
-            <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-2 overflow-hidden">
-              <div>{renderSelectName()}</div>
+            <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-2">
+              <div className="min-w-0">{renderSelectName()}</div>
               <div>{renderSelectOp()}</div>
-              <div className="overflow-hidden">{renderSelectValue()}</div>
+              <div className="min-w-0">{renderSelectValue()}</div>
               <div>{renderDeleteButton()}</div>
             </div>
+            {renderInNotInValueChips()}
             {renderError()}
           </div>
         );

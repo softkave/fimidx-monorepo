@@ -5,8 +5,10 @@ import {
   IObjRecordQueryList,
 } from "fimidx-core/definitions/obj";
 import { Loader2, PlusIcon, XIcon } from "lucide-react";
-import { ComponentProps, useMemo, useState } from "react";
+import { ComponentProps, useEffect, useMemo, useState } from "react";
 import { Button } from "../../ui/button";
+import { LogsFilterChip } from "./logs-filter-chip";
+import { normalizeValueForOp, normalizeStringArrayValue } from "./filter-value-utils";
 import { LogsFilterItem } from "./logs-filter-item";
 import { IWorkingLogPartFilterItem } from "./types";
 
@@ -26,34 +28,53 @@ export interface ILogsFilterListProps {
   hijackApplyButtonOnClick?: () => void;
 }
 
+const emptyDraft = (): IWorkingLogPartFilterItem => ({
+  item: { field: "", op: "like", value: "" },
+});
+
+function toWorkingFilters(
+  filters: IObjRecordQueryList | undefined,
+  fieldsMap: Map<string, ILogField>
+): IWorkingLogPartFilterItem[] {
+  return (
+    filters?.map((filter) => ({
+      item: {
+        field: filter.field,
+        op: filter.op,
+        value: normalizeValueForOp(filter.op, filter.value) as any,
+      },
+      field: fieldsMap.get(filter.field),
+    })) ?? []
+  );
+}
+
 function validateFilter(
   filter: IWorkingLogPartFilterItem
 ): IWorkingLogPartFilterItem {
-  const isNumberField = filter.field?.type === "number";
+  const normalizedFilter: IWorkingLogPartFilterItem = {
+    ...filter,
+    item: {
+      ...filter.item,
+      value: normalizeValueForOp(filter.item.op, filter.item.value) as never,
+    },
+  };
+  const isNumberField = normalizedFilter.field?.type === "number";
 
-  switch (filter.item.op) {
+  switch (normalizedFilter.item.op) {
     case "eq":
     case "neq": {
-      // Intentionally allow empty value for equality filters
-      // if (filter.item.value === "") {
-      //   return {
-      //     ...filter,
-      //     error: "Value is required",
-      //   };
-      // }
-
       if (isNumberField) {
-        const value = Number(filter.item.value);
-        if (isNaN(value)) {
+        const value = Number(normalizedFilter.item.value);
+        if (normalizedFilter.item.value !== "" && isNaN(value)) {
           return {
-            ...filter,
+            ...normalizedFilter,
             error: "Invalid number value",
           };
         }
       }
 
       return {
-        ...filter,
+        ...normalizedFilter,
         error: undefined,
       };
     }
@@ -61,53 +82,55 @@ function validateFilter(
     case "gte":
     case "lt":
     case "lte": {
-      if (filter.item.value === "") {
+      if (normalizedFilter.item.value === "") {
         return {
-          ...filter,
+          ...normalizedFilter,
           error: "Value is required",
         };
       }
 
-      assert.ok(filter.item.value);
-      const value = Number(filter.item.value);
+      assert.ok(normalizedFilter.item.value);
+      const value = Number(normalizedFilter.item.value);
       if (isNaN(value)) {
         return {
-          ...filter,
+          ...normalizedFilter,
           error: "Invalid value",
         };
       }
 
       return {
-        ...filter,
+        ...normalizedFilter,
         error: undefined,
       };
     }
     case "like":
-      if (filter.item.value === "") {
+      if (normalizedFilter.item.value === "") {
         return {
-          ...filter,
+          ...normalizedFilter,
           error: "Value is required",
         };
       }
       return {
-        ...filter,
+        ...normalizedFilter,
         error: undefined,
       };
     case "in":
     case "not_in": {
-      if (filter.item.value.length === 0) {
+      const values = normalizeStringArrayValue(normalizedFilter.item.value);
+      if (values.length === 0) {
         return {
-          ...filter,
+          ...normalizedFilter,
+          item: { ...normalizedFilter.item, value: values as never },
           error: "At least one value is required",
         };
       }
 
       if (isNumberField) {
-        const values = filter.item.value as string[];
         for (const v of values) {
           if (isNaN(Number(v))) {
             return {
-              ...filter,
+              ...normalizedFilter,
+              item: { ...normalizedFilter.item, value: values as never },
               error: `Invalid number value: "${v}"`,
             };
           }
@@ -115,23 +138,24 @@ function validateFilter(
       }
 
       return {
-        ...filter,
+        ...normalizedFilter,
+        item: { ...normalizedFilter.item, value: values as never },
         error: undefined,
       };
     }
     case "between": {
-      if (filter.item.value.length !== 2) {
+      if (!Array.isArray(normalizedFilter.item.value) || normalizedFilter.item.value.length !== 2) {
         return {
-          ...filter,
+          ...normalizedFilter,
           error: "Both values are required",
         };
       }
 
-      const [v1, v2] = filter.item.value as [string, string];
+      const [v1, v2] = normalizedFilter.item.value as [string, string];
       const value1 = Number(v1);
       if (isNaN(value1)) {
         return {
-          ...filter,
+          ...normalizedFilter,
           error: "First value is invalid",
         };
       }
@@ -139,22 +163,30 @@ function validateFilter(
       const value2 = Number(v2);
       if (isNaN(value2)) {
         return {
-          ...filter,
+          ...normalizedFilter,
           error: "Second value is invalid",
         };
       }
 
       return {
-        ...filter,
+        ...normalizedFilter,
         error: undefined,
       };
     }
     default:
       return {
-        ...filter,
+        ...normalizedFilter,
         error: undefined,
       };
   }
+}
+
+function isFilterReady(filter: IWorkingLogPartFilterItem): boolean {
+  if (!filter.item.field || !filter.item.op) {
+    return false;
+  }
+
+  return !validateFilter(filter).error;
 }
 
 function transformFilterValue(
@@ -227,82 +259,148 @@ export function LogsFilterList(props: ILogsFilterListProps) {
     return new Map(fields.map((f) => [f.path, f]));
   }, [fields]);
 
-  const [filters, setFilters] = useState<IWorkingLogPartFilterItem[]>(() => {
-    const initialFieldsMap = new Map(fields.map((f) => [f.path, f]));
-    return (
-      initialFilters?.map((filter) => ({
-        item: {
-          field: filter.field,
-          op: filter.op,
-          value: filter.value as any,
-        },
-        field: initialFieldsMap.get(filter.field),
-      })) ?? []
-    );
-  });
+  const [appliedFilters, setAppliedFilters] = useState<
+    IWorkingLogPartFilterItem[]
+  >(() => toWorkingFilters(initialFilters, fieldsMap));
 
-  const hasFilters = useMemo(() => {
-    return filters.length > 0;
-  }, [filters]);
+  const [draftFilter, setDraftFilter] =
+    useState<IWorkingLogPartFilterItem | null>(null);
 
-  const handleChange = (item: IWorkingLogPartFilterItem, index: number) => {
-    const newFilters = [...filters];
-    newFilters[index] = item;
-    setFilters(newFilters);
+  useEffect(() => {
+    setAppliedFilters(toWorkingFilters(initialFilters, fieldsMap));
+    setDraftFilter(null);
+  }, [initialFilters, fieldsMap]);
+
+  const hasAppliedFilters = appliedFilters.length > 0;
+  const hasDraftFilter = draftFilter != null;
+  const canApply =
+    hasAppliedFilters ||
+    (hasDraftFilter && isFilterReady(validateFilter(draftFilter)));
+
+  const commitDraftIfReady = (
+    currentApplied: IWorkingLogPartFilterItem[],
+    draft: IWorkingLogPartFilterItem | null
+  ): {
+    applied: IWorkingLogPartFilterItem[];
+    draft: IWorkingLogPartFilterItem | null;
+    committed: boolean;
+  } => {
+    if (!draft) {
+      return { applied: currentApplied, draft: null, committed: false };
+    }
+
+    const validated = validateFilter(draft);
+    if (!isFilterReady(validated)) {
+      setDraftFilter(validated);
+      return { applied: currentApplied, draft: validated, committed: false };
+    }
+
+    return {
+      applied: [...currentApplied, validated],
+      draft: null,
+      committed: true,
+    };
   };
 
-  const handleRemoveFilter = (index: number) => {
-    const newFilters = filters.filter((_, i) => i !== index);
-    setFilters(newFilters);
+  const handleDraftChange = (value: IWorkingLogPartFilterItem) => {
+    setDraftFilter(value);
   };
 
-  const handleApplyFilters = () => {
-    const newFilters = filters.map(validateFilter);
-    setFilters(newFilters);
+  const handleRemoveDraft = () => {
+    setDraftFilter(null);
+  };
 
-    const hasErrors = newFilters.some((filter) => filter.error);
-    if (hasErrors) {
+  const handleAddFilter = () => {
+    if (draftFilter) {
+      const { applied, draft, committed } = commitDraftIfReady(
+        appliedFilters,
+        draftFilter
+      );
+      setAppliedFilters(applied);
+      setDraftFilter(committed ? emptyDraft() : draft);
       return;
     }
 
-    onChange(transformFilters(newFilters));
+    setDraftFilter(emptyDraft());
   };
 
-  const itemsNode = filters.map((filter, index) => {
-    return (
-      <LogsFilterItem
-        key={filter.item.field}
-        item={filter}
-        onChange={(value) => handleChange(value, index)}
-        onRemove={() => handleRemoveFilter(index)}
-        fieldsMap={fieldsMap}
-        fields={fields}
-        disabled={disabled}
-      />
-    );
-  });
+  const handleEditChip = (index: number) => {
+    const chipToEdit = appliedFilters[index];
 
-  const handleAddFilter = () => {
-    setFilters((prev) => [
-      ...prev,
-      { item: { field: "", op: "eq", value: "" } },
-    ]);
+    setAppliedFilters((prev) => {
+      let next = prev.filter((_, i) => i !== index);
+      if (draftFilter) {
+        const validated = validateFilter(draftFilter);
+        if (isFilterReady(validated)) {
+          next = [...next, validated];
+        }
+      }
+      return next;
+    });
+
+    setDraftFilter(chipToEdit);
+  };
+
+  const handleRemoveChip = (index: number) => {
+    setAppliedFilters((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleApplyFilters = () => {
+    let nextApplied = appliedFilters;
+
+    if (draftFilter) {
+      const validated = validateFilter(draftFilter);
+      if (!isFilterReady(validated)) {
+        setDraftFilter(validated);
+        return;
+      }
+      nextApplied = [...nextApplied, validated];
+      setAppliedFilters(nextApplied);
+      setDraftFilter(null);
+    }
+
+    onChange(transformFilters(nextApplied));
   };
 
   const handleClearFilters = () => {
-    setFilters([]);
+    setAppliedFilters([]);
+    setDraftFilter(null);
     onChange([]);
   };
 
   return (
-    <div className="flex flex-col gap-2 w-full">
-      {itemsNode}
-      <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3 w-full">
+      <div className="flex flex-wrap items-center gap-2">
+        {appliedFilters.map((filter, index) => (
+          <LogsFilterChip
+            key={`${filter.item.field}-${filter.item.op}-${index}`}
+            filter={filter}
+            onEdit={() => handleEditChip(index)}
+            onRemove={() => handleRemoveChip(index)}
+            disabled={disabled}
+          />
+        ))}
+      </div>
+
+      {draftFilter && (
+        <div className="w-full max-w-lg mx-auto">
+          <LogsFilterItem
+            item={draftFilter}
+            onChange={handleDraftChange}
+            onRemove={handleRemoveDraft}
+            fieldsMap={fieldsMap}
+            fields={fields}
+            disabled={disabled}
+          />
+        </div>
+      )}
+
+      <div className="flex flex-col gap-2 w-full max-w-lg mx-auto">
         <div className="grid grid-cols-2 gap-2">
           <Button
             variant="outline"
             onClick={handleClearFilters}
-            disabled={!hasFilters || disabled}
+            disabled={(!hasAppliedFilters && !hasDraftFilter) || disabled}
             className="w-full"
           >
             <XIcon className="h-4 w-4" />
@@ -326,7 +424,7 @@ export function LogsFilterList(props: ILogsFilterListProps) {
               handleApplyFilters();
             }
           }}
-          disabled={applyButtonDisabled || !hasFilters || applyButtonLoading}
+          disabled={applyButtonDisabled || !canApply || applyButtonLoading}
           className={applyButtonClassName}
           variant={applyButtonVariant}
           type={applyButtonType}

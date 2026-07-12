@@ -7,7 +7,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { IPermissionAtom } from "fimidx-core/definitions/permission";
 import { IClientToken } from "fimidx-core/definitions/clientToken";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "../ui/button.tsx";
@@ -47,6 +47,20 @@ export function UpdateClientTokenForm(props: IUpdateClientTokenFormProps) {
       description: clientToken.description ?? "",
     },
   });
+
+  useEffect(() => {
+    form.reset({
+      name: clientToken.name,
+      description: clientToken.description ?? "",
+    });
+    setPermissions(clientToken.permissions ?? []);
+  }, [
+    clientToken.id,
+    clientToken.name,
+    clientToken.description,
+    clientToken.permissions,
+    form,
+  ]);
 
   const handleSuccess = useCallback(
     (...args: UpdateClientTokensOnSuccessParams) => {

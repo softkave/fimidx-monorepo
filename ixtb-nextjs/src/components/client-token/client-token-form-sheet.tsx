@@ -61,6 +61,7 @@ export function ClientTokenFormSheet(props: IClientTokenFormSheetProps) {
           <div className="mt-2 p-4">
             {clientToken ? (
               <UpdateClientTokenForm
+                key={clientToken.id}
                 clientToken={clientToken}
                 onSubmitComplete={handleSubmitComplete}
               />

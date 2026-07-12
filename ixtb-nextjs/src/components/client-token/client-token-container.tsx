@@ -31,6 +31,7 @@ export function ClientTokenContainer(props: IClientTokenContainerProps) {
     (): z.infer<typeof getClientTokensSchema> => ({
       page: 1,
       limit: 1,
+      includePermissions: true,
       query: {
         projectId,
         groupId,

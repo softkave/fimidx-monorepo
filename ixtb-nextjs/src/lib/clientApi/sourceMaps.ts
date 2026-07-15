@@ -22,6 +22,8 @@ export interface ISourceMapUploadsData {
   uploads: Array<{
     repoIdentifier: string;
     version: string;
+    repoIdentifierDisplay: string;
+    versionDisplay: string;
     uploadedAt: string;
     isZip: boolean;
   }>;

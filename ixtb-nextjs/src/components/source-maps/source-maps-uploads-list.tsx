@@ -5,6 +5,8 @@ import { ComponentListMessage } from "../internal/component-list/component-list-
 export interface ISourceMapUploadItem {
   repoIdentifier: string;
   version: string;
+  repoIdentifierDisplay: string;
+  versionDisplay: string;
   uploadedAt: string;
   isZip: boolean;
 }
@@ -17,7 +19,7 @@ function SourceMapUploadItem(props: { item: ISourceMapUploadItem }) {
   const { item } = props;
   return (
     <li className="text-sm">
-      {item.repoIdentifier} @ {item.version} —{" "}
+      {item.repoIdentifierDisplay} @ {item.versionDisplay} —{" "}
       {new Date(item.uploadedAt).toLocaleString()}
     </li>
   );

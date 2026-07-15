@@ -15,6 +15,8 @@ export const getSourceMapUploadsEndpoint: NextUserAuthenticatedEndpointFn<{
   uploads: Array<{
     repoIdentifier: string;
     version: string;
+    repoIdentifierDisplay: string;
+    versionDisplay: string;
     uploadedAt: string;
     isZip: boolean;
   }>;
@@ -47,6 +49,8 @@ export const getSourceMapUploadsEndpoint: NextUserAuthenticatedEndpointFn<{
     uploads: uploads.map((u) => ({
       repoIdentifier: u.repoIdentifier,
       version: u.version,
+      repoIdentifierDisplay: u.repoIdentifierDisplay ?? u.repoIdentifier,
+      versionDisplay: u.versionDisplay ?? u.version,
       uploadedAt: u.uploadedAt.toISOString(),
       isZip: u.isZip,
     })),

@@ -5,6 +5,7 @@ import { getObjModel } from "../../db/fimidx.mongo.js";
 import { getSymbolicatedLogTrackingModel } from "../../db/sourceMap.mongo.js";
 import type { IObj } from "../../definitions/obj.js";
 import { kObjTags } from "../../definitions/obj.js";
+import { normalizePathSegment } from "../../definitions/sourceMap.js";
 import { getDefaultStorageType } from "../../storage/config.js";
 import type { IObjStorage } from "../../storage/types.js";
 import {
@@ -20,6 +21,25 @@ import {
   type MetadataCache,
 } from "./symbolicateFromMongo.js";
 import { symbolicateStack } from "./symbolicateStack.js";
+
+/**
+ * Read repo/version from a log using configured fields, then normalize so they
+ * match stored upload keys (paths stay path-safe; logs may still send originals
+ * like "org/repo").
+ */
+function getNormalizedRepoAndVersion(
+  record: Record<string, unknown>,
+  repoIdFields: string[],
+  versionFields: string[]
+): { repo: string; version: string } | null {
+  const rawRepo = getFirstValueFromFields(record, repoIdFields);
+  const rawVersion = getFirstValueFromFields(record, versionFields);
+  if (rawRepo == null || rawVersion == null) return null;
+  const repo = normalizePathSegment(rawRepo);
+  const version = normalizePathSegment(rawVersion);
+  if (!repo || !version) return null;
+  return { repo, version };
+}
 
 const kSymbolicationBy = "symbolication";
 const kSymbolicationByType = "system";
@@ -208,15 +228,13 @@ export async function runSymbolication(params?: {
 
       const localMapByKey = new Map<string, string>();
       for (const log of logs) {
-        const repo = getFirstValueFromFields(
+        const normalized = getNormalizedRepoAndVersion(
           (log.objRecord ?? {}) as Record<string, unknown>,
-          config.repoIdFields
-        );
-        const version = getFirstValueFromFields(
-          (log.objRecord ?? {}) as Record<string, unknown>,
+          config.repoIdFields,
           config.versionFields
         );
-        if (repo == null || version == null) continue;
+        if (!normalized) continue;
+        const { repo, version } = normalized;
         const key = `${repo}\0${version}`;
         if (!hasSourceMapSet.has(key)) continue;
         if (localMapByKey.has(key)) continue;
@@ -241,20 +259,18 @@ export async function runSymbolication(params?: {
         trackingEntry?: ISymbolicationTrackingEntry;
         maxProcessedMs?: number;
       } | null> {
-        const repo = getFirstValueFromFields(
-          (log.objRecord ?? {}) as Record<string, unknown>,
-          config.repoIdFields
-        );
-        const version = getFirstValueFromFields(
-          (log.objRecord ?? {}) as Record<string, unknown>,
+        const record = (log.objRecord ?? {}) as Record<string, unknown>;
+        const normalized = getNormalizedRepoAndVersion(
+          record,
+          config.repoIdFields,
           config.versionFields
         );
-        if (repo == null || version == null) return null;
+        if (!normalized) return null;
+        const { repo, version } = normalized;
         const key = `${repo}\0${version}`;
         if (!hasSourceMapSet.has(key)) return null;
         if (!localMapByKey.has(key)) return null;
 
-        const record = (log.objRecord ?? {}) as Record<string, unknown>;
         const fieldPath = config.fieldsToSymbolicate.find(
           (f) => get(record, f) != null && typeof get(record, f) === "string"
         );

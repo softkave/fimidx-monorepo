@@ -54,8 +54,10 @@ export interface IProjectFimidaraToken {
 
 export interface ISourceMapUpload {
   projectId: string;
-  repoIdentifier: string; // normalized
-  version: string; // normalized
+  /** Normalized path-safe key used for matching + storage paths. */
+  repoIdentifier: string;
+  /** Normalized path-safe key used for matching + storage paths. */
+  version: string;
   fimidaraPath: string;
   isZip: boolean;
   /** After local unzip + Mongo ingestion (background job or on-demand ensure). */
@@ -63,7 +65,7 @@ export interface ISourceMapUpload {
   unzippedFimidaraPath?: string | null;
   uploadedAt: Date;
   createdBy: string;
-  /** Optional: original user-provided values for display */
+  /** Original user-provided values for display; matching still uses normalized. */
   repoIdentifierDisplay?: string | null;
   versionDisplay?: string | null;
 }

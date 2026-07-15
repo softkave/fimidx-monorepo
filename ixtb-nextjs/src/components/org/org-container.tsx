@@ -3,6 +3,8 @@
 import { IOrg } from "@/src/definitions/org";
 import { useGetOrg } from "@/src/lib/clientApi/org";
 import { useCallback, useMemo } from "react";
+import { PageError } from "../internal/error";
+import { PageNotFound } from "../internal/page-not-found";
 import { WrapLoader } from "../internal/wrap-loader";
 import { Org, OrgTab, kOrgTabs } from "./org";
 
@@ -17,6 +19,13 @@ export interface IOrgContainerProps {
   renderLoading?: () => React.ReactNode;
   renderError?: (error: unknown) => React.ReactNode;
 }
+
+const kOrgNotFoundMessages = new Set([
+  "Organization not found",
+  // Permission check runs before the org lookup, so a missing/inaccessible org
+  // usually surfaces as this message instead.
+  "Member not found",
+]);
 
 export function OrgContainer(props: IOrgContainerProps) {
   const {
@@ -44,6 +53,20 @@ export function OrgContainer(props: IOrgContainerProps) {
     [defaultTab]
   );
 
+  const defaultRenderError = useCallback((err: unknown) => {
+    const message = (err as Error | undefined)?.message;
+    if (message && kOrgNotFoundMessages.has(message)) {
+      return (
+        <PageNotFound
+          title="Organization not found"
+          message="This organization may have been deleted or you may not have access to it."
+        />
+      );
+    }
+
+    return <PageError error={err} />;
+  }, []);
+
   const render = props.render || defaultRender;
 
   return (
@@ -53,7 +76,7 @@ export function OrgContainer(props: IOrgContainerProps) {
       isLoading={isLoading}
       render={render}
       renderLoading={renderLoading}
-      renderError={renderError}
+      renderError={renderError ?? defaultRenderError}
     />
   );
 }

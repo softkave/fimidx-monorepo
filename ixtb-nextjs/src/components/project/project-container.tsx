@@ -1,9 +1,9 @@
 "use client";
 
 import { useGetProjects } from "@/src/lib/clientApi/project";
-import assert from "assert";
 import { IProject } from "fimidx-core/definitions/project";
 import { useCallback, useMemo } from "react";
+import { renderNotFoundError } from "../internal/page-not-found";
 import { WrapLoader } from "../internal/wrap-loader";
 import { kProjectTabs, Project, ProjectTab } from "./project";
 
@@ -20,6 +20,8 @@ export interface IProjectContainerProps {
   renderError?: (error: unknown) => React.ReactNode;
   className?: string;
 }
+
+const kProjectNotFoundMessage = "Project not found";
 
 export function ProjectContainer(props: IProjectContainerProps) {
   const {
@@ -42,15 +44,13 @@ export function ProjectContainer(props: IProjectContainerProps) {
   const isLoading = getProjectsHook.isLoading;
   const error =
     getProjectsHook.error ||
-    (!isLoading && getProjectsHook.data?.projects.length === 0
-      ? new Error("Project not found")
+    (!isLoading &&
+    getProjectsHook.data &&
+    getProjectsHook.data.projects.length === 0
+      ? new Error(kProjectNotFoundMessage)
       : undefined);
   const data = useMemo((): IProjectContainerRenderProps | undefined => {
-    if (getProjectsHook.data) {
-      assert.ok(
-        getProjectsHook.data.projects.length === 1,
-        "Project not found"
-      );
+    if (getProjectsHook.data?.projects[0]) {
       return {
         project: getProjectsHook.data.projects[0],
       };
@@ -68,6 +68,18 @@ export function ProjectContainer(props: IProjectContainerProps) {
     [defaultTab, className]
   );
 
+  const defaultRenderError = useCallback(
+    (err: unknown) =>
+      renderNotFoundError({
+        error: err,
+        notFoundMessage: kProjectNotFoundMessage,
+        title: "Project not found",
+        description:
+          "This project may have been deleted or you may not have access to it.",
+      }),
+    []
+  );
+
   const render = props.render || defaultRender;
 
   return (
@@ -77,7 +89,7 @@ export function ProjectContainer(props: IProjectContainerProps) {
       isLoading={isLoading}
       render={render}
       renderLoading={renderLoading}
-      renderError={renderError}
+      renderError={renderError ?? defaultRenderError}
     />
   );
 }

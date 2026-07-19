@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "next dev --turbopack",
-    "dev:test": "env-cmd -f \".env.test\" next dev --turbopack",
+    "dev:test": "npx softkave-forerunner run-env -e .env.test -e .env.dev.test --cmd \"next dev --turbopack\"",
     "build": "next build --turbopack",
     "start": "next start -p $PORT",
     "lint": "next lint",
@@ -15,9 +15,9 @@
     "email:export": "email export",
     "test": "env-cmd -f \".env.test\" vitest run --config ./vitest.config.ts",
     "test:e2e": "env-cmd -f \".env.test\" vitest run --config ./vitest.e2e.config.ts",
-    "seed:fimidx-js-env:test": "env-cmd -f \".env.test\" tsx ./scripts/seedEnvTest.ts fimidx-js",
-    "seed:symbolication-sample-app-env:test": "env-cmd -f \".env.test\" tsx ./scripts/seedEnvTest.ts symbolication-sample-app",
-    "seed:fimidx-symbolication-e2e-env:test": "env-cmd -f \".env.test\" tsx ./scripts/seedEnvTest.ts fimidx-symbolication-e2e",
+    "seed:fimidx-js-env:test": "npx softkave-forerunner run-env -e .env.test -e .env.dev.test --cmd \"tsx ./scripts/seedEnvTest.ts fimidx-js\"",
+    "seed:symbolication-sample-app-env:test": "npx softkave-forerunner run-env -e .env.test -e .env.dev.test --cmd \"tsx ./scripts/seedEnvTest.ts symbolication-sample-app\"",
+    "seed:fimidx-symbolication-e2e-env:test": "npx softkave-forerunner run-env -e .env.test -e .env.dev.test --cmd \"tsx ./scripts/seedEnvTest.ts fimidx-symbolication-e2e\"",
     "upload-source-maps": "npx --yes -- fimidx@latest source-maps upload --client-token \"$FIMIDX_SYMBOLICATION_AUTH_TOKEN\" --project-id \"$NEXT_PUBLIC_FIMIDX_LOGGER_PROJECT_ID\" --repo \"$NEXT_PUBLIC_FIMIDX_SYMBOLICATION_REPO\" --version \"$NEXT_PUBLIC_FIMIDX_SYMBOLICATION_VERSION\" --path .next",
     "delete-source-maps": "find .next -name '*.map' -type f -delete"
   },

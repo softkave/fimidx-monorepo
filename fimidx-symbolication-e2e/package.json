@@ -6,7 +6,7 @@
   "scripts": {
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "compile": "pnpm clean && tsc",
-    "test": "env-cmd -f \"../fimidx-node-server/.env.test\" vitest run --config ./vitest.config.ts"
+    "test": "npx softkave-forerunner run-env -e ../fimidx-node-server/.env.test -e ../fimidx-node-server/.env.dev.test --cmd \"vitest run --config ./vitest.config.ts\""
   },
   "dependencies": {
     "fimidx-core": "workspace:*"

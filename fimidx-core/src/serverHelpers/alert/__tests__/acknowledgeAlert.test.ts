@@ -110,7 +110,6 @@ describe("acknowledgeAlert + getAlertLogs query path", () => {
 
   it("getAlertLogs-style query uses alert snapshot query tree and window", async () => {
     const windowStart = new Date(Date.now() - 5 * 60_000);
-    const windowEnd = new Date();
 
     await ingestLogs({
       args: {
@@ -125,6 +124,9 @@ describe("acknowledgeAlert + getAlertLogs query path", () => {
       groupId: defaultGroupId,
       storage,
     });
+
+    // Window end must be after ingest so createdAt falls inside the snapshot.
+    const windowEnd = new Date();
 
     const query = {
       recordQuery: [{ op: "eq" as const, field: "level", value: "error" }],

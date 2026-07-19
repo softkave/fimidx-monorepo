@@ -162,7 +162,8 @@ describe("monitor endpoints sync (real DB, mock HTTP scheduler only)", () => {
     const req = {
       json: async () => ({
         query: { projectId },
-        update: { muted: true },
+        // interval triggers callback sync; muted alone would skip it
+        update: { interval: { minutes: 15 } },
       }),
     };
 

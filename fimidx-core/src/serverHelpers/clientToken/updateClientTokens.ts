@@ -206,6 +206,22 @@ export async function updateClientTokens(params: {
 
   const objQuery = getClientTokensObjQuery({ args });
 
+  // Permission updates must run while the query still matches. Meta updates
+  // (e.g. renaming) can change query fields and would make a later re-fetch
+  // miss the intended tokens.
+  if (hasPermissionUpdates) {
+    await applyPermissionUpdatesPaged({
+      query: args.query,
+      updateMany,
+      removeAllPerms,
+      removePerms,
+      addPerms,
+      by,
+      byType,
+      storage,
+    });
+  }
+
   // Split meta update for granular handling
   const hasUpdates = Object.keys(otherUpdates).length > 0;
   if (hasUpdates) {
@@ -218,19 +234,6 @@ export async function updateClientTokens(params: {
       updates,
       count: updateMany ? undefined : 1,
       updateWay: "shallowMerge",
-      storage,
-    });
-  }
-
-  if (hasPermissionUpdates) {
-    await applyPermissionUpdatesPaged({
-      query: args.query,
-      updateMany,
-      removeAllPerms,
-      removePerms,
-      addPerms,
-      by,
-      byType,
       storage,
     });
   }

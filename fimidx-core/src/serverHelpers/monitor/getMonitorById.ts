@@ -22,5 +22,5 @@ export async function getMonitorById(params: {
     return null;
   }
 
-  return objToMonitor(result.objs[0]);
+  return objToMonitor<IMonitor>(result.objs[0]);
 }

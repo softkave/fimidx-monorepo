@@ -22,5 +22,5 @@ export async function getAlertById(params: {
     return null;
   }
 
-  return objToAlert(byId.objs[0]);
+  return objToAlert<IAlert>(byId.objs[0]);
 }

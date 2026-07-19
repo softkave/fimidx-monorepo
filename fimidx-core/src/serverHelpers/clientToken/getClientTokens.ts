@@ -263,5 +263,5 @@ export async function getClientTokenById(params: {
       kOwnServerErrorCodes.NotFound
     )
   );
-  return objToClientToken(obj, null);
+  return objToClientToken<IClientToken>(obj, null);
 }

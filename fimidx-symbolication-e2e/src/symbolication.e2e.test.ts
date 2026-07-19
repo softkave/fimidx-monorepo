@@ -1,10 +1,15 @@
 import { getObjModel } from "fimidx-core/db/fimidx.mongo";
 import {
   getSourceMapMetadataModel,
+  getSourceMapUploadModel,
   getSymbolicationStateModel,
 } from "fimidx-core/db/sourceMap.mongo";
 import { kObjTags } from "fimidx-core/definitions/obj";
-import { upsertSymbolicationConfig } from "fimidx-core/serverHelpers/index";
+import {
+  getSourceMapUpload,
+  getSourceMapUploadsPendingUnzipPage,
+  upsertSymbolicationConfig,
+} from "fimidx-core/serverHelpers/index";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
@@ -45,6 +50,19 @@ describe("symbolication (e2e)", () => {
       );
     }
 
+    console.log("Symbolication e2e env", {
+      projectId,
+      repoIdentifier,
+      version,
+      serverUrl,
+      nodeServerUrl,
+      unzipUrl,
+      symbolicationUrl,
+      SYMBOLICATION_MAX_AGE_MS: process.env.SYMBOLICATION_MAX_AGE_MS,
+    });
+
+    console.log("Upserting symbolication config");
+
     await upsertSymbolicationConfig({
       projectId,
       fieldsToSymbolicate: ["stack"],
@@ -52,17 +70,105 @@ describe("symbolication (e2e)", () => {
       versionFields: ["version"],
     });
 
+    console.log("Upserted symbolication config");
+
     // Upload source maps using fimidx-js CLI through the fixture package script.
     await pExecFile("pnpm", ["upload-source-maps"], {
       cwd: fixtureDir,
       env: process.env,
     });
 
+    console.log("Uploaded source maps");
+
+    const upload = await getSourceMapUpload(projectId, repoIdentifier, version);
+    if (!upload) {
+      throw new Error(
+        [
+          "Upload finished but no source_map_uploads row was found.",
+          "Check that the sample-app upload CLI uses the same projectId/repo/version",
+          "and Mongo URI as this e2e / node-server.",
+          `Looked up projectId=${projectId} repoIdentifier=${repoIdentifier} version=${version}`,
+        ].join("\n")
+      );
+    }
+    if (!upload.isZip) {
+      throw new Error(
+        `Expected zip upload for ${projectId}/${repoIdentifier}/${version}, got isZip=${upload.isZip}`
+      );
+    }
+
+    const metadataModel = getSourceMapMetadataModel();
+    const existingMetadataCount = await metadataModel
+      .countDocuments({ projectId, repoIdentifier, version })
+      .exec();
+
+    // Prior runs may leave localZipIngested=true with no metadata (or stale).
+    // Reset so unzip will process this upload again.
+    if (upload.localZipIngested === true && existingMetadataCount === 0) {
+      console.log(
+        "Resetting stale localZipIngested=true (no metadata present yet)"
+      );
+      await getSourceMapUploadModel().updateOne(
+        { projectId, repoIdentifier, version },
+        { $set: { localZipIngested: false } }
+      );
+    }
+
+    const pending = await getSourceMapUploadsPendingUnzipPage({
+      page: 1,
+      pageSize: 100,
+    });
+    const pendingForTarget = pending.items.filter(
+      (u) =>
+        u.projectId === projectId &&
+        u.repoIdentifier === repoIdentifier &&
+        u.version === version
+    );
+    console.log("Pending unzip uploads", {
+      totalPending: pending.items.length,
+      pendingForTarget: pendingForTarget.length,
+      localZipIngested: upload.localZipIngested,
+      existingMetadataCount,
+    });
+    if (pendingForTarget.length === 0 && existingMetadataCount === 0) {
+      throw new Error(
+        [
+          "No pending zip upload for this project/repo/version, and no metadata yet.",
+          "Unzip would no-op and the metadata poll would time out.",
+          `projectId=${projectId} repoIdentifier=${repoIdentifier} version=${version}`,
+          `upload.localZipIngested=${String(upload.localZipIngested)}`,
+          `pendingTotal=${pending.items.length}`,
+        ].join("\n")
+      );
+    }
+
     // Unzip + ingest locally (node-server endpoint awaits work).
     await postInternalCallback(unzipUrl, internalKey);
 
-    // Poll until metadata is ingested.
-    const metadataModel = getSourceMapMetadataModel();
+    console.log("Unzipped source maps");
+
+    const uploadAfterUnzip = await getSourceMapUpload(
+      projectId,
+      repoIdentifier,
+      version
+    );
+    const metadataAfterUnzip = await metadataModel
+      .countDocuments({ projectId, repoIdentifier, version })
+      .exec();
+    if (metadataAfterUnzip === 0) {
+      throw new Error(
+        [
+          "Unzip callback returned OK but source_map_metadata is still empty.",
+          "Check node-server logs for 'Unzipped source map upload locally' vs silent empty pending,",
+          "fimidara download errors, or SOURCE_MAPS_LOCAL_DIR / Mongo URI mismatch.",
+          `projectId=${projectId} repoIdentifier=${repoIdentifier} version=${version}`,
+          `upload.localZipIngested=${String(uploadAfterUnzip?.localZipIngested)}`,
+          `upload.isZip=${String(uploadAfterUnzip?.isZip)}`,
+        ].join("\n")
+      );
+    }
+
+    // Poll until metadata is ingested (already non-zero; keep for eventual consistency).
     await poll({
       name: "source_map_metadata ingestion",
       timeoutMs: 60_000,
@@ -79,6 +185,8 @@ describe("symbolication (e2e)", () => {
       },
     });
 
+    console.log("Ingested source maps metadata");
+
     const startedAt = new Date();
 
     // Emit a few logs, then exit.
@@ -86,6 +194,8 @@ describe("symbolication (e2e)", () => {
       cwd: fixtureDir,
       env: process.env,
     });
+
+    console.log("Started fixture");
 
     const objModel = getObjModel();
     const logs = await poll({
@@ -109,6 +219,8 @@ describe("symbolication (e2e)", () => {
       },
     });
 
+    console.log("Ingested fixture logs");
+
     // Ensure we emitted all stack URL styles before symbolication.
     const rawStacks = logs
       .map((l: any) => l?.objRecord?.stack)
@@ -119,6 +231,8 @@ describe("symbolication (e2e)", () => {
       rawStacks.some((s) => s.includes("http://") || s.includes("https://"))
     ).toBe(true);
 
+    console.log("Ensured we emitted all stack URL styles before symbolication");
+
     const stateModel = getSymbolicationStateModel();
     const baselineState = await stateModel.findOne({ projectId }).lean().exec();
     const baselineCycleCount = baselineState?.cycleCount ?? 0;
@@ -128,6 +242,8 @@ describe("symbolication (e2e)", () => {
 
     // Trigger symbolication; node-server runs it asynchronously after 200.
     await postInternalCallback(symbolicationUrl, internalKey);
+
+    console.log("Triggered symbolication");
 
     await poll({
       name: "symbolication_state tick (runSymbolication finished)",
@@ -146,13 +262,18 @@ describe("symbolication (e2e)", () => {
       },
     });
 
+    console.log("Symbolication state ticked");
+
     const foundAfter = await objModel
       .find({ id: { $in: logs.map((l) => l.id) } })
       .lean()
       .exec();
+    console.log("Found after symbolication");
     const symbolicated = foundAfter
       .map((l: any) => l?.objRecord?.stack)
       .filter((s: any) => typeof s === "string") as string[];
+
+    console.log("Symbolicated stacks");
 
     // Sanity: stacks should no longer reference the dist .js files for those frames.
     expect(symbolicated.join("\n")).not.toContain(

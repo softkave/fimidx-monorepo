@@ -18,6 +18,8 @@ import type {
   BulkUpsertResult,
   CleanupDeletedObjsParams,
   CleanupResult,
+  CountObjsParams,
+  CountObjsResult,
   CreateObjsParams,
   CreateObjsResult,
   DeleteObjsParams,
@@ -102,6 +104,32 @@ export class MongoObjStorage implements IObjStorage {
       limit: params.limit || 100,
       hasMore: objs.length === pagination.limit,
     };
+  }
+
+  async count(
+    params: CountObjsParams,
+    session?: any
+  ): Promise<CountObjsResult> {
+    const filter = this.queryTransformer.transformFilter(
+      params.query,
+      params.date || new Date(),
+      params.fields
+    );
+
+    if (params.tag) {
+      filter.tag = params.tag;
+    }
+
+    if (!params.includeDeleted && filter.deletedAt === undefined) {
+      filter.deletedAt = null;
+    }
+
+    const count = await this.objModel.countDocuments(
+      filter,
+      session ? { session } : undefined
+    );
+
+    return { count };
   }
 
   async update(

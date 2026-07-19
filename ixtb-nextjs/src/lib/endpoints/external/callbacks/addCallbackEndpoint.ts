@@ -1,51 +1,14 @@
-import { OwnServerError } from "fimidx-core/common/error";
 import {
   AddCallbackEndpointArgs,
   addCallbackSchema,
   IAddCallbackEndpointResponse,
-  ICallback,
   kFimidxPermissions,
 } from "fimidx-core/definitions/index";
-import { v7 as uuidv7 } from "uuid";
-import {
-  getNodeServerInternalAccessKey,
-  getNodeServerURL,
-} from "../../../serverHelpers/nodeServer";
+import { callNodeServerAddCallback } from "../../../serverHelpers/nodeServerCallbacks";
 import { checkPermissionForClientTokenOrUser } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
 import { sanitizeAddCallbackInput } from "../../utils/sanitizeKId0";
-
-async function callNodeServerAddCallback(params: {
-  item: AddCallbackEndpointArgs;
-  groupId: string;
-  clientTokenId: string;
-  idempotencyKey: string;
-}) {
-  const nodeServerURL = getNodeServerURL();
-  const nodeServerInternalAccessKey = getNodeServerInternalAccessKey();
-  const callParams = {
-    item: params.item,
-    groupId: params.groupId,
-    clientTokenId: params.clientTokenId,
-    idempotencyKey: params.idempotencyKey,
-  };
-
-  const response = await fetch(`${nodeServerURL}/cb/addCallback`, {
-    method: "POST",
-    body: JSON.stringify(callParams),
-    headers: {
-      "X-Internal-Access-Key": nodeServerInternalAccessKey,
-      "Content-Type": "application/json",
-    },
-  });
-
-  if (!response.ok) {
-    throw new OwnServerError("Failed to add callback", 500);
-  }
-
-  const responseBody = await response.json();
-  return responseBody.callback as ICallback;
-}
+import { v7 as uuidv7 } from "uuid";
 
 export const addCallbackEndpoint: NextClientTokenAuthenticatedEndpointFn<
   IAddCallbackEndpointResponse
@@ -66,16 +29,15 @@ export const addCallbackEndpoint: NextClientTokenAuthenticatedEndpointFn<
 
   const idempotencyKey =
     input.idempotencyKey ?? `__fimidx_generated_${uuidv7()}_${Date.now()}`;
+  const item: AddCallbackEndpointArgs = {
+    ...input,
+    idempotencyKey,
+  };
   const callback = await callNodeServerAddCallback({
-    item: input,
+    item,
     groupId: clientToken.groupId,
     clientTokenId: clientToken.id,
-    idempotencyKey,
   });
 
-  const response: IAddCallbackEndpointResponse = {
-    callback,
-  };
-
-  return response;
+  return { callback };
 };

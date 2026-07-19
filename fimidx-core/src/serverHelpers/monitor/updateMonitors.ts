@@ -1,19 +1,26 @@
+import { getMsFromDuration } from "../../common/date.js";
+import { kOwnServerErrorCodes, OwnServerError } from "../../common/error.js";
 import type { UpdateMonitorsEndpointArgs } from "../../definitions/monitor.js";
+import {
+  kMonitorMinIntervalMs,
+  normalizeMonitorReportsTo,
+} from "../../definitions/monitor.js";
 import { kObjTags } from "../../definitions/obj.js";
 import type { IObjStorage } from "../../storage/types.js";
 import { updateManyObjs } from "../obj/updateObjs.js";
 import { getMonitorsObjQuery } from "./getMonitors.js";
+import { validateMonitorReportsTo } from "./validateMonitorReportsTo.js";
 
 export async function updateMonitors(params: {
   args: UpdateMonitorsEndpointArgs;
   by: string;
   byType: string;
   storage?: IObjStorage;
+  skipReportsToValidation?: boolean;
 }) {
-  const { args, by, byType, storage } = params;
+  const { args, by, byType, storage, skipReportsToValidation } = params;
   const { update } = args;
 
-  // Fetch the monitor to update
   const objQuery = getMonitorsObjQuery({ args });
   const { getManyObjs } = await import("../obj/getObjs.js");
   const result = await getManyObjs({
@@ -23,18 +30,29 @@ export async function updateMonitors(params: {
     storage,
   });
   if (!result.objs.length) return;
-  const existing = result.objs[0].objRecord;
+  const existingObj = result.objs[0];
+  const existing = existingObj.objRecord;
 
-  // Prepare the update object: merge all fields except query, which is replaced
-  // if present
   let updateObj: any = { ...update };
 
-  // Normalize reportsTo: always store as array of { userId: string }
-  if (updateObj.reportsTo !== undefined) {
-    if (Array.isArray(updateObj.reportsTo)) {
-      updateObj.reportsTo = updateObj.reportsTo.map((r: any) =>
-        typeof r === "string" ? { userId: r } : r
+  if (update.interval !== undefined) {
+    const intervalMs = getMsFromDuration(update.interval);
+    if (intervalMs < kMonitorMinIntervalMs) {
+      throw new OwnServerError(
+        `Monitor interval must be at least ${kMonitorMinIntervalMs / 60000} minutes`,
+        kOwnServerErrorCodes.BadRequest
       );
+    }
+  }
+
+  if (updateObj.reportsTo !== undefined) {
+    updateObj.reportsTo = normalizeMonitorReportsTo(updateObj.reportsTo);
+    if (!skipReportsToValidation) {
+      await validateMonitorReportsTo({
+        groupId: existingObj.groupId,
+        reportsTo: updateObj.reportsTo,
+        storage,
+      });
     }
   } else if (existing.reportsTo !== undefined) {
     updateObj.reportsTo = existing.reportsTo;
@@ -46,7 +64,6 @@ export async function updateMonitors(params: {
     updateObj.query = existing.query;
   }
 
-  // Merge all other fields
   updateObj = { ...existing, ...updateObj };
 
   await updateManyObjs({

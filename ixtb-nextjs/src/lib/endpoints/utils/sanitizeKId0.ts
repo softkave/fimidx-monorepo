@@ -166,9 +166,18 @@ export function sanitizeDeleteCallbacksInput(
 
 // --- Monitor ---
 
+function reportsToUserIds(
+  reportsTo: AddMonitorEndpointArgs["reportsTo"] | undefined
+): string[] {
+  if (!reportsTo) return [];
+  return reportsTo
+    .map((r) => (typeof r === "string" ? r : r.type === "user" ? r.userId : null))
+    .filter((id): id is string => typeof id === "string");
+}
+
 export function sanitizeAddMonitorInput(input: AddMonitorEndpointArgs): void {
   rejectIfKId0(input.projectId, "projectId");
-  rejectIfKId0(input.reportsTo, "reportsTo");
+  rejectIfKId0(reportsToUserIds(input.reportsTo), "reportsTo");
 }
 
 function sanitizeMonitorQuery(query: GetMonitorsEndpointArgs["query"]): void {
@@ -193,7 +202,7 @@ export function sanitizeUpdateMonitorsInput(
 ): void {
   sanitizeMonitorQuery(input.query);
   if (input.update.reportsTo !== undefined) {
-    rejectIfKId0(input.update.reportsTo, "update.reportsTo");
+    rejectIfKId0(reportsToUserIds(input.update.reportsTo), "update.reportsTo");
   }
 }
 

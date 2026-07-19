@@ -38,6 +38,7 @@ export const envVars = {
   BETTER_AUTH_URL: "BETTER_AUTH_URL",
   BETTER_AUTH_SECRET: "BETTER_AUTH_SECRET",
   NEXT_PUBLIC_BETTER_AUTH_URL: "NEXT_PUBLIC_BETTER_AUTH_URL",
+  NEXT_PUBLIC_URL: "NEXT_PUBLIC_URL",
 } as const;
 
 export const coreConfigSchema = z
@@ -201,6 +202,14 @@ export const coreConfigSchema = z
         .url({
           message: `${envVars.NEXT_PUBLIC_BETTER_AUTH_URL} is not a valid URL`,
         }),
+    }),
+    app: z.object({
+      publicURL: z
+        .string()
+        .url({
+          message: `${envVars.NEXT_PUBLIC_URL} is not a valid URL`,
+        })
+        .optional(),
     }),
   })
   .refine(

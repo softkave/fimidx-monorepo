@@ -97,6 +97,7 @@ describe("deleteMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeDeleteMonitorsArgs({
@@ -133,6 +134,7 @@ describe("deleteMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     await addMonitor({
@@ -141,6 +143,7 @@ describe("deleteMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     await addMonitor({
@@ -149,6 +152,7 @@ describe("deleteMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeDeleteMonitorsArgs({
@@ -188,6 +192,7 @@ describe("deleteMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     await addMonitor({
@@ -196,6 +201,7 @@ describe("deleteMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeDeleteMonitorsArgs({
@@ -234,6 +240,7 @@ describe("deleteMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     await addMonitor({
@@ -245,6 +252,7 @@ describe("deleteMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeDeleteMonitorsArgs({
@@ -287,6 +295,7 @@ describe("deleteMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     await addMonitor({
@@ -298,6 +307,7 @@ describe("deleteMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeDeleteMonitorsArgs({
@@ -326,7 +336,7 @@ describe("deleteMonitors integration", () => {
 
     expect(result.monitors).toHaveLength(1);
     expect(result.monitors[0].name).toBe("Monitor for User2");
-    expect(result.monitors[0].reportsTo).toEqual([{ userId: "user2" }]);
+    expect(result.monitors[0].reportsTo).toEqual([{ type: "user", userId: "user2" }]);
   });
 
   it("deletes monitors by createdBy filter", async () => {
@@ -337,6 +347,7 @@ describe("deleteMonitors integration", () => {
       byType: "user",
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     await addMonitor({
@@ -345,6 +356,7 @@ describe("deleteMonitors integration", () => {
       byType: "user",
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeDeleteMonitorsArgs({
@@ -384,6 +396,7 @@ describe("deleteMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const monitor2 = await addMonitor({
@@ -392,6 +405,7 @@ describe("deleteMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     // Update monitor1 to have a different updatedBy
@@ -411,6 +425,7 @@ describe("deleteMonitors integration", () => {
         by: "updater1",
         byType: "user",
         storage,
+      skipReportsToValidation: true,
       })
     );
 
@@ -431,6 +446,7 @@ describe("deleteMonitors integration", () => {
         by: "updater2",
         byType: "user",
         storage,
+      skipReportsToValidation: true,
       })
     );
 
@@ -472,6 +488,7 @@ describe("deleteMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     // Wait a bit to ensure different timestamps
@@ -483,6 +500,7 @@ describe("deleteMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     // Delete monitors created after monitor1
@@ -522,6 +540,7 @@ describe("deleteMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const monitor2 = await addMonitor({
@@ -530,6 +549,7 @@ describe("deleteMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     // Update monitor1
@@ -549,6 +569,7 @@ describe("deleteMonitors integration", () => {
         by: "updater",
         byType: "user",
         storage,
+      skipReportsToValidation: true,
       })
     );
 
@@ -572,6 +593,7 @@ describe("deleteMonitors integration", () => {
         by: "updater",
         byType: "user",
         storage,
+      skipReportsToValidation: true,
       })
     );
 
@@ -630,6 +652,7 @@ describe("deleteMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     await addMonitor({
@@ -642,6 +665,7 @@ describe("deleteMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     await addMonitor({
@@ -654,6 +678,7 @@ describe("deleteMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeDeleteMonitorsArgs({
@@ -697,6 +722,7 @@ describe("deleteMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeDeleteMonitorsArgs({
@@ -735,6 +761,7 @@ describe("deleteMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     await addMonitor({
@@ -743,6 +770,7 @@ describe("deleteMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeDeleteMonitorsArgs({
@@ -756,7 +784,7 @@ describe("deleteMonitors integration", () => {
       ...args,
       by: "deleter",
       byType: "user",
-      storage,
+      storage
     });
 
     // Verify all monitors were deleted

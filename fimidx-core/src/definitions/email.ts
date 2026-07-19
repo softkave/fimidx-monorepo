@@ -3,6 +3,7 @@ import type { ValueOf } from "type-fest";
 export const kEmailRecordReason = {
   addParticipant: "addParticipant",
   verificationRequest: "verificationRequest",
+  monitorAlert: "monitorAlert",
 } as const;
 
 export const kGeneralEmailCallerId = {

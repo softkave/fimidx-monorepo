@@ -1,4 +1,5 @@
 export * from "./deleteObjs.js";
+export * from "./countObjs.js";
 export * from "./getObjFields.js";
 export * from "./getObjs.js";
 export * from "./indexObjs.js";

@@ -92,7 +92,7 @@ export const kPermissionLabels: Record<
   },
   [kFimidxPermissions.monitor.read]: {
     label: "Monitor – read",
-    description: "View monitors",
+    description: "View monitors and run history",
   },
   [kFimidxPermissions.monitor.mutate]: {
     label: "Monitor – mutate",
@@ -101,6 +101,14 @@ export const kPermissionLabels: Record<
   [kFimidxPermissions.monitor.delete]: {
     label: "Monitor – delete",
     description: "Delete monitors",
+  },
+  [kFimidxPermissions.alert.read]: {
+    label: "Alert – read",
+    description: "View monitoring alerts",
+  },
+  [kFimidxPermissions.alert.mutate]: {
+    label: "Alert – mutate",
+    description: "Acknowledge and update alerts",
   },
   [kFimidxPermissions.callback.read]: {
     label: "Callback – read",

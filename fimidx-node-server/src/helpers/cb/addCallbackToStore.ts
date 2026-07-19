@@ -2,6 +2,7 @@ import {kCallbackStore} from '../../ctx/callback.js';
 import {kPromiseStore} from '../../ctx/promiseStore.js';
 import {fimidxNodeWinstonLogger} from '../../utils/fimidxNodeloggers.js';
 import {executeCallback} from './executeCallback.js';
+import {removeCallbackFromStore} from './removeCallbackFromStore.js';
 
 export function addCallbackToStore(params: {
   id: string;
@@ -11,11 +12,9 @@ export function addCallbackToStore(params: {
 }) {
   // TODO: implement timeout packing
 
+  // Replace any existing timer for this id (e.g. after interval/status updates).
   if (kCallbackStore[params.id]) {
-    fimidxNodeWinstonLogger.info('Callback already exists', {
-      callbackId: params.id,
-    });
-    return;
+    removeCallbackFromStore(params.id);
   }
 
   if (params.timeoutDate) {

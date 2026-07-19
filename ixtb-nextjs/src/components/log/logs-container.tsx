@@ -26,6 +26,8 @@ export interface ILogListContainerProps {
   projectId: string;
   showFiltersAndSort?: boolean;
   onShowFilters?: () => void;
+  filters?: IObjRecordQueryList;
+  onFiltersChange?: (filters: IObjRecordQueryList) => void;
 }
 
 export function LogListContainer({
@@ -37,9 +39,15 @@ export function LogListContainer({
   projectId,
   showFiltersAndSort,
   onShowFilters,
+  filters: controlledFilters,
+  onFiltersChange,
 }: ILogListContainerProps) {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const [filters, setFilters] = useState<IObjRecordQueryList>([]);
+  const [internalFilters, setInternalFilters] = useState<IObjRecordQueryList>(
+    []
+  );
+  const filters = controlledFilters ?? internalFilters;
+  const setFilters = onFiltersChange ?? setInternalFilters;
   const filterKey = useMemo(() => JSON.stringify(filters), [filters]);
 
   const query = useMemo(

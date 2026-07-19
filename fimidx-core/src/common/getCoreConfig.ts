@@ -52,6 +52,7 @@ export function getCoreConfig(): z.infer<typeof coreConfigSchema> {
   const betterAuthSecret = process.env[envVars.BETTER_AUTH_SECRET];
   const nextPublicBetterAuthUrl =
     process.env[envVars.NEXT_PUBLIC_BETTER_AUTH_URL];
+  const nextPublicUrl = process.env[envVars.NEXT_PUBLIC_URL];
 
   return coreConfigSchema.parse({
     postgres: {
@@ -118,6 +119,9 @@ export function getCoreConfig(): z.infer<typeof coreConfigSchema> {
       url: betterAuthUrl,
       secret: betterAuthSecret,
       nextPublicUrl: nextPublicBetterAuthUrl,
+    },
+    app: {
+      publicURL: nextPublicUrl ?? betterAuthUrl ?? nextPublicBetterAuthUrl,
     },
   });
 }

@@ -17,6 +17,7 @@ export interface IObjStorage {
   read(params: ReadObjsParams): Promise<ReadObjsResult>;
   update(params: UpdateObjsParams): Promise<UpdateObjsResult>;
   delete(params: DeleteObjsParams): Promise<DeleteObjsResult>;
+  count(params: CountObjsParams): Promise<CountObjsResult>;
 
   // Bulk/Batch Operations (Phase 1 & 2)
   bulkUpsert(params: BulkUpsertParams): Promise<BulkUpsertResult>;
@@ -79,6 +80,18 @@ export interface ReadObjsResult {
   page: number;
   limit: number;
   hasMore: boolean;
+}
+
+export interface CountObjsParams {
+  query: IObjQuery;
+  tag?: string;
+  fields?: Map<string, IObjField>;
+  date?: Date;
+  includeDeleted?: boolean;
+}
+
+export interface CountObjsResult {
+  count: number;
 }
 
 export interface UpdateObjsResult {

@@ -30,6 +30,8 @@ export const kFimidxPermissionStrings = {
   monitorRead: "monitor:read",
   monitorMutate: "monitor:mutate",
   monitorDelete: "monitor:delete",
+  alertRead: "alert:read",
+  alertMutate: "alert:mutate",
   callbackRead: "callback:read",
   callbackMutate: "callback:mutate",
   callbackDelete: "callback:delete",
@@ -78,6 +80,10 @@ export const kFimidxPermissions = {
     mutate: kFimidxPermissionStrings.monitorMutate,
     delete: kFimidxPermissionStrings.monitorDelete,
   },
+  alert: {
+    read: kFimidxPermissionStrings.alertRead,
+    mutate: kFimidxPermissionStrings.alertMutate,
+  },
   callback: {
     read: kFimidxPermissionStrings.callbackRead,
     mutate: kFimidxPermissionStrings.callbackMutate,
@@ -120,6 +126,8 @@ export const kFimidxPermissionsList = [
   kFimidxPermissions.monitor.read,
   kFimidxPermissions.monitor.mutate,
   kFimidxPermissions.monitor.delete,
+  kFimidxPermissions.alert.read,
+  kFimidxPermissions.alert.mutate,
   kFimidxPermissions.callback.read,
   kFimidxPermissions.callback.mutate,
   kFimidxPermissions.callback.delete,

@@ -19,6 +19,7 @@ export async function executeCallback(params: {callbackId: string}) {
     .findOne({
       id: callbackId,
       tag: kObjTags.callback,
+      deletedAt: null,
     })
     .lean();
 

@@ -14,6 +14,8 @@ export const kObjTags = {
   project: "project",
   monitor: "monitor",
   permission: "permission",
+  alert: "alert",
+  monitorRun: "monitorRun",
 } as const;
 
 export type ObjTag = (typeof kObjTags)[keyof typeof kObjTags];
@@ -30,6 +32,8 @@ export const kObjTagShortForms: Record<ObjTag, string> = {
   [kObjTags.project]: "proj",
   [kObjTags.monitor]: "moni",
   [kObjTags.permission]: "perm",
+  [kObjTags.alert]: "aler",
+  [kObjTags.monitorRun]: "mrun",
 } as const;
 
 /** Separator between tag short form and the rest of the id (e.g. "proj_01933..."). */

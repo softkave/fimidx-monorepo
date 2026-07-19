@@ -5,6 +5,8 @@ export * from "./isAdmin.js";
 export * from "./logs/index.js";
 export * from "./member/index.js";
 export * from "./monitor/index.js";
+export * from "./alert/index.js";
+export * from "./monitorRun/index.js";
 export * from "./obj/index.js";
 export * from "./fimidara/index.js";
 export * from "./permission/index.js";

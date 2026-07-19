@@ -10,6 +10,22 @@ import {
 } from "./obj.js";
 import { durationSchema } from "./other.js";
 
+export const kMonitorResourceTypes = {
+  logs: "logs",
+} as const;
+
+export type MonitorResourceType = ValueOf<typeof kMonitorResourceTypes>;
+
+export const kMonitorTimeFields = {
+  createdAt: "createdAt",
+  timestamp: "timestamp",
+} as const;
+
+export type MonitorTimeField = ValueOf<typeof kMonitorTimeFields>;
+
+/** Minimum monitor interval: 5 minutes in ms. */
+export const kMonitorMinIntervalMs = 5 * 60 * 1000;
+
 export const monitorObjMetaQuerySchema = objMetaQuerySchema.omit({
   projectId: true,
   groupId: true,
@@ -64,9 +80,26 @@ export const kMonitorStatus = {
 
 export type MonitorStatus = ValueOf<typeof kMonitorStatus>;
 
-export interface IMonitorReportsTo {
+export const kMonitorReportToTypes = {
+  user: "user",
+  webhook: "webhook",
+} as const;
+
+export type MonitorReportToType = ValueOf<typeof kMonitorReportToTypes>;
+
+export interface IMonitorReportsToUser {
+  type: "user";
   userId: string;
 }
+
+export interface IMonitorReportsToWebhook {
+  type: "webhook";
+  url: string;
+}
+
+export type IMonitorReportsTo =
+  | IMonitorReportsToUser
+  | IMonitorReportsToWebhook;
 
 export interface IMonitor {
   id: string;
@@ -84,6 +117,16 @@ export interface IMonitor {
   status: MonitorStatus;
   reportsTo: IMonitorReportsTo[];
   interval: Duration;
+  resourceType: MonitorResourceType;
+  timeField: MonitorTimeField;
+  alertIfCountGreaterThan?: number | null;
+  cooldown: Duration;
+  muted: boolean;
+  snoozedUntil?: Date | null;
+  lastRunAt?: Date | null;
+  lastAlertedAt?: Date | null;
+  /** Set while a run is in progress; used as concurrency guard. */
+  runningAt?: Date | null;
 }
 
 export interface IMonitorObjRecord {
@@ -93,6 +136,45 @@ export interface IMonitorObjRecord {
   status: MonitorStatus;
   reportsTo: IMonitorReportsTo[];
   interval: Duration;
+  resourceType: MonitorResourceType;
+  timeField: MonitorTimeField;
+  alertIfCountGreaterThan?: number | null;
+  cooldown: Duration;
+  muted: boolean;
+  snoozedUntil?: Date | string | null;
+  lastRunAt?: Date | string | null;
+  lastAlertedAt?: Date | string | null;
+  runningAt?: Date | string | null;
+}
+
+const monitorReportsToUserSchema = z.object({
+  type: z.literal(kMonitorReportToTypes.user),
+  userId: z.string().min(1),
+});
+
+const monitorReportsToWebhookSchema = z.object({
+  type: z.literal(kMonitorReportToTypes.webhook),
+  url: z.string().url(),
+});
+
+export const monitorReportsToSchema = z.union([
+  monitorReportsToUserSchema,
+  monitorReportsToWebhookSchema,
+]);
+
+/** Accept legacy string userIds or full reportsTo objects. */
+export const monitorReportsToInputSchema = z
+  .array(z.union([z.string().min(1), monitorReportsToSchema]))
+  .max(100);
+
+export function normalizeMonitorReportsTo(
+  reportsTo: Array<string | IMonitorReportsTo>
+): IMonitorReportsTo[] {
+  return reportsTo.map((r) =>
+    typeof r === "string"
+      ? { type: kMonitorReportToTypes.user, userId: r }
+      : r
+  );
 }
 
 export const addMonitorSchema = z.object({
@@ -101,8 +183,14 @@ export const addMonitorSchema = z.object({
   description: z.string().optional(),
   query: monitorObjQuerySchema,
   status: z.nativeEnum(kMonitorStatus),
-  reportsTo: z.array(z.string().min(1)).max(100),
+  reportsTo: monitorReportsToInputSchema,
   interval: durationSchema,
+  resourceType: z.nativeEnum(kMonitorResourceTypes).optional(),
+  timeField: z.nativeEnum(kMonitorTimeFields).optional(),
+  alertIfCountGreaterThan: z.number().int().min(0).optional().nullable(),
+  cooldown: durationSchema.optional(),
+  muted: z.boolean().optional(),
+  snoozedUntil: z.union([z.string().datetime(), z.date()]).optional().nullable(),
 });
 
 export const monitorQuerySchema = z.object({
@@ -124,8 +212,17 @@ export const updateMonitorsSchema = z.object({
     description: z.string().min(1).optional(),
     query: monitorObjQuerySchema.optional(),
     status: z.nativeEnum(kMonitorStatus).optional(),
-    reportsTo: z.array(z.string().min(1)).max(100).optional(),
+    reportsTo: monitorReportsToInputSchema.optional(),
     interval: durationSchema.optional(),
+    resourceType: z.nativeEnum(kMonitorResourceTypes).optional(),
+    timeField: z.nativeEnum(kMonitorTimeFields).optional(),
+    alertIfCountGreaterThan: z.number().int().min(0).optional().nullable(),
+    cooldown: durationSchema.optional(),
+    muted: z.boolean().optional(),
+    snoozedUntil: z
+      .union([z.string().datetime(), z.date()])
+      .optional()
+      .nullable(),
   }),
 });
 
@@ -141,10 +238,20 @@ export const deleteMonitorsSchema = z.object({
   deleteMany: z.boolean().optional(),
 });
 
-export type AddMonitorEndpointArgs = z.infer<typeof addMonitorSchema>;
-export type UpdateMonitorsEndpointArgs = z.infer<typeof updateMonitorsSchema>;
+export const runMonitorSchema = z.object({
+  monitorId: z.string().min(1),
+});
+
+export const previewMonitorSchema = z.object({
+  monitorId: z.string().min(1),
+});
+
+export type AddMonitorEndpointArgs = z.input<typeof addMonitorSchema>;
+export type UpdateMonitorsEndpointArgs = z.input<typeof updateMonitorsSchema>;
 export type GetMonitorsEndpointArgs = z.infer<typeof getMonitorsSchema>;
 export type DeleteMonitorsEndpointArgs = z.infer<typeof deleteMonitorsSchema>;
+export type RunMonitorEndpointArgs = z.infer<typeof runMonitorSchema>;
+export type PreviewMonitorEndpointArgs = z.infer<typeof previewMonitorSchema>;
 
 export interface IGetMonitorsEndpointResponse {
   monitors: IMonitor[];

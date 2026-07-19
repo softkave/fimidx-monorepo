@@ -7,6 +7,7 @@ import {
 } from "fimidx-core/definitions/clientToken";
 import { useCallback, useMemo } from "react";
 import { z } from "zod";
+import { renderNotFoundError } from "../internal/page-not-found";
 import { WrapLoader } from "../internal/wrap-loader";
 import { ClientToken } from "./client-token";
 
@@ -22,6 +23,8 @@ export interface IClientTokenContainerProps {
   renderLoading?: () => React.ReactNode;
   renderError?: (error: unknown) => React.ReactNode;
 }
+
+const kClientTokenNotFoundMessage = "Client token not found";
 
 export function ClientTokenContainer(props: IClientTokenContainerProps) {
   const { projectId, clientTokenId, groupId, renderLoading, renderError } =
@@ -45,10 +48,16 @@ export function ClientTokenContainer(props: IClientTokenContainerProps) {
 
   const clientTokenHook = useGetClientTokens(args);
 
-  const error = clientTokenHook.error;
   const isLoading = clientTokenHook.isLoading;
+  const error =
+    clientTokenHook.error ||
+    (!isLoading &&
+    clientTokenHook.data &&
+    clientTokenHook.data.clientTokens.length === 0
+      ? new Error(kClientTokenNotFoundMessage)
+      : undefined);
   const data = useMemo((): IClientTokenContainerRenderProps | undefined => {
-    if (clientTokenHook.data) {
+    if (clientTokenHook.data?.clientTokens[0]) {
       return {
         clientToken: clientTokenHook.data.clientTokens[0],
       };
@@ -62,6 +71,18 @@ export function ClientTokenContainer(props: IClientTokenContainerProps) {
     []
   );
 
+  const defaultRenderError = useCallback(
+    (err: unknown) =>
+      renderNotFoundError({
+        error: err,
+        notFoundMessage: kClientTokenNotFoundMessage,
+        title: "Client token not found",
+        description:
+          "This client token may have been deleted or you may not have access to it.",
+      }),
+    []
+  );
+
   const render = props.render || defaultRender;
 
   return (
@@ -71,7 +92,7 @@ export function ClientTokenContainer(props: IClientTokenContainerProps) {
       isLoading={isLoading}
       render={render}
       renderLoading={renderLoading}
-      renderError={renderError}
+      renderError={renderError ?? defaultRenderError}
     />
   );
 }

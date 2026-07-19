@@ -1,11 +1,17 @@
 import assert from "assert";
 import { kOwnServerErrorCodes, OwnServerError } from "fimidx-core/common/error";
+import { fimidxConsoleLogger } from "fimidx-core/common/logger/fimidx-console-logger";
 import {
   addMonitorSchema,
   IAddMonitorEndpointResponse,
 } from "fimidx-core/definitions/monitor";
 import { kFimidxPermissions } from "fimidx-core/definitions/permission";
-import { addMonitor, getProjectById } from "fimidx-core/serverHelpers/index";
+import {
+  addMonitor,
+  getProjectById,
+  syncMonitorCallback,
+} from "fimidx-core/serverHelpers/index";
+import { nodeMonitorCallbackScheduler } from "../../../serverHelpers/nodeServerCallbacks";
 import { checkPermissionForClientTokenOrUser } from "../../../serverHelpers/permissions";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
 import { sanitizeAddMonitorInput } from "../../utils/sanitizeKId0";
@@ -34,16 +40,30 @@ export const addMonitorEndpoint: NextMaybeAuthenticatedEndpointFn<
     new OwnServerError("Project not found", kOwnServerErrorCodes.NotFound)
   );
 
+  const { by, byType } = getBy();
   const { monitor } = await addMonitor({
     args: input,
-    by: getBy().by,
-    byType: getBy().byType,
+    by,
+    byType,
     groupId: project.orgId,
   });
 
-  const response: IAddMonitorEndpointResponse = {
-    monitor,
-  };
+  try {
+    await syncMonitorCallback({
+      monitor,
+      by,
+      byType,
+      scheduler: nodeMonitorCallbackScheduler,
+    });
+  } catch (err) {
+    fimidxConsoleLogger.error({
+      message: "[addMonitorEndpoint] syncMonitorCallback failed",
+      error: err,
+      monitorId: monitor.id,
+      by,
+      byType,
+    });
+  }
 
-  return response;
+  return { monitor };
 };

@@ -1,68 +1,67 @@
 import {Request, Response} from 'express';
-import {getObjModel} from 'fimidx-core/db/fimidx.mongo';
 import {
   deleteCallbacksSchema,
   ICallback,
 } from 'fimidx-core/definitions/callback';
-import {kObjTags} from 'fimidx-core/definitions/obj';
-import {deleteCallbacks} from 'fimidx-core/serverHelpers/index';
+import {deleteCallbacks, getCallbacks} from 'fimidx-core/serverHelpers/index';
 import {z} from 'zod';
-import {kPromiseStore} from '../../ctx/promiseStore.js';
 import {removeCallbackFromStore} from '../../helpers/cb/removeCallbackFromStore.js';
 import {IHttpOutgoingSuccessResponse} from '../../types/http.js';
 
-export const removeCallbackHttpEndpointSchema = deleteCallbacksSchema.extend({
+const removeCallbackHttpEndpointSchema = deleteCallbacksSchema.extend({
   clientTokenId: z.string(),
 });
 
-async function cleanupDeletedCallbacks(params: {fromDate: Date; toDate: Date}) {
-  let batch: Pick<ICallback, 'id'>[] = [];
-  let page = 0;
-  const batchSize = 100;
+/**
+ * Soft-delete matching callbacks in Mongo and clear them from the in-memory
+ * timer store. IDs are collected before delete so we do not rely on createdAt
+ * windows (soft-deleted docs keep their original createdAt).
+ */
+async function deleteCallbacksEndpointImpl(params: {
+  query: z.infer<typeof deleteCallbacksSchema>['query'];
+  deleteMany?: boolean;
+  clientTokenId: string;
+}) {
+  const idsToRemove: string[] = [];
+  let page = 1;
+  let hasMore = true;
 
-  do {
-    batch = await getObjModel()
-      .find({
-        tag: kObjTags.callback,
-        createdAt: {
-          $gte: params.fromDate,
-          $lte: params.toDate,
-        },
-        deletedAt: {
-          $exists: true,
-        },
-      })
-      .limit(batchSize)
-      .skip(page * batchSize)
-      .projection({
-        id: 1,
-      })
-      .lean();
-
-    batch.forEach(item => {
-      removeCallbackFromStore(item.id);
+  while (hasMore) {
+    const result = await getCallbacks({
+      args: {
+        query: params.query,
+        page,
+        limit: 100,
+      },
     });
-
+    idsToRemove.push(...result.callbacks.map((c: ICallback) => c.id));
+    hasMore = result.hasMore;
     page++;
-  } while (batch.length > 0);
+  }
+
+  if (idsToRemove.length > 0) {
+    await deleteCallbacks({
+      query: params.query,
+      deleteMany: params.deleteMany,
+      clientTokenId: params.clientTokenId,
+    });
+  }
+
+  for (const id of idsToRemove) {
+    removeCallbackFromStore(id);
+  }
+
+  return {deletedCount: idsToRemove.length};
 }
 
 export async function deleteCallbacksEndpoint(req: Request, res: Response) {
   const input = removeCallbackHttpEndpointSchema.parse(req.body);
 
-  const fromDate = new Date();
-  await deleteCallbacks({
-    ...input,
+  await deleteCallbacksEndpointImpl({
+    query: input.query,
+    deleteMany: input.deleteMany,
     clientTokenId: input.clientTokenId,
   });
-  const toDate = new Date();
-
-  kPromiseStore.callAndForget(() =>
-    cleanupDeletedCallbacks({
-      fromDate,
-      toDate,
-    }),
-  );
 
   const response: IHttpOutgoingSuccessResponse = {
     type: 'success',

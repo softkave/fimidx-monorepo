@@ -1,36 +1,11 @@
-import { OwnServerError } from "fimidx-core/common/error";
 import {
-  DeleteCallbacksEndpointArgs,
   deleteCallbacksSchema,
   kFimidxPermissions,
 } from "fimidx-core/definitions/index";
-import {
-  getNodeServerInternalAccessKey,
-  getNodeServerURL,
-} from "../../../serverHelpers/nodeServer";
+import { callNodeServerDeleteCallbacks } from "../../../serverHelpers/nodeServerCallbacks";
 import { checkPermissionForClientTokenOrUser } from "../../../serverHelpers/permissions";
 import { NextClientTokenAuthenticatedEndpointFn } from "../../types";
 import { sanitizeDeleteCallbacksInput } from "../../utils/sanitizeKId0";
-
-async function callNodeServerDeleteCallback(
-  input: DeleteCallbacksEndpointArgs & { clientTokenId: string }
-) {
-  const nodeServerURL = getNodeServerURL();
-  const nodeServerInternalAccessKey = getNodeServerInternalAccessKey();
-
-  const response = await fetch(`${nodeServerURL}/cb/deleteCallbacks`, {
-    method: "POST",
-    body: JSON.stringify(input),
-    headers: {
-      "X-Internal-Access-Key": nodeServerInternalAccessKey,
-      "Content-Type": "application/json",
-    },
-  });
-
-  if (!response.ok) {
-    throw new OwnServerError("Failed to delete callbacks", 500);
-  }
-}
 
 export const deleteCallbacksEndpoint: NextClientTokenAuthenticatedEndpointFn<
   void
@@ -49,7 +24,7 @@ export const deleteCallbacksEndpoint: NextClientTokenAuthenticatedEndpointFn<
     action: kFimidxPermissions.callback.delete,
   });
 
-  await callNodeServerDeleteCallback({
+  await callNodeServerDeleteCallbacks({
     ...input,
     clientTokenId: clientToken.id,
   });

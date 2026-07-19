@@ -3,6 +3,7 @@
 // invalidate the SWR cache using the api path.
 
 import { GetOrgsEndpointArgs } from "@/src/definitions/org";
+import { GetAlertsEndpointArgs } from "fimidx-core/definitions/alert";
 import { GetCallbacksEndpointArgs } from "fimidx-core/definitions/callback";
 import { GetClientTokensEndpointArgs } from "fimidx-core/definitions/clientToken";
 import { GetGroupsEndpointArgs } from "fimidx-core/definitions/group";
@@ -15,14 +16,17 @@ import {
   GetMembersEndpointArgs,
 } from "fimidx-core/definitions/member";
 import { GetMonitorsEndpointArgs } from "fimidx-core/definitions/monitor";
+import { GetMonitorRunsEndpointArgs } from "fimidx-core/definitions/monitorRun";
 import { GetProjectsEndpointArgs } from "fimidx-core/definitions/project";
 import {
+  kApiAlertKeys,
   kApiCallbackKeys,
   kApiClientTokenKeys,
   kApiGroupKeys,
   kApiLogKeys,
   kApiMemberKeys,
   kApiMonitorKeys,
+  kApiMonitorRunKeys,
   kApiOrgKeys,
   kApiProjectKeys,
 } from "./apikeys";
@@ -81,6 +85,24 @@ export const kMonitorSWRKeys = {
   deleteMonitor: () => kApiMonitorKeys.deleteMonitor(),
   updateMonitor: (monitorId: string) =>
     kApiMonitorKeys.updateMonitor(monitorId),
+  runMonitor: (monitorId: string) => kApiMonitorKeys.runMonitor(monitorId),
+  previewMonitor: (monitorId: string) =>
+    kApiMonitorKeys.previewMonitor(monitorId),
+};
+
+export const kAlertSWRKeys = {
+  getAlerts: (params: GetAlertsEndpointArgs) =>
+    [kApiAlertKeys.getAlerts(), params] as const,
+  getAlert: (alertId: string) => kApiAlertKeys.getAlert(alertId),
+  acknowledgeAlert: (alertId: string) =>
+    kApiAlertKeys.acknowledgeAlert(alertId),
+  getAlertLogs: (params: { alertId: string; page?: number; limit?: number }) =>
+    [kApiAlertKeys.getAlertLogs(params.alertId), params] as const,
+};
+
+export const kMonitorRunSWRKeys = {
+  getMonitorRuns: (params: GetMonitorRunsEndpointArgs) =>
+    [kApiMonitorRunKeys.getMonitorRuns(), params] as const,
 };
 
 export const kMemberSWRKeys = {

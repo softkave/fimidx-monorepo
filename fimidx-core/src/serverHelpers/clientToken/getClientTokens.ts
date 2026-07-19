@@ -13,9 +13,37 @@ import type { IPermissionAtom } from "../../definitions/permission.js";
 import type { IObjStorage } from "../../storage/types.js";
 import { kOwnServerErrorCodes, OwnServerError } from "../../common/error.js";
 import { getManyObjs } from "../obj/getObjs.js";
+import {
+  kObjTopLevelFields,
+  resourceFieldsToMongoProjection,
+  type ProjectedResource,
+} from "../obj/projectedResource.js";
 import { getPermissions } from "../permission/getPermissions.js";
 import { getOriginalClientTokenPermission } from "./addClientTokenPermissions.js";
 import { objToClientToken } from "./objToClientToken.js";
+
+export type ProjectedClientToken<
+  P extends readonly (keyof IClientToken)[] | undefined,
+> = ProjectedResource<IClientToken, P>;
+
+export type GetClientTokensResult<
+  P extends readonly (keyof IClientToken)[] | undefined = undefined,
+> = {
+  clientTokens: Array<ProjectedClientToken<P>>;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+};
+
+export function clientTokenFieldsToMongoProjection(
+  fields: readonly (keyof IClientToken)[]
+): Record<string, 0 | 1> {
+  // `permissions` are joined separately, not stored on the obj document.
+  const mongoFields = fields.filter((f) => f !== "permissions");
+  return resourceFieldsToMongoProjection(mongoFields as readonly string[], {
+    topLevelFields: kObjTopLevelFields,
+  });
+}
 
 export function getClientTokensObjQuery(params: {
   args: GetClientTokensEndpointArgs;
@@ -110,8 +138,22 @@ export async function getClientTokensPermissions(params: {
 export async function getClientTokens(params: {
   args: GetClientTokensEndpointArgs;
   storage?: IObjStorage;
-}) {
-  const { args, storage } = params;
+}): Promise<GetClientTokensResult<undefined>>;
+export async function getClientTokens<
+  const P extends readonly (keyof IClientToken)[],
+>(params: {
+  args: GetClientTokensEndpointArgs;
+  storage?: IObjStorage;
+  projection: P;
+}): Promise<GetClientTokensResult<P>>;
+export async function getClientTokens<
+  const P extends readonly (keyof IClientToken)[] | undefined = undefined,
+>(params: {
+  args: GetClientTokensEndpointArgs;
+  storage?: IObjStorage;
+  projection?: P;
+}): Promise<GetClientTokensResult<P>> {
+  const { args, storage, projection } = params;
   const {
     page: inputPage,
     limit: inputLimit,
@@ -133,14 +175,18 @@ export async function getClientTokens(params: {
   });
 
   const objQuery = getClientTokensObjQuery({ args });
+  const mongoProjection = projection
+    ? clientTokenFieldsToMongoProjection(projection)
+    : undefined;
 
-  const { objs, hasMore, page, limit } = await getManyObjs({
+  const { objs, hasMore } = await getManyObjs({
     objQuery,
     tag: kObjTags.clientToken,
     limit: limitNumber,
     page: storagePage,
     sort: transformedSort,
     storage,
+    projection: mongoProjection,
   });
 
   const { permissions } = includePermissions
@@ -170,13 +216,14 @@ export async function getClientTokens(params: {
   }, {} as Record<string, IPermissionAtom[]>);
 
   const clientTokens = objs.map((obj) => {
-    const clientTokenPermissions = permissionsMap[obj.id] || null;
-    const clientToken = objToClientToken(obj, clientTokenPermissions);
-    return clientToken;
+    const clientTokenPermissions = includePermissions
+      ? permissionsMap[obj.id] || null
+      : null;
+    return objToClientToken(obj, clientTokenPermissions);
   });
 
   return {
-    clientTokens,
+    clientTokens: clientTokens as Array<ProjectedClientToken<P>>,
     hasMore,
     page: pageNumber, // Return 1-based page number
     limit: limitNumber,

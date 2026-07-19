@@ -5,12 +5,12 @@ import type { IAlert } from "../../definitions/alert.js";
 import { kByTypes } from "../../definitions/index.js";
 import type { IMonitor } from "../../definitions/monitor.js";
 import {
-    kMonitorReportToTypes,
-    kMonitorStatus,
+  kMonitorReportToTypes,
+  kMonitorStatus,
 } from "../../definitions/monitor.js";
 import {
-    kMonitorRunSuppressedReasons,
-    type MonitorRunSuppressedReason,
+  kMonitorRunSuppressedReasons,
+  type MonitorRunSuppressedReason,
 } from "../../definitions/monitorRun.js";
 import { kObjTags } from "../../definitions/obj.js";
 import type { IObjStorage } from "../../storage/types.js";
@@ -19,10 +19,9 @@ import { addMonitorRun } from "../monitorRun/addMonitorRun.js";
 import { getUsers } from "../user.js";
 import { getMonitorById } from "./getMonitorById.js";
 import {
-    computeMonitorWindow,
-    countMonitorMatches,
-    extractMonitorFilters,
-    shouldAlertForMatchCount,
+  computeMonitorWindow,
+  countMonitorMatches,
+  shouldAlertForMatchCount,
 } from "./monitorQueryUtils.js";
 
 export type SendMonitorAlertEmailFn = (params: {
@@ -43,10 +42,22 @@ export interface IRunMonitorResult {
   durationMs: number;
 }
 
+type RunMonitorActor = {
+  by: string;
+  byType: string;
+};
+
+type RunMonitorContext = RunMonitorActor & {
+  monitorId: string;
+  startedAt: Date;
+  storage?: IObjStorage;
+};
+
 const kStaleRunningMs = 15 * 60 * 1000;
 
 /**
  * Atomically claim the per-monitor run lock.
+ * Returns the claimed `runningAt` timestamp on success, or null if busy.
  *
  * Talks to Mongo directly via findOneAndUpdate. The obj storage layer cannot
  * express a conditional compare-and-set on a single field — its updates
@@ -56,7 +67,7 @@ const kStaleRunningMs = 15 * 60 * 1000;
  */
 async function tryAcquireMonitorLock(params: {
   monitorId: string;
-}): Promise<boolean> {
+}): Promise<Date | null> {
   const { monitorId } = params;
   const now = new Date();
   const staleBefore = new Date(now.getTime() - kStaleRunningMs);
@@ -84,20 +95,23 @@ async function tryAcquireMonitorLock(params: {
     }
   );
 
-  return claimed != null;
+  return claimed != null ? now : null;
 }
 
 /**
  * Clear the run lock and apply post-run fields (lastRunAt / lastAlertedAt).
+ * Only the holder that set `runningAt` may clear it (ownership check), so a
+ * stale takeover cannot have its lock cleared by the previous holder's release.
  * Uses a field-level $set so we do not clobber concurrent objRecord updates.
  */
 async function releaseMonitorLock(params: {
   monitorId: string;
+  claimedRunningAt: Date;
   by: string;
   byType: string;
   patch: Record<string, unknown>;
 }) {
-  const { monitorId, by, byType, patch } = params;
+  const { monitorId, claimedRunningAt, by, byType, patch } = params;
   const now = new Date();
   const model = getObjModel();
 
@@ -115,7 +129,9 @@ async function releaseMonitorLock(params: {
     {
       id: monitorId,
       tag: kObjTags.monitor,
-      deletedAt: null,
+      // Allow release after soft-delete so a mid-run delete cannot leave a
+      // stuck lock.
+      "objRecord.runningAt": claimedRunningAt,
     },
     { $set: setFields }
   );
@@ -156,81 +172,243 @@ function getSuppressedReason(
   return null;
 }
 
-export async function runMonitor(params: {
-  monitorId: string;
-  by?: string;
-  byType?: string;
-  storage?: IObjStorage;
-  sendAlertEmail?: SendMonitorAlertEmailFn;
-  /** When true, evaluate and write run history but never create alert/email. */
-  dryRun?: boolean;
-}): Promise<IRunMonitorResult> {
-  const startedAt = new Date();
-  const by = params.by ?? "system";
-  const byType = params.byType ?? kByTypes.system;
-  const { monitorId, storage, sendAlertEmail, dryRun } = params;
+function durationSince(startedAt: Date, finishedAt: Date = new Date()): number {
+  return finishedAt.getTime() - startedAt.getTime();
+}
 
-  const acquired = await tryAcquireMonitorLock({
-    monitorId,
-  });
+/** Yield so a concurrent hard-delete can observe the held lock before we load. */
+async function yieldAfterLockAcquired(
+  afterLockAcquired?: () => Promise<void>
+): Promise<void> {
+  if (afterLockAcquired) {
+    await afterLockAcquired();
+    return;
+  }
+  await new Promise<void>((resolve) => setImmediate(resolve));
+}
 
-  if (!acquired) {
-    const finishedAt = new Date();
-    const monitor = await getMonitorById({ monitorId, storage });
-    if (monitor) {
-      const { monitorRun } = await addMonitorRun({
-        projectId: monitor.projectId,
-        groupId: monitor.groupId,
-        by,
-        byType,
-        record: {
-          monitorId,
-          startedAt,
-          finishedAt,
-          durationMs: finishedAt.getTime() - startedAt.getTime(),
-          windowStart: startedAt,
-          windowEnd: startedAt,
-          timeField: monitor.timeField,
-          matchCount: 0,
-          alertCreated: false,
-          suppressedReason: kMonitorRunSuppressedReasons.concurrent,
-          error: null,
-        },
-        storage,
-      });
-      return {
-        skipped: true,
-        suppressedReason: kMonitorRunSuppressedReasons.concurrent,
-        matchCount: 0,
-        alertCreated: false,
-        monitorRunId: monitorRun.id,
-        durationMs: finishedAt.getTime() - startedAt.getTime(),
-      };
-    }
+async function handleConcurrentSkip(
+  ctx: RunMonitorContext
+): Promise<IRunMonitorResult> {
+  const { monitorId, startedAt, by, byType, storage } = ctx;
+  const finishedAt = new Date();
+  const durationMs = durationSince(startedAt, finishedAt);
+  const monitor = await getMonitorById({ monitorId, storage });
+
+  if (!monitor) {
     return {
       skipped: true,
       suppressedReason: kMonitorRunSuppressedReasons.concurrent,
       matchCount: 0,
       alertCreated: false,
-      durationMs: finishedAt.getTime() - startedAt.getTime(),
+      durationMs,
     };
   }
 
-  let monitor = await getMonitorById({ monitorId, storage });
-  if (!monitor) {
-    return {
-      skipped: true,
+  const { monitorRun } = await addMonitorRun({
+    projectId: monitor.projectId,
+    groupId: monitor.groupId,
+    by,
+    byType,
+    record: {
+      monitorId,
+      startedAt,
+      finishedAt,
+      durationMs,
+      windowStart: startedAt,
+      windowEnd: startedAt,
+      timeField: monitor.timeField,
       matchCount: 0,
       alertCreated: false,
-      error: "Monitor not found",
-      durationMs: Date.now() - startedAt.getTime(),
-    };
+      suppressedReason: kMonitorRunSuppressedReasons.concurrent,
+      error: null,
+    },
+    storage,
+  });
+
+  return {
+    skipped: true,
+    suppressedReason: kMonitorRunSuppressedReasons.concurrent,
+    matchCount: 0,
+    alertCreated: false,
+    monitorRunId: monitorRun.id,
+    durationMs,
+  };
+}
+
+function handleMissingMonitor(ctx: RunMonitorContext): IRunMonitorResult {
+  // Deleted after acquire: soft-deleted docs can't be re-acquired
+  // (deletedAt: null required), hard-deleted docs are gone — no release.
+  return {
+    skipped: true,
+    matchCount: 0,
+    alertCreated: false,
+    error: "Monitor not found",
+    durationMs: durationSince(ctx.startedAt),
+  };
+}
+
+async function handleDisabledMonitor(params: {
+  ctx: RunMonitorContext;
+  monitor: IMonitor;
+  claimedRunningAt: Date;
+}): Promise<IRunMonitorResult> {
+  const { ctx, monitor, claimedRunningAt } = params;
+  const { monitorId, startedAt, by, byType, storage } = ctx;
+  const finishedAt = new Date();
+  const durationMs = durationSince(startedAt, finishedAt);
+  const { windowStart, windowEnd } = computeMonitorWindow({ monitor });
+
+  const { monitorRun } = await addMonitorRun({
+    projectId: monitor.projectId,
+    groupId: monitor.groupId,
+    by,
+    byType,
+    record: {
+      monitorId,
+      startedAt,
+      finishedAt,
+      durationMs,
+      windowStart,
+      windowEnd,
+      timeField: monitor.timeField,
+      matchCount: 0,
+      alertCreated: false,
+      suppressedReason: kMonitorRunSuppressedReasons.disabled,
+      error: null,
+    },
+    storage,
+  });
+
+  await releaseMonitorLock({
+    monitorId,
+    claimedRunningAt,
+    by,
+    byType,
+    patch: { lastRunAt: finishedAt },
+  });
+
+  return {
+    skipped: true,
+    suppressedReason: kMonitorRunSuppressedReasons.disabled,
+    matchCount: 0,
+    alertCreated: false,
+    monitorRunId: monitorRun.id,
+    durationMs,
+  };
+}
+
+async function notifyAlertRecipients(params: {
+  ctx: RunMonitorContext;
+  monitor: IMonitor;
+  alert: IAlert;
+  matchCount: number;
+  userIds: string[];
+  sendAlertEmail?: SendMonitorAlertEmailFn;
+}): Promise<{ emailSent: number; emailFailed: number }> {
+  const { ctx, monitor, alert, matchCount, userIds, sendAlertEmail } = params;
+  if (!sendAlertEmail || userIds.length === 0) {
+    return { emailSent: 0, emailFailed: 0 };
   }
 
-  if (monitor.status === kMonitorStatus.disabled) {
-    const finishedAt = new Date();
-    const { windowStart, windowEnd } = computeMonitorWindow({ monitor });
-    const { monitorRun } = await addMonitorRun({
+  const users = await getUsers(userIds);
+  const emails = users
+    .map((u) => u.email)
+    .filter((e): e is string => typeof e === "string" && e.length > 0);
+
+  if (emails.length === 0) {
+    return { emailSent: 0, emailFailed: 0 };
+  }
+
+  try {
+    const result = await sendAlertEmail({
+      to: emails,
+      monitor,
+      alert,
+      matchCount,
+    });
+    return { emailSent: result.sent, emailFailed: result.failed };
+  } catch (err) {
+    fimidxConsoleLogger.error({
+      message: "[runMonitor] email send failed",
+      error: err,
+      monitorId: ctx.monitorId,
+      by: ctx.by,
+      byType: ctx.byType,
+    });
+    return { emailSent: 0, emailFailed: emails.length };
+  }
+}
+
+async function createAlertAndNotify(params: {
+  ctx: RunMonitorContext;
+  monitor: IMonitor;
+  windowStart: Date;
+  windowEnd: Date;
+  matchCount: number;
+  sendAlertEmail?: SendMonitorAlertEmailFn;
+}): Promise<{
+  alertId: string;
+  emailSent: number;
+  emailFailed: number;
+}> {
+  const { ctx, monitor, windowStart, windowEnd, matchCount, sendAlertEmail } =
+    params;
+  const { by, byType, storage } = ctx;
+
+  const userIds = monitor.reportsTo
+    .filter((r) => r.type === kMonitorReportToTypes.user)
+    .map((r) => r.userId);
+
+  const { alert } = await addAlert({
+    projectId: monitor.projectId,
+    groupId: monitor.groupId,
+    by,
+    byType,
+    record: {
+      monitorId: monitor.id,
+      monitorName: monitor.name,
+      monitorDescription: monitor.description ?? null,
+      resourceType: monitor.resourceType,
+      timeField: monitor.timeField,
+      query: monitor.query ?? {},
+      windowStart,
+      windowEnd,
+      matchCount,
+      alertIfCountGreaterThan: monitor.alertIfCountGreaterThan ?? null,
+      notifiedUserIds: userIds,
+      acknowledgedAt: null,
+      acknowledgedBy: null,
+    },
+    storage,
+  });
+
+  const { emailSent, emailFailed } = await notifyAlertRecipients({
+    ctx,
+    monitor,
+    alert,
+    matchCount,
+    userIds,
+    sendAlertEmail,
+  });
+
+  return { alertId: alert.id, emailSent, emailFailed };
+}
+
+async function recordFailedRun(params: {
+  ctx: RunMonitorContext;
+  monitor: IMonitor;
+  windowStart: Date;
+  windowEnd: Date;
+  finishedAt: Date;
+  errorMessage: string;
+}): Promise<void> {
+  const { ctx, monitor, windowStart, windowEnd, finishedAt, errorMessage } =
+    params;
+  const { monitorId, startedAt, by, byType, storage } = ctx;
+
+  try {
+    await addMonitorRun({
       projectId: monitor.projectId,
       groupId: monitor.groupId,
       by,
@@ -239,35 +417,91 @@ export async function runMonitor(params: {
         monitorId,
         startedAt,
         finishedAt,
-        durationMs: finishedAt.getTime() - startedAt.getTime(),
+        durationMs: durationSince(startedAt, finishedAt),
         windowStart,
         windowEnd,
         timeField: monitor.timeField,
         matchCount: 0,
         alertCreated: false,
-        suppressedReason: kMonitorRunSuppressedReasons.disabled,
-        error: null,
+        suppressedReason: null,
+        error: errorMessage,
       },
       storage,
     });
-    await releaseMonitorLock({
+  } catch (err) {
+    fimidxConsoleLogger.error({
+      message: "[runMonitor] failed to add monitor run",
       monitorId,
-      by,
-      byType,
-      patch: { lastRunAt: finishedAt },
+      error: err,
     });
-    return {
-      skipped: true,
-      suppressedReason: kMonitorRunSuppressedReasons.disabled,
-      matchCount: 0,
-      alertCreated: false,
-      monitorRunId: monitorRun.id,
-      durationMs: finishedAt.getTime() - startedAt.getTime(),
-    };
   }
+}
 
-  const { windowStart, windowEnd } = computeMonitorWindow({ monitor });
+async function handleEvaluationFailure(params: {
+  ctx: RunMonitorContext;
+  monitor: IMonitor;
+  claimedRunningAt: Date;
+  windowStart: Date;
+  windowEnd: Date;
+  err: unknown;
+}): Promise<IRunMonitorResult> {
+  const { ctx, monitor, claimedRunningAt, windowStart, windowEnd, err } =
+    params;
+  const finishedAt = new Date();
+  const errorMessage = err instanceof Error ? err.message : String(err);
+
+  fimidxConsoleLogger.error({
+    message: "[runMonitor] failed",
+    monitorId: ctx.monitorId,
+    error: err,
+  });
+
+  await recordFailedRun({
+    ctx,
+    monitor,
+    windowStart,
+    windowEnd,
+    finishedAt,
+    errorMessage,
+  });
+
+  // Do not advance lastRunAt on evaluation failure so the next successful
+  // run re-evaluates the same window (no skipped logs).
+  await releaseMonitorLock({
+    monitorId: ctx.monitorId,
+    claimedRunningAt,
+    by: ctx.by,
+    byType: ctx.byType,
+    patch: {},
+  });
+
+  return {
+    skipped: false,
+    matchCount: 0,
+    alertCreated: false,
+    error: errorMessage,
+    durationMs: durationSince(ctx.startedAt, finishedAt),
+  };
+}
+
+async function evaluateAndFinishRun(params: {
+  ctx: RunMonitorContext;
+  monitor: IMonitor;
+  claimedRunningAt: Date;
+  dryRun?: boolean;
+  sendAlertEmail?: SendMonitorAlertEmailFn;
+}): Promise<IRunMonitorResult> {
+  const { ctx, monitor, claimedRunningAt, dryRun, sendAlertEmail } = params;
+  const { monitorId, startedAt, by, byType, storage } = ctx;
+
+  let windowStart = startedAt;
+  let windowEnd = startedAt;
+
   try {
+    const window = computeMonitorWindow({ monitor });
+    windowStart = window.windowStart;
+    windowEnd = window.windowEnd;
+
     const matchCount = await countMonitorMatches({
       monitor,
       windowStart,
@@ -275,75 +509,25 @@ export async function runMonitor(params: {
       storage,
     });
 
-    const now = windowEnd;
-    let suppressedReason = getSuppressedReason(monitor, matchCount, now);
+    let suppressedReason = getSuppressedReason(monitor, matchCount, windowEnd);
     let alertCreated = false;
     let alertId: string | null = null;
     let emailSent = 0;
     let emailFailed = 0;
 
-    const wouldAlert = suppressedReason == null && !dryRun;
-
-    if (wouldAlert) {
-      const filters = extractMonitorFilters(monitor.query);
-      const userIds = monitor.reportsTo
-        .filter((r) => r.type === kMonitorReportToTypes.user)
-        .map((r) => r.userId);
-
-      const { alert } = await addAlert({
-        projectId: monitor.projectId,
-        groupId: monitor.groupId,
-        by,
-        byType,
-        record: {
-          monitorId: monitor.id,
-          monitorName: monitor.name,
-          monitorDescription: monitor.description ?? null,
-          resourceType: monitor.resourceType,
-          timeField: monitor.timeField,
-          filters,
-          windowStart,
-          windowEnd,
-          matchCount,
-          alertIfCountGreaterThan: monitor.alertIfCountGreaterThan ?? null,
-          notifiedUserIds: userIds,
-          acknowledgedAt: null,
-          acknowledgedBy: null,
-        },
-        storage,
+    if (suppressedReason == null && !dryRun) {
+      const alertResult = await createAlertAndNotify({
+        ctx,
+        monitor,
+        windowStart,
+        windowEnd,
+        matchCount,
+        sendAlertEmail,
       });
-
       alertCreated = true;
-      alertId = alert.id;
-
-      if (sendAlertEmail && userIds.length > 0) {
-        const users = await getUsers(userIds);
-        const emails = users
-          .map((u) => u.email)
-          .filter((e): e is string => typeof e === "string" && e.length > 0);
-
-        if (emails.length > 0) {
-          try {
-            const result = await sendAlertEmail({
-              to: emails,
-              monitor,
-              alert,
-              matchCount,
-            });
-            emailSent = result.sent;
-            emailFailed = result.failed;
-          } catch (err) {
-            emailFailed = emails.length;
-            fimidxConsoleLogger.error({
-              message: "[runMonitor] email send failed",
-              error: err,
-              monitorId,
-              by,
-              byType,
-            });
-          }
-        }
-      }
+      alertId = alertResult.alertId;
+      emailSent = alertResult.emailSent;
+      emailFailed = alertResult.emailFailed;
     }
 
     if (dryRun && suppressedReason == null) {
@@ -352,7 +536,7 @@ export async function runMonitor(params: {
     }
 
     const finishedAt = new Date();
-    const durationMs = finishedAt.getTime() - startedAt.getTime();
+    const durationMs = durationSince(startedAt, finishedAt);
 
     const { monitorRun } = await addMonitorRun({
       projectId: monitor.projectId,
@@ -381,7 +565,13 @@ export async function runMonitor(params: {
       patch.lastAlertedAt = finishedAt;
     }
 
-    await releaseMonitorLock({ monitorId, by, byType, patch });
+    await releaseMonitorLock({
+      monitorId,
+      claimedRunningAt,
+      by,
+      byType,
+      patch,
+    });
 
     fimidxConsoleLogger.info({
       message: "[runMonitor]",
@@ -404,57 +594,67 @@ export async function runMonitor(params: {
       durationMs,
     };
   } catch (err) {
-    const finishedAt = new Date();
-    const errorMessage = err instanceof Error ? err.message : String(err);
-
-    fimidxConsoleLogger.error({
-      message: "[runMonitor] failed",
-      monitorId,
-      error: err,
+    return handleEvaluationFailure({
+      ctx,
+      monitor,
+      claimedRunningAt,
+      windowStart,
+      windowEnd,
+      err,
     });
-
-    try {
-      await addMonitorRun({
-        projectId: monitor.projectId,
-        groupId: monitor.groupId,
-        by,
-        byType,
-        record: {
-          monitorId,
-          startedAt,
-          finishedAt,
-          durationMs: finishedAt.getTime() - startedAt.getTime(),
-          windowStart,
-          windowEnd,
-          timeField: monitor.timeField,
-          matchCount: 0,
-          alertCreated: false,
-          suppressedReason: null,
-          error: errorMessage,
-        },
-        storage,
-      });
-    } catch (err) {
-      fimidxConsoleLogger.error({
-        message: "[runMonitor] failed to add monitor run",
-        monitorId,
-        error: err,
-      });
-    }
-
-    await releaseMonitorLock({
-      monitorId,
-      by,
-      byType,
-      patch: { lastRunAt: finishedAt },
-    });
-
-    return {
-      skipped: false,
-      matchCount: 0,
-      alertCreated: false,
-      error: errorMessage,
-      durationMs: finishedAt.getTime() - startedAt.getTime(),
-    };
   }
+}
+
+export async function runMonitor(params: {
+  monitorId: string;
+  by?: string;
+  byType?: string;
+  storage?: IObjStorage;
+  sendAlertEmail?: SendMonitorAlertEmailFn;
+  /** When true, evaluate and write run history but never create alert/email. */
+  dryRun?: boolean;
+  /**
+   * Invoked after the run lock is acquired and before the monitor is loaded.
+   * Intended for tests that need to hard-delete mid-run without racing setImmediate.
+   */
+  afterLockAcquired?: () => Promise<void>;
+}): Promise<IRunMonitorResult> {
+  const startedAt = new Date();
+  const ctx: RunMonitorContext = {
+    monitorId: params.monitorId,
+    startedAt,
+    by: params.by ?? "system",
+    byType: params.byType ?? kByTypes.system,
+    storage: params.storage,
+  };
+
+  const claimedRunningAt = await tryAcquireMonitorLock({
+    monitorId: ctx.monitorId,
+  });
+
+  if (!claimedRunningAt) {
+    return handleConcurrentSkip(ctx);
+  }
+
+  await yieldAfterLockAcquired(params.afterLockAcquired);
+
+  const monitor = await getMonitorById({
+    monitorId: ctx.monitorId,
+    storage: ctx.storage,
+  });
+  if (!monitor) {
+    return handleMissingMonitor(ctx);
+  }
+
+  if (monitor.status === kMonitorStatus.disabled) {
+    return handleDisabledMonitor({ ctx, monitor, claimedRunningAt });
+  }
+
+  return evaluateAndFinishRun({
+    ctx,
+    monitor,
+    claimedRunningAt,
+    dryRun: params.dryRun,
+    sendAlertEmail: params.sendAlertEmail,
+  });
 }

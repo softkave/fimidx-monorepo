@@ -1,4 +1,4 @@
-import type { GetAlertsEndpointArgs } from "../../definitions/alert.js";
+import type { GetAlertsEndpointArgs, IAlert } from "../../definitions/alert.js";
 import {
   kObjTags,
   type IObjQuery,
@@ -7,7 +7,33 @@ import {
 } from "../../definitions/obj.js";
 import type { IObjStorage } from "../../storage/types.js";
 import { getManyObjs } from "../obj/getObjs.js";
+import {
+  kObjTopLevelFields,
+  resourceFieldsToMongoProjection,
+  type ProjectedResource,
+} from "../obj/projectedResource.js";
 import { objToAlert } from "./objToAlert.js";
+
+export type ProjectedAlert<
+  P extends readonly (keyof IAlert)[] | undefined,
+> = ProjectedResource<IAlert, P>;
+
+export type GetAlertsResult<
+  P extends readonly (keyof IAlert)[] | undefined = undefined,
+> = {
+  alerts: Array<ProjectedAlert<P>>;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+};
+
+export function alertFieldsToMongoProjection(
+  fields: readonly (keyof IAlert)[]
+): Record<string, 0 | 1> {
+  return resourceFieldsToMongoProjection(fields as readonly string[], {
+    topLevelFields: kObjTopLevelFields,
+  });
+}
 
 export function getAlertsObjQuery(params: { args: GetAlertsEndpointArgs }) {
   const { args } = params;
@@ -54,8 +80,22 @@ export function getAlertsObjQuery(params: { args: GetAlertsEndpointArgs }) {
 export async function getAlerts(params: {
   args: GetAlertsEndpointArgs;
   storage?: IObjStorage;
-}) {
-  const { args, storage } = params;
+}): Promise<GetAlertsResult<undefined>>;
+export async function getAlerts<
+  const P extends readonly (keyof IAlert)[],
+>(params: {
+  args: GetAlertsEndpointArgs;
+  storage?: IObjStorage;
+  projection: P;
+}): Promise<GetAlertsResult<P>>;
+export async function getAlerts<
+  const P extends readonly (keyof IAlert)[] | undefined = undefined,
+>(params: {
+  args: GetAlertsEndpointArgs;
+  storage?: IObjStorage;
+  projection?: P;
+}): Promise<GetAlertsResult<P>> {
+  const { args, storage, projection } = params;
   const { page: inputPage, limit: inputLimit, sort } = args;
 
   const pageNumber = inputPage ?? 1;
@@ -74,6 +114,10 @@ export async function getAlerts(params: {
   });
 
   const objQuery = getAlertsObjQuery({ args });
+  const mongoProjection = projection
+    ? alertFieldsToMongoProjection(projection)
+    : undefined;
+
   const result = await getManyObjs({
     objQuery,
     page: storagePage,
@@ -81,10 +125,11 @@ export async function getAlerts(params: {
     tag: kObjTags.alert,
     sort: transformedSort,
     storage,
+    projection: mongoProjection,
   });
 
   return {
-    alerts: result.objs.map(objToAlert),
+    alerts: result.objs.map(objToAlert) as Array<ProjectedAlert<P>>,
     page: pageNumber,
     limit: limitNumber,
     hasMore: result.hasMore,

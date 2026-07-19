@@ -2,6 +2,9 @@ import {defineConfig} from 'vitest/config';
 
 export default defineConfig({
   test: {
+    // Integration tests share one MongoDB — run files sequentially to avoid races.
+    fileParallelism: false,
+    globalSetup: './vitest.setup.ts',
     exclude: [
       '**/node_modules/**',
       '**/dist/**',

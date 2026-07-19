@@ -5,8 +5,9 @@ import {
 } from "../definitions/obj.js";
 
 /**
- * Pull the flat log-field filter list out of a monitor query tree.
- * Handles a leaf or a single and/or wrapper around a leaf (the UI shape).
+ * Pull a flat recordQuery list for UI editors that only support leaf filters.
+ * Does not preserve or/and semantics — do not use for evaluation or alert
+ * snapshots. Prefer the full query tree for count/query paths.
  */
 export function extractMonitorFilters(
   query: IMonitorObjQuery | undefined
@@ -19,6 +20,7 @@ export function extractMonitorFilters(
     and?: IMonitorObjQuery[];
     or?: IMonitorObjQuery[];
   };
+  // Form editor: only unwrap a single and/or wrapper around one leaf.
   const branch = logical.and?.[0] ?? logical.or?.[0];
   if (branch && isObjQueryLeaf(branch as never)) {
     return (branch as { recordQuery?: IObjRecordQueryList }).recordQuery ?? [];

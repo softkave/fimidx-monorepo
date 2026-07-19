@@ -1,4 +1,7 @@
-import type { GetCallbacksEndpointArgs } from "../../definitions/callback.js";
+import type {
+  GetCallbacksEndpointArgs,
+  ICallback,
+} from "../../definitions/callback.js";
 import {
   kObjTags,
   type IObjRecordQueryItem,
@@ -6,7 +9,34 @@ import {
 } from "../../definitions/obj.js";
 import type { IObjStorage } from "../../storage/types.js";
 import { getManyObjs } from "../obj/getObjs.js";
+import {
+  kObjTopLevelFields,
+  resourceFieldsToMongoProjection,
+  type ProjectedResource,
+} from "../obj/projectedResource.js";
 import { objToCallback } from "./objToCallback.js";
+
+export type ProjectedCallback<
+  P extends readonly (keyof ICallback)[] | undefined,
+> = ProjectedResource<ICallback, P>;
+
+export type GetCallbacksResult<
+  P extends readonly (keyof ICallback)[] | undefined = undefined,
+> = {
+  callbacks: Array<ProjectedCallback<P>>;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+};
+
+/** Map callback field names to a Mongo projection (always includes `id`). */
+export function callbackFieldsToMongoProjection(
+  fields: readonly (keyof ICallback)[]
+): Record<string, 0 | 1> {
+  return resourceFieldsToMongoProjection(fields as readonly string[], {
+    topLevelFields: kObjTopLevelFields,
+  });
+}
 
 export function getCallbacksObjQuery(params: {
   args: GetCallbacksEndpointArgs;
@@ -174,7 +204,7 @@ export function getCallbacksObjQuery(params: {
         op: part.op,
         field: `requestBody.${part.field}`,
         value: part.value,
-      } as IObjRecordQueryItem)
+      }) as IObjRecordQueryItem
   );
   if (requestBodyPartQuery) {
     filterArr.push(...requestBodyPartQuery);
@@ -187,7 +217,7 @@ export function getCallbacksObjQuery(params: {
         op: part.op,
         field: `requestHeaders.${part.field}`,
         value: part.value,
-      } as IObjRecordQueryItem)
+      }) as IObjRecordQueryItem
   );
   if (requestHeadersPartQuery) {
     filterArr.push(...requestHeadersPartQuery);
@@ -215,8 +245,22 @@ export function getCallbacksObjQuery(params: {
 export async function getCallbacks(params: {
   args: GetCallbacksEndpointArgs;
   storage?: IObjStorage;
-}) {
-  const { args, storage } = params;
+}): Promise<GetCallbacksResult<undefined>>;
+export async function getCallbacks<
+  const P extends readonly (keyof ICallback)[],
+>(params: {
+  args: GetCallbacksEndpointArgs;
+  storage?: IObjStorage;
+  projection: P;
+}): Promise<GetCallbacksResult<P>>;
+export async function getCallbacks<
+  const P extends readonly (keyof ICallback)[] | undefined = undefined,
+>(params: {
+  args: GetCallbacksEndpointArgs;
+  storage?: IObjStorage;
+  projection?: P;
+}): Promise<GetCallbacksResult<P>> {
+  const { args, storage, projection } = params;
   const { page: inputPage, limit: inputLimit, sort } = args;
 
   // Convert 1-based pagination to 0-based for storage layer
@@ -233,6 +277,10 @@ export async function getCallbacks(params: {
   });
 
   const objQuery = getCallbacksObjQuery({ args });
+  const mongoProjection = projection
+    ? callbackFieldsToMongoProjection(projection)
+    : undefined;
+
   const result = await getManyObjs({
     objQuery,
     page: storagePage,
@@ -240,10 +288,15 @@ export async function getCallbacks(params: {
     tag: kObjTags.callback,
     sort: transformedSort,
     storage,
+    projection: mongoProjection,
   });
 
+  const callbacks = result.objs.map(objToCallback) as Array<
+    ProjectedCallback<P>
+  >;
+
   return {
-    callbacks: result.objs.map(objToCallback),
+    callbacks,
     page: pageNumber, // Return 1-based page number
     limit: limitNumber,
     hasMore: result.hasMore,

@@ -30,6 +30,13 @@ export function addCallbackToStore(params: {
   } else if (params.intervalMs && params.intervalFrom) {
     const now = new Date();
     const adder = () => {
+      const existing = kCallbackStore[params.id];
+      if (existing?.deferredStartHandle) {
+        clearTimeout(existing.deferredStartHandle);
+      }
+      if (existing?.intervalHandle) {
+        clearInterval(existing.intervalHandle);
+      }
       kCallbackStore[params.id] = {
         id: params.id,
         intervalHandle: setInterval(() => {
@@ -45,7 +52,14 @@ export function addCallbackToStore(params: {
     });
 
     if (params.intervalFrom > now) {
-      setTimeout(adder, params.intervalFrom.getTime() - now.getTime());
+      const deferredStartHandle = setTimeout(
+        adder,
+        params.intervalFrom.getTime() - now.getTime(),
+      );
+      kCallbackStore[params.id] = {
+        id: params.id,
+        deferredStartHandle,
+      };
     } else {
       adder();
     }

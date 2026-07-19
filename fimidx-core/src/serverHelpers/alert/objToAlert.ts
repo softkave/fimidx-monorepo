@@ -6,8 +6,11 @@ function toDate(value: Date | string | null | undefined): Date | null {
   return value instanceof Date ? value : new Date(value);
 }
 
-export function objToAlert(obj: IObj): IAlert {
-  const record = obj.objRecord as IAlertObjRecord;
+/** Accepts full or projected lean objs; missing fields may be undefined/defaulted. */
+export function objToAlert<T extends Partial<IAlert> = IAlert>(
+  obj: Partial<IObj>
+): T {
+  const record = (obj.objRecord ?? {}) as Partial<IAlertObjRecord>;
   return {
     id: obj.id,
     createdAt: obj.createdAt,
@@ -23,13 +26,13 @@ export function objToAlert(obj: IObj): IAlert {
     monitorDescription: record.monitorDescription ?? null,
     resourceType: record.resourceType,
     timeField: record.timeField,
-    filters: record.filters ?? [],
-    windowStart: toDate(record.windowStart)!,
-    windowEnd: toDate(record.windowEnd)!,
+    query: record.query ?? {},
+    windowStart: toDate(record.windowStart),
+    windowEnd: toDate(record.windowEnd),
     matchCount: record.matchCount,
     alertIfCountGreaterThan: record.alertIfCountGreaterThan ?? null,
     notifiedUserIds: record.notifiedUserIds ?? [],
     acknowledgedAt: toDate(record.acknowledgedAt),
     acknowledgedBy: record.acknowledgedBy ?? null,
-  };
+  } as T;
 }

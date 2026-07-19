@@ -92,7 +92,11 @@ export class MongoObjStorage implements IObjStorage {
     // console.dir(pagination, { depth: null });
 
     const objs = await this.objModel
-      .find(filter, undefined, session ? { session } : undefined)
+      .find(
+        filter,
+        params.projection,
+        session ? { session } : undefined
+      )
       .sort(sort)
       .skip(pagination.skip)
       .limit(pagination.limit)

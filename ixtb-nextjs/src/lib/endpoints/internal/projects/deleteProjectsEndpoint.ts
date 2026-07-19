@@ -42,10 +42,10 @@ export const deleteProjectsEndpoint: NextUserAuthenticatedEndpointFn<
     return;
   }
 
-  // TODO: pagination, caching allowed project ids (e.g. local file),
-  // projections for minimal db read
+  // TODO: pagination, caching allowed project ids (e.g. local file)
   const { projects } = await getProjects({
     args: { query: input.query, limit: 1000 },
+    projection: ["id"],
   });
   const results = await Promise.all(
     projects.map(async (project) => {

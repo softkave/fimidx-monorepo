@@ -8,8 +8,8 @@ import {
   buildMonitorLogQuery,
   getAlertById,
 } from "fimidx-core/serverHelpers/index";
-import { getManyObjs } from "fimidx-core/serverHelpers/obj/getObjs";
 import { objToLog } from "fimidx-core/serverHelpers/logs/objToLog";
+import { getManyObjs } from "fimidx-core/serverHelpers/obj/getObjs";
 import { checkPermissionForClientTokenOrUser } from "../../../serverHelpers/permissions";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
 
@@ -40,7 +40,7 @@ export const getAlertLogsEndpoint: NextMaybeAuthenticatedEndpointFn<
 
   const objQuery = buildMonitorLogQuery({
     projectId: alert.projectId,
-    filters: alert.filters,
+    query: alert.query,
     timeField: alert.timeField,
     windowStart: new Date(alert.windowStart),
     windowEnd: new Date(alert.windowEnd),

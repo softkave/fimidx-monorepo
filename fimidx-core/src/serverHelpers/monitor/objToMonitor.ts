@@ -12,8 +12,11 @@ function toDate(value: Date | string | null | undefined): Date | null {
   return value instanceof Date ? value : new Date(value);
 }
 
-export function objToMonitor(obj: IObj): IMonitor {
-  const record = obj.objRecord as IMonitorObjRecord;
+/** Accepts full or projected lean objs; missing fields may be undefined/defaulted. */
+export function objToMonitor<T extends Partial<IMonitor> = IMonitor>(
+  obj: Partial<IObj>
+): T {
+  const record = (obj.objRecord ?? {}) as Partial<IMonitorObjRecord>;
   const rawReportsTo = record.reportsTo ?? [];
   // Support legacy { userId } without type and string userIds
   const reportsTo = normalizeMonitorReportsTo(
@@ -52,5 +55,5 @@ export function objToMonitor(obj: IObj): IMonitor {
     lastRunAt: toDate(record.lastRunAt),
     lastAlertedAt: toDate(record.lastAlertedAt),
     runningAt: toDate(record.runningAt),
-  };
+  } as T;
 }

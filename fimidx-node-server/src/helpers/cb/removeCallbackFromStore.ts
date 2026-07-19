@@ -10,5 +10,8 @@ export function removeCallbackFromStore(id: string) {
     if (item.intervalHandle) {
       clearInterval(item.intervalHandle);
     }
+    if (item.deferredStartHandle) {
+      clearTimeout(item.deferredStartHandle);
+    }
   }
 }

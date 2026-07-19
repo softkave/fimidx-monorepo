@@ -1,3 +1,4 @@
+import { kOwnServerErrorCodes, OwnServerError } from "fimidx-core/common/error";
 import { fimidxConsoleLogger } from "fimidx-core/common/logger/fimidx-console-logger";
 import {
   IUpdateMonitorsEndpointResponse,
@@ -8,12 +9,64 @@ import {
   getMonitorById,
   getMonitors,
   syncMonitorCallback,
+  syncMonitorCallbacks,
   updateMonitors,
 } from "fimidx-core/serverHelpers/index";
 import { nodeMonitorCallbackScheduler } from "../../../serverHelpers/nodeServerCallbacks";
 import { checkPermissionForClientTokenOrUser } from "../../../serverHelpers/permissions";
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
 import { sanitizeUpdateMonitorsInput } from "../../utils/sanitizeKId0";
+
+const kSyncPageSize = 100;
+
+/** Runner callbacks only depend on schedule fields, not evaluation config. */
+function updateNeedsCallbackSync(update: {
+  status?: unknown;
+  interval?: unknown;
+}): boolean {
+  return update.status !== undefined || update.interval !== undefined;
+}
+
+/** Fetch one page, batch-sync, next page until exhausted. */
+async function syncMonitorsForQueryPaged(params: {
+  query: { projectId: string; [key: string]: unknown };
+  by: string;
+  byType: string;
+}): Promise<{ errorCount: number; syncedCount: number }> {
+  const { query, by, byType } = params;
+  let page = 1;
+  let hasMore = true;
+  let errorCount = 0;
+  let syncedCount = 0;
+
+  while (hasMore) {
+    const result = await getMonitors({
+      args: { query: query as never, page, limit: kSyncPageSize },
+    });
+
+    const batch = await syncMonitorCallbacks({
+      monitors: result.monitors,
+      by,
+      byType,
+      scheduler: nodeMonitorCallbackScheduler,
+    });
+    syncedCount += batch.syncedCount;
+    errorCount += batch.errors.length;
+
+    for (const err of batch.errors) {
+      fimidxConsoleLogger.error({
+        message: "[updateMonitorsEndpoint] syncMonitorCallback failed",
+        error: err.error,
+        monitorId: err.monitorId,
+      });
+    }
+
+    hasMore = result.hasMore;
+    page++;
+  }
+
+  return { errorCount, syncedCount };
+}
 
 export const updateMonitorsEndpoint: NextMaybeAuthenticatedEndpointFn<
   IUpdateMonitorsEndpointResponse
@@ -41,7 +94,11 @@ export const updateMonitorsEndpoint: NextMaybeAuthenticatedEndpointFn<
     byType,
   });
 
-  // Sync callback for matching monitors (status/interval may have changed)
+  if (!updateNeedsCallbackSync(input.update)) {
+    return { success: true };
+  }
+
+  // Sync callback for matching monitors (status/interval changed)
   try {
     if (input.query.id?.eq) {
       const monitor = await getMonitorById({ monitorId: input.query.id.eq });
@@ -54,23 +111,33 @@ export const updateMonitorsEndpoint: NextMaybeAuthenticatedEndpointFn<
         });
       }
     } else {
-      const { monitors } = await getMonitors({
-        args: { query: input.query, limit: 100 },
+      const { errorCount } = await syncMonitorsForQueryPaged({
+        query: input.query,
+        by,
+        byType,
       });
-      for (const monitor of monitors) {
-        await syncMonitorCallback({
-          monitor,
-          by,
-          byType,
-          scheduler: nodeMonitorCallbackScheduler,
-        });
+      if (errorCount > 0) {
+        throw new OwnServerError(
+          `Monitor updated but scheduler sync failed for ${errorCount} monitor(s)`,
+          kOwnServerErrorCodes.InternalServerError
+        );
       }
     }
   } catch (err) {
     fimidxConsoleLogger.error({
       message: "[updateMonitorsEndpoint] syncMonitorCallback failed",
       error: err,
+      by,
+      byType,
     });
+    if (OwnServerError.isOwnServerError(err)) {
+      throw err;
+    }
+
+    throw new OwnServerError(
+      "Monitor updated but scheduler sync failed; retry update to register the runner",
+      kOwnServerErrorCodes.InternalServerError
+    );
   }
 
   return { success: true };

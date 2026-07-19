@@ -63,6 +63,10 @@ export const addMonitorEndpoint: NextMaybeAuthenticatedEndpointFn<
       by,
       byType,
     });
+    throw new OwnServerError(
+      "Monitor created but scheduler sync failed; retry update to register the runner",
+      kOwnServerErrorCodes.InternalServerError
+    );
   }
 
   return { monitor };

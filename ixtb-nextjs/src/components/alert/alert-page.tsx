@@ -7,12 +7,12 @@ import {
 } from "@/src/lib/clientApi/alert";
 import { kClientPaths } from "@/src/lib/clientHelpers/clientPaths";
 import { cn } from "@/src/lib/utils";
+import { format } from "date-fns";
 import {
   IAlert,
   kAlertResourceTypeLabels,
   kAlertTimeFieldLabels,
 } from "fimidx-core/definitions/alert";
-import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -170,11 +170,11 @@ function AlertSnapshot(props: {
           <dt className="text-muted-foreground">Threshold</dt>
           <dd>{thresholdLabel}</dd>
         </div>
-        {alert.filters?.length ? (
+        {alert.query && Object.keys(alert.query).length > 0 ? (
           <div>
-            <dt className="text-muted-foreground">Filters</dt>
+            <dt className="text-muted-foreground">Query</dt>
             <dd className="font-mono text-xs break-all">
-              {JSON.stringify(alert.filters)}
+              {JSON.stringify(alert.query)}
             </dd>
           </div>
         ) : null}

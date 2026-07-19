@@ -1,4 +1,7 @@
-import type { GetMonitorsEndpointArgs } from "../../definitions/monitor.js";
+import type {
+  GetMonitorsEndpointArgs,
+  IMonitor,
+} from "../../definitions/monitor.js";
 import {
   kObjTags,
   type IObjRecordQueryItem,
@@ -7,7 +10,33 @@ import {
 } from "../../definitions/obj.js";
 import type { IObjStorage } from "../../storage/types.js";
 import { getManyObjs } from "../obj/getObjs.js";
+import {
+  kObjTopLevelFields,
+  resourceFieldsToMongoProjection,
+  type ProjectedResource,
+} from "../obj/projectedResource.js";
 import { objToMonitor } from "./objToMonitor.js";
+
+export type ProjectedMonitor<
+  P extends readonly (keyof IMonitor)[] | undefined,
+> = ProjectedResource<IMonitor, P>;
+
+export type GetMonitorsResult<
+  P extends readonly (keyof IMonitor)[] | undefined = undefined,
+> = {
+  monitors: Array<ProjectedMonitor<P>>;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+};
+
+export function monitorFieldsToMongoProjection(
+  fields: readonly (keyof IMonitor)[]
+): Record<string, 0 | 1> {
+  return resourceFieldsToMongoProjection(fields as readonly string[], {
+    topLevelFields: kObjTopLevelFields,
+  });
+}
 
 export function getMonitorsObjQuery(params: { args: GetMonitorsEndpointArgs }) {
   const { args } = params;
@@ -84,8 +113,22 @@ export function getMonitorsObjQuery(params: { args: GetMonitorsEndpointArgs }) {
 export async function getMonitors(params: {
   args: GetMonitorsEndpointArgs;
   storage?: IObjStorage;
-}) {
-  const { args, storage } = params;
+}): Promise<GetMonitorsResult<undefined>>;
+export async function getMonitors<
+  const P extends readonly (keyof IMonitor)[],
+>(params: {
+  args: GetMonitorsEndpointArgs;
+  storage?: IObjStorage;
+  projection: P;
+}): Promise<GetMonitorsResult<P>>;
+export async function getMonitors<
+  const P extends readonly (keyof IMonitor)[] | undefined = undefined,
+>(params: {
+  args: GetMonitorsEndpointArgs;
+  storage?: IObjStorage;
+  projection?: P;
+}): Promise<GetMonitorsResult<P>> {
+  const { args, storage, projection } = params;
   const { page: inputPage, limit: inputLimit, sort } = args;
 
   // Convert 1-based pagination to 0-based for storage layer
@@ -102,6 +145,10 @@ export async function getMonitors(params: {
   });
 
   const objQuery = getMonitorsObjQuery({ args });
+  const mongoProjection = projection
+    ? monitorFieldsToMongoProjection(projection)
+    : undefined;
+
   const result = await getManyObjs({
     objQuery,
     page: storagePage,
@@ -109,10 +156,11 @@ export async function getMonitors(params: {
     tag: kObjTags.monitor,
     sort: transformedSort,
     storage,
+    projection: mongoProjection,
   });
 
   return {
-    monitors: result.objs.map(objToMonitor),
+    monitors: result.objs.map(objToMonitor) as Array<ProjectedMonitor<P>>,
     page: pageNumber, // Return 1-based page number
     limit: limitNumber,
     hasMore: result.hasMore,

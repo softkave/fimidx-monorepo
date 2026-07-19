@@ -1,6 +1,9 @@
 import { getMsFromDuration } from "../../common/date.js";
-import { extractMonitorFilters } from "../../common/monitor.js";
-import type { IMonitor, MonitorTimeField } from "../../definitions/monitor.js";
+import type {
+  IMonitor,
+  IMonitorObjQuery,
+  MonitorTimeField,
+} from "../../definitions/monitor.js";
 import {
   kMonitorResourceTypes,
   kMonitorTimeFields,
@@ -8,14 +11,13 @@ import {
 import {
   kObjTags,
   type IObjQuery,
-  type IObjRecordQueryList,
+  type IObjQueryBranch,
+  type IObjQueryLeaf,
 } from "../../definitions/obj.js";
 import type { IObjStorage } from "../../storage/types.js";
+import { objToLog } from "../logs/objToLog.js";
 import { countObjs } from "../obj/countObjs.js";
 import { getManyObjs } from "../obj/getObjs.js";
-import { objToLog } from "../logs/objToLog.js";
-
-export { extractMonitorFilters };
 
 /** Cap evaluation windows after outages to avoid scanning unbounded history. */
 export const kMonitorMaxWindowMultiplier = 2;
@@ -42,18 +44,16 @@ export function computeMonitorWindow(params: {
   return { windowStart, windowEnd: now };
 }
 
-export function buildMonitorLogQuery(params: {
+function buildWindowLeaf(params: {
   projectId: string;
-  filters: IObjRecordQueryList;
   timeField: MonitorTimeField;
   windowStart: Date;
   windowEnd: Date;
-}): IObjQuery {
-  const { projectId, filters, timeField, windowStart, windowEnd } = params;
+}): IObjQueryLeaf {
+  const { projectId, timeField, windowStart, windowEnd } = params;
 
   if (timeField === kMonitorTimeFields.createdAt) {
     return {
-      recordQuery: filters.length > 0 ? filters : undefined,
       metaQuery: {
         projectId: { eq: projectId },
         createdAt: {
@@ -64,10 +64,8 @@ export function buildMonitorLogQuery(params: {
     };
   }
 
-  // timestamp lives on the log record
   return {
     recordQuery: [
-      ...filters,
       {
         op: "gte",
         field: "timestamp",
@@ -85,6 +83,31 @@ export function buildMonitorLogQuery(params: {
   };
 }
 
+/**
+ * Build a log query that preserves the monitor/alert query tree (including
+ * and/or) and ANDs it with the evaluation window + projectId constraints.
+ */
+export function buildMonitorLogQuery(params: {
+  projectId: string;
+  query?: IMonitorObjQuery | null;
+  timeField: MonitorTimeField;
+  windowStart: Date;
+  windowEnd: Date;
+}): IObjQuery {
+  const windowLeaf = buildWindowLeaf(params);
+  const monitorQuery = params.query as IObjQueryBranch | null | undefined;
+
+  if (!monitorQuery) {
+    return windowLeaf;
+  }
+
+  // Window leaf first so getProjectIdFromObjQuery finds projectId on the
+  // combined tree (it walks the first and/or branch).
+  return {
+    and: [windowLeaf, monitorQuery],
+  };
+}
+
 export function shouldAlertForMatchCount(params: {
   matchCount: number;
   alertIfCountGreaterThan?: number | null;
@@ -96,10 +119,7 @@ export function shouldAlertForMatchCount(params: {
 }
 
 export async function countMonitorMatches(params: {
-  monitor: Pick<
-    IMonitor,
-    "projectId" | "query" | "timeField" | "resourceType"
-  >;
+  monitor: Pick<IMonitor, "projectId" | "query" | "timeField" | "resourceType">;
   windowStart: Date;
   windowEnd: Date;
   storage?: IObjStorage;
@@ -110,10 +130,9 @@ export async function countMonitorMatches(params: {
     return 0;
   }
 
-  const filters = extractMonitorFilters(monitor.query);
   const objQuery = buildMonitorLogQuery({
     projectId: monitor.projectId,
-    filters,
+    query: monitor.query,
     timeField: monitor.timeField,
     windowStart,
     windowEnd,
@@ -139,10 +158,9 @@ export async function previewMonitorMatches(params: {
   const limitNumber = params.limit ?? 50;
   const { windowStart, windowEnd } = computeMonitorWindow({ monitor });
 
-  const filters = extractMonitorFilters(monitor.query);
   const objQuery = buildMonitorLogQuery({
     projectId: monitor.projectId,
-    filters,
+    query: monitor.query,
     timeField: monitor.timeField,
     windowStart,
     windowEnd,

@@ -2,6 +2,8 @@ import { z } from "zod";
 import {
   kMonitorResourceTypes,
   kMonitorTimeFields,
+  monitorObjQuerySchema,
+  type IMonitorObjQuery,
   type MonitorResourceType,
   type MonitorTimeField,
 } from "./monitor.js";
@@ -27,7 +29,8 @@ export interface IAlert {
   monitorDescription?: string | null;
   resourceType: MonitorResourceType;
   timeField: MonitorTimeField;
-  filters: IObjRecordQueryList;
+  /** Full monitor query tree snapshotted at alert time (preserves and/or). */
+  query: IMonitorObjQuery;
   windowStart: Date;
   windowEnd: Date;
   matchCount: number;
@@ -43,7 +46,8 @@ export interface IAlertObjRecord {
   monitorDescription?: string | null;
   resourceType: MonitorResourceType;
   timeField: MonitorTimeField;
-  filters: IObjRecordQueryList;
+  /** Full monitor query tree; prefer this over legacy `filters`. */
+  query?: IMonitorObjQuery;
   windowStart: Date | string;
   windowEnd: Date | string;
   matchCount: number;
@@ -115,3 +119,6 @@ export const kAlertTimeFieldLabels: Record<MonitorTimeField, string> = {
   [kMonitorTimeFields.createdAt]: "Ingestion time",
   [kMonitorTimeFields.timestamp]: "Log event time",
 };
+
+/** Re-export for callers validating alert query snapshots. */
+export { monitorObjQuerySchema };

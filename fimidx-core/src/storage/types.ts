@@ -44,6 +44,11 @@ export interface ReadObjsParams {
   fields?: Map<string, IObjField>;
   date?: Date;
   includeDeleted?: boolean;
+  /**
+   * Mongo-style field projection (e.g. `{ id: 1, "objRecord.url": 1, _id: 0 }`).
+   * When omitted, full documents are returned.
+   */
+  projection?: Record<string, 0 | 1>;
 }
 
 export interface UpdateObjsParams {

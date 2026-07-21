@@ -44,6 +44,7 @@ export const kOrgSWRKeys = {
   getOrgs: (params: GetOrgsEndpointArgs) =>
     [kApiOrgKeys.getOrgs(), params] as const,
   getOrg: (orgId: string) => kApiOrgKeys.getOrg(orgId),
+  getOrgMembers: (orgId: string) => kApiOrgKeys.getOrgMembers(orgId),
   addOrg: () => kApiOrgKeys.addOrg(),
   deleteOrg: (orgId: string) => kApiOrgKeys.deleteOrg(orgId),
   updateOrg: (orgId: string) => kApiOrgKeys.updateOrg(orgId),

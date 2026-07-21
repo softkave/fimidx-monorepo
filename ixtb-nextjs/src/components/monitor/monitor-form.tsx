@@ -50,6 +50,7 @@ import { Switch } from "../ui/switch";
 import { Textarea } from "../ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
 import { kApiMonitorKeys } from "@/src/lib/clientApi/apikeys";
+import { MonitorReportsToUsersCombobox } from "./monitor-reports-to-users-combobox";
 
 function durationToMinutes(duration: { minutes?: number } | undefined): number {
   if (!duration) return 10;
@@ -60,12 +61,13 @@ function durationToMinutes(duration: { minutes?: number } | undefined): number {
   }
 }
 
-function reportsToUserIds(reportsTo: IMonitor["reportsTo"] | undefined): string {
-  if (!reportsTo?.length) return "";
+function reportsToUserIds(
+  reportsTo: IMonitor["reportsTo"] | undefined
+): string[] {
+  if (!reportsTo?.length) return [];
   return reportsTo
     .filter((r) => r.type === "user")
-    .map((r) => r.userId)
-    .join(", ");
+    .map((r) => r.userId);
 }
 
 const monitorFormSchema = z.object({
@@ -79,7 +81,7 @@ const monitorFormSchema = z.object({
   cooldownMinutes: z.coerce.number().int().min(0),
   alertOnThreshold: z.boolean(),
   alertIfCountGreaterThan: z.coerce.number().int().min(0).optional().nullable(),
-  reportsToUserIds: z.string().optional(),
+  reportsToUserIds: z.array(z.string().min(1)).optional(),
   enabled: z.boolean(),
   muted: z.boolean(),
   snoozedUntil: z.string().optional().nullable(),
@@ -151,10 +153,7 @@ export function MonitorForm(props: IMonitorFormProps) {
 
   const buildPayload = useCallback(
     (values: MonitorFormValues) => {
-      const reportsTo = (values.reportsToUserIds ?? "")
-        .split(",")
-        .map((id) => id.trim())
-        .filter(Boolean);
+      const reportsTo = (values.reportsToUserIds ?? []).filter(Boolean);
 
       return {
         name: values.name,
@@ -500,16 +499,16 @@ export function MonitorForm(props: IMonitorFormProps) {
           name="reportsToUserIds"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Notify (user IDs)</FormLabel>
+              <FormLabel>Notify</FormLabel>
               <FormControl>
-                <Input
-                  placeholder="userId1, userId2"
-                  {...field}
-                  value={field.value ?? ""}
+                <MonitorReportsToUsersCombobox
+                  orgId={orgId}
+                  value={field.value ?? []}
+                  onChange={field.onChange}
                 />
               </FormControl>
               <FormDescription>
-                Comma-separated user IDs to notify when this monitor alerts.
+                Org members to notify when this monitor alerts.
               </FormDescription>
               <FormMessage />
             </FormItem>

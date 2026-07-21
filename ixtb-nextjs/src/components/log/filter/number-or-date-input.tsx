@@ -64,6 +64,7 @@ export function NumberOrDateInput(props: {
                 !valueDate && "text-muted-foreground"
               )}
               disabled={disabled}
+              type="button"
             >
               <CalendarIcon />
               {valueDate ? (

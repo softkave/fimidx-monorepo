@@ -265,6 +265,7 @@ export function LogsFilterItem(props: ILogsFilterItemProps) {
         size="icon"
         onClick={onRemove}
         disabled={disabled}
+        type="button"
       >
         <XIcon className="h-4 w-4" />
       </Button>

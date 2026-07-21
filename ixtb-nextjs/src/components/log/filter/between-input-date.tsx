@@ -39,6 +39,7 @@ export function BetweenInputDate(props: {
               "w-full justify-start text-left font-normal",
               !date && "text-muted-foreground"
             )}
+            type="button"
           >
             <CalendarIcon />
             {date?.from ? (

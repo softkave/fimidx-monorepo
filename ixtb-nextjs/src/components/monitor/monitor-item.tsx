@@ -56,7 +56,7 @@ export function MonitorItem(props: IMonitorItemProps) {
         )}
         className="flex-1"
       >
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1">
           <h3 className="font-medium">{item.name}</h3>
           {item.description ? (
             <p className="text-muted-foreground text-sm">{item.description}</p>

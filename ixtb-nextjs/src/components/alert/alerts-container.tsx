@@ -16,6 +16,10 @@ export interface IAlertsListContainerProps {
   alertsContainerClassName?: string;
   projectId: string;
   orgId: string;
+  /** When set, only alerts for this monitor are listed. */
+  monitorId?: string;
+  emptyTitle?: string;
+  emptyMessage?: string;
 }
 
 export function AlertsListContainer({
@@ -25,6 +29,9 @@ export function AlertsListContainer({
   alertsContainerClassName,
   projectId,
   orgId,
+  monitorId,
+  emptyTitle,
+  emptyMessage,
 }: IAlertsListContainerProps) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -34,11 +41,19 @@ export function AlertsListContainer({
     limit: pageSize,
     query: {
       projectId,
+      ...(monitorId ? { monitorId: { eq: monitorId } } : {}),
     },
   });
 
   const defaultRender = (alerts: IAlert[]) => {
-    return <AlertsList alerts={alerts} orgId={orgId} />;
+    return (
+      <AlertsList
+        alerts={alerts}
+        orgId={orgId}
+        emptyTitle={emptyTitle}
+        emptyMessage={emptyMessage}
+      />
+    );
   };
 
   const render = inputRender ?? defaultRender;
@@ -52,8 +67,10 @@ export function AlertsListContainer({
         render={(data) =>
           data.alerts.length === 0 && showNoAlertsMessage ? (
             <ComponentListMessage
-              title="No alerts"
-              message="Alerts appear when a monitor matches"
+              title={emptyTitle ?? "No alerts"}
+              message={
+                emptyMessage ?? "Alerts appear when a monitor matches"
+              }
             />
           ) : (
             <div

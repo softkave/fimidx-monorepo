@@ -248,7 +248,7 @@ export function LogsFilterList(props: ILogsFilterListProps) {
     applyButtonText,
     applyButtonClassName,
     applyButtonVariant,
-    applyButtonType,
+    applyButtonType = "button",
     applyButtonDisabled,
     applyButtonLoading,
     disabled,
@@ -402,6 +402,7 @@ export function LogsFilterList(props: ILogsFilterListProps) {
             onClick={handleClearFilters}
             disabled={(!hasAppliedFilters && !hasDraftFilter) || disabled}
             className="w-full"
+            type="button"
           >
             <XIcon className="h-4 w-4" />
             Clear filters
@@ -411,6 +412,7 @@ export function LogsFilterList(props: ILogsFilterListProps) {
             onClick={handleAddFilter}
             className="w-full"
             disabled={disabled}
+            type="button"
           >
             <PlusIcon className="h-4 w-4" />
             Add filter

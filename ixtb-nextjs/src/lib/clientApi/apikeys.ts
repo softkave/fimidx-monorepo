@@ -9,6 +9,7 @@ export const kApiGroupKeys = {
 export const kApiOrgKeys = {
   getOrgs: () => `/api/orgs/fetch`,
   getOrg: (orgId: string) => `/api/orgs/${orgId}`,
+  getOrgMembers: (orgId: string) => `/api/orgs/${orgId}/members`,
   addOrg: () => `/api/orgs`,
   deleteOrg: (orgId: string) => `/api/orgs/${orgId}`,
   updateOrg: (orgId: string) => `/api/orgs/${orgId}`,

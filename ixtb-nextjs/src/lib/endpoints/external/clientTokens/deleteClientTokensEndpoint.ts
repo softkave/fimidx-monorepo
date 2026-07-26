@@ -9,6 +9,8 @@ import { checkPermissionForClientTokenOrUser } from "../../../serverHelpers/perm
 import { NextMaybeAuthenticatedEndpointFn } from "../../types";
 import { sanitizeDeleteClientTokensInput } from "../../utils/sanitizeKId0";
 
+const kDeleteBatchSize = 100;
+
 export const deleteClientTokensEndpoint: NextMaybeAuthenticatedEndpointFn<
   void
 > = async (params) => {
@@ -21,6 +23,8 @@ export const deleteClientTokensEndpoint: NextMaybeAuthenticatedEndpointFn<
   sanitizeDeleteClientTokensInput(input);
   const query = input.query as { projectId: string; groupId: string };
   const { groupId, projectId } = query;
+  const { by, byType } = getBy();
+  const deleteMany = input.deleteMany ?? false;
 
   let allowed = false;
   try {
@@ -39,41 +43,80 @@ export const deleteClientTokensEndpoint: NextMaybeAuthenticatedEndpointFn<
   if (allowed) {
     await deleteClientTokens({
       query: input.query,
-      by: getBy().by,
-      byType: getBy().byType,
+      deleteMany,
+      by,
+      byType,
     });
     return;
   }
 
-  const { clientTokens } = await getClientTokens({
-    args: { query: input.query, limit: 1000 },
-  });
-  const results = await Promise.all(
-    clientTokens.map(async (token) => {
-      try {
-        await checkPermissionForClientTokenOrUser({
-          userId,
-          clientToken: sessionClientToken,
-          groupId: token.groupId,
-          projectId: token.projectId,
-          action: kFimidxPermissions.clientToken.delete,
-        });
-        return token.id;
-      } catch {
-        return null;
-      }
-    })
-  );
-  const allowedIds = results.filter((id): id is string => id != null);
+  // Caller lacks project-wide delete permission, so we must filter per token.
+  //
+  // Walk matches in pages. For each page, soft-delete the tokens we are
+  // allowed to delete. Soft-deleted docs drop out of the default query, so
+  // after a successful delete we reset to page 1 (the next undeleted matches
+  // shift forward). If a page has only denied tokens, nothing is deleted and
+  // those rows would stay on page 1 forever — so we advance to the next page
+  // to skip them.
+  let page = 1;
+  let sawAny = false;
+  let deletedAny = false;
 
-  if (allowedIds.length > 0) {
-    await deleteClientTokens({
-      query: { projectId, groupId, id: { in: allowedIds } },
-      deleteMany: true,
-      by: getBy().by,
-      byType: getBy().byType,
+  for (;;) {
+    const result = await getClientTokens({
+      args: {
+        query: input.query,
+        page,
+        limit: deleteMany ? kDeleteBatchSize : 1,
+      },
+      projection: ["id"],
     });
-  } else if (allowedIds.length === 0 && clientTokens.length > 0) {
+
+    if (result.clientTokens.length === 0) {
+      break;
+    }
+    sawAny = true;
+
+    const permissionResults = await Promise.all(
+      result.clientTokens.map(async (token) => {
+        try {
+          await checkPermissionForClientTokenOrUser({
+            userId,
+            clientToken: sessionClientToken,
+            groupId,
+            projectId,
+            action: kFimidxPermissions.clientToken.delete,
+          });
+          return token.id;
+        } catch {
+          return null;
+        }
+      })
+    );
+    const allowedIds = permissionResults.filter((id): id is string => id != null);
+
+    if (allowedIds.length > 0) {
+      await deleteClientTokens({
+        query: { projectId, groupId, id: { in: allowedIds } },
+        deleteMany: true,
+        by,
+        byType,
+      });
+      deletedAny = true;
+      page = 1;
+    } else {
+      page++;
+    }
+
+    if (!deleteMany) {
+      break;
+    }
+    if (!result.hasMore && allowedIds.length === 0) {
+      break;
+    }
+  }
+
+  if (sawAny && !deletedAny) {
     throw new OwnServerError(
       "No client tokens found with permission to delete",
       kOwnServerErrorCodes.Forbidden

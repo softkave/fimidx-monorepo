@@ -14,7 +14,10 @@ import {kAddCallbackQueue} from '../../ctx/callback.js';
 import {kPromiseStore} from '../../ctx/promiseStore.js';
 import {addCallbackToStore} from '../../helpers/cb/addCallbackToStore.js';
 import {IHttpOutgoingErrorResponse} from '../../types/http.js';
-import {IAddCallbackHttpOutgoingSuccessResponse} from './types.js';
+import {
+  IAddCallbackHttpOutgoingSuccessResponse,
+  IAddCallbacksHttpOutgoingSuccessResponse,
+} from './types.js';
 
 let isProcessing = false;
 
@@ -53,13 +56,13 @@ async function processNextCallbacksBatch() {
 
         return {
           idempotencyKey: item.item.idempotencyKey,
-          success: true,
+          success: true as const,
           callback,
         };
       } catch (error) {
         return {
           idempotencyKey: item.item.idempotencyKey,
-          success: false,
+          success: false as const,
           error,
         };
       }
@@ -80,11 +83,12 @@ async function processNextCallbacksBatch() {
       item.resolve(callback);
     } else {
       const error =
-        result?.error ??
-        new OwnServerError(
-          'Error adding callback',
-          kOwnServerErrorCodes.InternalServerError,
-        );
+        result && !result.success
+          ? result.error
+          : new OwnServerError(
+              'Error adding callback',
+              kOwnServerErrorCodes.InternalServerError,
+            );
       item.reject(error);
     }
   });
@@ -93,53 +97,129 @@ async function processNextCallbacksBatch() {
   kPromiseStore.callAndForget(processNextCallbacksBatch);
 }
 
-export async function addCallbackEndpointImpl(params: {
+function enqueueAddCallback(params: {
   item: AddCallbackEndpointArgs;
   groupId: string;
   clientTokenId: string;
 }) {
   const promise = getDeferredPromise<ICallback>();
+  const fimidxIdempotencyKey =
+    params.item.idempotencyKey ||
+    `__fimidx_generated_${randomUUID()}_${Date.now()}`;
+  const item: AddCallbackEndpointArgs = {
+    ...params.item,
+    idempotencyKey: fimidxIdempotencyKey,
+  };
+
   kAddCallbackQueue.push({
     groupId: params.groupId,
     clientTokenId: params.clientTokenId,
-    item: params.item,
+    item,
     resolve: promise.resolve,
     reject: promise.reject,
-    fimidxIdempotencyKey:
-      params.item.idempotencyKey ||
-      `__fimidx_generated_${randomUUID()}_${Date.now()}`,
+    fimidxIdempotencyKey,
   });
 
   kPromiseStore.callAndForget(processNextCallbacksBatch);
-  const callback = await promise.promise;
-  addCallbackToStore({
-    id: callback.id,
-    timeoutDate: callback.timeout ? new Date(callback.timeout) : undefined,
-    intervalFrom: callback.intervalFrom
-      ? new Date(callback.intervalFrom)
-      : undefined,
-    intervalMs: callback.intervalMs,
-  });
 
-  return callback;
+  return {
+    fimidxIdempotencyKey,
+    promise: promise.promise.then(callback => {
+      addCallbackToStore({
+        id: callback.id,
+        timeoutDate: callback.timeout ? new Date(callback.timeout) : undefined,
+        intervalFrom: callback.intervalFrom
+          ? new Date(callback.intervalFrom)
+          : undefined,
+        intervalMs: callback.intervalMs,
+      });
+      return callback;
+    }),
+  };
 }
 
-const inputSchema = z.object({
+export async function addCallbackEndpointImpl(params: {
+  item: AddCallbackEndpointArgs;
+  groupId: string;
+  clientTokenId: string;
+}) {
+  const {promise} = enqueueAddCallback(params);
+  return promise;
+}
+
+export async function addCallbacksEndpointImpl(params: {
+  items: AddCallbackEndpointArgs[];
+  groupId: string;
+  clientTokenId: string;
+}): Promise<
+  Array<{
+    idempotencyKey: string;
+    success: boolean;
+    callback?: ICallback;
+    error?: string;
+  }>
+> {
+  const enqueued = params.items.map(item =>
+    enqueueAddCallback({
+      item,
+      groupId: params.groupId,
+      clientTokenId: params.clientTokenId,
+    }),
+  );
+
+  return Promise.all(
+    enqueued.map(async ({fimidxIdempotencyKey, promise}) => {
+      try {
+        const callback = await promise;
+        return {
+          idempotencyKey: fimidxIdempotencyKey,
+          success: true as const,
+          callback,
+        };
+      } catch (error: unknown) {
+        return {
+          idempotencyKey: fimidxIdempotencyKey,
+          success: false as const,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        };
+      }
+    }),
+  );
+}
+
+const singleInputSchema = z.object({
   item: addCallbackSchema,
   groupId: z.string(),
   clientTokenId: z.string(),
 });
 
+const batchInputSchema = z.object({
+  items: z.array(addCallbackSchema).min(1).max(100),
+  groupId: z.string(),
+  clientTokenId: z.string(),
+});
+
+const inputSchema = z.union([singleInputSchema, batchInputSchema]);
+
 export async function addCallbackEndpoint(req: Request, res: Response) {
   const params = inputSchema.parse(req.body);
 
   try {
+    if ('items' in params) {
+      const results = await addCallbacksEndpointImpl(params);
+      const response: IAddCallbacksHttpOutgoingSuccessResponse = {
+        type: 'success',
+        results,
+      };
+      res.status(200).send(response);
+      return;
+    }
+
     const callback = await addCallbackEndpointImpl(params);
     const response: IAddCallbackHttpOutgoingSuccessResponse = {
       type: 'success',
       callback,
     };
-
     res.status(200).send(response);
   } catch (error: unknown) {
     const code = OwnServerError.isOwnServerError(error)

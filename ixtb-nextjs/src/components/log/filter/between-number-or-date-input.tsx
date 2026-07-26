@@ -1,6 +1,11 @@
 import { CalendarIcon, HashIcon } from "lucide-react";
 import { useState } from "react";
 import { ToggleGroup, ToggleGroupItem } from "../../ui/toggle-group";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "../../ui/tooltip";
 import { BetweenInputDate } from "./between-input-date";
 import { BetweenInputNumber } from "./between-input-number";
 
@@ -24,12 +29,22 @@ export function BetweenNumberOrDateInput(props: {
         value={type}
         disabled={disabled}
       >
-        <ToggleGroupItem value="number" aria-label="Toggle number">
-          <HashIcon className="h-4 w-4" />
-        </ToggleGroupItem>
-        <ToggleGroupItem value="date" aria-label="Toggle date">
-          <CalendarIcon className="h-4 w-4" />
-        </ToggleGroupItem>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <ToggleGroupItem value="number" aria-label="Number">
+              <HashIcon className="h-4 w-4" />
+            </ToggleGroupItem>
+          </TooltipTrigger>
+          <TooltipContent>Number</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <ToggleGroupItem value="date" aria-label="Date">
+              <CalendarIcon className="h-4 w-4" />
+            </ToggleGroupItem>
+          </TooltipTrigger>
+          <TooltipContent>Date</TooltipContent>
+        </Tooltip>
       </ToggleGroup>
       {type === "number" ? (
         <BetweenInputNumber

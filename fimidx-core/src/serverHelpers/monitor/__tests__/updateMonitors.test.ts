@@ -99,6 +99,7 @@ describe("updateMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeUpdateMonitorsArgs({
@@ -117,6 +118,7 @@ describe("updateMonitors integration", () => {
       by: "updater",
       byType: "user",
       storage,
+      skipReportsToValidation: true,
     });
 
     // Verify the update
@@ -144,6 +146,7 @@ describe("updateMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeUpdateMonitorsArgs({
@@ -161,6 +164,7 @@ describe("updateMonitors integration", () => {
       by: "updater",
       byType: "user",
       storage,
+      skipReportsToValidation: true,
     });
 
     // Verify the update
@@ -188,6 +192,7 @@ describe("updateMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeUpdateMonitorsArgs({
@@ -205,6 +210,7 @@ describe("updateMonitors integration", () => {
       by: "updater",
       byType: "user",
       storage,
+      skipReportsToValidation: true,
     });
 
     // Verify the update
@@ -218,9 +224,8 @@ describe("updateMonitors integration", () => {
     const result = await getMonitors({ args: getArgs, storage });
 
     expect(result.monitors).toHaveLength(1);
-    expect(result.monitors[0].reportsTo).toEqual([
-      { userId: "user3" },
-      { userId: "user4" },
+    expect(result.monitors[0].reportsTo).toEqual([{ type: "user", userId: "user3" },
+      { type: "user", userId: "user4" },
     ]);
   });
 
@@ -235,6 +240,7 @@ describe("updateMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeUpdateMonitorsArgs({
@@ -252,6 +258,7 @@ describe("updateMonitors integration", () => {
       by: "updater",
       byType: "user",
       storage,
+      skipReportsToValidation: true,
     });
 
     // Verify the update
@@ -279,6 +286,7 @@ describe("updateMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const newLogsQuery = {
@@ -311,6 +319,7 @@ describe("updateMonitors integration", () => {
       by: "updater",
       byType: "user",
       storage,
+      skipReportsToValidation: true,
     });
 
     // Verify the update
@@ -335,6 +344,7 @@ describe("updateMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     await addMonitor({
@@ -343,6 +353,7 @@ describe("updateMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeUpdateMonitorsArgs({
@@ -360,6 +371,7 @@ describe("updateMonitors integration", () => {
       by: "updater",
       byType: "user",
       storage,
+      skipReportsToValidation: true,
     });
 
     // Verify the update
@@ -390,6 +402,7 @@ describe("updateMonitors integration", () => {
       byType: "user",
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     await addMonitor({
@@ -398,6 +411,7 @@ describe("updateMonitors integration", () => {
       byType: "user",
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeUpdateMonitorsArgs({
@@ -415,6 +429,7 @@ describe("updateMonitors integration", () => {
       by: "updater",
       byType: "user",
       storage,
+      skipReportsToValidation: true,
     });
 
     // Verify the update
@@ -447,6 +462,7 @@ describe("updateMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeUpdateMonitorsArgs({
@@ -468,6 +484,7 @@ describe("updateMonitors integration", () => {
       by: "updater",
       byType: "user",
       storage,
+      skipReportsToValidation: true,
     });
 
     // Verify the update
@@ -486,8 +503,8 @@ describe("updateMonitors integration", () => {
     expect(updatedMonitor.description).toBe("Updated description");
     expect(updatedMonitor.status).toBe("disabled");
     expect(updatedMonitor.reportsTo).toEqual([
-      { userId: "user2" },
-      { userId: "user3" },
+      { type: "user", userId: "user2" },
+      { type: "user", userId: "user3" },
     ]);
     expect(updatedMonitor.interval).toEqual({ hours: 12 });
   });
@@ -500,6 +517,7 @@ describe("updateMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeUpdateMonitorsArgs({
@@ -517,6 +535,7 @@ describe("updateMonitors integration", () => {
       by: "updater",
       byType: "user",
       storage,
+      skipReportsToValidation: true,
     });
 
     // Verify no changes were made

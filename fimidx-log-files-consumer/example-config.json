@@ -1,26 +1,26 @@
 {
+  "workingDir": ".",
   "projectId": "my-project",
-  "clientToken": "your-client-token",
-  "serverURL": "https://your-fimidx-server.com",
+  "serverURL": "https://dx.fimidara.com/api",
   "metadata": {
     "environment": "production",
     "service": "log-consumer"
   },
+  "batchSize": 100,
+  "maxRecordBytes": 1048576,
+  "flushIncompleteAfterMs": 5000,
   "logFiles": [
     {
       "path": "/var/log/application.log",
       "metadata": {
-        "logType": "application",
-        "level": "info"
+        "logType": "application"
       }
     },
     {
       "path": "/var/log/error.log",
       "metadata": {
-        "logType": "error",
-        "level": "error"
+        "logType": "error"
       }
     }
-  ],
-  "trackConsumptionFilepath": "./consumption-data.json"
+  ]
 }

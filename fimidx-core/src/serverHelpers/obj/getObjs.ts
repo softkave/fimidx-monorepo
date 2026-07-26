@@ -108,6 +108,8 @@ export async function getManyObjs(params: {
   date?: Date;
   storage?: IObjStorage;
   storageType?: "mongo" | "postgres";
+  /** Mongo-style projection forwarded to storage.read. */
+  projection?: Record<string, 0 | 1>;
 }) {
   const {
     objQuery,
@@ -118,6 +120,7 @@ export async function getManyObjs(params: {
     date,
     storageType = getDefaultStorageType(),
     storage = createStorage({ type: storageType }),
+    projection,
   } = params;
 
   // Fetch fields for query generation
@@ -165,6 +168,7 @@ export async function getManyObjs(params: {
     date,
     fields: fieldsMap,
     includeDeleted,
+    projection,
   });
 
   return result;

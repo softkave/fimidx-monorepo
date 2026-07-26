@@ -43,8 +43,32 @@ export const kClientPaths = {
         monitors: {
           index: (orgId: string, projectId: string) =>
             `/app/orgs/${orgId}/projects/${projectId}/monitors`,
+          /** Defaults to the details tab. */
           single: (orgId: string, projectId: string, monitorId: string) =>
-            `/app/orgs/${orgId}/projects/${projectId}/monitors/${monitorId}`,
+            `/app/orgs/${orgId}/projects/${projectId}/monitors/${monitorId}/details`,
+          details: (orgId: string, projectId: string, monitorId: string) =>
+            `/app/orgs/${orgId}/projects/${projectId}/monitors/${monitorId}/details`,
+          alerts: (orgId: string, projectId: string, monitorId: string) =>
+            `/app/orgs/${orgId}/projects/${projectId}/monitors/${monitorId}/alerts`,
+          runs: (orgId: string, projectId: string, monitorId: string) =>
+            `/app/orgs/${orgId}/projects/${projectId}/monitors/${monitorId}/runs`,
+          edit: (orgId: string, projectId: string, monitorId: string) =>
+            `/app/orgs/${orgId}/projects/${projectId}/monitors/${monitorId}/edit`,
+          tab: (
+            orgId: string,
+            projectId: string,
+            monitorId: string,
+            tab: string
+          ) =>
+            `/app/orgs/${orgId}/projects/${projectId}/monitors/${monitorId}/${tab}`,
+          new: (orgId: string, projectId: string) =>
+            `/app/orgs/${orgId}/projects/${projectId}/monitors/new`,
+        },
+        alerts: {
+          index: (orgId: string, projectId: string) =>
+            `/app/orgs/${orgId}/projects/${projectId}/alerts`,
+          single: (orgId: string, projectId: string, alertId: string) =>
+            `/app/orgs/${orgId}/projects/${projectId}/alerts/${alertId}`,
         },
         callbacks: {
           index: (orgId: string, projectId: string) =>
@@ -59,6 +83,7 @@ export const kClientPaths = {
   emailTemplates: {
     index: "/email-templates",
     addParticipant: "/email-templates/add-participant",
+    monitorAlert: "/email-templates/monitor-alert",
   },
   withURL(path: string) {
     return `${kBaseUrl}${path}`;

@@ -1,13 +1,13 @@
+"use client";
+
 import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from "@/src/components/ui/sidebar";
 import { kClientPaths } from "@/src/lib/clientHelpers/clientPaths";
 import { BoxesIcon } from "lucide-react";
+import { SidebarNavItems } from "./sidebar-nav-items";
 import { ISidebarItem } from "./types";
 
 const items: ISidebarItem[] = [
@@ -15,6 +15,8 @@ const items: ISidebarItem[] = [
     title: "Orgs",
     url: kClientPaths.app.org.index,
     icon: BoxesIcon,
+    // Avoid lighting up for every `/orgs/:orgId/...` route.
+    match: "exact",
   },
 ];
 
@@ -23,18 +25,7 @@ export function HomeSidebarGroup() {
     <SidebarGroup>
       <SidebarGroupLabel>Home</SidebarGroupLabel>
       <SidebarGroupContent>
-        <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild>
-                <a href={item.url}>
-                  <item.icon />
-                  <span>{item.title}</span>
-                </a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
+        <SidebarNavItems items={items} />
       </SidebarGroupContent>
     </SidebarGroup>
   );

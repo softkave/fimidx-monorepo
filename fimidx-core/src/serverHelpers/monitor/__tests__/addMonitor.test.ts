@@ -87,6 +87,7 @@ describe("addMonitor integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     expect(result1.monitor).toBeDefined();
@@ -100,6 +101,7 @@ describe("addMonitor integration", () => {
         byType: defaultByType,
         groupId: defaultGroupId,
         storage,
+        skipReportsToValidation: true,
       })
     ).rejects.toThrow("Failed to add monitor");
   });
@@ -133,16 +135,16 @@ describe("addMonitor integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     expect(result.monitor).toBeDefined();
     expect(result.monitor.name).toBe("My Test Monitor");
     expect(result.monitor.description).toBe("A test monitor description");
     expect(result.monitor.status).toBe("enabled");
-    expect(result.monitor.reportsTo).toEqual([
-      { userId: "user1" },
-      { userId: "user2" },
-      { userId: "user3" },
+    expect(result.monitor.reportsTo).toEqual([{ type: "user", userId: "user1" },
+      { type: "user", userId: "user2" },
+      { type: "user", userId: "user3" },
     ]);
     expect(result.monitor.interval).toEqual({ hours: 6 });
     expect(result.monitor.query).toEqual({
@@ -180,6 +182,7 @@ describe("addMonitor integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     expect(result.monitor).toBeDefined();
@@ -199,6 +202,7 @@ describe("addMonitor integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     expect(result1.monitor).toBeDefined();
@@ -212,6 +216,7 @@ describe("addMonitor integration", () => {
         byType: defaultByType,
         groupId: defaultGroupId,
         storage,
+        skipReportsToValidation: true,
       })
     ).rejects.toThrow("Failed to add monitor");
   });
@@ -231,6 +236,7 @@ describe("addMonitor integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const result2 = await addMonitor({
@@ -239,6 +245,7 @@ describe("addMonitor integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     expect(result1.monitor.name).toBe("First Monitor");
@@ -263,6 +270,7 @@ describe("addMonitor integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const result2 = await addMonitor({
@@ -271,6 +279,7 @@ describe("addMonitor integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     expect(result1.monitor.name).toBe("Same Name Monitor");
@@ -292,6 +301,7 @@ describe("addMonitor integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     expect(result.monitor.status).toBe("disabled");
@@ -309,6 +319,7 @@ describe("addMonitor integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     expect(result.monitor.reportsTo).toEqual([]);
@@ -339,6 +350,7 @@ describe("addMonitor integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     expect(result.monitor.query).toEqual({

@@ -1,14 +1,20 @@
+"use client";
+
 import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from "@/src/components/ui/sidebar";
 import { kClientPaths } from "@/src/lib/clientHelpers/clientPaths";
-import { FileStackIcon, KeyIcon, LogsIcon } from "lucide-react";
+import {
+  ActivityIcon,
+  BellRingIcon,
+  FileStackIcon,
+  KeyIcon,
+  LogsIcon,
+} from "lucide-react";
 import { useMemo } from "react";
+import { SidebarNavItems } from "./sidebar-nav-items";
 import { ISidebarItem } from "./types";
 
 function getItems(orgId: string, projectId: string) {
@@ -22,6 +28,16 @@ function getItems(orgId: string, projectId: string) {
       title: "Logs",
       url: kClientPaths.app.org.project.log.index(orgId, projectId),
       icon: LogsIcon,
+    },
+    {
+      title: "Monitoring",
+      url: kClientPaths.app.org.project.monitors.index(orgId, projectId),
+      icon: ActivityIcon,
+    },
+    {
+      title: "Alerts",
+      url: kClientPaths.app.org.project.alerts.index(orgId, projectId),
+      icon: BellRingIcon,
     },
     {
       title: "Source Maps",
@@ -47,18 +63,7 @@ export function ProjectSidebarGroup(props: {
     <SidebarGroup>
       <SidebarGroupLabel>{props.name}</SidebarGroupLabel>
       <SidebarGroupContent>
-        <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild>
-                <a href={item.url}>
-                  <item.icon />
-                  <span>{item.title}</span>
-                </a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
+        <SidebarNavItems items={items} />
       </SidebarGroupContent>
     </SidebarGroup>
   );

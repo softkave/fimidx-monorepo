@@ -13,7 +13,39 @@ import type {
 import { kId0 } from "../../definitions/system.js";
 import type { IObjStorage } from "../../storage/types.js";
 import { getManyObjs } from "../obj/getObjs.js";
+import {
+  kObjTopLevelFields,
+  resourceFieldsToMongoProjection,
+  type ProjectedResource,
+} from "../obj/projectedResource.js";
 import { objToProject } from "./objToProject.js";
+
+/** `orgId` on IProject is stored as top-level `groupId`. */
+const kProjectFieldAliases: Record<string, string> = {
+  orgId: "groupId",
+};
+
+export type ProjectedProject<
+  P extends readonly (keyof IProject)[] | undefined,
+> = ProjectedResource<IProject, P>;
+
+export type GetProjectsResult<
+  P extends readonly (keyof IProject)[] | undefined = undefined,
+> = {
+  projects: Array<ProjectedProject<P>>;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+};
+
+export function projectFieldsToMongoProjection(
+  fields: readonly (keyof IProject)[]
+): Record<string, 0 | 1> {
+  return resourceFieldsToMongoProjection(fields as readonly string[], {
+    topLevelFields: kObjTopLevelFields,
+    fieldAliases: kProjectFieldAliases,
+  });
+}
 
 export function getProjectsObjQuery(params: { args: GetProjectsEndpointArgs }) {
   const { args } = params;
@@ -69,8 +101,22 @@ export function getProjectsObjQuery(params: { args: GetProjectsEndpointArgs }) {
 export async function getProjects(params: {
   args: GetProjectsEndpointArgs;
   storage?: IObjStorage;
-}) {
-  const { args, storage } = params;
+}): Promise<GetProjectsResult<undefined>>;
+export async function getProjects<
+  const P extends readonly (keyof IProject)[],
+>(params: {
+  args: GetProjectsEndpointArgs;
+  storage?: IObjStorage;
+  projection: P;
+}): Promise<GetProjectsResult<P>>;
+export async function getProjects<
+  const P extends readonly (keyof IProject)[] | undefined = undefined,
+>(params: {
+  args: GetProjectsEndpointArgs;
+  storage?: IObjStorage;
+  projection?: P;
+}): Promise<GetProjectsResult<P>> {
+  const { args, storage, projection } = params;
   const { page, limit, sort } = args;
 
   // Convert 1-based pagination to 0-based for storage layer
@@ -87,6 +133,10 @@ export async function getProjects(params: {
   });
 
   const objQuery = getProjectsObjQuery({ args });
+  const mongoProjection = projection
+    ? projectFieldsToMongoProjection(projection)
+    : undefined;
+
   const result = await getManyObjs({
     objQuery,
     page: storagePage,
@@ -94,10 +144,11 @@ export async function getProjects(params: {
     tag: kObjTags.project,
     sort: transformedSort,
     storage,
+    projection: mongoProjection,
   });
 
   return {
-    projects: result.objs.map(objToProject),
+    projects: result.objs.map(objToProject) as Array<ProjectedProject<P>>,
     page: pageNumber, // Return 1-based page number
     limit: limitNumber,
     hasMore: result.hasMore,

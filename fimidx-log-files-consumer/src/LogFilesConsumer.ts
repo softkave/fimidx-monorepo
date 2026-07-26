@@ -1,46 +1,48 @@
+import {FimidxEndpoints} from 'fimidx';
 import * as chokidar from 'chokidar';
 import * as fs from 'fs/promises';
+import {
+  loadConsumptionData,
+  saveConsumptionData,
+} from './checkpointStore.js';
+import {resolveFileConfig} from './config.js';
 import {consumeLogFile} from './consumeLogFile.js';
 import {
+  getRuntimePaths,
+  IRuntimePaths,
+  removeOwnPidFile,
+  writePidFile,
+} from './runtimePaths.js';
+import {
+  IConsumeBatch,
   ILogFileConsumptionEntry,
   ILogFilesConsumption,
+  IResolvedFileConfig,
+  kDefaultPassIntervalMs,
   LogFilesConsumerOptions,
   LogFilesConsumerOptionsSchema,
-  LogFilesConsumptionSchema,
 } from './types.js';
-
-interface IAwakeFile {
-  path: string;
-  metadata: Record<string, any>;
-  projectId: string;
-  clientToken: string;
-  serverURL?: string;
-}
-
-interface IAsleepFile {
-  path: string;
-  metadata: Record<string, any>;
-  projectId: string;
-  clientToken: string;
-  serverURL?: string;
-}
 
 export interface ILogFilesConsumer {
   start(): Promise<void>;
   stop(): Promise<void>;
+  requestReload(): void;
 }
 
 export class LogFilesConsumer implements ILogFilesConsumer {
   private configFilepath: string;
-  private configWatcher: chokidar.FSWatcher | null = null;
   private fileWatchers: Map<string, chokidar.FSWatcher> = new Map();
-  private awakeFiles: Map<string, IAwakeFile> = new Map();
-  private asleepFiles: Map<string, IAsleepFile> = new Map();
+  private awakeFiles: Map<string, IResolvedFileConfig> = new Map();
+  private asleepFiles: Map<string, IResolvedFileConfig> = new Map();
   private consumptionData: ILogFilesConsumption = {entries: []};
+  private cachedConfig: LogFilesConsumerOptions | null = null;
+  private runtimePaths: IRuntimePaths | null = null;
+  private endpointsByKey = new Map<string, FimidxEndpoints>();
   private isRunning = false;
-  private passInterval: number = 10000; // 10 seconds default
+  private passInterval = kDefaultPassIntervalMs;
   private passTimer: NodeJS.Timeout | null = null;
-  private configChanged = false;
+  private passInFlight = false;
+  private reloadRequested = false;
 
   constructor(configFilepath: string) {
     this.configFilepath = configFilepath;
@@ -53,17 +55,34 @@ export class LogFilesConsumer implements ILogFilesConsumer {
 
     this.isRunning = true;
     console.log(
-      `Starting log files consumer with config: ${this.configFilepath}`,
+      `Starting log files consumer (PID: ${process.pid}) with config: ${this.configFilepath}`,
     );
 
-    // Start watching the config file
-    await this.startConfigWatcher();
+    try {
+      await this.loadConfig();
+      await this.runPass();
+      console.log(`Log files consumer started (PID: ${process.pid})`);
+    } catch (error) {
+      await this.stop();
+      throw error;
+    }
+  }
 
-    // Load initial config
-    await this.loadConfig();
+  /**
+   * Ask the consumer to re-read its config file. The reload is applied at the
+   * start of a pass so it never interleaves with an in-flight pass.
+   */
+  requestReload(): void {
+    if (!this.isRunning) {
+      return;
+    }
 
-    // Start the main consumption loop
-    await this.startConsumptionLoop();
+    this.reloadRequested = true;
+    console.log('Config reload requested');
+
+    if (!this.passInFlight) {
+      this.scheduleNextPass(0);
+    }
   }
 
   async stop(): Promise<void> {
@@ -74,139 +93,91 @@ export class LogFilesConsumer implements ILogFilesConsumer {
     this.isRunning = false;
     console.log('Stopping log files consumer...');
 
-    // Clear the pass timer
     if (this.passTimer) {
       clearTimeout(this.passTimer);
       this.passTimer = null;
     }
 
-    // Stop all file watchers
-    for (const [filepath, watcher] of this.fileWatchers) {
+    for (const watcher of this.fileWatchers.values()) {
       await watcher.close();
     }
     this.fileWatchers.clear();
 
-    // Stop config watcher
-    if (this.configWatcher) {
-      await this.configWatcher.close();
-      this.configWatcher = null;
+    if (this.runtimePaths) {
+      await removeOwnPidFile(this.runtimePaths);
     }
 
+    this.endpointsByKey.clear();
     console.log('Log files consumer stopped');
   }
 
-  private async startConfigWatcher(): Promise<void> {
-    this.configWatcher = chokidar.watch(this.configFilepath, {
-      persistent: true,
-      ignoreInitial: true,
-    });
-
-    this.configWatcher.on('change', () => {
-      console.log('Config file changed, will reload on next pass');
-      this.configChanged = true;
-    });
-
-    this.configWatcher.on('error', error => {
-      console.error('Error watching config file:', error);
-    });
-  }
-
   private async loadConfig(): Promise<void> {
-    try {
-      const configContent = await fs.readFile(this.configFilepath, 'utf-8');
-      const configData = JSON.parse(configContent);
+    // Everything that can fail is resolved before any live state is mutated, so
+    // a bad config leaves the previously loaded one running.
+    const configContent = await fs.readFile(this.configFilepath, 'utf-8');
+    const configData = JSON.parse(configContent);
+    const validatedConfig = LogFilesConsumerOptionsSchema.parse(configData);
+    const resolvedFiles = validatedConfig.logFiles.map(logFile =>
+      resolveFileConfig(logFile, validatedConfig),
+    );
+    const nextRuntimePaths = getRuntimePaths(validatedConfig.workingDir);
+    const runtimeChanged =
+      this.runtimePaths?.runtimeDir !== nextRuntimePaths.runtimeDir;
 
-      // Validate config
-      const validatedConfig = LogFilesConsumerOptionsSchema.parse(configData);
-
-      // Load consumption data if it exists
-      await this.loadConsumptionData(validatedConfig.trackConsumptionFilepath);
-
-      // Process log files from config
-      await this.processConfigLogFiles(validatedConfig);
-
-      console.log(
-        `Loaded config with ${validatedConfig.logFiles.length} log files`,
+    await writePidFile(nextRuntimePaths);
+    if (runtimeChanged) {
+      if (this.runtimePaths) {
+        await removeOwnPidFile(this.runtimePaths);
+      }
+      this.consumptionData = await loadConsumptionData(
+        nextRuntimePaths.consumptionFilepath,
       );
-    } catch (error) {
-      console.error('Error loading config:', error);
-      throw error;
     }
+
+    this.runtimePaths = nextRuntimePaths;
+    this.cachedConfig = validatedConfig;
+    await this.applyResolvedLogFiles(resolvedFiles);
+
+    console.log(
+      `Loaded config with ${validatedConfig.logFiles.length} log files; runtime data: ${nextRuntimePaths.runtimeDir}`,
+    );
   }
 
-  private async loadConsumptionData(filepath: string): Promise<void> {
-    try {
-      const content = await fs.readFile(filepath, 'utf-8');
-      const data = JSON.parse(content);
-      this.consumptionData = LogFilesConsumptionSchema.parse(data);
-    } catch (error: unknown) {
-      // File doesn't exist or is invalid, start with empty consumption data
-      this.consumptionData = {entries: []};
+  private getEndpoints(file: IResolvedFileConfig): FimidxEndpoints {
+    const key = `${file.clientToken}::${file.serverURL ?? ''}`;
+    let endpoints = this.endpointsByKey.get(key);
+    if (!endpoints) {
+      endpoints = new FimidxEndpoints({
+        authToken: file.clientToken,
+        ...(file.serverURL ? {serverURL: file.serverURL} : {}),
+      });
+      this.endpointsByKey.set(key, endpoints);
     }
+    return endpoints;
   }
 
-  private async saveConsumptionData(filepath: string): Promise<void> {
-    try {
-      await fs.writeFile(
-        filepath,
-        JSON.stringify(this.consumptionData, null, 2),
-      );
-    } catch (error) {
-      console.error('Error saving consumption data:', error);
-    }
-  }
-
-  private async processConfigLogFiles(
-    config: LogFilesConsumerOptions,
+  private async applyResolvedLogFiles(
+    resolvedFiles: IResolvedFileConfig[],
   ): Promise<void> {
-    // Clear current awake and asleep files
     this.awakeFiles.clear();
     this.asleepFiles.clear();
+    this.endpointsByKey.clear();
 
-    // Stop existing file watchers
-    for (const [filepath, watcher] of this.fileWatchers) {
+    for (const watcher of this.fileWatchers.values()) {
       await watcher.close();
     }
     this.fileWatchers.clear();
 
-    // Process each log file from config
-    for (const logFile of config.logFiles) {
-      const fileKey = logFile.path;
-
-      // Merge config options (per-entry config takes priority)
-      const mergedConfig = {
-        metadata: logFile.metadata || config.metadata || {},
-        projectId: logFile.projectId || config.projectId,
-        clientToken: logFile.clientToken || config.clientToken,
-        serverURL: logFile.serverURL || config.serverURL,
-      };
-
-      // Validate that required fields are present
-      if (!mergedConfig.projectId || !mergedConfig.clientToken) {
-        throw new Error(
-          `Missing required config for file ${logFile.path}: projectId and clientToken are required`,
-        );
-      }
-
-      // Check if file exists
+    for (const resolved of resolvedFiles) {
       try {
-        await fs.access(logFile.path);
-      } catch (error) {
-        console.warn(`Log file does not exist: ${logFile.path}`);
+        await fs.access(resolved.path);
+      } catch {
+        console.warn(`Log file does not exist: ${resolved.path}`);
         continue;
       }
 
-      // Add to awake files initially
-      this.awakeFiles.set(fileKey, {
-        path: logFile.path,
-        metadata: mergedConfig.metadata,
-        projectId: mergedConfig.projectId!,
-        clientToken: mergedConfig.clientToken!,
-        serverURL: mergedConfig.serverURL,
-      });
-
-      // Start watching the file
-      await this.startFileWatcher(logFile.path);
+      this.awakeFiles.set(resolved.path, resolved);
+      await this.startFileWatcher(resolved.path);
     }
   }
 
@@ -233,128 +204,142 @@ export class LogFilesConsumer implements ILogFilesConsumer {
   }
 
   private handleFileChange(filepath: string): void {
-    // Find the file in asleep files and move it to awake files
-    for (const [key, asleepFile] of this.asleepFiles) {
-      if (asleepFile.path === filepath) {
-        this.awakeFiles.set(key, asleepFile);
-        this.asleepFiles.delete(key);
-        console.log(`Moved ${filepath} from asleep to awake`);
-        break;
-      }
+    const asleepFile = this.asleepFiles.get(filepath);
+    if (asleepFile) {
+      this.awakeFiles.set(filepath, asleepFile);
+      this.asleepFiles.delete(filepath);
+      console.log(`Moved ${filepath} from asleep to awake`);
     }
   }
 
-  private async startConsumptionLoop(): Promise<void> {
-    const runPass = async () => {
-      if (!this.isRunning) {
-        return;
+  private scheduleNextPass(delayMs = this.passInterval): void {
+    if (this.passTimer) {
+      clearTimeout(this.passTimer);
+      this.passTimer = null;
+    }
+
+    if (!this.isRunning) {
+      return;
+    }
+
+    this.passTimer = setTimeout(() => {
+      void this.runPass();
+    }, delayMs);
+  }
+
+  private async runPass(): Promise<void> {
+    if (!this.isRunning || this.passInFlight) {
+      return;
+    }
+
+    this.passInFlight = true;
+
+    try {
+      if (this.reloadRequested) {
+        this.reloadRequested = false;
+        await this.reloadConfig();
       }
 
-      try {
-        // Check if config has changed
-        if (this.configChanged) {
-          console.log('Config changed, reloading...');
-          await this.loadConfig();
-          this.configChanged = false;
-        }
+      await this.processAwakeFiles();
+    } catch (error) {
+      console.error('Error in consumption pass:', error);
+    } finally {
+      this.passInFlight = false;
+      this.scheduleNextPass();
+    }
+  }
 
-        // Process awake files
-        await this.processAwakeFiles();
+  private async reloadConfig(): Promise<void> {
+    try {
+      await this.loadConfig();
+    } catch (error) {
+      console.error(
+        'Failed to reload config, keeping the previous one:',
+        error,
+      );
+    }
+  }
 
-        // Schedule next pass
-        this.passTimer = setTimeout(runPass, this.passInterval);
-      } catch (error) {
-        console.error('Error in consumption pass:', error);
-        // Schedule next pass even if there was an error
-        this.passTimer = setTimeout(runPass, this.passInterval);
-      }
-    };
-
-    // Start the first pass
-    await runPass();
+  private updateCheckpointEntry(entry: ILogFileConsumptionEntry): void {
+    const existingIndex = this.consumptionData.entries.findIndex(
+      e => e.path === entry.path,
+    );
+    if (existingIndex >= 0) {
+      this.consumptionData.entries[existingIndex] = entry;
+    } else {
+      this.consumptionData.entries.push(entry);
+    }
   }
 
   private async processAwakeFiles(): Promise<void> {
-    const filesToRemove: string[] = [];
-    const config = await this.getCurrentConfig();
+    if (!this.cachedConfig || !this.runtimePaths) {
+      return;
+    }
+
+    const trackPath = this.runtimePaths.consumptionFilepath;
+    const filesToSleep: string[] = [];
 
     for (const [key, awakeFile] of this.awakeFiles) {
       try {
-        // Find last consumption entry for this file
         const lastEntry = this.consumptionData.entries.find(
           entry => entry.path === awakeFile.path,
         );
 
-        // Consume the log file
+        const endpoints = this.getEndpoints(awakeFile);
+
         const result = await consumeLogFile(
           {
             path: awakeFile.path,
             metadata: awakeFile.metadata,
-            projectId: awakeFile.projectId,
-            clientToken: awakeFile.clientToken,
-            serverURL: awakeFile.serverURL,
+            batchSize: awakeFile.batchSize,
+            maxRecordBytes: awakeFile.maxRecordBytes,
+            flushIncompleteAfterMs: awakeFile.flushIncompleteAfterMs,
+            sendBatch: async (batch: IConsumeBatch) => {
+              await endpoints.logs.ingestLogs({
+                projectId: awakeFile.projectId,
+                logs: batch.records,
+              });
+
+              this.updateCheckpointEntry({
+                path: awakeFile.path,
+                startPosition: batch.endPosition,
+                lastModified: batch.lastModified,
+                size: batch.size,
+                ...(batch.dev !== undefined ? {dev: batch.dev} : {}),
+                ...(batch.ino !== undefined ? {ino: batch.ino} : {}),
+              });
+              await saveConsumptionData(trackPath, this.consumptionData);
+            },
           },
           lastEntry,
         );
 
-        // Get current file stats
-        const stats = await fs.stat(awakeFile.path);
-        const currentModifiedTime = stats.mtime.getTime();
-
-        // Update or create consumption entry
-        const newEntry: ILogFileConsumptionEntry = {
+        // Ensure checkpoint reflects latest confirmed position even if no new batches.
+        this.updateCheckpointEntry({
           path: awakeFile.path,
           startPosition: result.endPosition,
-          lastModified: currentModifiedTime,
-        };
+          lastModified: result.lastModified,
+          size: result.size,
+          ...(result.dev !== undefined ? {dev: result.dev} : {}),
+          ...(result.ino !== undefined ? {ino: result.ino} : {}),
+        });
+        await saveConsumptionData(trackPath, this.consumptionData);
 
-        // Update consumption data
-        const existingIndex = this.consumptionData.entries.findIndex(
-          entry => entry.path === awakeFile.path,
-        );
-
-        if (existingIndex >= 0) {
-          this.consumptionData.entries[existingIndex] = newEntry;
-        } else {
-          this.consumptionData.entries.push(newEntry);
-        }
-
-        // Check if file has changed
-        if (lastEntry && lastEntry.lastModified === currentModifiedTime) {
-          // File hasn't changed, check if it should be moved to asleep
-          if (lastEntry.startPosition === result.endPosition) {
-            // No new content consumed, move to asleep files
-            this.asleepFiles.set(key, awakeFile);
-            filesToRemove.push(key);
-            console.log(
-              `Moved ${awakeFile.path} from awake to asleep (no changes)`,
-            );
-          }
-        }
-
-        // Save consumption data
-        if (config) {
-          await this.saveConsumptionData(config.trackConsumptionFilepath);
+        if (result.fullyConsumed && !result.hasPending) {
+          this.asleepFiles.set(key, awakeFile);
+          filesToSleep.push(key);
+          console.log(
+            `Moved ${awakeFile.path} from awake to asleep (fully consumed)`,
+          );
         }
       } catch (error) {
         console.error(`Error processing file ${awakeFile.path}:`, error);
+        // Keep awake for retry; checkpoint already reflects last successful batch.
       }
     }
 
-    // Remove files that were moved to asleep
-    for (const key of filesToRemove) {
+    for (const key of filesToSleep) {
       this.awakeFiles.delete(key);
-    }
-  }
-
-  private async getCurrentConfig(): Promise<LogFilesConsumerOptions | null> {
-    try {
-      const configContent = await fs.readFile(this.configFilepath, 'utf-8');
-      const configData = JSON.parse(configContent);
-      return LogFilesConsumerOptionsSchema.parse(configData);
-    } catch (error) {
-      console.error('Error reading current config:', error);
-      return null;
     }
   }
 }

@@ -630,7 +630,8 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
       (value.eq !== undefined ||
         value.neq !== undefined ||
         value.in !== undefined ||
-        value.not_in !== undefined)
+        value.not_in !== undefined ||
+        value.like !== undefined)
     );
   }
 
@@ -661,7 +662,9 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
     const hasNeq = value.neq !== undefined;
     const hasIn = value.in !== undefined && value.in.length > 0;
     const hasNotIn = value.not_in !== undefined && value.not_in.length > 0;
-    const hasOnlyEq = value.eq !== undefined && !hasNeq && !hasIn && !hasNotIn;
+    const hasLike = value.like !== undefined;
+    const hasOnlyEq =
+      value.eq !== undefined && !hasNeq && !hasIn && !hasNotIn && !hasLike;
 
     if (hasOnlyEq) {
       filter[fieldKey] = value.eq;
@@ -682,6 +685,10 @@ export class MongoQueryTransformer extends BaseQueryTransformer<
     }
     if (hasNotIn) {
       fieldFilter.$nin = uniq(value.not_in);
+    }
+    if (hasLike) {
+      // Match record-query `like`: case-insensitive regex by default.
+      fieldFilter.$regex = new RegExp(value.like!, "i");
     }
 
     // Assign the field filter to the main filter

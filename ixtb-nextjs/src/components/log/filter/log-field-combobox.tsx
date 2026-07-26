@@ -1,8 +1,10 @@
 "use client";
 
+import { useGetLogFieldsInfinite } from "@/src/lib/clientApi/log";
 import { cn } from "@/src/lib/utils";
 import { ILogField } from "fimidx-core/definitions/log";
-import { useMemo, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Combobox,
   ComboboxChip,
@@ -21,8 +23,11 @@ const defaultPlaceholder = {
   multiple: "Add field…",
 };
 
+const SEARCH_DEBOUNCE_MS = 250;
+const PAGE_LIMIT = 50;
+
 interface LogFieldComboboxPropsBase {
-  fields: ILogField[];
+  projectId: string;
   disabled?: boolean;
   placeholder?: string;
   className?: string;
@@ -34,7 +39,7 @@ export type LogFieldComboboxProps =
   | (LogFieldComboboxPropsBase & {
       multiple?: false;
       value: string;
-      onChange: (value: string) => void;
+      onChange: (value: string, field?: ILogField) => void;
     })
   | (LogFieldComboboxPropsBase & {
       multiple: true;
@@ -43,14 +48,12 @@ export type LogFieldComboboxProps =
     });
 
 /**
- * Combobox for choosing log field path(s). When multiple is true,
- * value/onChange are array-based; otherwise single string. When
- * allowCustomValue is true, the current input is shown as an option when it
- * doesn't match any field.
+ * Combobox for choosing log field path(s). Fetches fields for `projectId` with
+ * infinite scroll and server-side path search as the user types.
  */
 export function LogFieldCombobox(props: LogFieldComboboxProps) {
   const {
-    fields,
+    projectId,
     disabled,
     placeholder,
     className,
@@ -59,35 +62,102 @@ export function LogFieldCombobox(props: LogFieldComboboxProps) {
 
   const anchorRef = useComboboxAnchor();
   const [inputValue, setInputValue] = useState("");
+  const [debouncedPath, setDebouncedPath] = useState("");
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      setDebouncedPath(inputValue.trim());
+    }, SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(handle);
+  }, [inputValue]);
+
+  const {
+    fields: fetchedFields,
+    hasMore,
+    isLoading,
+    isLoadingMore,
+    setSize,
+  } = useGetLogFieldsInfinite({
+    projectId,
+    path: debouncedPath || undefined,
+    limit: PAGE_LIMIT,
+  });
+
+  useEffect(() => {
+    setSize(1);
+  }, [debouncedPath, projectId, setSize]);
+
+  const fieldsByPath = useMemo(() => {
+    const map = new Map<string, ILogField>();
+    for (const field of fetchedFields) {
+      map.set(field.path, field);
+    }
+    return map;
+  }, [fetchedFields]);
 
   const options = useMemo(() => {
-    const paths = fields.map((f) => f.path);
+    const query = inputValue.trim().toLowerCase();
+    // Prefer server results; also filter client-side so stale pages / in-flight
+    // debounce never show non-matching paths. Deduplicate by path so React
+    // keys stay unique even if the API returns overlapping rows.
+    const seen = new Set<string>();
+    const paths: string[] = [];
+    for (const field of fetchedFields) {
+      if (seen.has(field.path)) {
+        continue;
+      }
+      if (query && !field.path.toLowerCase().includes(query)) {
+        continue;
+      }
+      seen.add(field.path);
+      paths.push(field.path);
+    }
     if (
       allowCustomValue &&
-      inputValue.trim() &&
-      !paths.includes(inputValue.trim())
+      query &&
+      !paths.some((path) => path.toLowerCase() === query)
     ) {
-      return [...paths, inputValue.trim()];
+      paths.push(inputValue.trim());
     }
     return paths;
-  }, [fields, inputValue, allowCustomValue]);
+  }, [fetchedFields, inputValue, allowCustomValue]);
 
   const isMultiple = props.multiple === true;
   const place =
     placeholder ?? defaultPlaceholder[isMultiple ? "multiple" : "single"];
 
+  const loadMoreIfNeeded = (el: HTMLElement) => {
+    if (!hasMore || isLoadingMore) {
+      return;
+    }
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 48) {
+      setSize((size) => size + 1);
+    }
+  };
+
   const renderItem = (path: string) => (
     <ComboboxItem key={path} value={path}>
       <pre className="overflow-hidden text-ellipsis">
-        <code className="text-sm">{path}</code>
+        <code className="text-sm text-wrap">{path}</code>
       </pre>
     </ComboboxItem>
   );
 
   const renderList = () => (
     <>
-      <ComboboxEmpty>No fields</ComboboxEmpty>
-      <ComboboxList>{renderItem}</ComboboxList>
+      <ComboboxEmpty>
+        {isLoading ? "Loading fields…" : "No fields"}
+      </ComboboxEmpty>
+      <ComboboxList
+        onScroll={(event) => loadMoreIfNeeded(event.currentTarget)}
+      >
+        {renderItem}
+      </ComboboxList>
+      {isLoadingMore ? (
+        <div className="flex justify-center py-2">
+          <Loader2 className="size-4 animate-spin text-muted-foreground" />
+        </div>
+      ) : null}
     </>
   );
 
@@ -96,6 +166,7 @@ export function LogFieldCombobox(props: LogFieldComboboxProps) {
     return (
       <Combobox
         items={options}
+        filter={null}
         multiple
         value={value}
         onValueChange={(v) => onChange(v ?? [])}
@@ -125,19 +196,26 @@ export function LogFieldCombobox(props: LogFieldComboboxProps) {
 
   const { value, onChange } = props;
 
-  const commitCustomValue = (raw: string) => {
+  const commitValue = (raw: string) => {
     const trimmed = raw.trim();
-    if (!allowCustomValue || !trimmed || trimmed === value) {
+    if (!trimmed || trimmed === value) {
       return;
     }
-    onChange(trimmed);
+    if (!allowCustomValue && !fieldsByPath.has(trimmed)) {
+      return;
+    }
+    onChange(trimmed, fieldsByPath.get(trimmed));
   };
 
   return (
     <Combobox
       items={options}
+      filter={null}
       value={value}
-      onValueChange={(v) => onChange(v ?? "")}
+      onValueChange={(v) => {
+        const next = v ?? "";
+        onChange(next, fieldsByPath.get(next));
+      }}
       onInputValueChange={(v) => setInputValue(v)}
       disabled={disabled}
     >
@@ -147,10 +225,10 @@ export function LogFieldCombobox(props: LogFieldComboboxProps) {
           showTrigger
           showClear={!!value}
           className="w-full"
-          onBlur={() => commitCustomValue(inputValue)}
+          onBlur={() => commitValue(inputValue)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
-              commitCustomValue(inputValue);
+              commitValue(inputValue);
             }
           }}
         />

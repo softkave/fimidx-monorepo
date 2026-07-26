@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/src/lib/utils.ts";
+import { IObjRecordQueryList } from "fimidx-core/definitions/obj";
 import { useState } from "react";
 import { ProjectPage } from "../internal/project-page.tsx";
 import { LogListContainer } from "./logs-container.tsx";
@@ -14,6 +15,7 @@ export function LogsPage(props: {
 }) {
   const { withProjectWrapper = true } = props;
   const [showFiltersAndSort, setShowFiltersAndSort] = useState(false);
+  const [filters, setFilters] = useState<IObjRecordQueryList>([]);
 
   const contentNode = (
     <div className={cn("flex flex-col", props.className)}>
@@ -22,6 +24,7 @@ export function LogsPage(props: {
         projectId={props.projectId}
         onShowFiltersAndSort={setShowFiltersAndSort}
         showFiltersAndSort={showFiltersAndSort}
+        filters={filters}
       />
       <LogListContainer
         orgId={props.orgId}
@@ -29,6 +32,8 @@ export function LogsPage(props: {
         showNoLogsMessage={false}
         showFiltersAndSort={showFiltersAndSort}
         onShowFilters={() => setShowFiltersAndSort(true)}
+        filters={filters}
+        onFiltersChange={setFilters}
       />
     </div>
   );

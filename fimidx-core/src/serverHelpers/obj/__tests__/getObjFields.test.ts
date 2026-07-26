@@ -134,4 +134,33 @@ describe("getObjFields integration", () => {
     expect(result.fields.some((f) => f.id === testField.id)).toBe(true);
     expect(result.fields.some((f) => f.id === otherField.id)).toBe(false);
   });
+
+  it("returns exact path matches for path.in and substring matches for path.like", async () => {
+    const exact = makeObjField({ path: "a.b" });
+    const nested = makeObjField({ path: "a.b.c" });
+    const other = makeObjField({ path: "x.y" });
+    await (await getObjFieldsCollection()).insertMany([exact, nested, other]);
+    insertedIds = [exact.id, nested.id, other.id];
+
+    const byIn = await getObjFields({
+      projectId: TEST_PROJECT_ID,
+      tag: TEST_TAG,
+      path: { in: ["a.b", "x.y"] },
+    });
+    expect(byIn.fields.map((f) => f.path).sort()).toEqual(["a.b", "x.y"]);
+
+    const byLike = await getObjFields({
+      projectId: TEST_PROJECT_ID,
+      tag: TEST_TAG,
+      path: { like: "a\\.b" },
+    });
+    expect(byLike.fields.map((f) => f.path).sort()).toEqual(["a.b", "a.b.c"]);
+
+    const byEq = await getObjFields({
+      projectId: TEST_PROJECT_ID,
+      tag: TEST_TAG,
+      path: { eq: "a.b" },
+    });
+    expect(byEq.fields.map((f) => f.path)).toEqual(["a.b"]);
+  });
 });

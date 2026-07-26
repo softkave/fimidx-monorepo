@@ -1,11 +1,19 @@
 import assert from "assert";
+import { useGetLogFieldsByPaths } from "@/src/lib/clientApi/log";
 import { ILogField } from "fimidx-core/definitions/log";
 import {
   IObjRecordQueryItem,
   IObjRecordQueryList,
 } from "fimidx-core/definitions/obj";
 import { Loader2, PlusIcon, XIcon } from "lucide-react";
-import { ComponentProps, useEffect, useMemo, useState } from "react";
+import {
+  ComponentProps,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Button } from "../../ui/button";
 import { LogsFilterChip } from "./logs-filter-chip";
 import { normalizeValueForOp, normalizeStringArrayValue } from "./filter-value-utils";
@@ -17,7 +25,6 @@ export interface ILogsFilterListProps {
   projectId: string;
   onChange: (filters: IObjRecordQueryList) => void;
   filters?: IObjRecordQueryList;
-  fields: ILogField[];
   applyButtonText?: string;
   applyButtonClassName?: string;
   applyButtonVariant?: ComponentProps<typeof Button>["variant"];
@@ -26,6 +33,12 @@ export interface ILogsFilterListProps {
   applyButtonLoading?: boolean;
   disabled?: boolean;
   hijackApplyButtonOnClick?: () => void;
+  /**
+   * Report filter changes to `onChange` as they happen and hide the apply
+   * button. Use when the filters feed a surrounding form (e.g. monitor form)
+   * that has its own submit, so there is no separate apply step to forget.
+   */
+  autoApply?: boolean;
 }
 
 const emptyDraft = (): IWorkingLogPartFilterItem => ({
@@ -63,9 +76,17 @@ function validateFilter(
   switch (normalizedFilter.item.op) {
     case "eq":
     case "neq": {
+      const raw = normalizedFilter.item.value;
+      if (raw === "" || raw === undefined || raw === null) {
+        return {
+          ...normalizedFilter,
+          error: "Value is required",
+        };
+      }
+
       if (isNumberField) {
-        const value = Number(normalizedFilter.item.value);
-        if (normalizedFilter.item.value !== "" && isNaN(value)) {
+        const value = Number(raw);
+        if (isNaN(value)) {
           return {
             ...normalizedFilter,
             error: "Invalid number value",
@@ -224,7 +245,11 @@ function workingFilterToFilter(
 ): IObjRecordQueryItem {
   assert.ok(filter.item.field, "Field is required");
   assert.ok(filter.item.op, "Op is required");
-  assert.ok(filter.item.value, "Value is required");
+  // Empty string / false / 0 are valid values; only nullish is missing.
+  assert.ok(
+    filter.item.value !== undefined && filter.item.value !== null,
+    "Value is required"
+  );
   return {
     field: filter.item.field,
     op: filter.item.op,
@@ -238,26 +263,62 @@ function transformFilters(
   return filters.map(workingFilterToFilter);
 }
 
+function isSameFilterList(
+  a: IObjRecordQueryList | undefined,
+  b: IObjRecordQueryList | undefined
+): boolean {
+  if (a === b) return true;
+  return JSON.stringify(a ?? []) === JSON.stringify(b ?? []);
+}
+
 export function LogsFilterList(props: ILogsFilterListProps) {
   const {
     orgId,
     projectId,
     onChange,
     filters: initialFilters,
-    fields,
     applyButtonText,
     applyButtonClassName,
     applyButtonVariant,
-    applyButtonType,
+    applyButtonType = "button",
     applyButtonDisabled,
     applyButtonLoading,
     disabled,
     hijackApplyButtonOnClick,
+    autoApply = false,
   } = props;
 
+  // Tracks what we last reported so the echo back through `filters` does not
+  // reset in-progress edits.
+  const lastEmittedRef = useRef<IObjRecordQueryList>(initialFilters ?? []);
+
+  const emitFilters = useCallback(
+    (next: IObjRecordQueryList) => {
+      lastEmittedRef.current = next;
+      onChange(next);
+    },
+    [onChange]
+  );
+
+  const selectedPaths = useMemo(() => {
+    const paths: string[] = [];
+    for (const filter of initialFilters ?? []) {
+      if (filter.field?.trim()) {
+        paths.push(filter.field);
+      }
+    }
+    return paths;
+  }, [initialFilters]);
+
+  const { fields: resolvedFields, isLoading: isLoadingSelectedFields } =
+    useGetLogFieldsByPaths({
+      projectId,
+      paths: selectedPaths,
+    });
+
   const fieldsMap = useMemo(() => {
-    return new Map(fields.map((f) => [f.path, f]));
-  }, [fields]);
+    return new Map(resolvedFields.map((f) => [f.path, f]));
+  }, [resolvedFields]);
 
   const [appliedFilters, setAppliedFilters] = useState<
     IWorkingLogPartFilterItem[]
@@ -267,9 +328,59 @@ export function LogsFilterList(props: ILogsFilterListProps) {
     useState<IWorkingLogPartFilterItem | null>(null);
 
   useEffect(() => {
+    const incoming = initialFilters ?? [];
+    if (isSameFilterList(incoming, lastEmittedRef.current)) {
+      return;
+    }
+    lastEmittedRef.current = incoming;
     setAppliedFilters(toWorkingFilters(initialFilters, fieldsMap));
     setDraftFilter(null);
   }, [initialFilters, fieldsMap]);
+
+  useEffect(() => {
+    // Field types decide how values are coerced (e.g. numeric in/not_in), so
+    // wait for the selected-field lookup before reporting anything.
+    if (!autoApply || isLoadingSelectedFields) {
+      return;
+    }
+
+    const validatedDraft = draftFilter ? validateFilter(draftFilter) : null;
+    const ready = [
+      ...appliedFilters.filter(isFilterReady),
+      ...(validatedDraft && isFilterReady(validatedDraft)
+        ? [validatedDraft]
+        : []),
+    ];
+    const next = transformFilters(ready);
+    if (isSameFilterList(next, lastEmittedRef.current)) {
+      return;
+    }
+    emitFilters(next);
+  }, [
+    autoApply,
+    isLoadingSelectedFields,
+    appliedFilters,
+    draftFilter,
+    emitFilters,
+  ]);
+
+  // Enrich metadata when selected-field lookup resolves, without wiping drafts.
+  useEffect(() => {
+    setAppliedFilters((prev) =>
+      prev.map((filter) => ({
+        ...filter,
+        field: filter.field ?? fieldsMap.get(filter.item.field),
+      })),
+    );
+    setDraftFilter((prev) =>
+      prev
+        ? {
+            ...prev,
+            field: prev.field ?? fieldsMap.get(prev.item.field),
+          }
+        : null,
+    );
+  }, [fieldsMap]);
 
   const hasAppliedFilters = appliedFilters.length > 0;
   const hasDraftFilter = draftFilter != null;
@@ -359,13 +470,13 @@ export function LogsFilterList(props: ILogsFilterListProps) {
       setDraftFilter(null);
     }
 
-    onChange(transformFilters(nextApplied));
+    emitFilters(transformFilters(nextApplied));
   };
 
   const handleClearFilters = () => {
     setAppliedFilters([]);
     setDraftFilter(null);
-    onChange([]);
+    emitFilters([]);
   };
 
   return (
@@ -389,7 +500,7 @@ export function LogsFilterList(props: ILogsFilterListProps) {
             onChange={handleDraftChange}
             onRemove={handleRemoveDraft}
             fieldsMap={fieldsMap}
-            fields={fields}
+            projectId={projectId}
             disabled={disabled}
           />
         </div>
@@ -402,6 +513,7 @@ export function LogsFilterList(props: ILogsFilterListProps) {
             onClick={handleClearFilters}
             disabled={(!hasAppliedFilters && !hasDraftFilter) || disabled}
             className="w-full"
+            type="button"
           >
             <XIcon className="h-4 w-4" />
             Clear filters
@@ -411,29 +523,32 @@ export function LogsFilterList(props: ILogsFilterListProps) {
             onClick={handleAddFilter}
             className="w-full"
             disabled={disabled}
+            type="button"
           >
             <PlusIcon className="h-4 w-4" />
-            Add filter
+            {hasDraftFilter ? "Add another filter" : "Add filter"}
           </Button>
         </div>
-        <Button
-          onClick={() => {
-            if (hijackApplyButtonOnClick) {
-              hijackApplyButtonOnClick();
-            } else {
-              handleApplyFilters();
-            }
-          }}
-          disabled={applyButtonDisabled || !canApply || applyButtonLoading}
-          className={applyButtonClassName}
-          variant={applyButtonVariant}
-          type={applyButtonType}
-        >
-          {applyButtonLoading && (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          )}
-          {applyButtonText ?? "Apply filters"}
-        </Button>
+        {!autoApply && (
+          <Button
+            onClick={() => {
+              if (hijackApplyButtonOnClick) {
+                hijackApplyButtonOnClick();
+              } else {
+                handleApplyFilters();
+              }
+            }}
+            disabled={applyButtonDisabled || !canApply || applyButtonLoading}
+            className={applyButtonClassName}
+            variant={applyButtonVariant}
+            type={applyButtonType}
+          >
+            {applyButtonLoading && (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            )}
+            {applyButtonText ?? "Apply filters"}
+          </Button>
+        )}
       </div>
     </div>
   );

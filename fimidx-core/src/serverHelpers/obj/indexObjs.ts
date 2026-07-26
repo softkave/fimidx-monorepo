@@ -7,7 +7,7 @@ import {
   type IndexedJson,
 } from "../../common/indexer.js";
 import { getMongoConnection } from "../../db/fimidx.mongo.js";
-import type { IObj, IObjField } from "../../definitions/obj.js";
+import { kObjTags, prefixObjId, type IObj, type IObjField } from "../../definitions/obj.js";
 import type { IProject } from "../../definitions/project.js";
 import { createStorage, getDefaultStorageType } from "../../storage/config.js";
 import type { IObjStorage } from "../../storage/types.js";
@@ -38,7 +38,7 @@ async function indexObjFields(params: {
 
       if (!field) {
         field = {
-          id: uuidv7(),
+          id: prefixObjId(kObjTags.objField, uuidv7()),
           path: fieldPath,
           type: indexedField.type,
           arrayTypes: indexedField.arrayTypes

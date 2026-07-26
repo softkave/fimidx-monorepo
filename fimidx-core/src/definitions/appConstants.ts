@@ -1,4 +1,4 @@
 export const kAppConstants = {
   name: "fimidx",
-  description: "Power Tools for building web applications.",
+  description: "Logs, monitoring, and alerting for your applications.",
 };

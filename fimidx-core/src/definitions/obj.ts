@@ -14,6 +14,10 @@ export const kObjTags = {
   project: "project",
   monitor: "monitor",
   permission: "permission",
+  alert: "alert",
+  monitorRun: "monitorRun",
+  objField: "objField",
+  user: "user",
 } as const;
 
 export type ObjTag = (typeof kObjTags)[keyof typeof kObjTags];
@@ -30,6 +34,10 @@ export const kObjTagShortForms: Record<ObjTag, string> = {
   [kObjTags.project]: "proj",
   [kObjTags.monitor]: "moni",
   [kObjTags.permission]: "perm",
+  [kObjTags.alert]: "aler",
+  [kObjTags.monitorRun]: "mrun",
+  [kObjTags.objField]: "objf",
+  [kObjTags.user]: "user",
 } as const;
 
 /** Separator between tag short form and the rest of the id (e.g. "proj_01933..."). */
@@ -59,13 +67,11 @@ export type IObjField = {
    * For example:
    * - "primary"
    * - "content.name"
-   * - "content.scores[0]"
    * - "content.scores[*]"
-   * - "content.tags[0].name"
    * - "content.tags[*].name"
    *
    * `path` will not include `objRecord`, but its content. For example,
-   * `objRecord.content.tags[0].name` will be `content.tags[0].name`.
+   * `objRecord.content.tags[*].name` will be `content.tags[*].name`.
    */
   path: string;
   type: FieldType;
@@ -250,6 +256,8 @@ export const stringMetaQuerySchema = z.object({
   neq: z.string().optional(),
   in: z.array(z.string()).max(100).optional(),
   not_in: z.array(z.string()).max(100).optional(),
+  /** Case-insensitive substring / regex match (same semantics as record `like`). */
+  like: z.string().optional(),
 });
 
 export const numberMetaQuerySchema = z.object({

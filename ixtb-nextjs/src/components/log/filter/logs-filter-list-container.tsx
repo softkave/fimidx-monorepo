@@ -1,7 +1,6 @@
 "use client";
 
 import { cn } from "@/src/lib/utils.ts";
-import { LogFieldsListContainer } from "../log-fields-list-container";
 import { ILogsFilterListProps, LogsFilterList } from "./logs-filter-list";
 
 export interface ILogsFilterListContainerProps
@@ -19,6 +18,7 @@ export interface ILogsFilterListContainerProps
     | "applyButtonDisabled"
     | "hijackApplyButtonOnClick"
     | "applyButtonLoading"
+    | "autoApply"
   > {
   className?: string;
 }
@@ -34,25 +34,22 @@ export function LogsFilterListContainer({
   applyButtonDisabled,
   hijackApplyButtonOnClick,
   applyButtonLoading,
+  autoApply,
 }: ILogsFilterListContainerProps) {
   return (
     <div className={cn("flex flex-col items-center w-full", className)}>
-      <LogFieldsListContainer projectId={projectId} className="w-full">
-        {({ fields }) => (
-          <LogsFilterList
-            fields={fields}
-            orgId={orgId}
-            projectId={projectId}
-            onChange={onChange}
-            filters={filters}
-            applyButtonText={applyButtonText}
-            disabled={disabled}
-            applyButtonDisabled={applyButtonDisabled}
-            hijackApplyButtonOnClick={hijackApplyButtonOnClick}
-            applyButtonLoading={applyButtonLoading}
-          />
-        )}
-      </LogFieldsListContainer>
+      <LogsFilterList
+        orgId={orgId}
+        projectId={projectId}
+        onChange={onChange}
+        filters={filters}
+        applyButtonText={applyButtonText}
+        disabled={disabled}
+        applyButtonDisabled={applyButtonDisabled}
+        hijackApplyButtonOnClick={hijackApplyButtonOnClick}
+        applyButtonLoading={applyButtonLoading}
+        autoApply={autoApply}
+      />
     </div>
   );
 }

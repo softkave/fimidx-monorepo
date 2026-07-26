@@ -11,16 +11,15 @@
   "license": "MIT",
   "keywords": [],
   "scripts": {
-    "test": "vitest",
+    "test": "env-cmd -f \".env.test\" vitest run",
     "lint": "gts lint",
     "clean": "gts clean && rm -f tsconfig.tsbuildinfo",
     "compile": "npm run clean && tsc",
     "fix": "gts fix",
     "pretest": "npm run compile",
-    "posttest": "npm run lint",
     "start": "node build/src/index.js",
     "dev": "npm run compile && env-cmd -f \".env.local\" pnpm start",
-    "dev:test": "npm run compile && env-cmd -f \".env.test\" pnpm start",
+    "dev:test": "npm run compile && npx softkave-forerunner run-env -e .env.test -e .env.dev.test --cmd \"pnpm start\"",
     "upload-source-maps": "npx --yes -- fimidx@latest source-maps upload --client-token \"$FIMIDX_SYMBOLICATION_AUTH_TOKEN\" --project-id \"$NEXT_PUBLIC_FIMIDX_LOGGER_PROJECT_ID\" --repo \"$NEXT_PUBLIC_FIMIDX_SYMBOLICATION_REPO\" --version \"$NEXT_PUBLIC_FIMIDX_SYMBOLICATION_VERSION\" --path build/src",
     "delete-source-maps": "find build/src -name '*.map' -type f -delete"
   },

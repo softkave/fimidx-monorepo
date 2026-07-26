@@ -110,6 +110,7 @@ export const kWildcard = "*" as const;
 export const kByTypes = {
   user: "user",
   clientToken: "clientToken",
+  system: "system",
 } as const;
 
 export type ByType = ValueOf<typeof kByTypes>;

@@ -1,413 +1,349 @@
-import * as chokidar from 'chokidar';
 import * as fs from 'fs/promises';
+import * as os from 'os';
+import * as path from 'path';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
+import {
+  loadConsumptionData,
+  saveConsumptionData,
+} from '../checkpointStore.js';
 import {LogFilesConsumer} from '../LogFilesConsumer.js';
-import {consumeLogFile} from '../consumeLogFile.js';
+import {getRuntimePaths} from '../runtimePaths.js';
+import {kDefaultPassIntervalMs} from '../types.js';
 
-// Mock chokidar
-const mockWatcher = {
-  on: vi.fn(),
-  close: vi.fn().mockResolvedValue(undefined),
-};
+const ingestLogs = vi.fn();
+
+// Records the chokidar 'change' handler per watched path so tests can simulate
+// the filesystem waking a sleeping file.
+const changeHandlers = new Map<string, () => void>();
+
+vi.mock('fimidx', () => ({
+  FimidxEndpoints: vi.fn().mockImplementation(() => ({
+    logs: {
+      ingestLogs,
+    },
+  })),
+}));
 
 vi.mock('chokidar', () => ({
-  watch: vi.fn(() => mockWatcher),
+  watch: vi.fn((filepath: string) => ({
+    on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
+      if (event === 'change') {
+        changeHandlers.set(filepath, () => handler());
+      }
+    }),
+    close: vi.fn().mockResolvedValue(undefined),
+  })),
 }));
 
-// Mock fs
-vi.mock('fs/promises', () => ({
-  readFile: vi.fn(),
-  writeFile: vi.fn(),
-  stat: vi.fn(),
-  access: vi.fn(),
-  open: vi.fn(),
-}));
+function fireChange(filepath: string): void {
+  const handler = changeHandlers.get(filepath);
+  if (!handler) {
+    throw new Error(`No chokidar change handler registered for ${filepath}`);
+  }
+  handler();
+}
 
-// Mock consumeLogFile
-vi.mock('../consumeLogFile.js', () => ({
-  consumeLogFile: vi.fn(),
-}));
+async function waitFor(
+  predicate: () => boolean | Promise<boolean>,
+  timeoutMs = 1000,
+): Promise<void> {
+  const start = Date.now();
+  while (!(await predicate())) {
+    if (Date.now() - start > timeoutMs) {
+      throw new Error('Timed out waiting for condition');
+    }
+    await new Promise(r => setTimeout(r, 10));
+  }
+}
+
+async function makeTempDir(): Promise<string> {
+  return fs.mkdtemp(path.join(os.tmpdir(), 'fimidx-consumer-orch-'));
+}
+
+function ingestedMessages(): string[] {
+  return ingestLogs.mock.calls.flatMap(call => {
+    const body = call[0] as {logs: {message: string}[]};
+    return body.logs.map(log => log.message);
+  });
+}
+
+describe('checkpointStore', () => {
+  let tempDir: string;
+
+  beforeEach(async () => {
+    tempDir = await makeTempDir();
+  });
+
+  afterEach(async () => {
+    await fs.rm(tempDir, {recursive: true, force: true});
+  });
+
+  it('atomically saves and loads checkpoints including new fields', async () => {
+    const filePath = path.join(tempDir, 'consumption.json');
+    await saveConsumptionData(filePath, {
+      entries: [
+        {
+          path: '/var/log/a.log',
+          startPosition: 12,
+          lastModified: 100,
+          size: 12,
+          dev: 1,
+          ino: 2,
+        },
+      ],
+    });
+
+    const loaded = await loadConsumptionData(filePath);
+    expect(loaded.entries[0]).toMatchObject({
+      path: '/var/log/a.log',
+      startPosition: 12,
+      size: 12,
+      dev: 1,
+      ino: 2,
+    });
+  });
+
+  it('loads legacy checkpoints without size/dev/ino', async () => {
+    const filePath = path.join(tempDir, 'legacy.json');
+    await fs.writeFile(
+      filePath,
+      JSON.stringify({
+        entries: [
+          {path: '/a.log', startPosition: 3, lastModified: 1},
+        ],
+      }),
+    );
+
+    const loaded = await loadConsumptionData(filePath);
+    expect(loaded.entries[0].startPosition).toBe(3);
+  });
+});
 
 describe('LogFilesConsumer', () => {
-  const mockConfig = {
-    projectId: 'test-project',
-    clientToken: 'test-token',
-    serverURL: 'https://test-server.com',
-    metadata: {environment: 'test'},
-    logFiles: [
-      {
-        path: '/var/log/test.log',
-        metadata: {logType: 'test'},
-      },
-      {
-        path: '/var/log/another.log',
-        projectId: 'another-project',
-        clientToken: 'another-token',
-      },
-    ],
-    trackConsumptionFilepath: './test-consumption.json',
-  };
+  let tempDir: string;
+  let logPath: string;
+  let configPath: string;
+  let trackPath: string;
 
-  const mockConsumptionData = {
-    entries: [
-      {
-        path: '/var/log/test.log',
-        startPosition: 100,
-        lastModified: 1640995200000, // 2022-01-01T00:00:00Z
-      },
-    ],
-  };
-
-  let consumer: LogFilesConsumer;
-
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+    changeHandlers.clear();
+    ingestLogs.mockResolvedValue(undefined);
+    tempDir = await makeTempDir();
+    logPath = path.join(tempDir, 'app.log');
+    configPath = path.join(tempDir, 'config.json');
+    trackPath = getRuntimePaths(tempDir).consumptionFilepath;
+    await fs.writeFile(logPath, 'one\ntwo\n');
+  });
 
-    // Mock fs.readFile for config
-    vi.mocked(fs.readFile).mockImplementation(async (path: any) => {
-      if (path === './test-config.json') {
-        return JSON.stringify(mockConfig);
+  afterEach(async () => {
+    vi.useRealTimers();
+    await fs.rm(tempDir, {recursive: true, force: true});
+  });
+
+  async function writeConfig(extra: Record<string, unknown> = {}) {
+    await fs.writeFile(
+      configPath,
+      JSON.stringify({
+        projectId: 'test-project',
+        clientToken: 'test-token',
+        workingDir: tempDir,
+        logFiles: [{path: logPath}],
+        flushIncompleteAfterMs: 0,
+        ...extra,
+      }),
+    );
+  }
+
+  it('ingests logs and persists checkpoints', async () => {
+    await writeConfig();
+    const consumer = new LogFilesConsumer(configPath);
+
+    // Avoid infinite loop scheduling: stop after first pass settles.
+    const startPromise = consumer.start();
+    await new Promise(r => setTimeout(r, 50));
+    await consumer.stop();
+    await startPromise.catch(() => undefined);
+
+    expect(ingestLogs).toHaveBeenCalled();
+    const body = ingestLogs.mock.calls[0][0];
+    expect(body.projectId).toBe('test-project');
+    expect(body.logs.map((l: {message: string}) => l.message)).toEqual([
+      'one',
+      'two',
+    ]);
+
+    const checkpoint = JSON.parse(await fs.readFile(trackPath, 'utf-8'));
+    expect(checkpoint.entries[0].startPosition).toBe(
+      Buffer.byteLength('one\ntwo\n'),
+    );
+    expect(checkpoint.entries[0].size).toBeDefined();
+    await expect(
+      fs.access(getRuntimePaths(tempDir).pidFilepath),
+    ).rejects.toMatchObject({code: 'ENOENT'});
+  });
+
+  it('keeps running, wakes a sleeping file, and catches up on appended lines', async () => {
+    await writeConfig();
+
+    // Fake timers let us fire the next scheduled pass instead of waiting the
+    // real 10s interval. Real filesystem/promise work still settles because
+    // advanceTimersByTimeAsync flushes microtasks between timers.
+    vi.useFakeTimers();
+    const consumer = new LogFilesConsumer(configPath);
+
+    // start() awaits the first pass, which consumes the initial content and
+    // moves the file to asleep (fully consumed, nothing pending).
+    await consumer.start();
+
+    expect(ingestedMessages()).toEqual(['one', 'two']);
+    const firstCheckpoint = JSON.parse(await fs.readFile(trackPath, 'utf-8'));
+    expect(firstCheckpoint.entries[0].startPosition).toBe(
+      Buffer.byteLength('one\ntwo\n'),
+    );
+
+    // New lines arrive while the consumer keeps running.
+    await fs.appendFile(logPath, 'three\nfour\n');
+    ingestLogs.mockClear();
+
+    // chokidar observes the change and wakes the sleeping file...
+    fireChange(logPath);
+    // ...then the next scheduled pass fires. The pass is detached inside the
+    // timer callback, so advance to start it, then let its real filesystem
+    // work settle under real timers.
+    await vi.advanceTimersByTimeAsync(kDefaultPassIntervalMs);
+    vi.useRealTimers();
+
+    const expectedPosition = Buffer.byteLength('one\ntwo\nthree\nfour\n');
+    await waitFor(async () => {
+      try {
+        const cp = JSON.parse(await fs.readFile(trackPath, 'utf-8'));
+        return cp.entries[0]?.startPosition === expectedPosition;
+      } catch {
+        return false;
       }
-      if (path === './test-consumption.json') {
-        return JSON.stringify(mockConsumptionData);
-      }
-      throw new Error('File not found');
     });
 
-    // Mock fs.access to simulate file exists
-    vi.mocked(fs.access).mockResolvedValue(undefined);
+    expect(ingestedMessages()).toEqual(['three', 'four']);
 
-    // Mock fs.stat
-    vi.mocked(fs.stat).mockResolvedValue({
-      mtime: new Date('2023-01-01T00:00:00Z'),
-    } as any);
-
-    // Mock fs.writeFile
-    vi.mocked(fs.writeFile).mockResolvedValue(undefined);
-
-    // Mock consumeLogFile
-    vi.mocked(consumeLogFile).mockResolvedValue({
-      endPosition: 200,
-    });
-
-    consumer = new LogFilesConsumer('./test-config.json');
+    await consumer.stop();
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
+  it('does not advance checkpoint when ingest fails', async () => {
+    await writeConfig();
+    ingestLogs.mockRejectedValue(new Error('boom'));
+
+    const consumer = new LogFilesConsumer(configPath);
+    const startPromise = consumer.start();
+    await new Promise(r => setTimeout(r, 50));
+    await consumer.stop();
+    await startPromise.catch(() => undefined);
+
+    const exists = await fs
+      .access(trackPath)
+      .then(() => true)
+      .catch(() => false);
+
+    if (exists) {
+      const checkpoint = JSON.parse(await fs.readFile(trackPath, 'utf-8'));
+      // Either no entry or still at 0 — never past unsent content.
+      const entry = checkpoint.entries.find(
+        (e: {path: string}) => e.path === logPath,
+      );
+      expect(entry?.startPosition ?? 0).toBe(0);
+    }
   });
 
-  describe('constructor', () => {
-    it('should create instance with config filepath', () => {
-      const consumer = new LogFilesConsumer('./test-config.json');
-      expect(consumer).toBeInstanceOf(LogFilesConsumer);
-      expect(consumer).toHaveProperty('start');
-      expect(consumer).toHaveProperty('stop');
-    });
+  it('uses env credentials when config omits them', async () => {
+    vi.stubEnv('FIMIDX_PROJECT_ID', 'env-project');
+    vi.stubEnv('FIMIDX_CLIENT_TOKEN', 'env-token');
+
+    await fs.writeFile(
+      configPath,
+      JSON.stringify({
+        workingDir: tempDir,
+        logFiles: [{path: logPath}],
+        flushIncompleteAfterMs: 0,
+      }),
+    );
+
+    const consumer = new LogFilesConsumer(configPath);
+    const startPromise = consumer.start();
+    await new Promise(r => setTimeout(r, 50));
+    await consumer.stop();
+    await startPromise.catch(() => undefined);
+
+    expect(ingestLogs).toHaveBeenCalled();
+    expect(ingestLogs.mock.calls[0][0].projectId).toBe('env-project');
+
+    vi.unstubAllEnvs();
   });
 
-  describe('start', () => {
-    it('should start the consumer successfully', async () => {
-      await consumer.start();
+  it('picks up config changes only after a reload is requested', async () => {
+    await writeConfig();
+    const consumer = new LogFilesConsumer(configPath);
+    await consumer.start();
 
-      expect(chokidar.watch).toHaveBeenCalledWith('./test-config.json', {
-        persistent: true,
-        ignoreInitial: true,
-      });
+    const secondLog = path.join(tempDir, 'other.log');
+    await fs.writeFile(secondLog, 'three\n');
+    await writeConfig({logFiles: [{path: logPath}, {path: secondLog}]});
+    ingestLogs.mockClear();
 
-      expect(fs.readFile).toHaveBeenCalledWith('./test-config.json', 'utf-8');
-    });
+    consumer.requestReload();
+    await new Promise(r => setTimeout(r, 100));
+    await consumer.stop();
 
-    it('should not start if already running', async () => {
-      await consumer.start();
-      await consumer.start(); // Second call should be ignored
-
-      // The first start calls chokidar.watch for config file and each log file
-      // So we expect 1 config watcher + 2 log file watchers = 3 total calls
-      expect(chokidar.watch).toHaveBeenCalledTimes(3);
-    });
-
-    it('should handle config file not found', async () => {
-      vi.mocked(fs.readFile).mockRejectedValue(new Error('File not found'));
-
-      await expect(consumer.start()).rejects.toThrow('File not found');
-    });
-
-    it('should handle invalid JSON config', async () => {
-      vi.mocked(fs.readFile).mockResolvedValue('invalid json');
-
-      await expect(consumer.start()).rejects.toThrow();
-    });
-
-    it('should handle missing required fields in config', async () => {
-      const invalidConfig = {
-        logFiles: [{path: '/var/log/test.log'}],
-        trackConsumptionFilepath: './test-consumption.json',
-      };
-
-      vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(invalidConfig));
-
-      await expect(consumer.start()).rejects.toThrow(
-        'Missing required config for file /var/log/test.log: projectId and clientToken are required',
-      );
-    });
-
-    it('should handle log file that does not exist', async () => {
-      const configWithMissingFile = {
-        ...mockConfig,
-        logFiles: [
-          {
-            path: '/var/log/missing.log',
-            projectId: 'test',
-            clientToken: 'test',
-          },
-        ],
-      };
-
-      vi.mocked(fs.readFile).mockResolvedValue(
-        JSON.stringify(configWithMissingFile),
-      );
-      vi.mocked(fs.access).mockRejectedValue(new Error('File not found'));
-
-      await consumer.start();
-
-      // Should not throw, just warn and continue
-      expect(fs.access).toHaveBeenCalledWith('/var/log/missing.log');
-    });
+    expect(ingestedMessages()).toEqual(['three']);
   });
 
-  describe('stop', () => {
-    it('should stop the consumer successfully', async () => {
-      await consumer.start();
-      await consumer.stop();
+  it('keeps the previous config when a reload fails', async () => {
+    await writeConfig();
+    const consumer = new LogFilesConsumer(configPath);
+    await consumer.start();
 
-      expect(mockWatcher.close).toHaveBeenCalled();
-    });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    await fs.writeFile(configPath, '{not json');
+    consumer.requestReload();
+    await new Promise(r => setTimeout(r, 100));
 
-    it('should not stop if not running', async () => {
-      await consumer.stop();
+    expect(errorSpy).toHaveBeenCalledWith(
+      'Failed to reload config, keeping the previous one:',
+      expect.anything(),
+    );
 
-      expect(mockWatcher.close).not.toHaveBeenCalled();
-    });
+    // Still running: a subsequent valid reload is applied.
+    const secondLog = path.join(tempDir, 'other.log');
+    await fs.writeFile(secondLog, 'three\n');
+    await writeConfig({logFiles: [{path: logPath}, {path: secondLog}]});
+    ingestLogs.mockClear();
+
+    consumer.requestReload();
+    await new Promise(r => setTimeout(r, 100));
+    await consumer.stop();
+
+    expect(ingestedMessages()).toEqual(['three']);
+    errorSpy.mockRestore();
   });
 
-  describe('config file watching', () => {
-    it('should reload config when config file changes', async () => {
-      await consumer.start();
+  it('writes the current PID while running and removes it on stop', async () => {
+    await writeConfig();
+    const runtimePaths = getRuntimePaths(tempDir);
+    const logSpy = vi.spyOn(console, 'log');
+    const consumer = new LogFilesConsumer(configPath);
 
-      // Simulate config file change
-      const changeCallback = vi
-        .mocked(mockWatcher.on)
-        .mock.calls.find(call => call[0] === 'change')?.[1];
+    await consumer.start();
 
-      expect(changeCallback).toBeDefined();
+    expect(logSpy).toHaveBeenCalledWith(
+      `Log files consumer started (PID: ${process.pid})`,
+    );
+    expect(await fs.readFile(runtimePaths.pidFilepath, 'utf-8')).toBe(
+      `${process.pid}\n`,
+    );
 
-      // Mock the config reload
-      vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(mockConfig));
-
-      // Trigger the change callback
-      if (changeCallback) {
-        changeCallback();
-      }
-
-      // Should reload config on next pass
-      expect(fs.readFile).toHaveBeenCalledWith('./test-config.json', 'utf-8');
+    await consumer.stop();
+    await expect(fs.access(runtimePaths.pidFilepath)).rejects.toMatchObject({
+      code: 'ENOENT',
     });
-
-    it('should handle config watcher errors', async () => {
-      await consumer.start();
-
-      const errorCallback = vi
-        .mocked(mockWatcher.on)
-        .mock.calls.find(call => call[0] === 'error')?.[1];
-
-      expect(errorCallback).toBeDefined();
-
-      // Trigger error callback
-      if (errorCallback) {
-        errorCallback(new Error('Watcher error'));
-      }
-
-      // Should not throw, just log error
-    });
-  });
-
-  describe('log file watching', () => {
-    it('should watch log files for changes', async () => {
-      await consumer.start();
-
-      // Should watch each log file
-      expect(chokidar.watch).toHaveBeenCalledWith('/var/log/test.log', {
-        persistent: true,
-        ignoreInitial: true,
-      });
-
-      expect(chokidar.watch).toHaveBeenCalledWith('/var/log/another.log', {
-        persistent: true,
-        ignoreInitial: true,
-      });
-    });
-
-    it('should handle file change events', async () => {
-      await consumer.start();
-
-      // Find the change callback for a log file
-      const fileWatcherCalls = vi.mocked(chokidar.watch).mock.calls;
-      const logFileWatcher = fileWatcherCalls.find(
-        call => call[0] === '/var/log/test.log',
-      );
-
-      expect(logFileWatcher).toBeDefined();
-    });
-  });
-
-  describe('consumption loop', () => {
-    it('should process awake files in consumption loop', async () => {
-      await consumer.start();
-
-      // Wait for the consumption loop to run
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      expect(consumeLogFile).toHaveBeenCalled();
-    });
-
-    it('should handle errors in consumption loop', async () => {
-      vi.mocked(consumeLogFile).mockRejectedValue(
-        new Error('Consumption error'),
-      );
-
-      await consumer.start();
-
-      // Wait for the consumption loop to run
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Should not throw, just log error and continue
-      expect(consumeLogFile).toHaveBeenCalled();
-    });
-  });
-
-  describe('consumption data management', () => {
-    it('should load existing consumption data', async () => {
-      await consumer.start();
-
-      expect(fs.readFile).toHaveBeenCalledWith(
-        './test-consumption.json',
-        'utf-8',
-      );
-    });
-
-    it('should handle missing consumption data file', async () => {
-      vi.mocked(fs.readFile).mockImplementation(async (path: any) => {
-        if (path === './test-config.json') {
-          return JSON.stringify(mockConfig);
-        }
-        if (path === './test-consumption.json') {
-          throw new Error('File not found');
-        }
-        throw new Error('File not found');
-      });
-
-      await consumer.start();
-
-      // Should not throw, just start with empty consumption data
-      expect(fs.readFile).toHaveBeenCalledWith(
-        './test-consumption.json',
-        'utf-8',
-      );
-    });
-
-    it('should save consumption data after processing', async () => {
-      await consumer.start();
-
-      // Wait for the consumption loop to run
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      expect(fs.writeFile).toHaveBeenCalledWith(
-        './test-consumption.json',
-        expect.any(String),
-      );
-    });
-  });
-
-  describe('file state management', () => {
-    it('should move files from awake to asleep when no changes detected', async () => {
-      // Mock that no new content was consumed
-      vi.mocked(consumeLogFile).mockResolvedValue({
-        endPosition: 100, // Same as existing entry
-      });
-
-      await consumer.start();
-
-      // Wait for the consumption loop to run
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Should move file to asleep state
-      expect(consumeLogFile).toHaveBeenCalled();
-    });
-
-    it('should move files from asleep to awake when file changes', async () => {
-      await consumer.start();
-
-      // Simulate file change event
-      const fileWatcherCalls = vi.mocked(chokidar.watch).mock.calls;
-      const logFileWatcher = fileWatcherCalls.find(
-        call => call[0] === '/var/log/test.log',
-      );
-
-      expect(logFileWatcher).toBeDefined();
-    });
-  });
-
-  describe('config validation', () => {
-    it('should validate required fields in config', async () => {
-      const invalidConfig = {
-        logFiles: [
-          {
-            path: '/var/log/test.log',
-            // Missing projectId and clientToken
-          },
-        ],
-        trackConsumptionFilepath: './test-consumption.json',
-      };
-
-      vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(invalidConfig));
-
-      await expect(consumer.start()).rejects.toThrow(
-        'Missing required config for file /var/log/test.log: projectId and clientToken are required',
-      );
-    });
-
-    it('should merge config options correctly', async () => {
-      const configWithMergedOptions = {
-        projectId: 'global-project',
-        clientToken: 'global-token',
-        metadata: {global: true},
-        logFiles: [
-          {
-            path: '/var/log/test.log',
-            projectId: 'local-project',
-            metadata: {local: true},
-          },
-        ],
-        trackConsumptionFilepath: './test-consumption.json',
-      };
-
-      vi.mocked(fs.readFile).mockResolvedValue(
-        JSON.stringify(configWithMergedOptions),
-      );
-
-      await consumer.start();
-
-      // Should use local projectId and merge metadata
-      expect(consumeLogFile).toHaveBeenCalledWith(
-        expect.objectContaining({
-          projectId: 'local-project',
-          clientToken: 'global-token',
-          metadata: {local: true},
-          path: '/var/log/test.log',
-        }),
-        undefined,
-      );
-    });
+    logSpy.mockRestore();
   });
 });

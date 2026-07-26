@@ -1,7 +1,11 @@
-import type { IObj } from "fimidx-core/definitions/obj";
+import type { IObj } from "../../definitions/obj.js";
 import type { IProject } from "../../definitions/project.js";
 
-export function objToProject(obj: IObj): IProject {
+/** Accepts full or projected lean objs; missing fields may be undefined. */
+export function objToProject<T extends Partial<IProject> = IProject>(
+  obj: Partial<IObj>
+): T {
+  const record = obj.objRecord ?? {};
   return {
     id: obj.id,
     createdAt: obj.createdAt,
@@ -9,13 +13,10 @@ export function objToProject(obj: IObj): IProject {
     createdBy: obj.createdBy,
     updatedBy: obj.updatedBy,
     orgId: obj.groupId,
-    name: obj.objRecord.name,
-    description:
-      obj.objRecord.description === null
-        ? undefined
-        : obj.objRecord.description,
+    name: record.name,
+    description: record.description === null ? undefined : record.description,
     createdByType: obj.createdByType,
     updatedByType: obj.updatedByType,
-    objFieldsToIndex: obj.objRecord.objFieldsToIndex,
-  };
+    objFieldsToIndex: record.objFieldsToIndex,
+  } as T;
 }

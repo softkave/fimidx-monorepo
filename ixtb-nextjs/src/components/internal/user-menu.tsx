@@ -4,7 +4,7 @@ import { authClient } from "@/src/lib/auth-client";
 import { kClientPaths } from "@/src/lib/clientHelpers/clientPaths.ts";
 import { useProjectSession } from "@/src/lib/clientHooks/userHooks.ts";
 import { UserIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/src/lib/clientHooks/useRouter";
 import { Button } from "../ui/button.tsx";
 import {
   DropdownMenu,

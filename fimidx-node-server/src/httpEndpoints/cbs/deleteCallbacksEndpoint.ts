@@ -1,68 +1,77 @@
 import {Request, Response} from 'express';
-import {getObjModel} from 'fimidx-core/db/fimidx.mongo';
-import {
-  deleteCallbacksSchema,
-  ICallback,
-} from 'fimidx-core/definitions/callback';
-import {kObjTags} from 'fimidx-core/definitions/obj';
-import {deleteCallbacks} from 'fimidx-core/serverHelpers/index';
+import {deleteCallbacksSchema} from 'fimidx-core/definitions/callback';
+import {deleteCallbacks, getCallbacks} from 'fimidx-core/serverHelpers/index';
 import {z} from 'zod';
-import {kPromiseStore} from '../../ctx/promiseStore.js';
 import {removeCallbackFromStore} from '../../helpers/cb/removeCallbackFromStore.js';
 import {IHttpOutgoingSuccessResponse} from '../../types/http.js';
 
-export const removeCallbackHttpEndpointSchema = deleteCallbacksSchema.extend({
+const removeCallbackHttpEndpointSchema = deleteCallbacksSchema.extend({
   clientTokenId: z.string(),
 });
 
-async function cleanupDeletedCallbacks(params: {fromDate: Date; toDate: Date}) {
-  let batch: Pick<ICallback, 'id'>[] = [];
-  let page = 0;
-  const batchSize = 100;
+const kDeleteBatchSize = 100;
 
-  do {
-    batch = await getObjModel()
-      .find({
-        tag: kObjTags.callback,
-        createdAt: {
-          $gte: params.fromDate,
-          $lte: params.toDate,
-        },
-        deletedAt: {
-          $exists: true,
-        },
-      })
-      .limit(batchSize)
-      .skip(page * batchSize)
-      .projection({
-        id: 1,
-      })
-      .lean();
+/**
+ * Soft-delete matching callbacks in Mongo and clear them from the in-memory
+ * timer store. Processes in batches of {@link kDeleteBatchSize} so we never
+ * hold the full match set in memory. When deleteMany is false, only the first
+ * match is deleted and cleared from the store.
+ */
+async function deleteCallbacksEndpointImpl(params: {
+  query: z.infer<typeof deleteCallbacksSchema>['query'];
+  deleteMany?: boolean;
+  clientTokenId: string;
+}) {
+  const deleteMany = params.deleteMany ?? false;
+  let deletedCount = 0;
 
-    batch.forEach(item => {
-      removeCallbackFromStore(item.id);
+  // Always fetch page 1: soft-deletes fall out of the default query, so the
+  // next batch surfaces as the new page 1.
+  for (;;) {
+    const result = await getCallbacks({
+      args: {
+        query: params.query,
+        page: deleteMany ? 1 : undefined,
+        limit: deleteMany ? kDeleteBatchSize : 1,
+      },
+      projection: ['id'],
     });
 
-    page++;
-  } while (batch.length > 0);
+    if (result.callbacks.length === 0) {
+      break;
+    }
+
+    const ids = result.callbacks.map(c => c.id);
+    await deleteCallbacks({
+      deleteMany: true,
+      query: {
+        id: {in: ids},
+        projectId: params.query.projectId,
+      },
+      clientTokenId: params.clientTokenId,
+    });
+
+    for (const id of ids) {
+      removeCallbackFromStore(id);
+    }
+
+    deletedCount += ids.length;
+    if (!deleteMany) {
+      break;
+    }
+  }
+
+  return {deletedCount};
 }
 
 export async function deleteCallbacksEndpoint(req: Request, res: Response) {
   const input = removeCallbackHttpEndpointSchema.parse(req.body);
 
-  const fromDate = new Date();
-  await deleteCallbacks({
-    ...input,
+  await deleteCallbacksEndpointImpl({
+    query: input.query,
+    deleteMany: input.deleteMany,
     clientTokenId: input.clientTokenId,
   });
-  const toDate = new Date();
-
-  kPromiseStore.callAndForget(() =>
-    cleanupDeletedCallbacks({
-      fromDate,
-      toDate,
-    }),
-  );
 
   const response: IHttpOutgoingSuccessResponse = {
     type: 'success',
@@ -70,3 +79,5 @@ export async function deleteCallbacksEndpoint(req: Request, res: Response) {
 
   res.status(200).send(response);
 }
+
+export {deleteCallbacksEndpointImpl};

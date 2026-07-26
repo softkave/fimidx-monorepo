@@ -2,7 +2,6 @@
 
 import { useUpdateSymbolicationConfig } from "@/src/lib/clientApi/sourceMaps";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ILogField } from "fimidx-core/definitions/log";
 import { useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -35,12 +34,11 @@ export interface ISymbolicationConfigFormProps {
     repoIdFields: string[];
     versionFields: string[];
   } | null;
-  fields: ILogField[];
   onSaveComplete?: () => void;
 }
 
 export function SymbolicationConfigForm(props: ISymbolicationConfigFormProps) {
-  const { projectId, config, fields, onSaveComplete } = props;
+  const { projectId, config, onSaveComplete } = props;
 
   const form = useForm<SymbolicationConfigFormValues>({
     resolver: zodResolver(symbolicationConfigFormSchema),
@@ -102,10 +100,10 @@ export function SymbolicationConfigForm(props: ISymbolicationConfigFormProps) {
               <FormLabel>Fields to symbolicate</FormLabel>
               <FormControl>
                 <LogFieldCombobox
+                  projectId={projectId}
                   multiple
                   value={field.value}
                   onChange={field.onChange}
-                  fields={fields}
                   placeholder="stack, stackTrace…"
                   allowCustomValue
                 />
@@ -125,10 +123,10 @@ export function SymbolicationConfigForm(props: ISymbolicationConfigFormProps) {
               <FormLabel>Repo ID fields (first present used)</FormLabel>
               <FormControl>
                 <LogFieldCombobox
+                  projectId={projectId}
                   multiple
                   value={field.value}
                   onChange={field.onChange}
-                  fields={fields}
                   placeholder="metadata.repo, repo…"
                   allowCustomValue
                 />
@@ -148,10 +146,10 @@ export function SymbolicationConfigForm(props: ISymbolicationConfigFormProps) {
               <FormLabel>Version fields (first present used)</FormLabel>
               <FormControl>
                 <LogFieldCombobox
+                  projectId={projectId}
                   multiple
                   value={field.value}
                   onChange={field.onChange}
-                  fields={fields}
                   placeholder="metadata.version, version…"
                   allowCustomValue
                 />

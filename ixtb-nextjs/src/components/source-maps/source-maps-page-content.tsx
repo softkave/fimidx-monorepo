@@ -4,7 +4,6 @@ import {
   useGetSymbolicationConfig,
   useGetSourceMapUploads,
 } from "@/src/lib/clientApi/sourceMaps";
-import { LogFieldsListContainer } from "../log/log-fields-list-container";
 import { ProjectContainer } from "../project/project-container";
 import { SymbolicationConfigForm } from "./symbolication-config-form";
 import { SourceMapsUploadsList } from "./source-maps-uploads-list";
@@ -31,15 +30,7 @@ export function SourceMapsPageContent(props: {
 
           <section>
             <h2 className="text-lg font-medium mb-2">Symbolication config</h2>
-            <LogFieldsListContainer projectId={projectId} renderWhenEmpty>
-              {({ fields }) => (
-                <SymbolicationConfigForm
-                  projectId={projectId}
-                  config={config}
-                  fields={fields}
-                />
-              )}
-            </LogFieldsListContainer>
+            <SymbolicationConfigForm projectId={projectId} config={config} />
           </section>
 
           <section>

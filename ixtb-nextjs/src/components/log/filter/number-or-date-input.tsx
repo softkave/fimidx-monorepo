@@ -10,6 +10,11 @@ import { Calendar } from "../../ui/calendar";
 import { Input } from "../../ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "../../ui/popover";
 import { ToggleGroup, ToggleGroupItem } from "../../ui/toggle-group";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "../../ui/tooltip";
 import { TimePicker } from "./time-picker";
 
 export function NumberOrDateInput(props: {
@@ -35,15 +40,30 @@ export function NumberOrDateInput(props: {
         value={type}
         disabled={disabled}
       >
-        <ToggleGroupItem value="number" aria-label="Toggle number">
-          <HashIcon className="h-4 w-4" />
-        </ToggleGroupItem>
-        <ToggleGroupItem value="date" aria-label="Toggle date">
-          <CalendarIcon className="h-4 w-4" />
-        </ToggleGroupItem>
-        <ToggleGroupItem value="duration" aria-label="Toggle duration">
-          <CalendarRangeIcon className="h-4 w-4" />
-        </ToggleGroupItem>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <ToggleGroupItem value="number" aria-label="Number">
+              <HashIcon className="h-4 w-4" />
+            </ToggleGroupItem>
+          </TooltipTrigger>
+          <TooltipContent>Number</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <ToggleGroupItem value="date" aria-label="Date">
+              <CalendarIcon className="h-4 w-4" />
+            </ToggleGroupItem>
+          </TooltipTrigger>
+          <TooltipContent>Date</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <ToggleGroupItem value="duration" aria-label="Relative duration">
+              <CalendarRangeIcon className="h-4 w-4" />
+            </ToggleGroupItem>
+          </TooltipTrigger>
+          <TooltipContent>Relative duration</TooltipContent>
+        </Tooltip>
       </ToggleGroup>
       {type === "number" ? (
         <Input
@@ -64,6 +84,7 @@ export function NumberOrDateInput(props: {
                 !valueDate && "text-muted-foreground"
               )}
               disabled={disabled}
+              type="button"
             >
               <CalendarIcon />
               {valueDate ? (

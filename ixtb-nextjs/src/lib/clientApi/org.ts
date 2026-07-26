@@ -7,6 +7,7 @@ import {
   UpdateOrgEndpointResponse,
   updateOrgSchema,
 } from "@/src/definitions/org.ts";
+import type { GetOrgMembersEndpointResponse } from "@/src/lib/endpoints/internal/orgs/getOrgMembersEndpoint";
 import { first } from "lodash-es";
 import { convertToArray } from "softkave-js-utils";
 import useSWR from "swr";
@@ -87,6 +88,25 @@ export function useGetOrg(opts: { orgId: string }) {
   const { data, error, isLoading, isValidating, mutate } = useSWR(
     kOrgSWRKeys.getOrg(opts.orgId),
     getOrg
+  );
+
+  return { data, error, isLoading, isValidating, mutate };
+}
+
+async function getOrgMembers(
+  key: ReturnType<typeof kOrgSWRKeys.getOrgMembers>
+) {
+  const res = await fetch(key, {
+    method: "GET",
+  });
+
+  return await handleResponse<GetOrgMembersEndpointResponse>(res);
+}
+
+export function useGetOrgMembers(opts: { orgId: string }) {
+  const { data, error, isLoading, isValidating, mutate } = useSWR(
+    opts.orgId ? kOrgSWRKeys.getOrgMembers(opts.orgId) : null,
+    getOrgMembers
   );
 
   return { data, error, isLoading, isValidating, mutate };

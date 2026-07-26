@@ -59,8 +59,9 @@ function formatChipField(filter: IWorkingLogPartFilterItem): string {
 
 export interface ILogsFilterChipProps {
   filter: IWorkingLogPartFilterItem;
-  onEdit: () => void;
-  onRemove: () => void;
+  /** Omit edit/remove handlers to render a read-only chip. */
+  onEdit?: () => void;
+  onRemove?: () => void;
   disabled?: boolean;
   className?: string;
 }
@@ -76,37 +77,50 @@ export function LogsFilterChip({
   const opLabel = kChipOpLabels[op] ?? op;
   const valueLabel = formatChipValue(filter);
   const fieldLabel = formatChipField(filter);
+  const content = (
+    <>
+      <span className="border-r px-2 py-1 font-medium">{fieldLabel}</span>
+      <span className="border-r px-2 py-1 text-muted-foreground">
+        {opLabel}
+      </span>
+      <span className="truncate px-2 py-1">{valueLabel}</span>
+    </>
+  );
 
   return (
     <div
       className={cn(
-        "inline-flex max-w-full items-stretch overflow-hidden rounded-lg border bg-muted/20 text-sm",
+        "inline-flex max-w-full items-stretch overflow-hidden rounded-lg border bg-muted/40 text-sm",
         className
       )}
     >
-      <button
-        type="button"
-        onClick={onEdit}
-        disabled={disabled}
-        className="inline-flex min-w-0 max-w-full items-stretch disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        <span className="border-r px-2 py-1.5 font-medium">{fieldLabel}</span>
-        <span className="border-r px-2 py-1.5 text-muted-foreground">
-          {opLabel}
+      {onEdit ? (
+        <button
+          type="button"
+          onClick={onEdit}
+          disabled={disabled}
+          className="inline-flex min-w-0 max-w-full items-stretch disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {content}
+        </button>
+      ) : (
+        <span className="inline-flex min-w-0 max-w-full items-stretch">
+          {content}
         </span>
-        <span className="truncate px-2 py-1.5">{valueLabel}</span>
-      </button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        onClick={onRemove}
-        disabled={disabled}
-        className="h-auto w-8 shrink-0 rounded-none border-l"
-        aria-label={`Remove ${fieldLabel} filter`}
-      >
-        <XIcon className="h-3.5 w-3.5" />
-      </Button>
+      )}
+      {onRemove ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={onRemove}
+          disabled={disabled}
+          className="h-auto w-8 shrink-0 rounded-none border-l"
+          aria-label={`Remove ${fieldLabel} filter`}
+        >
+          <XIcon className="h-3.5 w-3.5" />
+        </Button>
+      ) : null}
     </div>
   );
 }

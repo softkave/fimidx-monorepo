@@ -9,6 +9,7 @@ export const kApiGroupKeys = {
 export const kApiOrgKeys = {
   getOrgs: () => `/api/orgs/fetch`,
   getOrg: (orgId: string) => `/api/orgs/${orgId}`,
+  getOrgMembers: (orgId: string) => `/api/orgs/${orgId}/members`,
   addOrg: () => `/api/orgs`,
   deleteOrg: (orgId: string) => `/api/orgs/${orgId}`,
   updateOrg: (orgId: string) => `/api/orgs/${orgId}`,
@@ -43,6 +44,19 @@ export const kApiMonitorKeys = {
   addMonitor: () => `/api/monitors`,
   deleteMonitor: () => `/api/monitors`,
   updateMonitor: (monitorId: string) => `/api/monitors/${monitorId}`,
+  runMonitor: (monitorId: string) => `/api/monitors/${monitorId}/run`,
+  previewMonitor: (monitorId: string) => `/api/monitors/${monitorId}/preview`,
+};
+
+export const kApiAlertKeys = {
+  getAlerts: () => `/api/alerts/fetch`,
+  getAlert: (alertId: string) => `/api/alerts/${alertId}`,
+  acknowledgeAlert: (alertId: string) => `/api/alerts/${alertId}`,
+  getAlertLogs: (alertId: string) => `/api/alerts/${alertId}/logs`,
+};
+
+export const kApiMonitorRunKeys = {
+  getMonitorRuns: () => `/api/monitor-runs/fetch`,
 };
 
 export const kApiMemberKeys = {

@@ -1,7 +1,11 @@
-import type { IObj } from "fimidx-core/definitions/obj";
 import type { ICallback } from "../../definitions/callback.js";
+import type { IObj } from "../../definitions/obj.js";
 
-export function objToCallback(obj: IObj): ICallback {
+/** Accepts full or projected lean objs; missing fields may be undefined. */
+export function objToCallback<T extends Partial<ICallback> = ICallback>(
+  obj: Partial<IObj>
+): T {
+  const record = obj.objRecord ?? {};
   return {
     id: obj.id,
     createdAt: obj.createdAt,
@@ -12,18 +16,18 @@ export function objToCallback(obj: IObj): ICallback {
     createdByType: obj.createdByType,
     updatedBy: obj.updatedBy,
     updatedByType: obj.updatedByType,
-    url: obj.objRecord.url,
-    method: obj.objRecord.method,
-    requestHeaders: obj.objRecord.requestHeaders,
-    requestBody: obj.objRecord.requestBody,
-    lastExecutedAt: obj.objRecord.lastExecutedAt,
-    lastSuccessAt: obj.objRecord.lastSuccessAt,
-    lastErrorAt: obj.objRecord.lastErrorAt,
-    timeout: obj.objRecord.timeout,
-    intervalFrom: obj.objRecord.intervalFrom,
-    intervalMs: obj.objRecord.intervalMs,
-    idempotencyKey: obj.objRecord.idempotencyKey,
-    name: obj.objRecord.name,
-    description: obj.objRecord.description,
-  };
+    url: record.url,
+    method: record.method,
+    requestHeaders: record.requestHeaders,
+    requestBody: record.requestBody,
+    lastExecutedAt: record.lastExecutedAt,
+    lastSuccessAt: record.lastSuccessAt,
+    lastErrorAt: record.lastErrorAt,
+    timeout: record.timeout,
+    intervalFrom: record.intervalFrom,
+    intervalMs: record.intervalMs,
+    idempotencyKey: record.idempotencyKey,
+    name: record.name,
+    description: record.description,
+  } as T;
 }

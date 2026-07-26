@@ -223,6 +223,7 @@ describe("getMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const monitor2 = await addMonitor({
@@ -231,6 +232,7 @@ describe("getMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeGetMonitorsArgs();
@@ -253,6 +255,7 @@ describe("getMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     await addMonitor({
@@ -261,6 +264,7 @@ describe("getMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeGetMonitorsArgs({
@@ -284,6 +288,7 @@ describe("getMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     await addMonitor({
@@ -295,6 +300,7 @@ describe("getMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeGetMonitorsArgs({
@@ -322,6 +328,7 @@ describe("getMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     await addMonitor({
@@ -333,6 +340,7 @@ describe("getMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeGetMonitorsArgs({
@@ -346,7 +354,7 @@ describe("getMonitors integration", () => {
 
     expect(result.monitors).toHaveLength(1);
     expect(result.monitors[0].name).toBe("Monitor for User1");
-    expect(result.monitors[0].reportsTo).toEqual([{ userId: "user1" }]);
+    expect(result.monitors[0].reportsTo).toEqual([{ type: "user", userId: "user1" }]);
   });
 
   it("filters monitors by id", async () => {
@@ -357,6 +365,7 @@ describe("getMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeGetMonitorsArgs({
@@ -380,6 +389,7 @@ describe("getMonitors integration", () => {
       byType: "user",
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     await addMonitor({
@@ -388,6 +398,7 @@ describe("getMonitors integration", () => {
       byType: "user",
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeGetMonitorsArgs({
@@ -414,6 +425,7 @@ describe("getMonitors integration", () => {
         byType: defaultByType,
         groupId: defaultGroupId,
         storage,
+      skipReportsToValidation: true,
       });
       monitors.push(monitor.monitor);
     }
@@ -472,6 +484,7 @@ describe("getMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     await addMonitor({
@@ -480,6 +493,7 @@ describe("getMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     await addMonitor({
@@ -488,6 +502,7 @@ describe("getMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeGetMonitorsArgs({
@@ -516,6 +531,7 @@ describe("getMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     await addMonitor({
@@ -524,6 +540,7 @@ describe("getMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeGetMonitorsArgs({
@@ -549,6 +566,7 @@ describe("getMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     await addMonitor({
@@ -561,6 +579,7 @@ describe("getMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     await addMonitor({
@@ -573,6 +592,7 @@ describe("getMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeGetMonitorsArgs({
@@ -588,7 +608,7 @@ describe("getMonitors integration", () => {
     expect(result.monitors).toHaveLength(1);
     expect(result.monitors[0].name).toBe("Enabled Error Monitor");
     expect(result.monitors[0].status).toBe("enabled");
-    expect(result.monitors[0].reportsTo).toEqual([{ userId: "user1" }]);
+    expect(result.monitors[0].reportsTo).toEqual([{ type: "user", userId: "user1" }]);
   });
 
   it("handles empty results for non-existent filters", async () => {
@@ -599,6 +619,7 @@ describe("getMonitors integration", () => {
       byType: defaultByType,
       groupId: defaultGroupId,
       storage,
+      skipReportsToValidation: true,
     });
 
     const args = makeGetMonitorsArgs({

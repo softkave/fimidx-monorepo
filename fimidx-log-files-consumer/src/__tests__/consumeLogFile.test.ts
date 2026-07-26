@@ -1,571 +1,437 @@
-import {FimidxConsoleLikeLogger} from 'fimidx';
 import * as fs from 'fs/promises';
-import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
-import {consumeLogFile, IConsumeLogFileInput} from '../consumeLogFile.js';
-import {ILogFileConsumptionEntry} from '../types.js';
+import * as os from 'os';
+import * as path from 'path';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {
+  consumeLogFile,
+  shouldResetForRotation,
+} from '../consumeLogFile.js';
+import {LogFileReader} from '../logFileReader.js';
+import {IConsumeBatch, ILogFileConsumptionEntry} from '../types.js';
 
-// Mock fs module
-vi.mock('fs/promises');
+async function makeTempDir(): Promise<string> {
+  return fs.mkdtemp(path.join(os.tmpdir(), 'fimidx-consumer-'));
+}
 
-// Mock FimidxConsoleLikeLogger
-vi.mock('fimidx');
-
-describe('consumeLogFiles', () => {
-  let mockFileHandle: any;
-  let mockLogger: any;
-  let mockFileStats: any;
-
-  beforeEach(() => {
-    // Reset all mocks
-    vi.clearAllMocks();
-
-    // Setup mock file handle
-    mockFileHandle = {
-      read: vi.fn(),
-      close: vi.fn(),
-    };
-
-    // Setup mock logger
-    mockLogger = {
-      log: vi.fn(),
-      flush: vi.fn(),
-    };
-
-    // Setup mock file stats
-    mockFileStats = {
-      mtime: {
-        getTime: vi.fn().mockReturnValue(1234567890000), // Mock timestamp
-      },
-    };
-
-    // Setup fs.open mock
-    vi.mocked(fs.open).mockResolvedValue(mockFileHandle);
-
-    // Setup fs.stat mock
-    vi.mocked(fs.stat).mockResolvedValue(mockFileStats);
-
-    // Setup FimidxConsoleLikeLogger mock
-    vi.mocked(FimidxConsoleLikeLogger).mockImplementation(() => mockLogger);
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('should process single line log entries correctly', async () => {
-    const input: IConsumeLogFileInput = {
-      path: '/test/log.txt',
-      metadata: {source: 'test'},
-      projectId: 'test-project',
-      clientToken: 'test-token',
-    };
-
-    const lastConsumptionEntry: ILogFileConsumptionEntry = {
-      path: '/test/log.txt',
-      startPosition: 0,
-      lastModified: 1234567890000,
-    };
-
-    // Mock file content: "line1\nline2\n"
-    mockFileHandle.read
-      .mockImplementationOnce(
-        async (
-          buffer: Buffer,
-          offset: number,
-          length: number,
-          position: number,
-        ) => {
-          const content = 'line1\nline2\n';
-          buffer.write(content, offset, 'utf8');
-          return {bytesRead: content.length};
-        },
-      )
-      .mockResolvedValueOnce({bytesRead: 0}); // End of file
-
-    const result = await consumeLogFile(input, lastConsumptionEntry);
-
-    expect(fs.stat).toHaveBeenCalledWith('/test/log.txt');
-    expect(fs.open).toHaveBeenCalledWith('/test/log.txt', 'r');
-    expect(FimidxConsoleLikeLogger).toHaveBeenCalledWith({
-      projectId: 'test-project',
-      clientToken: 'test-token',
-      serverURL: undefined,
-      metadata: {source: 'test'},
+describe('LogFileReader', () => {
+  it('parses duplicate and empty lines with exact byte offsets', () => {
+    const reader = new LogFileReader({
+      flushIncompleteAfterMs: 0,
+      now: () => 10_000,
     });
-    expect(mockLogger.log).toHaveBeenCalledWith('line1');
-    expect(mockLogger.log).toHaveBeenCalledWith('line2');
-    expect(mockFileHandle.close).toHaveBeenCalled();
-    expect(mockLogger.flush).toHaveBeenCalled();
-    expect(result).toEqual({endPosition: 12}); // Position after "line1\nline2\n"
+    reader.reset(0);
+    reader.setFileMtime(0);
+
+    const mid = reader.pushChunk(Buffer.from('a\na\n\n'), 0);
+    expect(mid).toEqual([
+      {message: 'a', endOffset: 2},
+      {message: 'a', endOffset: 4},
+    ]);
+
+    const finish = reader.finish(true);
+    expect(finish.records).toEqual([{message: '', endOffset: 5}]);
+    expect(finish.position).toBe(5);
+    expect(finish.hasPending).toBe(false);
   });
 
-  it('should process multi-line log entries correctly', async () => {
-    const input: IConsumeLogFileInput = {
-      path: '/test/log.txt',
-      metadata: {source: 'test'},
-      projectId: 'test-project',
-      clientToken: 'test-token',
-    };
+  it('handles UTF-8 and CRLF with byte-accurate offsets', () => {
+    const reader = new LogFileReader({
+      flushIncompleteAfterMs: 0,
+      now: () => 10_000,
+    });
+    reader.reset(0);
+    reader.setFileMtime(0);
+    const content = Buffer.from('café\r\n😀\n', 'utf8');
+    const mid = reader.pushChunk(content, 0);
+    expect(mid).toEqual([
+      {message: 'café', endOffset: Buffer.byteLength('café\r\n', 'utf8')},
+    ]);
+    const finish = reader.finish(true);
+    expect(finish.records).toEqual([
+      {message: '😀', endOffset: content.length},
+    ]);
+    expect(finish.position).toBe(content.length);
+  });
 
-    const lastConsumptionEntry: ILogFileConsumptionEntry = {
-      path: '/test/log.txt',
-      startPosition: 0,
-      lastModified: 1234567890000,
-    };
+  it('folds indented continuations across chunk boundaries', () => {
+    const reader = new LogFileReader({
+      flushIncompleteAfterMs: 0,
+      now: () => 10_000,
+    });
+    reader.reset(0);
+    reader.setFileMtime(0);
 
-    // Mock file content: "error: something went wrong\n  at line 10\n  at line 20\ninfo: success\n"
-    const multiLineLog =
-      'error: something went wrong\n  at line 10\n  at line 20\ninfo: success\n';
-    mockFileHandle.read
-      .mockImplementationOnce(
-        async (
-          buffer: Buffer,
-          offset: number,
-          length: number,
-          position: number,
-        ) => {
-          buffer.write(multiLineLog, offset, 'utf8');
-          return {bytesRead: multiLineLog.length};
-        },
-      )
-      .mockResolvedValueOnce({bytesRead: 0});
+    const part1 = Buffer.from('err:\n');
+    expect(reader.pushChunk(part1, 0)).toEqual([]);
 
-    const result = await consumeLogFile(input, lastConsumptionEntry);
+    const part2 = Buffer.from('  at x\ninfo\n');
+    const mid = reader.pushChunk(part2, part1.length);
+    expect(mid).toEqual([
+      {
+        message: 'err:\n  at x',
+        endOffset: Buffer.byteLength('err:\n  at x\n', 'utf8'),
+      },
+    ]);
 
-    expect(mockLogger.log).toHaveBeenCalledWith(
-      'error: something went wrong\n  at line 10\n  at line 20',
+    const finish = reader.finish(true);
+    expect(finish.records).toEqual([
+      {message: 'info', endOffset: part1.length + part2.length},
+    ]);
+  });
+
+  it('carries incomplete UTF-8 sequences across chunks', () => {
+    const reader = new LogFileReader({
+      flushIncompleteAfterMs: 0,
+      now: () => 10_000,
+    });
+    reader.reset(0);
+    reader.setFileMtime(0);
+
+    const full = Buffer.from('😀\n', 'utf8');
+    expect(reader.pushChunk(full.subarray(0, 2), 0)).toEqual([]);
+    expect(reader.pushChunk(full.subarray(2), 2)).toEqual([]);
+    const finish = reader.finish(true);
+    expect(finish.records).toEqual([{message: '😀', endOffset: full.length}]);
+  });
+
+  it('throws when a record exceeds maxRecordBytes', () => {
+    const reader = new LogFileReader({maxRecordBytes: 8});
+    reader.reset(0);
+    expect(() => reader.pushChunk(Buffer.from('0123456789'), 0)).toThrow(
+      /maxRecordBytes/,
     );
-    expect(mockLogger.log).toHaveBeenCalledWith('info: success');
-    expect(result).toEqual({endPosition: multiLineLog.length}); // Position after the entire content
   });
 
-  it('should handle incomplete lines at buffer boundaries', async () => {
-    const input: IConsumeLogFileInput = {
-      path: '/test/log.txt',
-      metadata: {source: 'test'},
-      projectId: 'test-project',
-      clientToken: 'test-token',
-    };
+  it('does not infinite-loop on lines larger than the read buffer', () => {
+    const reader = new LogFileReader({
+      maxRecordBytes: 100_000,
+      flushIncompleteAfterMs: 0,
+      now: () => 10_000,
+    });
+    reader.reset(0);
+    reader.setFileMtime(0);
 
-    const lastConsumptionEntry: ILogFileConsumptionEntry = {
-      path: '/test/log.txt',
-      startPosition: 0,
-      lastModified: 1234567890000,
-    };
+    const big = 'x'.repeat(20_000);
+    const chunk1 = Buffer.from(big.slice(0, 8192));
+    const chunk2 = Buffer.from(big.slice(8192) + '\n');
+    expect(reader.pushChunk(chunk1, 0)).toEqual([]);
+    expect(reader.pushChunk(chunk2, chunk1.length)).toEqual([]);
+    const finish = reader.finish(true);
+    expect(finish.records).toEqual([
+      {message: big, endOffset: big.length + 1},
+    ]);
+  });
 
-    // First buffer ends with incomplete line
-    mockFileHandle.read
-      .mockImplementationOnce(
-        async (
-          buffer: Buffer,
-          offset: number,
-          length: number,
-          position: number,
-        ) => {
-          const content = 'line1\nli';
-          buffer.write(content, offset, 'utf8');
-          return {bytesRead: content.length};
+  it('holds pending until quiescence then flushes unterminated trailer', () => {
+    let now = 1_000;
+    const reader = new LogFileReader({
+      flushIncompleteAfterMs: 5_000,
+      now: () => now,
+    });
+    reader.reset(0);
+    reader.setFileMtime(1_000);
+    expect(reader.pushChunk(Buffer.from('partial'), 0)).toEqual([]);
+
+    now = 2_000;
+    expect(reader.finish(true).hasPending).toBe(true);
+
+    now = 7_000;
+    const finish = reader.finish(true);
+    expect(finish.records).toEqual([{message: 'partial', endOffset: 7}]);
+    expect(finish.hasPending).toBe(false);
+  });
+});
+
+describe('shouldResetForRotation', () => {
+  it('resets when file shrinks below checkpoint', () => {
+    expect(
+      shouldResetForRotation(
+        {path: '/a', startPosition: 100, lastModified: 1},
+        {size: 50, dev: 1, ino: 1},
+      ),
+    ).toBe(true);
+  });
+
+  it('resets when inode changes', () => {
+    expect(
+      shouldResetForRotation(
+        {path: '/a', startPosition: 10, lastModified: 1, dev: 1, ino: 1},
+        {size: 100, dev: 1, ino: 2},
+      ),
+    ).toBe(true);
+  });
+
+  it('does not reset for normal growth', () => {
+    expect(
+      shouldResetForRotation(
+        {path: '/a', startPosition: 10, lastModified: 1, dev: 1, ino: 1},
+        {size: 100, dev: 1, ino: 1},
+      ),
+    ).toBe(false);
+  });
+
+  it('does not reset when checkpoint stores number and stats use bigint', () => {
+    expect(
+      shouldResetForRotation(
+        {path: '/a', startPosition: 10, lastModified: 1, dev: 1, ino: 2},
+        {size: 100, dev: 1n, ino: 2n},
+      ),
+    ).toBe(false);
+  });
+});
+
+describe('consumeLogFile', () => {
+  let tempDir: string;
+  let logPath: string;
+
+  beforeEach(async () => {
+    tempDir = await makeTempDir();
+    logPath = path.join(tempDir, 'app.log');
+  });
+
+  afterEach(async () => {
+    await fs.rm(tempDir, {recursive: true, force: true});
+  });
+
+  it('ships lines and advances checkpoint only after successful send', async () => {
+    await fs.writeFile(logPath, 'line1\nline2\n');
+    const batches: IConsumeBatch[] = [];
+
+    const result = await consumeLogFile(
+      {
+        path: logPath,
+        metadata: {source: 'test'},
+        flushIncompleteAfterMs: 0,
+        now: () => Date.now() + 10_000,
+        sendBatch: async batch => {
+          batches.push(batch);
         },
-      )
-      .mockImplementationOnce(
-        async (
-          buffer: Buffer,
-          offset: number,
-          length: number,
-          position: number,
-        ) => {
-          const content = 'ne2\n';
-          buffer.write(content, offset, 'utf8');
-          return {bytesRead: content.length};
+      },
+      undefined,
+    );
+
+    expect(batches).toHaveLength(1);
+    expect(batches[0].records.map(r => r.message)).toEqual(['line1', 'line2']);
+    expect(batches[0].records[0]).toMatchObject({
+      level: 'log',
+      source: 'test',
+    });
+    expect(result.endPosition).toBe(Buffer.byteLength('line1\nline2\n'));
+    expect(result.fullyConsumed).toBe(true);
+  });
+
+  it('does not advance past a failed batch', async () => {
+    await fs.writeFile(logPath, 'a\nb\nc\n');
+    let calls = 0;
+
+    await expect(
+      consumeLogFile(
+        {
+          path: logPath,
+          metadata: {},
+          batchSize: 1,
+          flushIncompleteAfterMs: 0,
+          now: () => Date.now() + 10_000,
+          sendBatch: async () => {
+            calls += 1;
+            if (calls === 2) {
+              throw new Error('ingest failed');
+            }
+          },
         },
-      )
-      .mockResolvedValueOnce({bytesRead: 0});
+        undefined,
+      ),
+    ).rejects.toThrow('ingest failed');
 
-    const result = await consumeLogFile(input, lastConsumptionEntry);
-
-    expect(mockLogger.log).toHaveBeenCalledWith('line1');
-    // line2 is incomplete, so it shouldn't be logged
-    expect(mockLogger.log).toHaveBeenCalledTimes(1);
-    expect(result).toEqual({endPosition: 6}); // Position after "line1\n"
+    expect(calls).toBe(2);
   });
 
-  it('should handle empty file', async () => {
-    const input: IConsumeLogFileInput = {
-      path: '/test/empty.txt',
-      metadata: {source: 'test'},
-      projectId: 'test-project',
-      clientToken: 'test-token',
+  it('retries from last successful batch position', async () => {
+    await fs.writeFile(logPath, 'a\nb\nc\n');
+    const sent: string[] = [];
+
+    await expect(
+      consumeLogFile(
+        {
+          path: logPath,
+          metadata: {},
+          batchSize: 1,
+          flushIncompleteAfterMs: 0,
+          now: () => Date.now() + 10_000,
+          sendBatch: async batch => {
+            const msg = String(batch.records[0].message);
+            if (msg === 'b') {
+              throw new Error('fail b');
+            }
+            sent.push(msg);
+          },
+        },
+        undefined,
+      ),
+    ).rejects.toThrow('fail b');
+
+    expect(sent).toEqual(['a']);
+
+    const checkpoint: ILogFileConsumptionEntry = {
+      path: logPath,
+      startPosition: 2,
+      lastModified: (await fs.stat(logPath)).mtime.getTime(),
     };
 
-    const lastConsumptionEntry: ILogFileConsumptionEntry = {
-      path: '/test/empty.txt',
-      startPosition: 0,
-      lastModified: 1234567890000,
-    };
+    const sent2: string[] = [];
+    const result = await consumeLogFile(
+      {
+        path: logPath,
+        metadata: {},
+        batchSize: 1,
+        flushIncompleteAfterMs: 0,
+        now: () => Date.now() + 10_000,
+        sendBatch: async batch => {
+          sent2.push(String(batch.records[0].message));
+        },
+      },
+      checkpoint,
+    );
 
-    mockFileHandle.read.mockResolvedValueOnce({bytesRead: 0});
-
-    const result = await consumeLogFile(input, lastConsumptionEntry);
-
-    expect(mockLogger.log).not.toHaveBeenCalled();
-    expect(result).toEqual({endPosition: 0});
+    expect(sent2).toEqual(['b', 'c']);
+    expect(result.endPosition).toBe(Buffer.byteLength('a\nb\nc\n'));
   });
 
-  it('should handle file with only one incomplete line', async () => {
-    const input: IConsumeLogFileInput = {
-      path: '/test/incomplete.txt',
-      metadata: {source: 'test'},
-      projectId: 'test-project',
-      clientToken: 'test-token',
-    };
+  it('handles 8KB+ lines without hanging', async () => {
+    const big = 'y'.repeat(10_000);
+    await fs.writeFile(logPath, `${big}\n`);
 
-    const lastConsumptionEntry: ILogFileConsumptionEntry = {
-      path: '/test/incomplete.txt',
-      startPosition: 0,
-      lastModified: 1234567890000,
-    };
+    const result = await consumeLogFile(
+      {
+        path: logPath,
+        metadata: {},
+        bufferSize: 8192,
+        flushIncompleteAfterMs: 0,
+        now: () => Date.now() + 10_000,
+        sendBatch: async () => undefined,
+      },
+      undefined,
+    );
 
-    // File contains only "incomplete line" without newline
-    mockFileHandle.read
-      .mockResolvedValueOnce({bytesRead: 15}) // "incomplete line"
-      .mockResolvedValueOnce({bytesRead: 0});
-
-    const result = await consumeLogFile(input, lastConsumptionEntry);
-
-    expect(mockLogger.log).not.toHaveBeenCalled();
-    expect(result).toEqual({endPosition: 0});
+    expect(result.endPosition).toBe(big.length + 1);
+    expect(result.fullyConsumed).toBe(true);
   });
 
-  it('should handle startPosition greater than 0', async () => {
-    const input: IConsumeLogFileInput = {
-      path: '/test/log.txt',
-      metadata: {source: 'test'},
-      projectId: 'test-project',
-      clientToken: 'test-token',
-    };
+  it('rejects oversized records without advancing', async () => {
+    await fs.writeFile(logPath, `${'z'.repeat(50)}\n`);
 
-    const lastConsumptionEntry: ILogFileConsumptionEntry = {
-      path: '/test/log.txt',
+    await expect(
+      consumeLogFile(
+        {
+          path: logPath,
+          metadata: {},
+          maxRecordBytes: 10,
+          flushIncompleteAfterMs: 0,
+          now: () => Date.now() + 10_000,
+          sendBatch: async () => undefined,
+        },
+        undefined,
+      ),
+    ).rejects.toThrow(/maxRecordBytes/);
+  });
+
+  it('holds unterminated trailing line until quiescence', async () => {
+    await fs.writeFile(logPath, 'partial');
+    const stats = await fs.stat(logPath);
+    const mtime = stats.mtime.getTime();
+    let now = mtime + 1000;
+    const batches: IConsumeBatch[] = [];
+
+    const early = await consumeLogFile(
+      {
+        path: logPath,
+        metadata: {},
+        flushIncompleteAfterMs: 5_000,
+        now: () => now,
+        sendBatch: async batch => {
+          batches.push(batch);
+        },
+      },
+      undefined,
+    );
+
+    expect(batches).toHaveLength(0);
+    expect(early.hasPending).toBe(true);
+    expect(early.endPosition).toBe(0);
+
+    now = mtime + 6_000;
+    const later = await consumeLogFile(
+      {
+        path: logPath,
+        metadata: {},
+        flushIncompleteAfterMs: 5_000,
+        now: () => now,
+        sendBatch: async batch => {
+          batches.push(batch);
+        },
+      },
+      undefined,
+    );
+
+    expect(batches).toHaveLength(1);
+    expect(batches[0].records[0].message).toBe('partial');
+    expect(later.endPosition).toBe(Buffer.byteLength('partial'));
+    expect(later.fullyConsumed).toBe(true);
+  });
+
+  it('resets on truncation', async () => {
+    await fs.writeFile(logPath, 'abcdefghij\n');
+    const stats = await fs.stat(logPath);
+    const checkpoint: ILogFileConsumptionEntry = {
+      path: logPath,
       startPosition: 10,
-      lastModified: 1234567890000,
+      lastModified: stats.mtime.getTime(),
+      size: stats.size,
+      dev: stats.dev,
+      ino: stats.ino,
     };
 
-    mockFileHandle.read
-      .mockImplementationOnce(
-        async (
-          buffer: Buffer,
-          offset: number,
-          length: number,
-          position: number,
-        ) => {
-          const content = 'line2\n';
-          buffer.write(content, offset, 'utf8');
-          return {bytesRead: content.length};
+    await fs.writeFile(logPath, 'new\n');
+    const batches: IConsumeBatch[] = [];
+
+    const result = await consumeLogFile(
+      {
+        path: logPath,
+        metadata: {},
+        flushIncompleteAfterMs: 0,
+        now: () => Date.now() + 10_000,
+        sendBatch: async batch => {
+          batches.push(batch);
         },
-      )
-      .mockResolvedValueOnce({bytesRead: 0});
-
-    const result = await consumeLogFile(input, lastConsumptionEntry);
-
-    expect(mockFileHandle.read).toHaveBeenCalledWith(
-      expect.any(Buffer),
-      0,
-      8192,
-      10,
+      },
+      checkpoint,
     );
-    expect(mockLogger.log).toHaveBeenCalledWith('line2');
-    expect(result).toEqual({endPosition: 16});
+
+    expect(result.rotated).toBe(true);
+    expect(batches[0].records.map(r => r.message)).toEqual(['new']);
+    expect(result.endPosition).toBe(Buffer.byteLength('new\n'));
   });
 
-  it('should handle mixed single and multi-line entries', async () => {
-    const input: IConsumeLogFileInput = {
-      path: '/test/mixed.txt',
-      metadata: {source: 'test'},
-      projectId: 'test-project',
-      clientToken: 'test-token',
-    };
+  it('splits lines across small read buffers', async () => {
+    await fs.writeFile(logPath, 'hello\nworld\n');
+    const messages: string[] = [];
 
-    const lastConsumptionEntry: ILogFileConsumptionEntry = {
-      path: '/test/mixed.txt',
-      startPosition: 0,
-      lastModified: 1234567890000,
-    };
-
-    const mixedContent =
-      'single line\nmulti:\n  line1\n  line2\nanother single\n';
-    mockFileHandle.read
-      .mockImplementationOnce(
-        async (
-          buffer: Buffer,
-          offset: number,
-          length: number,
-          position: number,
-        ) => {
-          buffer.write(mixedContent, offset, 'utf8');
-          return {bytesRead: mixedContent.length};
+    await consumeLogFile(
+      {
+        path: logPath,
+        metadata: {},
+        bufferSize: 3,
+        flushIncompleteAfterMs: 0,
+        now: () => Date.now() + 10_000,
+        sendBatch: async batch => {
+          for (const r of batch.records) {
+            messages.push(String(r.message));
+          }
         },
-      )
-      .mockResolvedValueOnce({bytesRead: 0});
-
-    const result = await consumeLogFile(input, lastConsumptionEntry);
-
-    expect(mockLogger.log).toHaveBeenCalledWith('single line');
-    expect(mockLogger.log).toHaveBeenCalledWith('multi:\n  line1\n  line2');
-    expect(mockLogger.log).toHaveBeenCalledWith('another single');
-    expect(result).toEqual({endPosition: mixedContent.length});
-  });
-
-  it('should handle tabs as indentation', async () => {
-    const input: IConsumeLogFileInput = {
-      path: '/test/tabs.txt',
-      metadata: {source: 'test'},
-      projectId: 'test-project',
-      clientToken: 'test-token',
-    };
-
-    const lastConsumptionEntry: ILogFileConsumptionEntry = {
-      path: '/test/tabs.txt',
-      startPosition: 0,
-      lastModified: 1234567890000,
-    };
-
-    const tabContent = 'error:\n\tat function1\n\tat function2\ninfo: done\n';
-    mockFileHandle.read
-      .mockImplementationOnce(
-        async (
-          buffer: Buffer,
-          offset: number,
-          length: number,
-          position: number,
-        ) => {
-          buffer.write(tabContent, offset, 'utf8');
-          return {bytesRead: tabContent.length};
-        },
-      )
-      .mockResolvedValueOnce({bytesRead: 0});
-
-    const result = await consumeLogFile(input, lastConsumptionEntry);
-
-    expect(mockLogger.log).toHaveBeenCalledWith(
-      'error:\n\tat function1\n\tat function2',
+      },
+      undefined,
     );
-    expect(mockLogger.log).toHaveBeenCalledWith('info: done');
-    expect(result).toEqual({endPosition: tabContent.length});
-  });
 
-  it('should handle large files with multiple buffer reads', async () => {
-    const input: IConsumeLogFileInput = {
-      path: '/test/large.txt',
-      metadata: {source: 'test'},
-      projectId: 'test-project',
-      clientToken: 'test-token',
-    };
-
-    const lastConsumptionEntry: ILogFileConsumptionEntry = {
-      path: '/test/large.txt',
-      startPosition: 0,
-      lastModified: 1234567890000,
-    };
-
-    // First buffer: full 8KB
-    const buffer1 = 'line1\n'.repeat(1000); // ~6KB
-    const buffer2 = 'line2\n'.repeat(500); // ~3KB
-    const buffer3 = 'final\n'; // ~6 bytes
-
-    mockFileHandle.read
-      .mockImplementationOnce(
-        async (
-          buffer: Buffer,
-          offset: number,
-          length: number,
-          position: number,
-        ) => {
-          buffer.write(buffer1, offset, 'utf8');
-          return {bytesRead: 8192}; // Full buffer
-        },
-      )
-      .mockImplementationOnce(
-        async (
-          buffer: Buffer,
-          offset: number,
-          length: number,
-          position: number,
-        ) => {
-          buffer.write(buffer2, offset, 'utf8');
-          return {bytesRead: 3000}; // Partial buffer
-        },
-      )
-      .mockImplementationOnce(
-        async (
-          buffer: Buffer,
-          offset: number,
-          length: number,
-          position: number,
-        ) => {
-          buffer.write(buffer3, offset, 'utf8');
-          return {bytesRead: 6}; // Small final buffer
-        },
-      )
-      .mockResolvedValueOnce({bytesRead: 0});
-
-    const result = await consumeLogFile(input, lastConsumptionEntry);
-
-    expect(mockFileHandle.read).toHaveBeenCalledTimes(2);
-    expect(mockLogger.log).toHaveBeenCalled();
-    expect(mockFileHandle.close).toHaveBeenCalled();
-    expect(mockLogger.flush).toHaveBeenCalled();
-  });
-
-  it('should handle errors gracefully', async () => {
-    const input: IConsumeLogFileInput = {
-      path: '/test/error.txt',
-      metadata: {source: 'test'},
-      projectId: 'test-project',
-      clientToken: 'test-token',
-    };
-
-    const lastConsumptionEntry: ILogFileConsumptionEntry = {
-      path: '/test/error.txt',
-      startPosition: 0,
-      lastModified: 1234567890000,
-    };
-
-    mockFileHandle.read.mockRejectedValue(new Error('File read error'));
-
-    await expect(consumeLogFile(input, lastConsumptionEntry)).rejects.toThrow(
-      'File read error',
-    );
-    expect(mockFileHandle.close).toHaveBeenCalled();
-    expect(mockLogger.flush).toHaveBeenCalled();
-  });
-
-  it('should handle logger errors gracefully', async () => {
-    const input: IConsumeLogFileInput = {
-      path: '/test/log.txt',
-      metadata: {source: 'test'},
-      projectId: 'test-project',
-      clientToken: 'test-token',
-    };
-
-    const lastConsumptionEntry: ILogFileConsumptionEntry = {
-      path: '/test/log.txt',
-      startPosition: 0,
-      lastModified: 1234567890000,
-    };
-
-    mockFileHandle.read
-      .mockImplementationOnce(
-        async (
-          buffer: Buffer,
-          offset: number,
-          length: number,
-          position: number,
-        ) => {
-          const content = 'line1\nline2';
-          buffer.write(content, offset, 'utf8');
-          return {bytesRead: content.length};
-        },
-      )
-      .mockResolvedValueOnce({bytesRead: 0});
-
-    mockLogger.log.mockRejectedValue(new Error('Logger error'));
-
-    await expect(consumeLogFile(input, lastConsumptionEntry)).rejects.toThrow(
-      'Logger error',
-    );
-    expect(mockFileHandle.close).toHaveBeenCalled();
-    expect(mockLogger.flush).toHaveBeenCalled();
-  });
-
-  it('should return early if file has not changed and not enough time has passed', async () => {
-    const input: IConsumeLogFileInput = {
-      path: '/test/log.txt',
-      metadata: {source: 'test'},
-      projectId: 'test-project',
-      clientToken: 'test-token',
-    };
-
-    const lastConsumptionEntry: ILogFileConsumptionEntry = {
-      path: '/test/log.txt',
-      startPosition: 100,
-      lastModified: 1234567890000,
-    };
-
-    // Mock current time to be close to last modified time
-    const mockNow = 1234567890000 + 2000; // 2 seconds later
-    vi.spyOn(Date, 'now').mockReturnValue(mockNow);
-
-    const result = await consumeLogFile(input, lastConsumptionEntry);
-
-    expect(result).toEqual({endPosition: 100});
-    expect(fs.open).not.toHaveBeenCalled();
-    expect(FimidxConsoleLikeLogger).not.toHaveBeenCalled();
-  });
-
-  it('should process file if enough time has passed since last modification', async () => {
-    const input: IConsumeLogFileInput = {
-      path: '/test/log.txt',
-      metadata: {source: 'test'},
-      projectId: 'test-project',
-      clientToken: 'test-token',
-    };
-
-    const lastConsumptionEntry: ILogFileConsumptionEntry = {
-      path: '/test/log.txt',
-      startPosition: 100,
-      lastModified: 1234567890000,
-    };
-
-    // Mock current time to be far from last modified time
-    const mockNow = 1234567890000 + 10000; // 10 seconds later
-    vi.spyOn(Date, 'now').mockReturnValue(mockNow);
-
-    mockFileHandle.read.mockResolvedValueOnce({bytesRead: 0});
-
-    const result = await consumeLogFile(input, lastConsumptionEntry);
-
-    expect(fs.open).toHaveBeenCalled();
-    expect(FimidxConsoleLikeLogger).toHaveBeenCalled();
-    expect(result).toEqual({endPosition: 100});
-  });
-
-  it('should process file if lastConsumptionEntry is undefined', async () => {
-    const input: IConsumeLogFileInput = {
-      path: '/test/log.txt',
-      metadata: {source: 'test'},
-      projectId: 'test-project',
-      clientToken: 'test-token',
-    };
-
-    mockFileHandle.read.mockResolvedValueOnce({bytesRead: 0});
-
-    const result = await consumeLogFile(input, undefined);
-
-    expect(fs.open).toHaveBeenCalled();
-    expect(FimidxConsoleLikeLogger).toHaveBeenCalled();
-    expect(result).toEqual({endPosition: 0});
-  });
-
-  it('should process file if lastConsumptionEntry path is different', async () => {
-    const input: IConsumeLogFileInput = {
-      path: '/test/log.txt',
-      metadata: {source: 'test'},
-      projectId: 'test-project',
-      clientToken: 'test-token',
-    };
-
-    const lastConsumptionEntry: ILogFileConsumptionEntry = {
-      path: '/test/different.txt',
-      startPosition: 100,
-      lastModified: 1234567890000,
-    };
-
-    mockFileHandle.read.mockResolvedValueOnce({bytesRead: 0});
-
-    const result = await consumeLogFile(input, lastConsumptionEntry);
-
-    expect(fs.open).toHaveBeenCalled();
-    expect(FimidxConsoleLikeLogger).toHaveBeenCalled();
-    expect(result).toEqual({endPosition: 0});
+    expect(messages).toEqual(['hello', 'world']);
   });
 });

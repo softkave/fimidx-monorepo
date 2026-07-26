@@ -2,7 +2,7 @@
 
 import { kClientPaths } from "@/src/lib/clientHelpers/clientPaths";
 import { IMonitor } from "fimidx-core/definitions/monitor";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/src/lib/clientHooks/useRouter";
 import { useCallback } from "react";
 import { AlertsListContainer } from "../alert/alerts-container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
@@ -70,7 +70,7 @@ export function MonitorDetail(props: IMonitorDetailProps) {
         </TabsList>
 
         <TabsContent value={kMonitorTabs.details} className="pt-4">
-          <MonitorDetailsSummary monitor={monitor} />
+          <MonitorDetailsSummary monitor={monitor} orgId={orgId} />
         </TabsContent>
 
         <TabsContent value={kMonitorTabs.alerts} className="pt-4">

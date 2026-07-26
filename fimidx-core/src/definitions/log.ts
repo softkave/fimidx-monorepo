@@ -52,6 +52,7 @@ export const getLogsSchema = z.object({
 export const getLogFieldsSchema = z.object({
   query: z.object({
     projectId: z.string().min(1),
+    path: stringMetaQuerySchema.optional(),
   }),
   page: z.number().optional(),
   limit: z.number().optional(),

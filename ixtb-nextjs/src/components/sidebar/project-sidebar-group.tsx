@@ -1,10 +1,9 @@
+"use client";
+
 import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from "@/src/components/ui/sidebar";
 import { kClientPaths } from "@/src/lib/clientHelpers/clientPaths";
 import {
@@ -15,6 +14,7 @@ import {
   LogsIcon,
 } from "lucide-react";
 import { useMemo } from "react";
+import { SidebarNavItems } from "./sidebar-nav-items";
 import { ISidebarItem } from "./types";
 
 function getItems(orgId: string, projectId: string) {
@@ -63,18 +63,7 @@ export function ProjectSidebarGroup(props: {
     <SidebarGroup>
       <SidebarGroupLabel>{props.name}</SidebarGroupLabel>
       <SidebarGroupContent>
-        <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild>
-                <a href={item.url}>
-                  <item.icon />
-                  <span>{item.title}</span>
-                </a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
+        <SidebarNavItems items={items} />
       </SidebarGroupContent>
     </SidebarGroup>
   );

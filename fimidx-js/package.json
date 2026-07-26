@@ -6,13 +6,13 @@
     "email": "ywordk@gmail.com",
     "name": "softkave"
   },
-  "homepage": "https://github.com/softkave/fimidx/tree/main/fimidx-js",
+  "homepage": "https://github.com/softkave/fimidx-monorepo/tree/main/fimidx-js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/softkave/fimidx.git"
+    "url": "git+https://github.com/softkave/fimidx-monorepo.git"
   },
   "bugs": {
-    "url": "https://github.com/softkave/fimidx/issues"
+    "url": "https://github.com/softkave/fimidx-monorepo/issues"
   },
   "type": "module",
   "main": "./build/indexIsomorphic.js",

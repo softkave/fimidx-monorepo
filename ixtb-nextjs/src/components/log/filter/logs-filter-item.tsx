@@ -57,7 +57,7 @@ const kValueTypeToAllowedOps: Record<FieldType, (keyof typeof kOps)[]> = {
 
 export interface ILogsFilterItemProps {
   item: IWorkingLogPartFilterItem;
-  fields: ILogField[];
+  projectId: string;
   fieldsMap: Map<string, ILogField>;
   onChange: (value: IWorkingLogPartFilterItem) => void;
   onRemove: () => void;
@@ -65,7 +65,7 @@ export interface ILogsFilterItemProps {
 }
 
 export function LogsFilterItem(props: ILogsFilterItemProps) {
-  const { fields, fieldsMap, item, onChange, onRemove, disabled } = props;
+  const { projectId, fieldsMap, item, onChange, onRemove, disabled } = props;
 
   const knownField = item.field ?? fieldsMap.get(item.item.field);
 
@@ -82,14 +82,15 @@ export function LogsFilterItem(props: ILogsFilterItemProps) {
   const renderSelectName = () => {
     return (
       <LogFieldCombobox
+        projectId={projectId}
         value={item.item.field}
-        onChange={(value) => {
-          const selectedField = fieldsMap.get(value);
+        onChange={(value, selectedField) => {
+          const field = selectedField ?? fieldsMap.get(value);
           const fieldChanged = value !== item.item.field;
-          const allowedOps = selectedField
-            ? kValueTypeToAllowedOps[selectedField.type]
+          const allowedOps = field
+            ? kValueTypeToAllowedOps[field.type]
             : kAllOps;
-          const defaultOp = getDefaultOpForField(selectedField);
+          const defaultOp = getDefaultOpForField(field);
 
           let nextOp = item.item.op;
           let nextValue = item.item.value;
@@ -110,12 +111,11 @@ export function LogsFilterItem(props: ILogsFilterItemProps) {
               ...item.item,
               field: value,
               op: nextOp,
-              value: nextValue as never,
-            },
-            field: selectedField,
+              value: nextValue,
+            } as typeof item.item,
+            field,
           });
         }}
-        fields={fields}
         disabled={disabled}
         placeholder="Field"
         allowCustomValue

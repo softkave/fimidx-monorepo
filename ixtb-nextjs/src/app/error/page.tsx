@@ -1,4 +1,5 @@
 import { DefaultErrorMessage } from "@/src/components/internal/default-error-message.tsx";
+import { ErrorPageContent } from "@/src/components/internal/error-page-content.tsx";
 import { ErrorTypeMessage } from "@/src/components/internal/error-type-message.tsx";
 import { ProjectHeader } from "@/src/components/internal/project-header";
 import { kAppConstants } from "fimidx-core/definitions/appConstants";
@@ -10,23 +11,21 @@ export const metadata: Metadata = {
   description: "Something went wrong",
 };
 
-export default function AuthErrorPage() {
+/**
+ * Landing page for errors we redirect to, e.g. auth failures that carry their
+ * reason in `?error=`. Render-time crashes are handled by `app/error.tsx`.
+ */
+export default function ErrorPage() {
   return (
-    <main className="flex flex-col h-screen flex-1">
+    <main className="flex h-screen flex-1 flex-col">
       <ProjectHeader />
-      <div className="flex h-screen w-full flex-col items-center justify-center flex-1">
-        <a
-          href="#"
-          className="block max-w-sm bg-white p-6 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700"
-        >
-          <h5 className="mb-2 flex flex-row items-center gap-2 text-xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Something went wrong
-          </h5>
+      <ErrorPageContent
+        message={
           <Suspense fallback={<DefaultErrorMessage />}>
             <ErrorTypeMessage />
           </Suspense>
-        </a>
-      </div>
+        }
+      />
     </main>
   );
 }

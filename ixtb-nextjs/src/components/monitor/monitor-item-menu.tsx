@@ -6,7 +6,7 @@ import { cn } from "@/src/lib/utils";
 import { IMonitor } from "fimidx-core/definitions/monitor";
 import { isString } from "lodash-es";
 import { Ellipsis, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/src/lib/clientHooks/useRouter";
 import { useState } from "react";
 import { toast } from "sonner";
 import { mutate } from "swr";

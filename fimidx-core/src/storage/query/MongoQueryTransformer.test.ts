@@ -421,6 +421,24 @@ describe("MongoQueryTransformer", () => {
       });
     });
 
+    it("should handle string meta query like (case-insensitive)", () => {
+      const query: IObjQuery = {
+        metaQuery: {
+          projectId: { eq: "project1" },
+          tag: { like: "reason" },
+        },
+      };
+      const result = transformer.transformFilter(query, now);
+      expect(result).toMatchObject({
+        $and: [{ projectId: "project1" }, { tag: expect.any(Object) }],
+      });
+      const tagFilter = (result as { $and: Record<string, unknown>[] }).$and[1]
+        .tag as { $regex: RegExp };
+      expect(tagFilter.$regex).toBeInstanceOf(RegExp);
+      expect(tagFilter.$regex.source).toBe("reason");
+      expect(tagFilter.$regex.flags).toContain("i");
+    });
+
     it("should handle deletedAt null", () => {
       const query: IObjQuery = {
         metaQuery: {

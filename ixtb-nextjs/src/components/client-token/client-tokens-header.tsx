@@ -2,7 +2,7 @@
 
 import { kClientPaths } from "@/src/lib/clientHelpers/clientPaths";
 import { PlusIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/src/lib/clientHooks/useRouter";
 import { useState } from "react";
 import { ComponentListHeader } from "../internal/component-list/component-list-header";
 import { Button } from "../ui/button";

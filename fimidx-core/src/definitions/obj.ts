@@ -53,7 +53,7 @@ export function getObjTagShortForm(tag: string): string {
 /**
  * Prefixes an id with the tag's short form when creating objs. Ids look like "{shortForm}_{id}".
  */
-export function prefixObjId(tag: ObjTag, id: string): string {
+export function prefixObjId(tag: string, id: string): string {
   const shortForm = getObjTagShortForm(tag);
   return `${shortForm}${kObjIdPrefixSeparator}${id}`;
 }
@@ -256,6 +256,8 @@ export const stringMetaQuerySchema = z.object({
   neq: z.string().optional(),
   in: z.array(z.string()).max(100).optional(),
   not_in: z.array(z.string()).max(100).optional(),
+  /** Case-insensitive substring / regex match (same semantics as record `like`). */
+  like: z.string().optional(),
 });
 
 export const numberMetaQuerySchema = z.object({

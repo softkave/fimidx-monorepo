@@ -19,7 +19,7 @@ import {
 import type { IObjRecordQueryList } from "fimidx-core/definitions/obj";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/src/lib/clientHooks/useRouter";
 import { useCallback, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -407,10 +407,11 @@ export function MonitorForm(props: IMonitorFormProps) {
             projectId={projectId}
             filters={filters}
             onChange={setFilters}
-            applyButtonText="Apply filters"
+            autoApply
           />
           <FormDescription>
-            Only matching log entries are counted in each interval.
+            Only matching log entries are counted in each interval. Filters are
+            saved when you save the monitor.
           </FormDescription>
         </FormItem>
 

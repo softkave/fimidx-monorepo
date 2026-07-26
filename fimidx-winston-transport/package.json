@@ -6,13 +6,13 @@
     "email": "ywordk@gmail.com",
     "name": "softkave"
   },
-  "homepage": "https://github.com/softkave/fimidx/tree/main/fimidx-winston-transport",
+  "homepage": "https://github.com/softkave/fimidx-monorepo/tree/main/fimidx-winston-transport",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/softkave/fimidx.git"
+    "url": "git+https://github.com/softkave/fimidx-monorepo.git"
   },
   "bugs": {
-    "url": "https://github.com/softkave/fimidx/issues"
+    "url": "https://github.com/softkave/fimidx-monorepo/issues"
   },
   "type": "module",
   "main": "build/index.js",
@@ -49,7 +49,7 @@
   },
   "dependencies": {
     "winston-transport": "^4.9.0",
-    "fimidx": "0.7.0"
+    "fimidx": "^0.7.5"
   },
   "devDependencies": {
     "gts": "^6.0.2",

@@ -38,7 +38,7 @@ export function MonitorReportsToUsersCombobox(
     const members = data?.members ?? [];
     const fromApi = members.map((m) => ({
       value: m.userId,
-      label: m.email ? `${m.name} (${m.email})` : m.name,
+      label: m.name,
     }));
 
     // Keep previously selected users visible even if they left the org list.

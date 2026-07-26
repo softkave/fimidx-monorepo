@@ -67,9 +67,6 @@ export const MonitorAlertEmail = (props: MonitorAlertEmailProps) => {
                   <p className="mb-1 text-sm text-gray-600">
                     Window: {windowStart} → {windowEnd}
                   </p>
-                  <p className="mb-1 text-sm text-gray-600">
-                    Time field: {timeFieldLabel}
-                  </p>
                   <p className="mb-4 text-sm text-gray-600">
                     Threshold: {thresholdLabel}
                   </p>

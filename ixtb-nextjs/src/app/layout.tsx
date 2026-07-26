@@ -1,20 +1,12 @@
 import { Toaster } from "@/src/components/ui/sonner.tsx";
 import { kAppConstants } from "fimidx-core/definitions/appConstants";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, DM_Sans, Source_Code_Pro } from "next/font/google";
+import { DM_Sans, Source_Code_Pro } from "next/font/google";
+import NextTopLoader from "nextjs-toploader";
 import { GlobalStateProvider } from "../components/contexts/global-state-context";
+import { ErrorBoundary } from "../components/internal/error-boundary";
 import { SidebarProvider } from "../components/ui/sidebar";
 import "./globals.css";
-
-// const geistSans = Geist({
-//   variable: "--font-geist-sans",
-//   subsets: ["latin"],
-// });
-
-// const geistMono = Geist_Mono({
-//   variable: "--font-geist-mono",
-//   subsets: ["latin"],
-// });
 
 const sans = DM_Sans({
   variable: "--font-sans",
@@ -38,12 +30,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${sans.variable} ${mono.variable} antialiased`}
-      >
-        <GlobalStateProvider>
-          <SidebarProvider>{children}</SidebarProvider>
-        </GlobalStateProvider>
+      <body className={`${sans.variable} ${mono.variable} antialiased`}>
+        <NextTopLoader
+          color="var(--primary)"
+          height={2}
+          showSpinner={false}
+          shadow={false}
+        />
+        <ErrorBoundary name="RootLayout">
+          <GlobalStateProvider>
+            <SidebarProvider>{children}</SidebarProvider>
+          </GlobalStateProvider>
+        </ErrorBoundary>
         <Toaster />
       </body>
     </html>

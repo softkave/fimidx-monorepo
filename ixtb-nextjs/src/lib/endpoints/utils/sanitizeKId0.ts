@@ -85,13 +85,17 @@ function rejectIfKId0(
 }
 
 function sanitizeStringMetaQuery(
-  meta: { eq?: string; in?: string[]; not_in?: string[] } | undefined,
+  meta:
+    | { eq?: string; neq?: string; in?: string[]; not_in?: string[]; like?: string }
+    | undefined,
   fieldLabel: string
 ): void {
   if (!meta) return;
   rejectIfKId0(meta.eq, fieldLabel);
+  rejectIfKId0(meta.neq, fieldLabel);
   rejectIfKId0(meta.in, fieldLabel);
   rejectIfKId0(meta.not_in, fieldLabel);
+  rejectIfKId0(meta.like, fieldLabel);
 }
 
 // --- Org (ixtb-nextjs) ---

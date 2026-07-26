@@ -1,5 +1,6 @@
 "use client";
 
+import { useGetOrgMembers } from "@/src/lib/clientApi/org";
 import { format } from "date-fns";
 import { getMsFromDuration } from "fimidx-core/common/date";
 import { extractMonitorFilters } from "fimidx-core/common/monitor";
@@ -9,6 +10,8 @@ import {
   kMonitorStatus,
   kMonitorStatusLabels,
 } from "fimidx-core/definitions/monitor";
+import { useMemo } from "react";
+import { LogsFilterChip } from "../log/filter/logs-filter-chip";
 import { Badge } from "../ui/badge";
 
 function durationMinutes(
@@ -31,8 +34,11 @@ function DetailRow(props: { label: string; children: React.ReactNode }) {
   );
 }
 
-export function MonitorDetailsSummary(props: { monitor: IMonitor }) {
-  const { monitor } = props;
+export function MonitorDetailsSummary(props: {
+  monitor: IMonitor;
+  orgId: string;
+}) {
+  const { monitor, orgId } = props;
   const filters = extractMonitorFilters(monitor.query);
   const intervalMins = durationMinutes(monitor.interval);
   const cooldownMins = durationMinutes(monitor.cooldown);
@@ -41,9 +47,28 @@ export function MonitorDetailsSummary(props: { monitor: IMonitor }) {
     monitor.snoozedUntil != null &&
     new Date(monitor.snoozedUntil).getTime() > now;
 
-  const reportsToUsers = monitor.reportsTo
-    .filter((r) => r.type === "user")
-    .map((r) => r.userId);
+  const reportsToUserIds = useMemo(
+    () =>
+      monitor.reportsTo
+        .filter((r) => r.type === "user")
+        .map((r) => r.userId),
+    [monitor.reportsTo]
+  );
+
+  const { data: membersData, isLoading: isLoadingMembers } = useGetOrgMembers({
+    orgId,
+  });
+
+  const notifyUsers = useMemo(() => {
+    const membersById = new Map(
+      (membersData?.members ?? []).map((m) => [m.userId, m])
+    );
+    return reportsToUserIds.map((userId) => {
+      const member = membersById.get(userId);
+      const label = member?.name?.trim() || member?.email?.trim() || userId;
+      return { userId, label };
+    });
+  }, [membersData?.members, reportsToUserIds]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -92,26 +117,30 @@ export function MonitorDetailsSummary(props: { monitor: IMonitor }) {
           {filters.length === 0 ? (
             "None"
           ) : (
-            <ul className="list-disc list-inside space-y-0.5">
+            <div className="flex flex-wrap gap-1.5">
               {filters.map((f, i) => (
-                <li key={i}>
-                  <code className="text-xs">
-                    {f.field} {f.op}{" "}
-                    {typeof f.value === "string"
-                      ? f.value
-                      : JSON.stringify(f.value)}
-                  </code>
-                </li>
+                <LogsFilterChip
+                  key={`${f.field}-${f.op}-${i}`}
+                  filter={{ item: f }}
+                />
               ))}
-            </ul>
+            </div>
           )}
         </DetailRow>
         <DetailRow label="Notify">
-          {reportsToUsers.length === 0
-            ? "Nobody"
-            : `${reportsToUsers.length} user${
-                reportsToUsers.length === 1 ? "" : "s"
-              }`}
+          {reportsToUserIds.length === 0 ? (
+            "Nobody"
+          ) : isLoadingMembers ? (
+            "Loading…"
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {notifyUsers.map((user) => (
+                <Badge key={user.userId} variant="secondary">
+                  {user.label}
+                </Badge>
+              ))}
+            </div>
+          )}
         </DetailRow>
         <DetailRow label="Last run">
           {monitor.lastRunAt

@@ -6,7 +6,7 @@ import { kClientPaths } from "@/src/lib/clientHelpers/clientPaths";
 import { cn } from "@/src/lib/utils";
 import { isString } from "lodash-es";
 import { Ellipsis, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/src/lib/clientHooks/useRouter";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useDeleteResourceDialog } from "../internal/delete-resource-dialog";

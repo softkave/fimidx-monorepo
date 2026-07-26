@@ -58,7 +58,7 @@ export const addMonitorEndpoint: NextMaybeAuthenticatedEndpointFn<
   } catch (err) {
     fimidxConsoleLogger.error({
       message: "[addMonitorEndpoint] syncMonitorCallback failed",
-      error: err,
+      error: JSON.stringify(err),
       monitorId: monitor.id,
       by,
       byType,

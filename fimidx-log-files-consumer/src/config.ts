@@ -33,7 +33,10 @@ export function resolveFileConfig(
 
   return {
     path: logFile.path,
-    metadata: logFile.metadata ?? globalConfig.metadata ?? {},
+    metadata: {
+      ...(globalConfig.metadata ?? {}),
+      ...(logFile.metadata ?? {}),
+    },
     projectId,
     clientToken,
     ...(serverURL ? {serverURL} : {}),

@@ -110,7 +110,8 @@ await consumer.stop();
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `path` | `string` | yes | Path to the log file |
-| `projectId` / `clientToken` / `serverURL` / `metadata` | | no | Overrides global values |
+| `projectId` / `clientToken` / `serverURL` | | no | Overrides global values |
+| `metadata` | `object` | no | Merged into global metadata; per-file keys win on conflict |
 | `batchSize` / `maxRecordBytes` / `flushIncompleteAfterMs` | | no | Overrides global processing options |
 
 ## How it works

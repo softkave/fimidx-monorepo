@@ -93,4 +93,29 @@ describe('resolveFileConfig', () => {
     expect(resolved.maxRecordBytes).toBe(2048);
     expect(resolved.flushIncompleteAfterMs).toBe(1000);
   });
+
+  it('merges per-file metadata into global metadata', () => {
+    const resolved = resolveFileConfig(
+      {
+        path: '/var/log/a.log',
+        projectId: 'p',
+        clientToken: 't',
+        metadata: {logType: 'application', service: 'file-service'},
+      },
+      {
+        ...baseConfig,
+        metadata: {
+          environment: 'production',
+          service: 'global-service',
+        },
+      },
+      {},
+    );
+
+    expect(resolved.metadata).toEqual({
+      environment: 'production',
+      service: 'file-service',
+      logType: 'application',
+    });
+  });
 });

@@ -16,6 +16,8 @@ export const kObjTags = {
   permission: "permission",
   alert: "alert",
   monitorRun: "monitorRun",
+  objField: "objField",
+  user: "user",
 } as const;
 
 export type ObjTag = (typeof kObjTags)[keyof typeof kObjTags];
@@ -34,6 +36,8 @@ export const kObjTagShortForms: Record<ObjTag, string> = {
   [kObjTags.permission]: "perm",
   [kObjTags.alert]: "aler",
   [kObjTags.monitorRun]: "mrun",
+  [kObjTags.objField]: "objf",
+  [kObjTags.user]: "user",
 } as const;
 
 /** Separator between tag short form and the rest of the id (e.g. "proj_01933..."). */
@@ -49,7 +53,7 @@ export function getObjTagShortForm(tag: string): string {
 /**
  * Prefixes an id with the tag's short form when creating objs. Ids look like "{shortForm}_{id}".
  */
-export function prefixObjId(tag: string, id: string): string {
+export function prefixObjId(tag: ObjTag, id: string): string {
   const shortForm = getObjTagShortForm(tag);
   return `${shortForm}${kObjIdPrefixSeparator}${id}`;
 }
@@ -63,13 +67,11 @@ export type IObjField = {
    * For example:
    * - "primary"
    * - "content.name"
-   * - "content.scores[0]"
    * - "content.scores[*]"
-   * - "content.tags[0].name"
    * - "content.tags[*].name"
    *
    * `path` will not include `objRecord`, but its content. For example,
-   * `objRecord.content.tags[0].name` will be `content.tags[0].name`.
+   * `objRecord.content.tags[*].name` will be `content.tags[*].name`.
    */
   path: string;
   type: FieldType;

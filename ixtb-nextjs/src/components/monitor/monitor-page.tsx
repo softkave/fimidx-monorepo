@@ -5,11 +5,13 @@ import { ProjectPage } from "../internal/project-page";
 import { ProjectContainer } from "../project/project-container";
 import { ProjectUpdateState } from "../project/project-update-state";
 import { MonitorContainer } from "./monitor-container";
+import type { MonitorTab } from "./monitor-tabs";
 
 export interface IMonitorPageProps {
   monitorId: string;
   projectId: string;
   orgId: string;
+  tab: MonitorTab;
   className?: string;
 }
 
@@ -26,6 +28,7 @@ export function MonitorPage(props: IMonitorPageProps) {
               projectId={props.projectId}
               monitorId={props.monitorId}
               orgId={props.orgId}
+              tab={props.tab}
             />
           </div>
         )}

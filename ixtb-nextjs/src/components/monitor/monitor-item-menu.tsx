@@ -103,7 +103,7 @@ export function MonitorItemMenu(props: IMonitorItemMenuProps) {
           <DropdownMenuItem
             onSelect={() =>
               router.push(
-                kClientPaths.app.org.project.monitors.single(
+                kClientPaths.app.org.project.monitors.edit(
                   orgId,
                   projectId,
                   monitor.id

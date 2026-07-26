@@ -1,12 +1,13 @@
 "use client";
 
 import { kClientPaths } from "@/src/lib/clientHelpers/clientPaths";
+import { format } from "date-fns";
 import {
   IAlert,
   kAlertResourceTypeLabels,
   kAlertTimeFieldLabels,
 } from "fimidx-core/definitions/alert";
-import { format } from "date-fns";
+import { ArrowRightIcon } from "lucide-react";
 import Link from "next/link";
 import { ComponentListItemSkeleton } from "../internal/component-list/component-list-item-skeleton.tsx";
 import { ComponentListItem } from "../internal/component-list/component-list-item.tsx";
@@ -32,7 +33,7 @@ export function AlertItem(props: IAlertItemProps) {
         )}
         className="flex-1"
       >
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2 justify-between">
             <h3 className="font-medium">{item.monitorName}</h3>
             <Badge variant={acknowledged ? "secondary" : "default"}>
@@ -53,8 +54,9 @@ export function AlertItem(props: IAlertItemProps) {
             <span>·</span>
             <span>{kAlertTimeFieldLabels[item.timeField]}</span>
           </div>
-          <p className="text-xs text-muted-foreground">
-            {format(new Date(item.windowStart), "PPp")} →{" "}
+          <p className="text-xs text-muted-foreground flex items-center gap-1">
+            {format(new Date(item.windowStart), "PPp")}
+            <ArrowRightIcon className="w-4 h-4" />
             {format(new Date(item.windowEnd), "PPp")}
           </p>
         </div>

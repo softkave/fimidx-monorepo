@@ -13,7 +13,7 @@ import {
   kAlertResourceTypeLabels,
   kAlertTimeFieldLabels,
 } from "fimidx-core/definitions/alert";
-import { Loader2 } from "lucide-react";
+import { ArrowRightIcon, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -40,12 +40,7 @@ export function AlertPage(props: IAlertPageProps) {
         projectId={props.projectId}
         orgId={props.orgId}
         render={({ project }) => (
-          <div
-            className={cn(
-              "flex flex-col max-w-lg mx-auto w-full",
-              props.className
-            )}
-          >
+          <div className={cn("flex flex-col w-full", props.className)}>
             <ProjectUpdateState project={project} />
             <AlertDetail
               alertId={props.alertId}
@@ -93,7 +88,7 @@ function AlertDetail(props: {
 
   if (alertHook.isLoading || !alertHook.data?.alert) {
     return (
-      <div className="p-4">
+      <div className="p-4 w-full">
         <LogsTableSkeleton />
       </div>
     );
@@ -103,20 +98,22 @@ function AlertDetail(props: {
 
   return (
     <div className="flex flex-col gap-6 p-4 pt-0 w-full">
-      <AlertSnapshot
-        alert={alert}
-        orgId={orgId}
-        projectId={projectId}
-        isAcknowledging={isAcknowledging}
-        onAcknowledge={handleAcknowledge}
-      />
+      <div className="max-w-lg mx-auto w-full">
+        <AlertSnapshot
+          alert={alert}
+          orgId={orgId}
+          projectId={projectId}
+          isAcknowledging={isAcknowledging}
+          onAcknowledge={handleAcknowledge}
+        />
+      </div>
       <div className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Matching logs</h2>
         <AlertLogsList alertId={alertId} />
       </div>
     </div>
   );
-}
+} 
 
 function AlertSnapshot(props: {
   alert: IAlert;
@@ -153,8 +150,9 @@ function AlertSnapshot(props: {
         </div>
         <div>
           <dt className="text-muted-foreground">Window</dt>
-          <dd>
-            {format(new Date(alert.windowStart), "PPp")} →{" "}
+          <dd className="flex items-center gap-1">
+            {format(new Date(alert.windowStart), "PPp")}
+            <ArrowRightIcon className="w-4 h-4" />
             {format(new Date(alert.windowEnd), "PPp")}
           </dd>
         </div>

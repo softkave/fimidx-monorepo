@@ -1,36 +1,49 @@
 "use client";
 
+import { kClientPaths } from "@/src/lib/clientHelpers/clientPaths";
 import { IMonitor } from "fimidx-core/definitions/monitor";
-import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback } from "react";
 import { AlertsListContainer } from "../alert/alerts-container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { MonitorDetailsSummary } from "./monitor-details-summary";
 import { MonitorForm } from "./monitor-form";
 import { MonitorItemMenu } from "./monitor-item-menu";
 import { MonitorRunsList } from "./monitor-runs-list";
-
-const kMonitorTabs = {
-  details: "details",
-  alerts: "alerts",
-  runs: "runs",
-  edit: "edit",
-} as const;
-
-type MonitorTab = (typeof kMonitorTabs)[keyof typeof kMonitorTabs];
+import { kMonitorTabs, type MonitorTab } from "./monitor-tabs";
 
 export interface IMonitorDetailProps {
   monitor: IMonitor;
   orgId: string;
   projectId: string;
+  tab: MonitorTab;
 }
 
 export function MonitorDetail(props: IMonitorDetailProps) {
-  const { monitor, orgId, projectId } = props;
-  const [tab, setTab] = useState<MonitorTab>(kMonitorTabs.details);
+  const { monitor, orgId, projectId, tab } = props;
+  const router = useRouter();
+
+  const pathForTab = useCallback(
+    (nextTab: MonitorTab) =>
+      kClientPaths.app.org.project.monitors.tab(
+        orgId,
+        projectId,
+        monitor.id,
+        nextTab
+      ),
+    [monitor.id, orgId, projectId]
+  );
+
+  const handleTabChange = useCallback(
+    (value: string) => {
+      router.push(pathForTab(value as MonitorTab));
+    },
+    [pathForTab, router]
+  );
 
   const handleEditComplete = useCallback(() => {
-    setTab(kMonitorTabs.details);
-  }, []);
+    router.push(pathForTab(kMonitorTabs.details));
+  }, [pathForTab, router]);
 
   return (
     <div className="flex flex-col gap-6 p-4 pt-0">
@@ -48,11 +61,7 @@ export function MonitorDetail(props: IMonitorDetailProps) {
         />
       </div>
 
-      <Tabs
-        value={tab}
-        onValueChange={(value) => setTab(value as MonitorTab)}
-        className="w-full"
-      >
+      <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="w-full flex-wrap h-auto justify-start">
           <TabsTrigger value={kMonitorTabs.details}>Details</TabsTrigger>
           <TabsTrigger value={kMonitorTabs.alerts}>Alerts</TabsTrigger>

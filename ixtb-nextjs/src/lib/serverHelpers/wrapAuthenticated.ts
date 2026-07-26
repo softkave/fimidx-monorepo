@@ -57,6 +57,7 @@ async function tryGetUserAuthenticatedRequest(
   assert.ok(session.user.email, new OwnServerError("Unauthorized", 401));
   return {
     session,
+    // Better Auth maps Mongo `_id` → user.id (ObjectId hex).
     userId: session.user.id,
     email: session.user.email,
     user: session.user,

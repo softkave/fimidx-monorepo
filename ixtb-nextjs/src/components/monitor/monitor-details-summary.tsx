@@ -1,5 +1,6 @@
 "use client";
 
+import { format } from "date-fns";
 import { getMsFromDuration } from "fimidx-core/common/date";
 import { extractMonitorFilters } from "fimidx-core/common/monitor";
 import { kAlertTimeFieldLabels } from "fimidx-core/definitions/alert";
@@ -8,7 +9,6 @@ import {
   kMonitorStatus,
   kMonitorStatusLabels,
 } from "fimidx-core/definitions/monitor";
-import { format } from "date-fns";
 import { Badge } from "../ui/badge";
 
 function durationMinutes(
@@ -47,25 +47,31 @@ export function MonitorDetailsSummary(props: { monitor: IMonitor }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap gap-1.5">
-        <Badge
-          variant={
-            monitor.status === kMonitorStatus.enabled ? "default" : "secondary"
-          }
-        >
-          {kMonitorStatusLabels[monitor.status]}
-        </Badge>
-        {monitor.muted ? <Badge variant="outline">Muted</Badge> : null}
-        {isSnoozed && monitor.snoozedUntil ? (
-          <Badge variant="outline">
-            Snoozed until {format(new Date(monitor.snoozedUntil), "PPp")}
-          </Badge>
-        ) : null}
-      </div>
-
       <dl className="flex flex-col gap-3">
+        <DetailRow label="Name">
+          {monitor.name?.trim() ? monitor.name : "—"}
+        </DetailRow>
         <DetailRow label="Description">
           {monitor.description?.trim() ? monitor.description : "—"}
+        </DetailRow>
+        <DetailRow label="Status">
+          <div className="flex flex-wrap gap-1.5">
+            <Badge
+              variant={
+                monitor.status === kMonitorStatus.enabled
+                  ? "default"
+                  : "secondary"
+              }
+            >
+              {kMonitorStatusLabels[monitor.status]}
+            </Badge>
+            {monitor.muted ? <Badge variant="outline">Muted</Badge> : null}
+            {isSnoozed && monitor.snoozedUntil ? (
+              <Badge variant="outline">
+                Snoozed until {format(new Date(monitor.snoozedUntil), "PPp")}
+              </Badge>
+            ) : null}
+          </div>
         </DetailRow>
         <DetailRow label="Resource">Logs</DetailRow>
         <DetailRow label="Time field">

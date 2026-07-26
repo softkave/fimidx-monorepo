@@ -213,8 +213,14 @@ export function MonitorForm(props: IMonitorFormProps) {
             )
           );
         }
-      } catch {
-        // handleResponse already toasts
+      } catch (error) {
+        toast.error(
+          isEdit ? "Failed to update monitor" : "Failed to create monitor",
+          {
+            description:
+              error instanceof Error ? error.message : "An error occurred",
+          }
+        );
       } finally {
         setIsSubmitting(false);
       }

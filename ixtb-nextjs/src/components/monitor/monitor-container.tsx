@@ -6,6 +6,7 @@ import { useCallback, useMemo } from "react";
 import { renderNotFoundError } from "../internal/page-not-found";
 import { WrapLoader } from "../internal/wrap-loader";
 import { MonitorDetail } from "./monitor-detail";
+import type { MonitorTab } from "./monitor-tabs";
 
 export interface IMonitorContainerRenderProps {
   monitor: IMonitor;
@@ -15,6 +16,7 @@ export interface IMonitorContainerProps {
   projectId: string;
   monitorId: string;
   orgId: string;
+  tab: MonitorTab;
   render?: (response: IMonitorContainerRenderProps) => React.ReactNode;
   renderLoading?: () => React.ReactNode;
   renderError?: (error: unknown) => React.ReactNode;
@@ -23,7 +25,8 @@ export interface IMonitorContainerProps {
 const kMonitorNotFoundMessage = "Monitor not found";
 
 export function MonitorContainer(props: IMonitorContainerProps) {
-  const { projectId, monitorId, orgId, renderLoading, renderError } = props;
+  const { projectId, monitorId, orgId, tab, renderLoading, renderError } =
+    props;
 
   const args = useMemo(
     () => ({
@@ -63,9 +66,10 @@ export function MonitorContainer(props: IMonitorContainerProps) {
         monitor={response.monitor}
         orgId={orgId}
         projectId={projectId}
+        tab={tab}
       />
     ),
-    [orgId, projectId]
+    [orgId, projectId, tab]
   );
 
   const defaultRenderError = useCallback(

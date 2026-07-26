@@ -18,6 +18,7 @@
     "seed:fimidx-js-env:test": "npx softkave-forerunner run-env -e .env.test -e .env.dev.test --cmd \"tsx ./scripts/seedEnvTest.ts fimidx-js\"",
     "seed:symbolication-sample-app-env:test": "npx softkave-forerunner run-env -e .env.test -e .env.dev.test --cmd \"tsx ./scripts/seedEnvTest.ts symbolication-sample-app\"",
     "seed:fimidx-symbolication-e2e-env:test": "npx softkave-forerunner run-env -e .env.test -e .env.dev.test --cmd \"tsx ./scripts/seedEnvTest.ts fimidx-symbolication-e2e\"",
+    "rebuild:obj-fields": "npx --yes -- softkave-forerunner@latest run-env --cmd \"tsx ./scripts/rebuildObjFields.ts\"",
     "upload-source-maps": "npx --yes -- fimidx@latest source-maps upload --client-token \"$FIMIDX_SYMBOLICATION_AUTH_TOKEN\" --project-id \"$NEXT_PUBLIC_FIMIDX_LOGGER_PROJECT_ID\" --repo \"$NEXT_PUBLIC_FIMIDX_SYMBOLICATION_REPO\" --version \"$NEXT_PUBLIC_FIMIDX_SYMBOLICATION_VERSION\" --path .next",
     "delete-source-maps": "find .next -name '*.map' -type f -delete"
   },

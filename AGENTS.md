@@ -7,6 +7,7 @@ fimidx provides dx utils for building and managing web applications. It provides
 ## Code Style & Conventions
 
 - Prefer async functions over sync functions.
+- Do not use Mongo's `_id` but `id` field on every collection, so, every collection you add should have an `id` field. `id` values used should also be prefixed with resource type. Use `prefixObjId` in `/fimidx-core/src/definitions/obj.ts` to prefix an `id` with type.
 
 ## Architecture
 

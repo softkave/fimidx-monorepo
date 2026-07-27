@@ -11,7 +11,10 @@ export function useMutationFnWithRetry<
       try {
         return await fn(...args);
       } catch (error) {
-        ixtbConsoleLogger.error(error);
+        ixtbConsoleLogger.error({
+          message: "Error in mutation function",
+          error: JSON.stringify(error),
+        });
         toast.error("Error", {
           description: isString((error as Error | undefined)?.message)
             ? (error as Error).message

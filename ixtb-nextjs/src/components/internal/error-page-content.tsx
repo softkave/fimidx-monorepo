@@ -40,7 +40,7 @@ export function ErrorPageContent(props: IErrorPageContentProps) {
       )}
     >
       <div className="flex max-w-sm flex-col gap-3">
-        <h5 className="text-xl font-bold tracking-tight">{title}</h5>
+        <h5 className="text-xl font-semibold tracking-tight">{title}</h5>
         <div className="text-sm text-muted-foreground">
           {message ?? <DefaultErrorMessage />}
         </div>

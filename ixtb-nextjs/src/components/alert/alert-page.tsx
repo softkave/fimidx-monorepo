@@ -113,7 +113,7 @@ function AlertDetail(props: {
       </div>
     </div>
   );
-} 
+}
 
 function AlertSnapshot(props: {
   alert: IAlert;
@@ -133,7 +133,9 @@ function AlertSnapshot(props: {
     <div className="flex flex-col gap-4">
       <div className="flex justify-between items-start gap-2">
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-bold break-all">{alert.monitorName}</h1>
+          <h1 className="text-2xl font-semibold break-all">
+            {alert.monitorName}
+          </h1>
           {alert.monitorDescription ? (
             <p className="text-muted-foreground">{alert.monitorDescription}</p>
           ) : null}

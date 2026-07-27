@@ -36,7 +36,7 @@ export const AddParticipantEmail = ({
           <Tailwind>
             <div className="w-full">
               <div className="max-w-lg mx-auto">
-                <h1 className="text-2xl font-bold mb-8">
+                <h1 className="text-2xl font-semibold mb-8">
                   {getAddParticipantEmailTitle({ orgName, inviterName })}
                 </h1>
                 <div>

@@ -23,9 +23,7 @@ export interface MonitorAlertEmailProps {
   projectName?: string;
 }
 
-export function getMonitorAlertEmailTitle(params: {
-  monitorName: string;
-}) {
+export function getMonitorAlertEmailTitle(params: { monitorName: string }) {
   return `${kAppConstants.name} — Alert: ${params.monitorName}`;
 }
 
@@ -47,14 +45,16 @@ export const MonitorAlertEmail = (props: MonitorAlertEmailProps) => {
     <Html>
       <Head />
       <Preview>
-        {`${matchCount} matching ${matchCount === 1 ? "entry" : "entries"} for ${monitorName}`}
+        {`${matchCount} matching ${
+          matchCount === 1 ? "entry" : "entries"
+        } for ${monitorName}`}
       </Preview>
       <Body style={main}>
         <Container>
           <Tailwind>
             <div className="w-full">
               <div className="max-w-lg mx-auto">
-                <h1 className="text-2xl font-bold mb-8">{title}</h1>
+                <h1 className="text-2xl font-semibold mb-8">{title}</h1>
                 <div>
                   <p className="mb-2">
                     Monitor <strong>{monitorName}</strong> found{" "}

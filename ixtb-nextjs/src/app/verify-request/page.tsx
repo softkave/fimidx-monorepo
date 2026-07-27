@@ -18,7 +18,7 @@ export default function VerifyRequestPage() {
           href="#"
           className="block max-w-sm bg-white p-6 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700"
         >
-          <h5 className="mb-2 flex flex-row items-center gap-2 text-xl font-bold tracking-tight text-gray-900 dark:text-white">
+          <h5 className="mb-2 flex flex-row items-center gap-2 text-xl font-semibold tracking-tight text-gray-900 dark:text-white">
             Verify Request
           </h5>
           <Suspense

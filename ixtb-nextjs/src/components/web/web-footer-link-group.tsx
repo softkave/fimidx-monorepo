@@ -28,7 +28,7 @@ export function WebFooterLinkGroup(props: {
 }) {
   return (
     <div className={cn("flex flex-col gap-2", props.className)}>
-      <h3 className="text-sm font-bold text-muted-foreground">
+      <h3 className="text-sm font-semibold text-muted-foreground">
         {props.group.title}
       </h3>
       <ul className="flex flex-col gap-2">

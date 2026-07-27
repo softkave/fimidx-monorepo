@@ -16,7 +16,7 @@ export function Log(props: ILogProps) {
   return (
     <div className="flex flex-col gap-8 p-4">
       <div className="flex flex-col gap-4">
-        <h1 className="text-lg font-bold">{props.log.id}</h1>
+        <h1 className="text-lg font-semibold">{props.log.id}</h1>
         <div className="flex flex-col gap-1">
           <h3 className="text-sm text-muted-foreground">Timestamp</h3>
           <p>{timestamp}</p>

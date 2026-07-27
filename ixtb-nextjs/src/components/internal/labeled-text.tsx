@@ -17,7 +17,7 @@ export function LabeledText({
     <div className={cn("flex flex-col gap-1", className)}>
       <div
         className={cn(
-          "text-md font-bold text-muted-foreground",
+          "text-md font-semibold text-muted-foreground",
           labelClassName
         )}
       >

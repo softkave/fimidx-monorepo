@@ -16,7 +16,7 @@ export function WebFeatureItem(props: {
       <div className="flex items-center gap-2 text-muted-foreground">
         {props.icon}
       </div>
-      <h3 className="text-md font-bold">{props.title}</h3>
+      <h3 className="text-md font-semibold">{props.title}</h3>
       <p className="text-sm text-muted-foreground">{props.description}</p>
     </div>
   );

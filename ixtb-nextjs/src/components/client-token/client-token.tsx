@@ -51,7 +51,7 @@ export function ClientToken(props: IClientTokenProps) {
     <div className="flex flex-col gap-4 p-4 pt-0">
       <div className="flex justify-between items-center gap-2">
         <div>
-          <h1 className="text-2xl font-bold break-all">
+          <h1 className="text-2xl font-semibold break-all">
             {props.clientToken.name}
           </h1>
         </div>

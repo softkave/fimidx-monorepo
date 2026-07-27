@@ -1,8 +1,8 @@
 "use client";
 
 import { kClientPaths } from "@/src/lib/clientHelpers/clientPaths";
-import { IMonitor } from "fimidx-core/definitions/monitor";
 import { useRouter } from "@/src/lib/clientHooks/useRouter";
+import { IMonitor } from "fimidx-core/definitions/monitor";
 import { useCallback } from "react";
 import { AlertsListContainer } from "../alert/alerts-container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
@@ -49,7 +49,7 @@ export function MonitorDetail(props: IMonitorDetailProps) {
     <div className="flex flex-col gap-6 p-4 pt-0">
       <div className="flex justify-between items-start gap-2">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold break-all">{monitor.name}</h1>
+          <h1 className="text-2xl font-semibold break-all">{monitor.name}</h1>
           {monitor.description ? (
             <p className="text-muted-foreground mt-1">{monitor.description}</p>
           ) : null}

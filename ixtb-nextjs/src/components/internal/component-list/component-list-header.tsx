@@ -14,7 +14,7 @@ export function ComponentListHeader(props: {
       )}
     >
       <div className="flex flex-col gap-1 flex-1 min-h-[36px] justify-center">
-        <h1 className="text-xl font-bold">{props.title}</h1>
+        <h1 className="text-xl font-semibold">{props.title}</h1>
         {props.description && (
           <p className="text-muted-foreground text-sm">{props.description}</p>
         )}

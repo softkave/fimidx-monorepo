@@ -46,10 +46,59 @@ function decodeLine(lineBytes: Buffer): string {
   return lineBytes.toString('utf8');
 }
 
+/** Column-0 closers for util.inspect dumps: `}`, `]`, `}]`, `]}`, etc. */
+function isClosingDelimiterLine(trimmed: string): boolean {
+  return trimmed.length > 0 && /^[\]\}]+$/.test(trimmed);
+}
+
+/**
+ * Net `{`/`[` opens minus `}`/`]` closes, ignoring characters inside quotes.
+ * Used to keep util.inspect `{ ... }` / `[{ ... }]` dumps in one record.
+ */
+function structureDepthDelta(text: string): number {
+  let depth = 0;
+  let inSingle = false;
+  let inDouble = false;
+  let inBacktick = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    const escaped = i > 0 && text[i - 1] === '\\';
+    if (escaped) {
+      continue;
+    }
+
+    if (!inDouble && !inBacktick && c === "'") {
+      inSingle = !inSingle;
+      continue;
+    }
+    if (!inSingle && !inBacktick && c === '"') {
+      inDouble = !inDouble;
+      continue;
+    }
+    if (!inSingle && !inDouble && c === '`') {
+      inBacktick = !inBacktick;
+      continue;
+    }
+    if (inSingle || inDouble || inBacktick) {
+      continue;
+    }
+
+    if (c === '{' || c === '[') {
+      depth += 1;
+    } else if (c === '}' || c === ']') {
+      depth -= 1;
+    }
+  }
+
+  return depth;
+}
+
 /**
  * Byte-accurate log file parser. Scans raw buffers for newlines, carries
  * incomplete bytes and pending logical records across chunks, and folds
- * indented continuation lines into the preceding record.
+ * indented continuation lines (and util.inspect-style `{ ... }` /
+ * `[{ ... }]` blocks) into the preceding record.
  */
 export class LogFileReader {
   private readonly maxRecordBytes: number;
@@ -62,6 +111,11 @@ export class LogFileReader {
   private pendingRecordParts: string[] = [];
   private pendingRecordBytes = 0;
   private pendingRecordEndOffset = 0;
+  /**
+   * Unclosed `{`/`[` depth in the pending record (Node util.inspect /
+   * console dumps such as `{ ... }` and `[{ ... }]`).
+   */
+  private pendingStructureDepth = 0;
   /** Absolute offset through last finalized record */
   private position = 0;
   private fileMtimeMs = 0;
@@ -90,6 +144,7 @@ export class LogFileReader {
     this.pendingRecordParts = [];
     this.pendingRecordBytes = 0;
     this.pendingRecordEndOffset = position;
+    this.pendingStructureDepth = 0;
   }
 
   setFileMtime(mtimeMs: number): void {
@@ -168,6 +223,7 @@ export class LogFileReader {
       this.position = this.pendingRecordEndOffset;
       this.pendingRecordParts = [];
       this.pendingRecordBytes = 0;
+      this.pendingStructureDepth = 0;
     }
 
     return {
@@ -223,16 +279,28 @@ export class LogFileReader {
     line: IParsedLine,
   ): Array<{message: string; endOffset: number}> {
     const completed: Array<{message: string; endOffset: number}> = [];
+    const trimmed = line.text.trim();
 
-    if (line.indented && this.pendingRecordParts.length > 0) {
+    // Fold indented stack/object lines, and column-0 closers (`}`, `]`,
+    // `}]`, …) that finish a util.inspect-style structured dump.
+    const continuesPending =
+      this.pendingRecordParts.length > 0 &&
+      (line.indented ||
+        (this.pendingStructureDepth > 0 && isClosingDelimiterLine(trimmed)));
+
+    if (continuesPending) {
       this.assertRecordBudget(Buffer.byteLength(line.text, 'utf8') + 1);
       this.pendingRecordParts.push(line.text);
       this.pendingRecordBytes += Buffer.byteLength(line.text, 'utf8') + 1;
       this.pendingRecordEndOffset = line.endOffset;
+      this.pendingStructureDepth = Math.max(
+        0,
+        this.pendingStructureDepth + structureDepthDelta(line.text),
+      );
       return completed;
     }
 
-    // Non-indented line (or indented with no pending record): finalize prior candidate.
+    // Non-continuation line: finalize prior candidate, then start a new one.
     if (this.pendingRecordParts.length > 0) {
       completed.push({
         message: this.pendingRecordParts.join('\n'),
@@ -241,11 +309,13 @@ export class LogFileReader {
       this.position = this.pendingRecordEndOffset;
       this.pendingRecordParts = [];
       this.pendingRecordBytes = 0;
+      this.pendingStructureDepth = 0;
     }
 
     this.pendingRecordParts = [line.text];
     this.pendingRecordBytes = Buffer.byteLength(line.text, 'utf8');
     this.pendingRecordEndOffset = line.endOffset;
+    this.pendingStructureDepth = Math.max(0, structureDepthDelta(line.text));
     return completed;
   }
 

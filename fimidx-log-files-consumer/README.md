@@ -120,7 +120,7 @@ await consumer.stop();
 2. Watches each configured log file with chokidar.
 3. Every **10 seconds**, processes **awake** files.
 4. Reads only bytes after the last confirmed checkpoint, using a **byte-accurate** parser (handles UTF-8, CRLF, empty lines, and lines larger than the read buffer).
-5. Indented continuation lines (leading space or tab) are folded into the previous entry as one multi-line record.
+5. Indented continuation lines (leading space or tab) are folded into the previous entry as one multi-line record. Trailing util.inspect-style dumps (`{ ... }`, `[{ ... }]`, multi-line `[ ... ]`, including column-0 closers like `}` / `]` / `}]`) stay with that same record.
 6. Records are batched and sent with `FimidxEndpoints.logs.ingestLogs`. The checkpoint advances **only after** that call succeeds, and is written atomically (temp file + rename).
 7. A final incomplete line (no trailing newline) is held until the file has been unchanged for `flushIncompleteAfterMs`, then shipped.
 8. If the file shrinks below the checkpoint or its device/inode changes (rotation/truncate), the consumer resets to byte 0 and warns.

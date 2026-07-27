@@ -79,6 +79,173 @@ describe('LogFileReader', () => {
     ]);
   });
 
+  it('folds util.inspect trailing brace blocks into the error record', () => {
+    const reader = new LogFileReader({
+      flushIncompleteAfterMs: 0,
+      now: () => 10_000,
+    });
+    reader.reset(0);
+    reader.setFileMtime(0);
+
+    const content = [
+      'Error: Monitor created but scheduler sync failed; retry update to register the runner',
+      '    at I (.next/server/chunks/[root-of-the-server]__29035268._.js:1:3058)',
+      '    at async D (.next/server/chunks/[root-of-the-server]__29035268._.js:1:9117) {',
+      '  meta: undefined,',
+      '  statusCode: 500',
+      '}',
+      'next',
+      '',
+    ].join('\n');
+
+    const mid = reader.pushChunk(Buffer.from(content), 0);
+    expect(mid).toHaveLength(1);
+    expect(mid[0].message).toBe(
+      [
+        'Error: Monitor created but scheduler sync failed; retry update to register the runner',
+        '    at I (.next/server/chunks/[root-of-the-server]__29035268._.js:1:3058)',
+        '    at async D (.next/server/chunks/[root-of-the-server]__29035268._.js:1:9117) {',
+        '  meta: undefined,',
+        '  statusCode: 500',
+        '}',
+      ].join('\n'),
+    );
+
+    const finish = reader.finish(true);
+    expect(finish.records).toEqual([
+      {message: 'next', endOffset: content.length},
+    ]);
+  });
+
+  it('folds standalone util.inspect object dumps ending with a column-0 brace', () => {
+    const reader = new LogFileReader({
+      flushIncompleteAfterMs: 0,
+      now: () => 10_000,
+    });
+    reader.reset(0);
+    reader.setFileMtime(0);
+
+    const content = [
+      '{',
+      "  message: '[addMonitorEndpoint] syncMonitorCallback failed',",
+      "  error: '{}',",
+      "  monitorId: 'moni_019fa107-cc64-7496-8761-1a860c71ce17',",
+      '}',
+      'after',
+      '',
+    ].join('\n');
+
+    const mid = reader.pushChunk(Buffer.from(content), 0);
+    expect(mid).toHaveLength(1);
+    expect(mid[0].message).toBe(
+      [
+        '{',
+        "  message: '[addMonitorEndpoint] syncMonitorCallback failed',",
+        "  error: '{}',",
+        "  monitorId: 'moni_019fa107-cc64-7496-8761-1a860c71ce17',",
+        '}',
+      ].join('\n'),
+    );
+
+    const finish = reader.finish(true);
+    expect(finish.records).toEqual([
+      {message: 'after', endOffset: content.length},
+    ]);
+  });
+
+  it('folds util.inspect array-wrapped object dumps ending with }]', () => {
+    const reader = new LogFileReader({
+      flushIncompleteAfterMs: 0,
+      now: () => 10_000,
+    });
+    reader.reset(0);
+    reader.setFileMtime(0);
+
+    const content = [
+      '[{',
+      '    a: "something",',
+      '    b: 1',
+      '}]',
+      'after',
+      '',
+    ].join('\n');
+
+    const mid = reader.pushChunk(Buffer.from(content), 0);
+    expect(mid).toHaveLength(1);
+    expect(mid[0].message).toBe(
+      ['[{', '    a: "something",', '    b: 1', '}]'].join('\n'),
+    );
+
+    const finish = reader.finish(true);
+    expect(finish.records).toEqual([
+      {message: 'after', endOffset: content.length},
+    ]);
+  });
+
+  it('folds multi-line util.inspect array dumps with separate brackets', () => {
+    const reader = new LogFileReader({
+      flushIncompleteAfterMs: 0,
+      now: () => 10_000,
+    });
+    reader.reset(0);
+    reader.setFileMtime(0);
+
+    const content = [
+      '[',
+      '  {',
+      "    a: 'something'",
+      '  }',
+      ']',
+      'after',
+      '',
+    ].join('\n');
+
+    const mid = reader.pushChunk(Buffer.from(content), 0);
+    expect(mid).toHaveLength(1);
+    expect(mid[0].message).toBe(
+      ['[', '  {', "    a: 'something'", '  }', ']'].join('\n'),
+    );
+
+    const finish = reader.finish(true);
+    expect(finish.records).toEqual([
+      {message: 'after', endOffset: content.length},
+    ]);
+  });
+
+  it('keeps deeply nested util.inspect dumps as one record', () => {
+    const reader = new LogFileReader({
+      flushIncompleteAfterMs: 0,
+      now: () => 10_000,
+    });
+    reader.reset(0);
+    reader.setFileMtime(0);
+
+    const dump = [
+      '{',
+      '  nested: {',
+      '    a: 1,',
+      '    items: [',
+      "      { b: 'x' },",
+      '      {',
+      '        c: [1, 2],',
+      "        d: '{}'",
+      '      }',
+      '    ]',
+      '  }',
+      '}',
+    ].join('\n');
+    const content = `${dump}\nafter\n`;
+
+    const mid = reader.pushChunk(Buffer.from(content), 0);
+    expect(mid).toHaveLength(1);
+    expect(mid[0].message).toBe(dump);
+
+    const finish = reader.finish(true);
+    expect(finish.records).toEqual([
+      {message: 'after', endOffset: content.length},
+    ]);
+  });
+
   it('carries incomplete UTF-8 sequences across chunks', () => {
     const reader = new LogFileReader({
       flushIncompleteAfterMs: 0,

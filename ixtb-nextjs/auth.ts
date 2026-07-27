@@ -5,6 +5,7 @@ import { getCoreConfig } from "fimidx-core/common/getCoreConfig";
 import { getMongoConnection } from "fimidx-core/db/fimidx.mongo";
 import { checkIsAdminEmail } from "fimidx-core/serverHelpers/isAdmin";
 import { headers } from "next/headers";
+import { connection } from "next/server";
 import { sendVerificationRequestEmail } from "./src/lib/serverHelpers/emails/sendVerificationRequestEmail";
 
 function createAuthApi() {
@@ -104,6 +105,9 @@ export const authApi: AuthApi = new Proxy({} as AuthApi, {
 });
 
 export async function auth() {
+  // Bail out of static prerender — session checks need a real request and
+  // must not open Mongo during `next build` (build hosts often can't reach prod DB).
+  await connection();
   const api = await getAuthApi();
   return api.api.getSession({ headers: await headers() });
 }

@@ -5,18 +5,38 @@ import type { IObj } from "../definitions/obj.js";
 
 let connection: ReturnType<typeof createConnection> | null = null;
 let promise: Promise<ReturnType<typeof createConnection>> | null = null;
+/** Bumped whenever the underlying connection is (re)created. */
+let connectionGeneration = 0;
+
+function isConnectionUnusable(
+  conn: ReturnType<typeof createConnection>
+): boolean {
+  // 0 = disconnected, 3 = disconnecting, 99 = uninitialized
+  return (
+    conn.readyState === 0 || conn.readyState === 3 || conn.readyState === 99
+  );
+}
 
 export function getMongoConnection() {
-  if (!connection) {
+  if (!connection || isConnectionUnusable(connection)) {
     const { mongo } = getCoreConfig();
     const uri = mongo.uri;
     const dbName = mongo.dbName;
     assert.ok(uri, "MONGO_URI is not set");
     assert.ok(dbName, "MONGO_DB_NAME is not set");
     connection = createConnection(uri, { dbName });
-    promise = connection.asPromise();
+    connectionGeneration += 1;
+    const generation = connectionGeneration;
+    promise = connection.asPromise().catch((err) => {
+      // Drop the dead handle so the next caller opens a fresh connection.
+      if (connectionGeneration === generation) {
+        connection = null;
+        promise = null;
+      }
+      throw err;
+    });
   }
-  return { connection, promise };
+  return { connection, promise, connectionGeneration };
 }
 
 export async function closeMongoConnection() {

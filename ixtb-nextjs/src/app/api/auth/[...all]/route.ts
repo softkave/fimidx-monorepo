@@ -1,25 +1,35 @@
-import { authApi } from "@/auth";
+import { getAuthApi } from "@/auth";
 import { toNextJsHandler } from "better-auth/next-js";
+import { getMongoConnection } from "fimidx-core/db/fimidx.mongo";
 
 type AuthHandlers = ReturnType<typeof toNextJsHandler>;
 
 let handlers: AuthHandlers | undefined;
+let handlersConnectionGeneration: number | undefined;
 
-function getHandlers(): AuthHandlers {
-  if (!handlers) {
-    handlers = toNextJsHandler(authApi);
+async function getHandlers(): Promise<AuthHandlers> {
+  const api = await getAuthApi();
+  const { connectionGeneration } = getMongoConnection();
+
+  if (
+    !handlers ||
+    handlersConnectionGeneration !== connectionGeneration
+  ) {
+    handlers = toNextJsHandler(api);
+    handlersConnectionGeneration = connectionGeneration;
   }
+
   return handlers;
 }
 
-export function GET(
+export async function GET(
   ...args: Parameters<AuthHandlers["GET"]>
-): ReturnType<AuthHandlers["GET"]> {
-  return getHandlers().GET(...args);
+): Promise<ReturnType<AuthHandlers["GET"]>> {
+  return (await getHandlers()).GET(...args);
 }
 
-export function POST(
+export async function POST(
   ...args: Parameters<AuthHandlers["POST"]>
-): ReturnType<AuthHandlers["POST"]> {
-  return getHandlers().POST(...args);
+): Promise<ReturnType<AuthHandlers["POST"]>> {
+  return (await getHandlers()).POST(...args);
 }

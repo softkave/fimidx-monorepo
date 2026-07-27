@@ -51,25 +51,59 @@ function createAuthApi() {
 type AuthApi = ReturnType<typeof createAuthApi>;
 
 let authApiInstance: AuthApi | undefined;
+let authConnectionGeneration: number | undefined;
 
-function getAuthApi(): AuthApi {
-  if (!authApiInstance) {
+/**
+ * Lazily creates Better Auth after Mongo is connected. Recreates the instance
+ * if the underlying mongoose connection was replaced (e.g. after topology close).
+ */
+export async function getAuthApi(): Promise<AuthApi> {
+  const { promise, connectionGeneration } = getMongoConnection();
+  await promise;
+
+  if (
+    !authApiInstance ||
+    authConnectionGeneration !== connectionGeneration
+  ) {
     authApiInstance = createAuthApi();
+    authConnectionGeneration = connectionGeneration;
   }
   return authApiInstance;
 }
 
-/** Lazily connects to Mongo on first use so `next build` page collection does not. */
+function getAuthApiSync(): AuthApi {
+  const { connectionGeneration } = getMongoConnection();
+  if (
+    !authApiInstance ||
+    authConnectionGeneration !== connectionGeneration
+  ) {
+    authApiInstance = createAuthApi();
+    authConnectionGeneration = connectionGeneration;
+  }
+  return authApiInstance;
+}
+
+/**
+ * Lazily connects to Mongo on first use so `next build` page collection does not.
+ *
+ * Important: include a `has` trap. `toNextJsHandler` does `"handler" in auth`;
+ * without `has`, that check hits the empty Proxy target and falls through to
+ * calling the Proxy as a function → `TypeError: … is not a function`.
+ */
 export const authApi: AuthApi = new Proxy({} as AuthApi, {
-  get(_target, prop, receiver) {
-    const instance = getAuthApi();
-    const value = Reflect.get(instance, prop, receiver);
+  get(_target, prop) {
+    const instance = getAuthApiSync();
+    const value = Reflect.get(instance, prop, instance);
     return typeof value === "function"
       ? (value as (...args: unknown[]) => unknown).bind(instance)
       : value;
   },
+  has(_target, prop) {
+    return Reflect.has(getAuthApiSync(), prop);
+  },
 });
 
 export async function auth() {
-  return getAuthApi().api.getSession({ headers: await headers() });
+  const api = await getAuthApi();
+  return api.api.getSession({ headers: await headers() });
 }

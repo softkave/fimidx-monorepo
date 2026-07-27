@@ -134,6 +134,60 @@ describe("ingestSourceMapsToMongo (integration - extra cases)", () => {
       expect(seg2Count).toBe(1);
   });
 
+  it("skips unmapped VLQ segments (null originalLine/originalColumn)", async () => {
+    const projectId = `proj_ingest_unmapped_${Date.now()}_${Math.random()
+      .toString(36)
+      .slice(2, 7)}`;
+    const repoIdentifier = "repo_ingest_unmapped";
+    const version = "v_ingest_unmapped";
+
+    baseDir = await mkdtemp(path.join(tmpdir(), "fimidx-ingest-unmapped-"));
+    await mkdir(path.join(baseDir, "dist"), { recursive: true });
+    const mapPath = path.join(baseDir, "dist", "bundle.js.map");
+
+    // Raw map: line 1 has an unmapped segment (single VLQ field) then a mapped
+    // segment; line 2 is only unmapped — must not fail mongoose validation.
+    const rawMap = {
+      version: 3,
+      file: "bundle.js",
+      sources: ["src/original.ts"],
+      names: [],
+      mappings: "A,AAAA;A",
+    };
+    await writeFile(mapPath, JSON.stringify(rawMap), "utf-8");
+
+    await ingestSourceMapsToMongo(projectId, repoIdentifier, version, baseDir);
+
+    const segmentsModel = getSourceMapSegmentsModel();
+    const seg1 = await segmentsModel
+      .findOne({
+        projectId,
+        repoIdentifier,
+        version,
+        generatedFile: "dist/bundle.js",
+        generatedLine: 1,
+      })
+      .lean()
+      .exec();
+    expect(seg1?.segments?.length).toBe(1);
+    expect(seg1?.segments?.[0]?.originalLine).toBe(1);
+    expect(seg1?.segments?.[0]?.originalColumn).toBe(0);
+    expect(
+      (seg1?.segments ?? []).every(
+        (s) => s.originalLine != null && s.originalColumn != null
+      )
+    ).toBe(true);
+
+    const seg2Count = await segmentsModel.countDocuments({
+      projectId,
+      repoIdentifier,
+      version,
+      generatedFile: "dist/bundle.js",
+      generatedLine: 2,
+    });
+    expect(seg2Count).toBe(0);
+  });
+
   it("ingests multiple .map files under a directory recursively", async () => {
     const projectId = `proj_ingest_extra_multi_${Date.now()}_${Math.random()
       .toString(36)
@@ -142,69 +196,64 @@ describe("ingestSourceMapsToMongo (integration - extra cases)", () => {
     const version = "v_ingest_extra_multi";
 
     baseDir = await mkdtemp(path.join(tmpdir(), "fimidx-ingest-extra-"));
-      const map1Dir = path.join(baseDir, "dist", "a");
-      const map2Dir = path.join(baseDir, "dist", "b");
-      await mkdir(map1Dir, { recursive: true });
-      await mkdir(map2Dir, { recursive: true });
+    const map1Dir = path.join(baseDir, "dist", "a");
+    const map2Dir = path.join(baseDir, "dist", "b");
+    await mkdir(map1Dir, { recursive: true });
+    await mkdir(map2Dir, { recursive: true });
 
-      const map1Path = path.join(map1Dir, "bundle1.js.map");
-      const map2Path = path.join(map2Dir, "bundle2.js.map");
+    const map1Path = path.join(map1Dir, "bundle1.js.map");
+    const map2Path = path.join(map2Dir, "bundle2.js.map");
 
-      const gen1 = new SourceMapGenerator({ file: "bundle1.js" });
-      gen1.addMapping({
-        generated: { line: 1, column: 0 },
-        original: { line: 11, column: 4 },
-        source: "src/original1.ts",
-      });
-      gen1.setSourceContent("src/original1.ts", "export {}");
+    const gen1 = new SourceMapGenerator({ file: "bundle1.js" });
+    gen1.addMapping({
+      generated: { line: 1, column: 0 },
+      original: { line: 11, column: 4 },
+      source: "src/original1.ts",
+    });
+    gen1.setSourceContent("src/original1.ts", "export {}");
 
-      const gen2 = new SourceMapGenerator({ file: "bundle2.js" });
-      gen2.addMapping({
-        generated: { line: 1, column: 0 },
-        original: { line: 22, column: 5 },
-        source: "src/original2.ts",
-      });
-      gen2.setSourceContent("src/original2.ts", "export {}");
+    const gen2 = new SourceMapGenerator({ file: "bundle2.js" });
+    gen2.addMapping({
+      generated: { line: 1, column: 0 },
+      original: { line: 22, column: 5 },
+      source: "src/original2.ts",
+    });
+    gen2.setSourceContent("src/original2.ts", "export {}");
 
-      await writeFile(map1Path, gen1.toString(), "utf-8");
-      await writeFile(map2Path, gen2.toString(), "utf-8");
+    await writeFile(map1Path, gen1.toString(), "utf-8");
+    await writeFile(map2Path, gen2.toString(), "utf-8");
 
-      await ingestSourceMapsToMongo(
+    await ingestSourceMapsToMongo(projectId, repoIdentifier, version, baseDir);
+
+    const metadataModel = getSourceMapMetadataModel();
+    const meta1 = await metadataModel
+      .findOne({
         projectId,
         repoIdentifier,
         version,
-        baseDir
-      );
+        generatedFile: "dist/a/bundle1.js",
+      })
+      .lean()
+      .exec();
+    const meta2 = await metadataModel
+      .findOne({
+        projectId,
+        repoIdentifier,
+        version,
+        generatedFile: "dist/b/bundle2.js",
+      })
+      .lean()
+      .exec();
 
-      const metadataModel = getSourceMapMetadataModel();
-      const meta1 = await metadataModel
-        .findOne({
-          projectId,
-          repoIdentifier,
-          version,
-          generatedFile: "dist/a/bundle1.js",
-        })
-        .lean()
-        .exec();
-      const meta2 = await metadataModel
-        .findOne({
-          projectId,
-          repoIdentifier,
-          version,
-          generatedFile: "dist/b/bundle2.js",
-        })
-        .lean()
-        .exec();
+    expect(meta1?.generatedFileBasename).toBe("bundle1.js");
+    expect(meta1?.generatedFileFolders).toEqual(["dist", "a"]);
+    expect(meta1?.sources).toContain("src/original1.ts");
+    expect((meta1 as any)?.sourcesNormalized).toContain("src/original1.ts");
 
-      expect(meta1?.generatedFileBasename).toBe("bundle1.js");
-      expect(meta1?.generatedFileFolders).toEqual(["dist", "a"]);
-      expect(meta1?.sources).toContain("src/original1.ts");
-      expect((meta1 as any)?.sourcesNormalized).toContain("src/original1.ts");
-
-      expect(meta2?.generatedFileBasename).toBe("bundle2.js");
-      expect(meta2?.generatedFileFolders).toEqual(["dist", "b"]);
-      expect(meta2?.sources).toContain("src/original2.ts");
-      expect((meta2 as any)?.sourcesNormalized).toContain("src/original2.ts");
+    expect(meta2?.generatedFileBasename).toBe("bundle2.js");
+    expect(meta2?.generatedFileFolders).toEqual(["dist", "b"]);
+    expect(meta2?.sources).toContain("src/original2.ts");
+    expect((meta2 as any)?.sourcesNormalized).toContain("src/original2.ts");
   });
 });
 

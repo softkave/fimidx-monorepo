@@ -76,6 +76,16 @@ export async function ingestSourceMapsToMongo(
 
       consumer.eachMapping(
         (m) => {
+          // VLQ segments with only a generated column are unmapped: source /
+          // originalLine / originalColumn are null. Skip them — they cannot be
+          // stored (schema requires numbers) and are useless for symbolication.
+          if (
+            m.source == null ||
+            m.originalLine == null ||
+            m.originalColumn == null
+          ) {
+            return;
+          }
           const sourceIndex = sourceToIndex.get(m.source) ?? 0;
           const nameIndex = m.name != null ? nameToIndex.get(m.name) ?? -1 : -1;
           const item: ISourceMapSegmentItem = {
@@ -106,6 +116,7 @@ export async function ingestSourceMapsToMongo(
 
       const segmentDocs: ISourceMapSegmentDoc[] = [];
       for (const [generatedLine, segments] of byLine) {
+        if (segments.length === 0) continue;
         segmentDocs.push({
           projectId,
           repoIdentifier,
@@ -116,7 +127,12 @@ export async function ingestSourceMapsToMongo(
         });
       }
       if (segmentDocs.length > 0) {
-        await segmentsModel.insertMany(segmentDocs);
+        // Use the native driver so large segment arrays are not wrapped as
+        // mongoose Subdocuments (validation failure + $getAllSubdocs can
+        // RangeError: Maximum call stack size exceeded).
+        await segmentsModel.collection.insertMany(segmentDocs, {
+          ordered: true,
+        });
       }
 
       await metadataModel.findOneAndUpdate(

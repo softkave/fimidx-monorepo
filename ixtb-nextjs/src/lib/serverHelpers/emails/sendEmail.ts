@@ -13,9 +13,10 @@ import { ixtbConsoleLogger } from "../../common/ixtb-loggers";
 const { resend: resendConfig } = getCoreConfig();
 
 const resend = new Resend(resendConfig.apiKey);
-const { connection, promise } = getMongoConnection();
 
-function getDb() {
+async function getDb() {
+  const { connection, promise } = getMongoConnection();
+  await promise;
   const db = connection?.db;
   if (!db) {
     throw new Error("Mongo connection is not available");
@@ -34,8 +35,8 @@ type SendEmailParams = OmitFrom<
 };
 
 export async function isEmailBlocked(email: string) {
-  await promise;
-  const emailRecord = await getDb()
+  const db = await getDb();
+  const emailRecord = await db
     .collection("emailBlockList")
     .findOne({ email: email.toLowerCase() });
 
@@ -50,7 +51,6 @@ export async function createEmailRecord(params: {
   reason: EmailRecordReason;
   callerId: string | null;
 }) {
-  await promise;
   const newEmailRecord = {
     id: crypto.randomUUID(),
     from: params.from,
@@ -65,7 +65,8 @@ export async function createEmailRecord(params: {
     callerId: params.callerId,
   };
 
-  await getDb().collection("emailRecord").insertOne(newEmailRecord);
+  const db = await getDb();
+  await db.collection("emailRecord").insertOne(newEmailRecord);
   const emailRecord = {
     ...newEmailRecord,
   };
@@ -79,21 +80,19 @@ export async function updateEmailRecord(params: {
   senderError?: string;
   serverError?: string;
 }) {
-  await promise;
-  await getDb()
-    .collection("emailRecord")
-    .updateOne(
-      { id: params.emailRecordId },
-      {
-        $set: {
-          status: params.status,
-          updatedAt: new Date(),
-          response: params.response,
-          senderError: params.senderError,
-          serverError: params.serverError,
-        },
+  const db = await getDb();
+  await db.collection("emailRecord").updateOne(
+    { id: params.emailRecordId },
+    {
+      $set: {
+        status: params.status,
+        updatedAt: new Date(),
+        response: params.response,
+        senderError: params.senderError,
+        serverError: params.serverError,
       },
-    );
+    },
+  );
 
   const emailRecord = {
     id: params.emailRecordId,

@@ -13,7 +13,6 @@ import {z} from 'zod';
 import {kAddCallbackQueue} from '../../ctx/callback.js';
 import {kPromiseStore} from '../../ctx/promiseStore.js';
 import {addCallbackToStore} from '../../helpers/cb/addCallbackToStore.js';
-import {IHttpOutgoingErrorResponse} from '../../types/http.js';
 import {
   IAddCallbackHttpOutgoingSuccessResponse,
   IAddCallbacksHttpOutgoingSuccessResponse,
@@ -204,31 +203,20 @@ const inputSchema = z.union([singleInputSchema, batchInputSchema]);
 export async function addCallbackEndpoint(req: Request, res: Response) {
   const params = inputSchema.parse(req.body);
 
-  try {
-    if ('items' in params) {
-      const results = await addCallbacksEndpointImpl(params);
-      const response: IAddCallbacksHttpOutgoingSuccessResponse = {
-        type: 'success',
-        results,
-      };
-      res.status(200).send(response);
-      return;
-    }
-
-    const callback = await addCallbackEndpointImpl(params);
-    const response: IAddCallbackHttpOutgoingSuccessResponse = {
+  if ('items' in params) {
+    const results = await addCallbacksEndpointImpl(params);
+    const response: IAddCallbacksHttpOutgoingSuccessResponse = {
       type: 'success',
-      callback,
+      results,
     };
     res.status(200).send(response);
-  } catch (error: unknown) {
-    const code = OwnServerError.isOwnServerError(error)
-      ? error.statusCode
-      : kOwnServerErrorCodes.InternalServerError;
-    const response: IHttpOutgoingErrorResponse = {
-      type: 'error',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    };
-    res.status(code).send(response);
+    return;
   }
+
+  const callback = await addCallbackEndpointImpl(params);
+  const response: IAddCallbackHttpOutgoingSuccessResponse = {
+    type: 'success',
+    callback,
+  };
+  res.status(200).send(response);
 }

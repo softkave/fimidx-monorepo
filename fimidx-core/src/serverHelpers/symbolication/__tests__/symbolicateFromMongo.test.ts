@@ -226,6 +226,68 @@ describe("symbolicateFromMongo", () => {
       });
     });
 
+    it("resolves absolute deploy paths via basename + folder suffix (Turbopack chunks)", async () => {
+      const projectId = `test_project_${Date.now()}_${Math.random()
+        .toString(36)
+        .slice(2, 7)}`;
+      const repoIdentifier = "repo_abs_deploy";
+      const version = "v_abs_deploy";
+      const chunkName = "[root-of-the-server]__058b11d4._.js";
+
+      const metadataModel = getSourceMapMetadataModel();
+      const segmentsModel = getSourceMapSegmentsModel();
+
+      await metadataModel.insertMany([
+        {
+          projectId,
+          repoIdentifier,
+          version,
+          generatedFile: `server/chunks/${chunkName}`,
+          generatedFileBasename: chunkName,
+          generatedFileFolders: ["server", "chunks"],
+          sources: ["src/lib/logger.ts"],
+          sourcesNormalized: ["src/lib/logger.ts"],
+          names: ["error"],
+          ingestedAt: new Date(),
+        },
+      ]);
+
+      await segmentsModel.insertMany([
+        {
+          projectId,
+          repoIdentifier,
+          version,
+          generatedFile: `server/chunks/${chunkName}`,
+          generatedLine: 8,
+          segments: [
+            {
+              generatedColumn: 36000,
+              sourceIndex: 0,
+              originalLine: 12,
+              originalColumn: 4,
+              nameIndex: 0,
+            },
+          ],
+        },
+      ]);
+
+      const pos = await originalPositionFromMongo({
+        projectId,
+        repoIdentifier,
+        version,
+        url: `/home/abbayomi/softkave-infra-wd/app-runs/ixtb-nextjs/instances/ixtb-nextjs-0/ixtb-nextjs/.next/server/chunks/${chunkName}`,
+        line: 8,
+        column: 36674,
+      });
+
+      expect(pos).toEqual({
+        source: "src/lib/logger.ts",
+        line: 12,
+        column: 4,
+        name: "error",
+      });
+    });
+
     it("resolves generatedFile using folder-suffix scoring for webpack URLs", async () => {
       const projectId = `test_project_${Date.now()}_${Math.random()
         .toString(36)

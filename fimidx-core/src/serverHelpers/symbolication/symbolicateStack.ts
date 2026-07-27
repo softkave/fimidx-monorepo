@@ -33,13 +33,28 @@ function formatSymbolicatedUrl(originalUrl: string, source: string): string {
   }
 }
 
-/** Parse a stack line to extract url (or file path), line (1-based), column
- * (0-based), and optional name (e.g. function name before "(url:line:col)"). */
+/**
+ * Parse a V8 stack frame line into url/line/column/name.
+ *
+ * Supports:
+ * - `at name (url:line:col)`
+ * - `at async name (url:line:col)` (Next/Node async frames)
+ * - `at async (url:line:col)` (anonymous async)
+ * - `at url:line:col`
+ */
 export function parseStackLine(line: string): IParsedStackLine | null {
-  // Match "at name (url:line:col)" or "at url:line:col"
-  const withParen = /^\s*at\s+(?:([^\s(]+)\s+\()?(.+?):(\d+):(\d+)\)?\s*$/.exec(
-    line
-  );
+  const trimmed = line.trim();
+  if (!trimmed.startsWith("at ")) {
+    return null;
+  }
+
+  let rest = trimmed.slice(3).trimStart();
+  if (rest.startsWith("async ")) {
+    rest = rest.slice(6).trimStart();
+  }
+
+  // Form with parentheses: optional name, then (url:line:col)
+  const withParen = /^(?:([^\s(]+)\s+)?\((.+):(\d+):(\d+)\)$/.exec(rest);
   if (withParen) {
     return {
       url: withParen[2].trim(),
@@ -48,6 +63,18 @@ export function parseStackLine(line: string): IParsedStackLine | null {
       name: withParen[1]?.trim() ?? null,
     };
   }
+
+  // Form without parentheses: url:line:col
+  const withoutParen = /^(.+):(\d+):(\d+)$/.exec(rest);
+  if (withoutParen) {
+    return {
+      url: withoutParen[1].trim(),
+      line: parseInt(withoutParen[2], 10),
+      column: parseInt(withoutParen[3], 10),
+      name: null,
+    };
+  }
+
   return null;
 }
 

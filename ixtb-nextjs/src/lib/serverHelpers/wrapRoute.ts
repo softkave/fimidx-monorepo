@@ -21,7 +21,11 @@ export const wrapRoute =
         status: 200,
       });
     } catch (error) {
-      ixtbConsoleLogger.error(error);
+      ixtbConsoleLogger.error({
+        message: "Error in wrapRoute",
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+        error: JSON.stringify(error),
+      });
 
       if (OwnServerError.isOwnServerError(error)) {
         return Response.json(

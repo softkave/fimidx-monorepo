@@ -13,6 +13,7 @@ export function useMutationFnWithRetry<
       } catch (error) {
         ixtbConsoleLogger.error({
           message: "Error in mutation function",
+          errorMessage: error instanceof Error ? error.message : "Unknown error",
           error: JSON.stringify(error),
         });
         toast.error("Error", {

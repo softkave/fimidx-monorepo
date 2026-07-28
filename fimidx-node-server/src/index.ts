@@ -1,7 +1,9 @@
+import type {Server} from 'node:http';
 import {
   isRetryableMongoNetworkError,
 } from 'fimidx-core/common/withMongoRetry';
 import {getCoreConfig} from 'fimidx-core/common/getCoreConfig';
+import {closeFimidxLogger} from 'fimidx-core/common/logger/fimidx-logger';
 import {loadCallbacks} from './helpers/cb/loadCallbacks.js';
 import {setupCleanupObjsCallback} from './helpers/setupCbs/setupCleanupObjsCallback.js';
 import {setupIndexObjsCallback} from './helpers/setupCbs/setupIndexObjsCallback.js';
@@ -10,6 +12,47 @@ import {setupSymbolicationCallback} from './helpers/setupCbs/setupSymbolicationC
 import {setupUnzipSourceMapsCallback} from './helpers/setupCbs/setupUnzipSourceMapsCallback.js';
 import {startHttpServer} from './httpServer.js';
 import {fimidxNodeWinstonLogger} from './utils/fimidxNodeloggers.js';
+
+let httpServer: Server | undefined;
+let isShuttingDown = false;
+
+async function flushLogs(): Promise<void> {
+  try {
+    await closeFimidxLogger();
+  } catch (error) {
+    // Last-resort console — winston/fimidx may already be closing.
+    console.error('Failed to flush fimidx logs on shutdown', error);
+  }
+}
+
+async function closeHttpServer(server: Server): Promise<void> {
+  await new Promise<void>(resolve => {
+    server.close(error => {
+      if (error) {
+        fimidxNodeWinstonLogger.error('Error closing HTTP server', {error});
+      }
+      resolve();
+    });
+    server.closeAllConnections();
+  });
+}
+
+async function shutdown(signal: string, exitCode = 0): Promise<void> {
+  if (isShuttingDown) {
+    return;
+  }
+  isShuttingDown = true;
+
+  fimidxNodeWinstonLogger.info('Started graceful shutdown', {signal});
+
+  if (httpServer) {
+    await closeHttpServer(httpServer);
+    httpServer = undefined;
+  }
+
+  await flushLogs();
+  process.exit(exitCode);
+}
 
 /**
  * Transient Mongo TLS/pool errors should not take down the process. Log and
@@ -34,7 +77,14 @@ function installProcessErrorHandlers() {
       return;
     }
     // Unknown sync throw — safer to exit so the process supervisor restarts.
-    process.exit(1);
+    void shutdown('uncaughtException', 1);
+  });
+
+  process.on('SIGTERM', () => {
+    void shutdown('SIGTERM');
+  });
+  process.on('SIGINT', () => {
+    void shutdown('SIGINT');
   });
 }
 
@@ -55,7 +105,7 @@ async function main() {
   await setupPurgeSourceMapCacheCallback();
   await loadCallbacks();
 
-  startHttpServer({
+  httpServer = startHttpServer({
     port: httpPort,
     internalAccessKey,
   });
@@ -63,5 +113,5 @@ async function main() {
 
 main().catch(err => {
   fimidxNodeWinstonLogger.error('Fatal startup error', {error: err});
-  process.exit(1);
+  void flushLogs().finally(() => process.exit(1));
 });

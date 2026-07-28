@@ -22,3 +22,8 @@ export const fimidxLogger = new FimidxLogger({
     repo: fimidxSymbolicationRepo,
   },
 });
+
+/** Flush any buffered remote log entries. Call on process shutdown. */
+export async function closeFimidxLogger(): Promise<void> {
+  await fimidxLogger.close();
+}

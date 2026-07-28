@@ -7,3 +7,8 @@ export {
   FimidxNextAuthLogger,
   type NextAuthWarningCode,
 } from './FimidxNextAuthLogger.js';
+export {
+  serializeError,
+  serializeForLog,
+  type SerializedError,
+} from './serializeForLog.js';

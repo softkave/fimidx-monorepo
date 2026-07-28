@@ -1,6 +1,7 @@
 import {FimidxEndpoints} from '../endpoints/fimidxEndpoints.js';
 import type {IngestLogsArgs} from '../endpoints/fimidxTypes.js';
 import {MfdocEndpointError} from '../endpoints/index.js';
+import {serializeForLog} from './serializeForLog.js';
 
 export interface IFimidxLoggerOptions {
   projectId: string;
@@ -127,8 +128,10 @@ export class FimidxLogger {
 
   // Private methods
   private addToBuffer = (entry: any): void => {
-    // Merge entry with metadata
-    const logEntry = this.metadata ? {...this.metadata, ...entry} : entry;
+    // Merge entry with metadata, then make Errors JSON-safe (name/message/stack
+    // are non-enumerable and would otherwise serialize as {}).
+    const merged = this.metadata ? {...this.metadata, ...entry} : entry;
+    const logEntry = serializeForLog(merged);
 
     this.buffer.push(logEntry);
 

@@ -1,6 +1,7 @@
 import {isPlainObject, isString} from 'lodash-es';
 import type {AnyObject} from 'softkave-js-utils';
 import {FimidxLogger} from './FimidxLogger.js';
+import {serializeError, serializeForLog} from './serializeForLog.js';
 
 export interface IFimidxConsoleLikeLoggerOptions {
   fimidxLogger: FimidxLogger;
@@ -402,18 +403,27 @@ export class FimidxConsoleLikeLogger {
     const timestamp = new Date().toISOString();
 
     let message: string | undefined;
+    let serializedError: ReturnType<typeof serializeError> | undefined;
+
     if (args.length === 0) {
       message = 'Empty message';
     } else if (args.length && isPrimitiveLike(args[0])) {
       message = isString(args[0]) ? args[0] : JSON.stringify(args[0]);
       args.shift();
+    } else if (args.length && args[0] instanceof Error) {
+      // Prefer Error.message as the log message; keep a structured error field.
+      const err = args.shift() as Error;
+      message = err.message || err.name;
+      serializedError = serializeError(err);
     }
 
     let mergedArgs: AnyObject = {};
     if (args.length === 1 && isPlainObject(args[0])) {
-      mergedArgs = args[0] as AnyObject;
+      // Serialize nested Errors inside the payload object.
+      mergedArgs = serializeForLog(args[0]) as AnyObject;
     } else if (args.length > 0) {
-      mergedArgs = {args: args};
+      // e.g. log('Message', error) — serialize every remaining arg.
+      mergedArgs = {args: serializeForLog(args)};
     }
 
     const entry: any = {
@@ -421,6 +431,7 @@ export class FimidxConsoleLikeLogger {
       timestamp,
       ...(message ? {message} : {}),
       ...mergedArgs,
+      ...(serializedError ? {error: serializedError} : {}),
     };
 
     if (additionalData) {

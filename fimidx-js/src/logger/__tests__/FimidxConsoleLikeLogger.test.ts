@@ -150,6 +150,59 @@ describe('FimidxConsoleLikeLogger', () => {
       });
       expect(consoleSpy.error).toHaveBeenCalledWith('error message');
     });
+
+    it('should extract name, message, and stack when passed an Error', () => {
+      const err = new Error('boom');
+      consoleLikeLogger.error(err);
+
+      expect(mockFimidxLogger.log).toHaveBeenCalledWith({
+        level: 'error',
+        message: 'boom',
+        timestamp: expect.any(String),
+        stackTrace: expect.any(String),
+        error: {
+          name: 'Error',
+          message: 'boom',
+          stack: err.stack,
+        },
+      });
+      expect(consoleSpy.error).toHaveBeenCalledWith(err);
+    });
+
+    it('should serialize Error args after a message string', () => {
+      const err = new Error('mongo flake');
+      consoleLikeLogger.log('Message', err);
+
+      expect(mockFimidxLogger.log).toHaveBeenCalledWith({
+        level: 'log',
+        message: 'Message',
+        timestamp: expect.any(String),
+        args: [
+          {
+            name: 'Error',
+            message: 'mongo flake',
+            stack: err.stack,
+          },
+        ],
+      });
+    });
+
+    it('should serialize nested Errors in a trailing plain object', () => {
+      const err = new Error('nested');
+      consoleLikeLogger.log('Message', {error: err, ok: true});
+
+      expect(mockFimidxLogger.log).toHaveBeenCalledWith({
+        level: 'log',
+        message: 'Message',
+        timestamp: expect.any(String),
+        error: {
+          name: 'Error',
+          message: 'nested',
+          stack: err.stack,
+        },
+        ok: true,
+      });
+    });
   });
 
   describe('assert', () => {
@@ -492,8 +545,13 @@ describe('FimidxConsoleLikeLogger', () => {
 
       expect(mockFimidxLogger.log).toHaveBeenCalledWith({
         level: 'log',
-        args: [error],
+        message: 'test error',
         timestamp: expect.any(String),
+        error: {
+          name: 'Error',
+          message: 'test error',
+          stack: error.stack,
+        },
       });
     });
   });

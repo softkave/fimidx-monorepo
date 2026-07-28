@@ -144,6 +144,24 @@ describe('FimidxLogger', () => {
       consoleSpy.mockRestore();
     });
 
+    it('should serialize Error fields so they are not empty objects', async () => {
+      const logger = new FimidxLogger({
+        projectId: 'test-project',
+        clientToken: 'test-token',
+        bufferTimeout: 1000,
+      });
+
+      const err = new Error('mongo flake');
+      logger.log({level: 'error', message: 'unhandledRejection', error: err});
+
+      const privateProps = logger as any;
+      expect(privateProps.buffer[0].error).toEqual({
+        name: 'Error',
+        message: 'mongo flake',
+        stack: err.stack,
+      });
+    });
+
     it('should merge metadata with log entries', async () => {
       const logger = new FimidxLogger({
         projectId: 'test-project',

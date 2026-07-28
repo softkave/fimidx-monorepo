@@ -3,6 +3,7 @@ import { last } from "lodash-es";
 import path from "path";
 import type { RawSourceMap } from "source-map";
 import { SourceMapConsumer } from "source-map";
+import { withMongoRetry } from "../../common/withMongoRetry.js";
 import {
   getSourceMapMetadataModel,
   getSourceMapSegmentsModel,
@@ -130,9 +131,11 @@ export async function ingestSourceMapsToMongo(
         // Use the native driver so large segment arrays are not wrapped as
         // mongoose Subdocuments (validation failure + $getAllSubdocs can
         // RangeError: Maximum call stack size exceeded).
-        await segmentsModel.collection.insertMany(segmentDocs, {
-          ordered: true,
-        });
+        await withMongoRetry(() =>
+          segmentsModel.collection.insertMany(segmentDocs, {
+            ordered: true,
+          })
+        );
       }
 
       await metadataModel.findOneAndUpdate(

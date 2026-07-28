@@ -6,6 +6,7 @@ import {
   type FieldType,
   type IndexedJson,
 } from "../../common/indexer.js";
+import { withMongoRetry } from "../../common/withMongoRetry.js";
 import { getMongoConnection } from "../../db/fimidx.mongo.js";
 import { kObjTags, prefixObjId, type IObj, type IObjField } from "../../definitions/obj.js";
 import type { IProject } from "../../definitions/project.js";
@@ -123,7 +124,9 @@ async function indexObjFields(params: {
     ];
 
     if (bulkWriteOps.length > 0) {
-      await collection.bulkWrite(bulkWriteOps, { ordered: false });
+      await withMongoRetry(() =>
+        collection.bulkWrite(bulkWriteOps, { ordered: false })
+      );
     }
     batchIndex += batchSize;
   }

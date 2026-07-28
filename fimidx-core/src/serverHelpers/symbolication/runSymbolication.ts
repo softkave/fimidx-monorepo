@@ -1,6 +1,7 @@
 import { get, set } from "lodash-es";
 import type { Model } from "mongoose";
 import { getCoreConfig } from "../../common/getCoreConfig.js";
+import { withMongoRetry } from "../../common/withMongoRetry.js";
 import { getObjModel } from "../../db/fimidx.mongo.js";
 import { getSymbolicatedLogTrackingModel } from "../../db/sourceMap.mongo.js";
 import type { IObj } from "../../definitions/obj.js";
@@ -144,11 +145,11 @@ export async function applySymbolicationUpdatesMongo(params: {
   );
 
   if (bulkWriteOps.length > 0) {
-    await objModel.bulkWrite(bulkWriteOps);
+    await withMongoRetry(() => objModel.bulkWrite(bulkWriteOps));
   }
 
   if (trackingEntries.length > 0) {
-    await trackingModel.insertMany(trackingEntries);
+    await withMongoRetry(() => trackingModel.insertMany(trackingEntries));
   }
 }
 

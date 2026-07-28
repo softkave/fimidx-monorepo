@@ -2,6 +2,7 @@ import { get, set, uniq } from "lodash-es";
 import type { Model, SortOrder } from "mongoose";
 import { mergeObjects, type AnyObject } from "softkave-js-utils";
 import { v7 as uuidv7 } from "uuid";
+import { withMongoRetry } from "../../common/withMongoRetry.js";
 import {
   prefixObjId,
   type IGranularUpdate,
@@ -42,9 +43,8 @@ export class MongoObjStorage implements IObjStorage {
     params: CreateObjsParams,
     session?: any
   ): Promise<CreateObjsResult> {
-    const objs = await this.objModel.insertMany(
-      params.objs,
-      session ? { session } : {}
+    const objs = await withMongoRetry(() =>
+      this.objModel.insertMany(params.objs, session ? { session } : {})
     );
     return { objs };
   }
@@ -457,15 +457,17 @@ export class MongoObjStorage implements IObjStorage {
       });
 
       // Perform bulk update
-      await this.objModel.bulkWrite(
-        objsToUpdate.map(({ id, obj }) => ({
-          updateOne: {
-            filter: { id },
-            update: { $set: obj },
-            ...(session ? { session } : {}),
-          },
-        })),
-        session ? { session } : undefined
+      await withMongoRetry(() =>
+        this.objModel.bulkWrite(
+          objsToUpdate.map(({ id, obj }) => ({
+            updateOne: {
+              filter: { id },
+              update: { $set: obj },
+              ...(session ? { session } : {}),
+            },
+          })),
+          session ? { session } : undefined
+        )
       );
 
       updatedObjs.push(...objsToUpdate.map((item) => item.obj));
@@ -797,7 +799,9 @@ export class MongoObjStorage implements IObjStorage {
       fieldsToIndex: fieldsToIndex ? Array.from(new Set(fieldsToIndex)) : null,
     }));
 
-    await this.objModel.insertMany(newObjs, session ? { session } : {});
+    await withMongoRetry(() =>
+      this.objModel.insertMany(newObjs, session ? { session } : {})
+    );
     return newObjs;
   }
 
@@ -830,15 +834,17 @@ export class MongoObjStorage implements IObjStorage {
       };
     });
 
-    await this.objModel.bulkWrite(
-      objsToUpdate.map(({ id, obj }) => ({
-        updateOne: {
-          filter: { id },
-          update: { $set: obj },
-          ...(session ? { session } : {}),
-        },
-      })),
-      session ? { session } : undefined
+    await withMongoRetry(() =>
+      this.objModel.bulkWrite(
+        objsToUpdate.map(({ id, obj }) => ({
+          updateOne: {
+            filter: { id },
+            update: { $set: obj },
+            ...(session ? { session } : {}),
+          },
+        })),
+        session ? { session } : undefined
+      )
     );
 
     return objsToUpdate.map((item) => item.obj);

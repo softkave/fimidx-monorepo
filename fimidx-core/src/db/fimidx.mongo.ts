@@ -24,7 +24,14 @@ export function getMongoConnection() {
     const dbName = mongo.dbName;
     assert.ok(uri, "MONGO_URI is not set");
     assert.ok(dbName, "MONGO_DB_NAME is not set");
-    connection = createConnection(uri, { dbName });
+    connection = createConnection(uri, {
+      dbName,
+      // Default is 100 per client; keep fimidx clients smaller so pool growth is gentler.
+      maxPoolSize: 25,
+      minPoolSize: 0,
+      maxIdleTimeMS: 60_000,
+      retryWrites: true,
+    });
     connectionGeneration += 1;
     const generation = connectionGeneration;
     promise = connection.asPromise().catch((err) => {

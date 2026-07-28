@@ -10,7 +10,7 @@
     "upload-source-maps": "pnpm --filter fimidx compile && pnpm compile && node ../fimidx-js/build/cli.js source-maps upload --client-token \"$FIMIDX_AUTH_TOKEN\" --project-id \"$FIMIDX_PROJECT_ID\" --repo \"$SYM_REPO\" --version \"$SYM_VERSION\" --path dist --server-url \"$FIMIDX_SERVER_URL\""
   },
   "dependencies": {
-    "fimidx": "^0.7.0"
+    "fimidx": "^0.8.0"
   },
   "devDependencies": {
     "@types/node": "^24.1.0",

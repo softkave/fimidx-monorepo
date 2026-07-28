@@ -54,7 +54,7 @@
   },
   "dependencies": {
     "chokidar": "^4.0.3",
-    "fimidx": "^0.7.5",
+    "fimidx": "^0.8.0",
     "zod": "^4.0.15"
   },
   "devDependencies": {

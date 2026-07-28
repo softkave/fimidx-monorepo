@@ -49,7 +49,7 @@
   },
   "dependencies": {
     "winston-transport": "^4.9.0",
-    "fimidx": "^0.7.5"
+    "fimidx": "^0.8.0"
   },
   "devDependencies": {
     "gts": "^6.0.2",

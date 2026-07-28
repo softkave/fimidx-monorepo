@@ -26,8 +26,8 @@ importers:
         specifier: ^1.39.0
         version: 1.39.0(nanoid@3.3.11)
       fimidx:
-        specifier: ^0.7.0
-        version: 0.7.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+        specifier: ^0.8.0
+        version: 0.8.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
       fimidx-winston-transport:
         specifier: ^0.5.0
         version: 0.5.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
@@ -166,8 +166,8 @@ importers:
         specifier: ^4.0.3
         version: 4.0.3
       fimidx:
-        specifier: ^0.7.5
-        version: 0.7.5(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+        specifier: ^0.8.0
+        version: 0.8.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
       zod:
         specifier: ^4.0.15
         version: 4.3.6
@@ -308,8 +308,8 @@ importers:
   fimidx-winston-transport:
     dependencies:
       fimidx:
-        specifier: ^0.7.5
-        version: 0.7.5(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+        specifier: ^0.8.0
+        version: 0.8.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
       winston-transport:
         specifier: ^4.9.0
         version: 4.9.0
@@ -541,8 +541,8 @@ importers:
   symbolication-sample-app:
     dependencies:
       fimidx:
-        specifier: ^0.7.0
-        version: 0.7.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+        specifier: ^0.8.0
+        version: 0.8.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
     devDependencies:
       '@types/node':
         specifier: ^24.1.0
@@ -4857,8 +4857,8 @@ packages:
     engines: {node: '>=13'}
     hasBin: true
 
-  fimidx@0.7.5:
-    resolution: {integrity: sha512-qki3QwR1iJj/EjPAOBbLSJedBBVvpIPOTA1t1L1Hm+NRLvtit1gELDnp3ZLkbzv2T1309icBKithoZEo4Ure5A==}
+  fimidx@0.8.0:
+    resolution: {integrity: sha512-wWGVshxvrEb0f1436kwE/PAWNjWnEUDb/abQUdDOJw28WGdUxNBKGXtxKypECv3aJMNornP65prIILrbxZJoJw==}
     engines: {node: '>=13'}
     hasBin: true
 
@@ -11276,7 +11276,7 @@ snapshots:
       - react-native-b4a
       - type-fest
 
-  fimidx@0.7.5(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
+  fimidx@0.8.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
     dependencies:
       archiver: 7.0.1
       commander: 12.1.0

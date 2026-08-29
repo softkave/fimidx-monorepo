@@ -48,7 +48,7 @@ export function Logs(props: ILogsProps) {
 
   if (props.showFiltersAndSort && props.onFiltersChange) {
     beforeNode = (
-      <Accordion type="single" collapsible defaultValue={"filters"}>
+      <Accordion defaultValue={["filters"]}>
         <AccordionItem value="filters">
           <AccordionTrigger>Filters</AccordionTrigger>
           <AccordionContent className="w-full">

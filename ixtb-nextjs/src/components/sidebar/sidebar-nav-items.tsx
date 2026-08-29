@@ -23,11 +23,12 @@ export function SidebarNavItems(props: { items: ISidebarItem[] }) {
     <SidebarMenu>
       {props.items.map((item) => (
         <SidebarMenuItem key={item.title}>
-          <SidebarMenuButton asChild isActive={isItemActive(pathname, item)}>
-            <Link href={item.url}>
-              <item.icon />
-              <span>{item.title}</span>
-            </Link>
+          <SidebarMenuButton
+            render={<Link href={item.url} />}
+            isActive={isItemActive(pathname, item)}
+          >
+            <item.icon />
+            <span>{item.title}</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
       ))}

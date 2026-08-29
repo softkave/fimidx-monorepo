@@ -30,32 +30,34 @@ export function BetweenInputDate(props: {
   return (
     <div className={cn("grid gap-2", className)}>
       <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            id="date"
-            variant={"outline"}
-            disabled={disabled}
-            className={cn(
-              "w-full justify-start text-left font-normal",
-              !date && "text-muted-foreground"
-            )}
-            type="button"
-          >
-            <CalendarIcon />
-            {date?.from ? (
-              date.to ? (
-                <>
-                  {format(date.from, "LLL dd, y HH:mm:ss")} -{" "}
-                  {format(date.to, "LLL dd, y HH:mm:ss")}
-                </>
+        <PopoverTrigger
+          render={
+            <Button
+              id="date"
+              variant={"outline"}
+              disabled={disabled}
+              className={cn(
+                "w-full justify-start text-left font-normal",
+                !date && "text-muted-foreground"
+              )}
+              type="button"
+            >
+              <CalendarIcon />
+              {date?.from ? (
+                date.to ? (
+                  <>
+                    {format(date.from, "LLL dd, y HH:mm:ss")} -{" "}
+                    {format(date.to, "LLL dd, y HH:mm:ss")}
+                  </>
+                ) : (
+                  format(date.from, "LLL dd, y HH:mm:ss")
+                )
               ) : (
-                format(date.from, "LLL dd, y HH:mm:ss")
-              )
-            ) : (
-              <span>Pick a date</span>
-            )}
-          </Button>
-        </PopoverTrigger>
+                <span>Pick a date</span>
+              )}
+            </Button>
+          }
+        />
         <PopoverContent className="w-auto p-0" align="start">
           <div className="p-4 grid grid-cols-[1fr_auto_1fr] gap-2">
             <TimePicker
@@ -95,7 +97,6 @@ export function BetweenInputDate(props: {
             />
           </div>
           <Calendar
-            initialFocus
             mode="range"
             defaultMonth={date?.from}
             selected={date}

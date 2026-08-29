@@ -23,11 +23,7 @@ export function UserMenu() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon">
-          <UserIcon />
-        </Button>
-      </DropdownMenuTrigger>
+      <DropdownMenuTrigger render={<Button variant="outline" size="icon"><UserIcon /></Button>} />
       <DropdownMenuContent>
         {/* <DropdownMenuItem
           onSelect={() => {

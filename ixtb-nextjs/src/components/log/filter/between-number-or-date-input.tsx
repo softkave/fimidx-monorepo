@@ -21,28 +21,31 @@ export function BetweenNumberOrDateInput(props: {
   return (
     <div className="grid grid-cols-[auto_1fr] gap-2 w-full">
       <ToggleGroup
-        type="single"
         onValueChange={(value) => {
-          setType(value as "date" | "number");
+          setType((value[0] as "date" | "number" | undefined) ?? "number");
         }}
         variant="outline"
-        value={type}
+        value={[type]}
         disabled={disabled}
       >
         <Tooltip>
-          <TooltipTrigger asChild>
-            <ToggleGroupItem value="number" aria-label="Number">
-              <HashIcon className="h-4 w-4" />
-            </ToggleGroupItem>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <ToggleGroupItem value="number" aria-label="Number">
+                <HashIcon className="h-4 w-4" />
+              </ToggleGroupItem>
+            }
+          />
           <TooltipContent>Number</TooltipContent>
         </Tooltip>
         <Tooltip>
-          <TooltipTrigger asChild>
-            <ToggleGroupItem value="date" aria-label="Date">
-              <CalendarIcon className="h-4 w-4" />
-            </ToggleGroupItem>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <ToggleGroupItem value="date" aria-label="Date">
+                <CalendarIcon className="h-4 w-4" />
+              </ToggleGroupItem>
+            }
+          />
           <TooltipContent>Date</TooltipContent>
         </Tooltip>
       </ToggleGroup>

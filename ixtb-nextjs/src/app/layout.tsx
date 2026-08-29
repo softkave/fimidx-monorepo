@@ -1,17 +1,15 @@
 import { Toaster } from "@/src/components/ui/sonner.tsx";
 import { kAppConstants } from "fimidx-core/definitions/appConstants";
 import type { Metadata } from "next";
-import { DM_Sans, Source_Code_Pro } from "next/font/google";
+import { DM_Sans, Source_Code_Pro, Inter } from "next/font/google";
 import NextTopLoader from "nextjs-toploader";
 import { GlobalStateProvider } from "../components/contexts/global-state-context";
 import { ErrorBoundary } from "../components/internal/error-boundary";
 import { SidebarProvider } from "../components/ui/sidebar";
 import "./globals.css";
+import { cn } from "@/src/lib/utils";
 
-const sans = DM_Sans({
-  variable: "--font-sans",
-  subsets: ["latin"],
-});
+const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
 const mono = Source_Code_Pro({
   variable: "--font-mono",
@@ -29,8 +27,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${sans.variable} ${mono.variable} antialiased`}>
+    <html lang="en" className={cn("font-sans", inter.variable)}>
+      <body className={`${inter.variable} ${mono.variable} antialiased`}>
         <NextTopLoader
           color="var(--primary)"
           height={2}

@@ -16,16 +16,14 @@ export function MonitorsHeader(props: {
       title="Monitoring"
       description="Create monitors that alert you when matching logs appear."
       button={
-        <Button variant="outline" asChild>
-          <Link
+        <Button variant="outline" render={<Link
             href={kClientPaths.app.org.project.monitors.new(
               props.orgId,
               props.projectId
             )}
-          >
-            Create
-            <PlusIcon className="w-4 h-4 ml-1" />
-          </Link>
+          />}>
+          Create
+          <PlusIcon className="w-4 h-4 ml-1" />
         </Button>
       }
       className={props.className}

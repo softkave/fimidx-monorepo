@@ -31,37 +31,42 @@ export function NumberOrDateInput(props: {
   return (
     <div className="grid grid-cols-[auto_1fr] gap-2 w-full">
       <ToggleGroup
-        type="single"
         onValueChange={(value) => {
-          setType(value as "date" | "number");
+          setType((value[0] as "date" | "number" | "duration" | undefined) ?? "number");
           onChange([]);
         }}
         variant="outline"
-        value={type}
+        value={[type]}
         disabled={disabled}
       >
         <Tooltip>
-          <TooltipTrigger asChild>
-            <ToggleGroupItem value="number" aria-label="Number">
-              <HashIcon className="h-4 w-4" />
-            </ToggleGroupItem>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <ToggleGroupItem value="number" aria-label="Number">
+                <HashIcon className="h-4 w-4" />
+              </ToggleGroupItem>
+            }
+          />
           <TooltipContent>Number</TooltipContent>
         </Tooltip>
         <Tooltip>
-          <TooltipTrigger asChild>
-            <ToggleGroupItem value="date" aria-label="Date">
-              <CalendarIcon className="h-4 w-4" />
-            </ToggleGroupItem>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <ToggleGroupItem value="date" aria-label="Date">
+                <CalendarIcon className="h-4 w-4" />
+              </ToggleGroupItem>
+            }
+          />
           <TooltipContent>Date</TooltipContent>
         </Tooltip>
         <Tooltip>
-          <TooltipTrigger asChild>
-            <ToggleGroupItem value="duration" aria-label="Relative duration">
-              <CalendarRangeIcon className="h-4 w-4" />
-            </ToggleGroupItem>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <ToggleGroupItem value="duration" aria-label="Relative duration">
+                <CalendarRangeIcon className="h-4 w-4" />
+              </ToggleGroupItem>
+            }
+          />
           <TooltipContent>Relative duration</TooltipContent>
         </Tooltip>
       </ToggleGroup>
@@ -76,24 +81,26 @@ export function NumberOrDateInput(props: {
         />
       ) : type === "date" ? (
         <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant={"outline"}
-              className={cn(
-                "w-full justify-start text-left font-normal",
-                !valueDate && "text-muted-foreground"
-              )}
-              disabled={disabled}
-              type="button"
-            >
-              <CalendarIcon />
-              {valueDate ? (
-                format(valueDate, "PPP HH:mm:ss")
-              ) : (
-                <span>Pick a date</span>
-              )}
-            </Button>
-          </PopoverTrigger>
+          <PopoverTrigger
+            render={
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !valueDate && "text-muted-foreground"
+                )}
+                disabled={disabled}
+                type="button"
+              >
+                <CalendarIcon />
+                {valueDate ? (
+                  format(valueDate, "PPP HH:mm:ss")
+                ) : (
+                  <span>Pick a date</span>
+                )}
+              </Button>
+            }
+          />
           <PopoverContent className="w-auto p-0" align="start">
             <div className="p-4">
               <TimePicker
@@ -116,7 +123,6 @@ export function NumberOrDateInput(props: {
               onSelect={(date) => {
                 onChange([date?.getTime().toString() ?? ""]);
               }}
-              initialFocus
               disabled={disabled}
             />
           </PopoverContent>

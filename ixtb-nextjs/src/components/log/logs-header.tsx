@@ -30,8 +30,8 @@ export function LogsHeader(props: {
       button={
         <div className="flex items-center gap-2">
           {createMonitorHref ? (
-            <Button variant="outline" size="sm" asChild>
-              <Link href={createMonitorHref}>Create monitor from filters</Link>
+            <Button variant="outline" size="sm" render={<Link href={createMonitorHref} />}>
+              Create monitor from filters
             </Button>
           ) : null}
           <LogsHeaderMenu

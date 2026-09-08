@@ -92,6 +92,8 @@ describe('FimidxLogger', () => {
         consoleLogOnError: false,
         logRemoteErrors: true,
         metadata: {env: 'test'},
+        redactFields: ['password'],
+        redactValue: '***',
       });
 
       const privateProps = logger as any;
@@ -102,6 +104,8 @@ describe('FimidxLogger', () => {
       expect(privateProps.consoleLogOnError).toBe(false);
       expect(privateProps.logRemoteErrors).toBe(true);
       expect(privateProps.metadata).toEqual({env: 'test'});
+      expect(privateProps.redactFields).toEqual(['password']);
+      expect(privateProps.redactValue).toBe('***');
     });
   });
 
@@ -187,6 +191,47 @@ describe('FimidxLogger', () => {
           },
         ],
       });
+    });
+
+    it('should redact configured fields before buffering', () => {
+      const logger = new FimidxLogger({
+        projectId: 'test-project',
+        clientToken: 'test-token',
+        redactFields: ['password', 'user.email'],
+      });
+
+      logger.log({
+        level: 'info',
+        message: 'signup',
+        password: 'hunter2',
+        user: {email: 'ada@example.com', name: 'ada'},
+      });
+
+      const privateProps = logger as any;
+      expect(privateProps.buffer[0]).toEqual({
+        level: 'info',
+        message: 'signup',
+        password: '[redacted]',
+        user: {email: '[redacted]', name: 'ada'},
+      });
+    });
+
+    it('should redact fields added after construction', () => {
+      const logger = new FimidxLogger({
+        projectId: 'test-project',
+        clientToken: 'test-token',
+      });
+
+      logger.addRedactFields(['token']);
+      logger.log({level: 'info', token: 'abc', ok: true});
+
+      const privateProps = logger as any;
+      expect(privateProps.buffer[0]).toEqual({
+        level: 'info',
+        token: '[redacted]',
+        ok: true,
+      });
+      expect(logger.getRedactFields()).toEqual(['token']);
     });
 
     it('should trigger immediate flush when buffer is full', async () => {

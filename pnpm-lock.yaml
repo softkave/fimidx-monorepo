@@ -26,11 +26,11 @@ importers:
         specifier: ^1.39.0
         version: 1.39.0(nanoid@3.3.11)
       fimidx:
-        specifier: ^0.8.0
-        version: 0.8.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+        specifier: ^0.8.1
+        version: 0.8.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
       fimidx-winston-transport:
-        specifier: ^0.5.0
-        version: 0.5.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+        specifier: ^0.5.1
+        version: 0.5.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
       ioredis:
         specifier: ^5.4.2
         version: 5.10.1
@@ -308,8 +308,8 @@ importers:
   fimidx-winston-transport:
     dependencies:
       fimidx:
-        specifier: ^0.8.0
-        version: 0.8.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+        specifier: ^0.9.0
+        version: 0.9.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
       winston-transport:
         specifier: ^4.9.0
         version: 4.9.0
@@ -407,6 +407,9 @@ importers:
       cmdk:
         specifier: 1.0.0
         version: 1.0.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+      cn:
+        specifier: ^0.2.5
+        version: 0.2.5
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -453,8 +456,8 @@ importers:
         specifier: ^4.1.2
         version: 4.8.0(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       shadcn:
-        specifier: ^4.18.0
-        version: 4.18.0(typescript@5.9.3)
+        specifier: ^4.21.0
+        version: 4.21.0(typescript@5.9.3)
       softkave-js-utils:
         specifier: 0.17.0
         version: 0.17.0(assert@2.1.0)(lodash-es@4.18.1)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
@@ -4308,6 +4311,11 @@ packages:
       react: ^18.0.0
       react-dom: ^18.0.0
 
+  cn@0.2.5:
+    resolution: {integrity: sha512-OCjZtMeQfXbI4Es1+EIjkd77gvWzaE689gD8KhfexlqjClC06qR1MQBR+Z35ZMSPNEBWyHiItW1Soy0UvwNv9w==}
+    engines: {node: '>=20'}
+    hasBin: true
+
   code-block-writer@13.0.3:
     resolution: {integrity: sha512-Oofo0pq3IKnsFtuHqSF7TqBfr71aeyZDVJ0HpmqB7FBM2qEigL0iPONSCZSO9pE9dZTAxANe5XHG9Uy0YMv8cg==}
 
@@ -5015,6 +5023,7 @@ packages:
   eslint@9.27.0:
     resolution: {integrity: sha512-ixRawFQuMB9DZ7fjU3iGGganFDp3+45bPOdaRurcFHSXO1e/sYwUX/FtQZpLZJR6SjMoJH8hR2pPEAfDyCoU2Q==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -5184,6 +5193,10 @@ packages:
     resolution: {integrity: sha512-xQedZ/bZ/Zl6h5rydcp0LDMdIYkhEKqT5Gbv2Bi+4MqaWkVWl8YGIcrQSKZIURY+N7Vso973r49qQ+P/uxvIhQ==}
     engines: {node: '>=13'}
 
+  fimidx-winston-transport@0.5.1:
+    resolution: {integrity: sha512-S99fqeM3dyj3IwMK6/YKXjfqV9XwpRZjEVPop1JulAzssaix04882xBlGOJ4j4698qluRxAgfSED/5ljm7IXdA==}
+    engines: {node: '>=13'}
+
   fimidx@0.7.0:
     resolution: {integrity: sha512-2yAy77LqGdhvwNIuyJpnJj0W8Cpg6bQ11xJCzvksONrsIeRo6BXMO1QHpyH1u9ZBYNRWI5TsslfV0nW1qgqCyA==}
     engines: {node: '>=13'}
@@ -5191,6 +5204,16 @@ packages:
 
   fimidx@0.8.0:
     resolution: {integrity: sha512-wWGVshxvrEb0f1436kwE/PAWNjWnEUDb/abQUdDOJw28WGdUxNBKGXtxKypECv3aJMNornP65prIILrbxZJoJw==}
+    engines: {node: '>=13'}
+    hasBin: true
+
+  fimidx@0.8.1:
+    resolution: {integrity: sha512-AQKHviovHHRa3IpUTV3kuJuPE7jM0s8lQDmgkEWbzRpGR4sR5tUembA4Zi/VaowKDljv9TQp0EBCxxSVIxpDSQ==}
+    engines: {node: '>=13'}
+    hasBin: true
+
+  fimidx@0.9.0:
+    resolution: {integrity: sha512-rxy/XW+r2oxePYGCQzZGO6e6w7ES4H+qwuB74o1UMzfIjk/mlsxvSFA6MT849TzCSJkQqc7l4Q9No5pAJI/KAQ==}
     engines: {node: '>=13'}
     hasBin: true
 
@@ -6983,8 +7006,8 @@ packages:
   setprototypeof@1.2.0:
     resolution: {integrity: sha512-E5LDX7Wrp85Kil5bhZv46j8jOeboKq5JMmYM3gVGdGH8xFpPWXUMsNrlODCrkoxMEeNi/XZIwuRvY4XNwYMJpw==}
 
-  shadcn@4.18.0:
-    resolution: {integrity: sha512-tUFZgkYmfVNQVm3xX7lhSzOvDsp+O14ac5dwgXIr5mIsr79ISueb/Mu+ZtWMz0DH6v77u4eYyvbQ9TTMpSn3aw==}
+  shadcn@4.21.0:
+    resolution: {integrity: sha512-UU2mFNusW8C5rvadKdH69vERYZqUlOOlXBcf0MYhYLdTGP6DPti7X4qovCu+RTfCqsAgq/T+YfE0Vnttxh9aiw==}
     engines: {node: '>=20.18.1'}
     hasBin: true
 
@@ -11210,6 +11233,8 @@ snapshots:
       - '@types/react'
       - '@types/react-dom'
 
+  cn@0.2.5: {}
+
   code-block-writer@13.0.3: {}
 
   color-convert@2.0.1:
@@ -12290,6 +12315,20 @@ snapshots:
       - react-native-b4a
       - type-fest
 
+  fimidx-winston-transport@0.5.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
+    dependencies:
+      fimidx: 0.8.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+      winston-transport: 4.9.0
+    transitivePeerDependencies:
+      - assert
+      - bare-abort-controller
+      - bare-buffer
+      - debug
+      - nanoid
+      - path-browserify
+      - react-native-b4a
+      - type-fest
+
   fimidx@0.7.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
     dependencies:
       archiver: 7.0.1
@@ -12309,6 +12348,42 @@ snapshots:
       - type-fest
 
   fimidx@0.8.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
+    dependencies:
+      archiver: 7.0.1
+      commander: 12.1.0
+      fimidara: 1.39.0(nanoid@3.3.11)
+      lodash-es: 4.18.1
+      mfdoc-js-sdk-base: 0.3.3(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+      softkave-js-utils: 0.17.1(assert@2.1.0)(lodash-es@4.18.1)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+    transitivePeerDependencies:
+      - assert
+      - bare-abort-controller
+      - bare-buffer
+      - debug
+      - nanoid
+      - path-browserify
+      - react-native-b4a
+      - type-fest
+
+  fimidx@0.8.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
+    dependencies:
+      archiver: 7.0.1
+      commander: 12.1.0
+      fimidara: 1.39.0(nanoid@3.3.11)
+      lodash-es: 4.18.1
+      mfdoc-js-sdk-base: 0.3.3(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+      softkave-js-utils: 0.17.1(assert@2.1.0)(lodash-es@4.18.1)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+    transitivePeerDependencies:
+      - assert
+      - bare-abort-controller
+      - bare-buffer
+      - debug
+      - nanoid
+      - path-browserify
+      - react-native-b4a
+      - type-fest
+
+  fimidx@0.9.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
     dependencies:
       archiver: 7.0.1
       commander: 12.1.0
@@ -13600,7 +13675,7 @@ snapshots:
 
   parse-json@5.2.0:
     dependencies:
-      '@babel/code-frame': 7.29.0
+      '@babel/code-frame': 7.29.7
       error-ex: 1.3.4
       json-parse-even-better-errors: 2.3.1
       lines-and-columns: 1.2.4
@@ -14228,16 +14303,17 @@ snapshots:
 
   setprototypeof@1.2.0: {}
 
-  shadcn@4.18.0(typescript@5.9.3):
+  shadcn@4.21.0(typescript@5.9.3):
     dependencies:
       '@babel/core': 7.29.7
-      '@babel/parser': 7.29.2
+      '@babel/parser': 7.29.8
       '@babel/plugin-transform-typescript': 7.29.7(@babel/core@7.29.7)
       '@babel/preset-typescript': 7.29.7(@babel/core@7.29.7)
       '@dotenvx/dotenvx': 1.75.1
       '@modelcontextprotocol/sdk': 1.30.0(zod@3.25.76)
       '@types/validate-npm-package-name': 4.0.2
       browserslist: 4.28.8
+      cn: 0.2.5
       commander: 14.0.3
       cosmiconfig: 9.0.2(typescript@5.9.3)
       dedent: 1.7.2
@@ -14256,7 +14332,6 @@ snapshots:
       recast: 0.23.21
       socks: 2.8.9
       stringify-object: 5.0.0
-      tailwind-merge: 3.5.0
       ts-morph: 26.0.0
       tsconfig-paths: 4.2.0
       undici: 7.29.0

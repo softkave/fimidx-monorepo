@@ -415,7 +415,7 @@ describe('FimidxConsoleLikeLogger', () => {
 
       expect(mockFimidxLogger.log).toHaveBeenCalledWith({
         level: 'dir',
-        message: '{\n  "test": "value"\n}',
+        message: '{"test":"value"}',
         timestamp: expect.any(String),
       });
       expect(consoleSpy.dir).toHaveBeenCalledWith(obj, undefined);

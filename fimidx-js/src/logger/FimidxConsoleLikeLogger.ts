@@ -450,7 +450,7 @@ export class FimidxConsoleLikeLogger {
       if (typeof obj === 'boolean') return String(obj);
       if (obj instanceof Error) return obj.stack || obj.message || String(obj);
 
-      return JSON.stringify(obj, null, 2);
+      return JSON.stringify(obj);
     } catch (error) {
       return '[Object]';
     }

@@ -26,11 +26,11 @@ importers:
         specifier: ^1.39.0
         version: 1.39.0(nanoid@3.3.11)
       fimidx:
-        specifier: ^0.8.1
-        version: 0.8.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+        specifier: ^0.9.0
+        version: 0.9.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
       fimidx-winston-transport:
-        specifier: ^0.5.1
-        version: 0.5.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+        specifier: ^0.5.2
+        version: 0.5.2(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
       ioredis:
         specifier: ^5.4.2
         version: 5.10.1
@@ -5193,8 +5193,8 @@ packages:
     resolution: {integrity: sha512-xQedZ/bZ/Zl6h5rydcp0LDMdIYkhEKqT5Gbv2Bi+4MqaWkVWl8YGIcrQSKZIURY+N7Vso973r49qQ+P/uxvIhQ==}
     engines: {node: '>=13'}
 
-  fimidx-winston-transport@0.5.1:
-    resolution: {integrity: sha512-S99fqeM3dyj3IwMK6/YKXjfqV9XwpRZjEVPop1JulAzssaix04882xBlGOJ4j4698qluRxAgfSED/5ljm7IXdA==}
+  fimidx-winston-transport@0.5.2:
+    resolution: {integrity: sha512-Hq3DOVlbLJz4A1gVdR4q61HNvjcTmWZG3aY2eY6rzGL06XG+FegArLEdYruPk53AoBReZ42wLURWrBaitth3RQ==}
     engines: {node: '>=13'}
 
   fimidx@0.7.0:
@@ -5204,11 +5204,6 @@ packages:
 
   fimidx@0.8.0:
     resolution: {integrity: sha512-wWGVshxvrEb0f1436kwE/PAWNjWnEUDb/abQUdDOJw28WGdUxNBKGXtxKypECv3aJMNornP65prIILrbxZJoJw==}
-    engines: {node: '>=13'}
-    hasBin: true
-
-  fimidx@0.8.1:
-    resolution: {integrity: sha512-AQKHviovHHRa3IpUTV3kuJuPE7jM0s8lQDmgkEWbzRpGR4sR5tUembA4Zi/VaowKDljv9TQp0EBCxxSVIxpDSQ==}
     engines: {node: '>=13'}
     hasBin: true
 
@@ -12315,9 +12310,9 @@ snapshots:
       - react-native-b4a
       - type-fest
 
-  fimidx-winston-transport@0.5.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
+  fimidx-winston-transport@0.5.2(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
     dependencies:
-      fimidx: 0.8.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
+      fimidx: 0.9.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
       winston-transport: 4.9.0
     transitivePeerDependencies:
       - assert
@@ -12348,24 +12343,6 @@ snapshots:
       - type-fest
 
   fimidx@0.8.0(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
-    dependencies:
-      archiver: 7.0.1
-      commander: 12.1.0
-      fimidara: 1.39.0(nanoid@3.3.11)
-      lodash-es: 4.18.1
-      mfdoc-js-sdk-base: 0.3.3(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
-      softkave-js-utils: 0.17.1(assert@2.1.0)(lodash-es@4.18.1)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0)
-    transitivePeerDependencies:
-      - assert
-      - bare-abort-controller
-      - bare-buffer
-      - debug
-      - nanoid
-      - path-browserify
-      - react-native-b4a
-      - type-fest
-
-  fimidx@0.8.1(assert@2.1.0)(nanoid@3.3.11)(path-browserify@1.0.1)(type-fest@4.41.0):
     dependencies:
       archiver: 7.0.1
       commander: 12.1.0

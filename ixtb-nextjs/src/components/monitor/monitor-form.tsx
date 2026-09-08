@@ -363,11 +363,10 @@ export function MonitorForm(props: IMonitorFormProps) {
               <FormLabel>Time field</FormLabel>
               <FormControl>
                 <ToggleGroup
-                  type="single"
                   variant="outline"
-                  value={field.value}
+                  value={[field.value]}
                   onValueChange={(value) => {
-                    if (value) field.onChange(value);
+                    if (value[0]) field.onChange(value[0]);
                   }}
                   className="w-full flex-col sm:flex-row"
                 >

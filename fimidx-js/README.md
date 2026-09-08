@@ -55,6 +55,23 @@ await logger.close(); // flush + clear pending flush timer
 | `consoleLogOnError` | `boolean` | `true` | Print failed batches to the console so logs are not lost |
 | `logRemoteErrors` | `boolean` | `false` | Log remote errors during retries |
 | `metadata` | `object` | — | Merged into every log entry |
+| `redactFields` | `string[]` | — | Field names or dotted paths to replace before sending. A bare name (`password`) matches that key at any depth; a path (`user.email`, `items.*.token`) matches from the log root (`*` is one segment) |
+| `redactValue` | `string` | `[redacted]` | Replacement used for redacted values |
+
+```ts
+const logger = new FimidxLogger({
+  projectId: 'your-project-id',
+  clientToken: 'your-client-token',
+  redactFields: ['password', 'user.email', 'items.*.token'],
+});
+
+logger.log({
+  password: 'hunter2',
+  user: {email: 'ada@example.com', name: 'ada'},
+  items: [{token: 'abc', id: 1}],
+});
+// sent as {password: '[redacted]', user: {email: '[redacted]', name: 'ada'}, items: [{token: '[redacted]', id: 1}]}
+```
 
 ### Methods
 
@@ -62,6 +79,7 @@ await logger.close(); // flush + clear pending flush timer
 - `flush()` — send the current buffer
 - `close()` — clear the flush timer and flush
 - `setMetadata` / `getMetadata` / `mergeMetadata` — manage shared metadata
+- `setRedactFields` / `getRedactFields` / `addRedactFields` — manage fields to redact
 
 ## FimidxConsoleLikeLogger
 

@@ -1,6 +1,13 @@
 import {FimidxEndpoints} from '../endpoints/fimidxEndpoints.js';
 import type {IngestLogsArgs} from '../endpoints/fimidxTypes.js';
 import {MfdocEndpointError} from '../endpoints/index.js';
+import {
+  compileRedactFields,
+  DEFAULT_REDACT_VALUE,
+  hasRedactFields,
+  redactLogFields,
+  type CompiledRedactFields,
+} from './redactLogFields.js';
 import {serializeForLog} from './serializeForLog.js';
 
 export interface IFimidxLoggerOptions {
@@ -30,6 +37,19 @@ export interface IFimidxLoggerOptions {
 
   // Metadata to include in every log entry
   metadata?: Record<string, any>;
+
+  /**
+   * Field names or dotted paths to replace before logs are sent.
+   *
+   * - `"password"` — any field named `password`, at any depth
+   * - `"user.email"` — that exact nested path from the log root
+   * - `"items.*.token"` — `token` on every item in `items`
+   */
+  redactFields?: string[];
+  /**
+   * Replacement used for redacted values. Default: `'[redacted]'`.
+   */
+  redactValue?: string;
 }
 
 export class FimidxLogger {
@@ -54,6 +74,11 @@ export class FimidxLogger {
 
   // Metadata
   private metadata?: Record<string, any>;
+
+  // Redaction
+  private redactFields: string[];
+  private compiledRedactFields: CompiledRedactFields;
+  private redactValue: string;
 
   constructor(opts: IFimidxLoggerOptions) {
     // Validate required parameters
@@ -80,6 +105,11 @@ export class FimidxLogger {
 
     // Metadata
     this.metadata = opts.metadata;
+
+    // Redaction
+    this.redactFields = opts.redactFields ?? [];
+    this.compiledRedactFields = compileRedactFields(this.redactFields);
+    this.redactValue = opts.redactValue ?? DEFAULT_REDACT_VALUE;
 
     // Initialize FimidxEndpoints
     this.fimidx = new FimidxEndpoints({
@@ -115,6 +145,19 @@ export class FimidxLogger {
     this.metadata = {...this.metadata, ...metadata};
   };
 
+  setRedactFields = (fields: string[]): void => {
+    this.redactFields = fields;
+    this.compiledRedactFields = compileRedactFields(fields);
+  };
+
+  getRedactFields = (): string[] => {
+    return this.redactFields;
+  };
+
+  addRedactFields = (fields: string[]): void => {
+    this.setRedactFields([...new Set([...this.redactFields, ...fields])]);
+  };
+
   close = async (): Promise<void> => {
     // Clear any pending timer
     if (this.flushTimer) {
@@ -131,7 +174,10 @@ export class FimidxLogger {
     // Merge entry with metadata, then make Errors JSON-safe (name/message/stack
     // are non-enumerable and would otherwise serialize as {}).
     const merged = this.metadata ? {...this.metadata, ...entry} : entry;
-    const logEntry = serializeForLog(merged);
+    const serialized = serializeForLog(merged);
+    const logEntry = hasRedactFields(this.compiledRedactFields)
+      ? redactLogFields(serialized, this.compiledRedactFields, this.redactValue)
+      : serialized;
 
     this.buffer.push(logEntry);
 

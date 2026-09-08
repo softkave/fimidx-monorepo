@@ -46,7 +46,7 @@ export function PageError(props: {
     messageNode = (
       <TooltipProvider>
         <Tooltip>
-          <TooltipTrigger asChild>{messageNode}</TooltipTrigger>
+          <TooltipTrigger render={messageNode} />
           <TooltipContent>
             <p>{message}</p>
           </TooltipContent>

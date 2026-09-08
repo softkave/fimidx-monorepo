@@ -199,16 +199,19 @@ function AlertSnapshot(props: {
             Acknowledge
           </Button>
         ) : null}
-        <Button variant="outline" asChild>
-          <Link
-            href={kClientPaths.app.org.project.monitors.single(
-              orgId,
-              projectId,
-              alert.monitorId
-            )}
-          >
-            View monitor
-          </Link>
+        <Button
+          variant="outline"
+          render={
+            <Link
+              href={kClientPaths.app.org.project.monitors.single(
+                orgId,
+                projectId,
+                alert.monitorId
+              )}
+            />
+          }
+        >
+          View monitor
         </Button>
       </div>
     </div>

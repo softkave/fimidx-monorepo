@@ -66,20 +66,22 @@ export function OrgItemMenu(props: IOrgItemMenuProps) {
       {deleteOrgDialog.DeleteResourceDialog()}
       <OrgFormSheet org={org} onOpenChange={setIsEditing} isOpen={isEditing} />
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            size="icon"
-            disabled={isMutating}
-            className={cn(isMutating && "animate-pulse")}
-          >
-            {isMutating ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Ellipsis className="w-4 h-4" />
-            )}
-          </Button>
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="outline"
+              size="icon"
+              disabled={isMutating}
+              className={cn(isMutating && "animate-pulse")}
+            >
+              {isMutating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Ellipsis className="w-4 h-4" />
+              )}
+            </Button>
+          }
+        />
         <DropdownMenuContent>
           <DropdownMenuItem onSelect={() => setIsEditing(true)}>
             Edit

@@ -16,8 +16,6 @@ export const kFooterLinkGroups: IWebFooterLinkGroup[] = [
     links: [
       { label: "fimidara", href: "https://fimidara.com" },
       { label: "fimipost", href: "https://fimipost.ywordk.com" },
-      { label: "mmind", href: "https://mmind.ywordk.com" },
-      { label: "card game", href: "https://kder.ywordk.com" },
     ],
   },
 ];

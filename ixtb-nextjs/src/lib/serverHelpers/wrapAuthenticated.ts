@@ -14,6 +14,29 @@ import { NextRequest } from "next/server";
 import { AnyFn, AnyObject } from "softkave-js-utils";
 import { IRouteContext, wrapRoute } from "./wrapRoute";
 
+const kClientTokenCorsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Authorization, Content-Type",
+};
+
+export function withClientTokenCors(response: Response): Response {
+  const headers = new Headers(response.headers);
+  for (const [key, value] of Object.entries(kClientTokenCorsHeaders)) {
+    headers.set(key, value);
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
+/** Preflight handler for browser clients using client-token auth. */
+export function clientTokenOptionsHandler() {
+  return withClientTokenCors(new Response(null, { status: 204 }));
+}
+
 type BetterAuthSession = NonNullable<
   Awaited<ReturnType<typeof authApi.api.getSession>>
 >;
@@ -155,11 +178,16 @@ export const wrapClientTokenAuthenticated = (
     Promise<void | AnyObject>
   >,
 ) => {
-  return wrapRoute(async (req: NextRequest, ctx: IRouteContext) => {
+  const wrapped = wrapRoute(async (req: NextRequest, ctx: IRouteContext) => {
     const clientTokenAuthenticatedRequest =
       await getClientTokenAuthenticatedRequest(req);
     return routeFn(req, ctx, clientTokenAuthenticatedRequest);
   });
+
+  return async (req: NextRequest, ctx: IRouteContext) => {
+    const response = await wrapped(req, ctx);
+    return withClientTokenCors(response);
+  };
 };
 
 export const wrapUserOrClientTokenAuthenticated = (

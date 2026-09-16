@@ -1,5 +1,8 @@
 import { uploadTokenEndpoint } from "@/src/lib/endpoints/external/sourceMaps/uploadTokenEndpoint";
-import { wrapClientTokenAuthenticated } from "@/src/lib/serverHelpers/wrapAuthenticated";
+import {
+  clientTokenOptionsHandler,
+  wrapClientTokenAuthenticated,
+} from "@/src/lib/serverHelpers/wrapAuthenticated";
 import { IRouteContext } from "@/src/lib/serverHelpers/wrapRoute";
 import { NextRequest } from "next/server";
 import { AnyFn } from "softkave-js-utils";
@@ -14,3 +17,5 @@ export const POST = postEndpointFn as unknown as AnyFn<
   [NextRequest, IRouteContext],
   Promise<Response>
 >;
+
+export const OPTIONS = clientTokenOptionsHandler;
